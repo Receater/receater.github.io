@@ -254,6 +254,8 @@ button{cursor:pointer}
 .receipt .meta{overflow-wrap:anywhere}
 
 /* Google Drive */
+.brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.hello{font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand-actions{display:flex;gap:6px;min-width:0;justify-content:flex-end}
 .brand-actions .pay-btn{max-width:none}
 #payBtn{max-width:48vw}
@@ -262,18 +264,46 @@ button{cursor:pointer}
 .cloud-banner{background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--line)}
 .cloud-banner p{margin:0 0 10px;font-size:.93rem}
 .cloud-banner .row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Ahorros */
+.jar-total{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:4px}
+.jar-total .fact .v{font-size:1.35rem}
+.jar-total .fact .v.usd{color:var(--usd)}
+.jar{background:var(--paper);border-radius:12px;margin-top:10px;overflow:hidden}
+.jar-head{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;border:0;background:none;padding:14px 16px;text-align:left}
+.jar-dot{width:14px;height:18px;border-radius:3px 3px 6px 6px}
+.jar-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jar-sub{font-size:.84rem;color:var(--muted)}
+.jar-bal{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.jar-bal.usd{color:var(--usd)}
+.jar .meter{margin:0 16px 12px}
+.jar-body{padding:0 16px 14px;border-top:1px dashed var(--line)}
+.jar-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px}
+.jar-hist{list-style:none;margin:10px 0 0;padding:0;font-size:.9rem}
+.jar-hist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding:6px 0;border-top:1px solid var(--line);align-items:center}
+.jar-hist li:first-child{border-top:0}
+.jar-hist .d{color:var(--muted);font-size:.8rem;min-width:46px}
+.jar-hist .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jar-hist .a{font-variant-numeric:tabular-nums;font-weight:600}
+.jar-hist .a.neg{color:var(--danger)}
+.jar-hist .x{width:auto;height:auto;font-size:1rem}
+#jarBg,#jmBg{z-index:14}
+#jarSheet,#jmSheet{z-index:15}
 </style>
 </head>
 <body>
 <main class="wrap">
   <header class="brand">
-    <span class="logo">Rec<span>eater</span></span>
+    <div class="brand-left">
+      <span class="logo">Rec<span>eater</span></span>
+      <span class="hello" id="hello" hidden></span>
+    </div>
     <div class="brand-actions">
       <button type="button" class="pay-btn" id="syncBtn" hidden></button>
       <button type="button" class="pay-btn" id="payBtn"></button>
     </div>
   </header>
-  <div class="month-nav">
+  <div class="month-nav" id="monthNav">
     <button class="icon-btn" id="prev" aria-label="Mes anterior">‹</button>
     <div class="title-wrap">
       <h1 id="monthTitle"></h1>
@@ -285,6 +315,7 @@ button{cursor:pointer}
   <div class="tabs" role="tablist">
     <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
     <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
+    <button role="tab" id="tabJars" aria-selected="false">Ahorros</button>
   </div>
 
   <div class="cloud-banner" id="cloudBanner" hidden>
@@ -331,6 +362,22 @@ button{cursor:pointer}
       <h2>Gastos de los últimos 6 meses</h2>
       <div id="barsBox"></div>
     </section>
+  </div>
+
+  <div id="viewJars" hidden>
+    <div class="jar-total" id="jarTotals"></div>
+    <div id="jarList"></div>
+    <section class="card" id="jarGrowthCard">
+      <div class="card-head">
+        <h2>Cómo fue creciendo</h2>
+        <div class="seg" role="group" aria-label="Moneda">
+          <button type="button" data-jcur="ARS" aria-pressed="true">$</button>
+          <button type="button" data-jcur="USD" aria-pressed="false">US$</button>
+        </div>
+      </div>
+      <div id="jarGrowth"></div>
+    </section>
+    <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newJar">+ Nuevo frasco</button></div>
   </div>
 </main>
 
@@ -382,6 +429,11 @@ button{cursor:pointer}
     <label for="until">¿Hasta cuándo te tiene que durar?</label>
     <input class="input" type="date" id="until">
     <div class="fx-hint">Poné cuándo creés que vas a volver a cobrar.</div>
+  </div>
+
+  <div class="field" id="jarField" hidden>
+    <span class="lbl">¿A qué frasco va?</span>
+    <div class="chips" id="jarChips"></div>
   </div>
 
   <div class="field" id="methodField">
@@ -464,6 +516,42 @@ button{cursor:pointer}
     <button type="button" class="btn danger" id="cardDel" hidden>Borrar</button>
     <button type="button" class="btn ghost" id="cardCancel">Cancelar</button>
     <button type="button" class="btn primary" id="cardSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="jarBg"></div>
+<div class="sheet" id="jarSheet" role="dialog" aria-modal="true" aria-labelledby="jarTitle">
+  <h3 id="jarTitle">Nuevo frasco</h3>
+  <div class="field"><label for="jarName">Nombre</label><input class="input" id="jarName" placeholder="Ej: Dólares, Plazo fijo, Viaje" autocomplete="off"></div>
+  <div class="field"><span class="lbl">Moneda</span>
+    <div class="seg" role="group" aria-label="Moneda del frasco">
+      <button type="button" data-jarcur="ARS" aria-pressed="true">Pesos</button>
+      <button type="button" data-jarcur="USD" aria-pressed="false">Dólares</button>
+    </div></div>
+  <div class="field"><label for="jarGoal">Meta (opcional)</label><input class="input" id="jarGoal" inputmode="decimal" placeholder="Ej: 1500" autocomplete="off"></div>
+  <div class="field"><label for="jarStart">¿Ya tenés algo ahorrado acá? (opcional)</label><input class="input" id="jarStart" inputmode="decimal" placeholder="0" autocomplete="off">
+    <div class="fx-hint">Se suma como saldo inicial, sin tocar tus gastos del mes.</div></div>
+  <div class="err" id="jarErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="jarDel" hidden>Borrar</button>
+    <button type="button" class="btn ghost" id="jarCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="jarSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="jmBg"></div>
+<div class="sheet" id="jmSheet" role="dialog" aria-modal="true" aria-labelledby="jmTitle">
+  <h3 id="jmTitle">Sumar</h3>
+  <div class="field two">
+    <div><label for="jmAmount" id="jmAmountLbl">Monto</label><input class="input" id="jmAmount" inputmode="decimal" autocomplete="off"></div>
+    <div><label for="jmDate">Fecha</label><input class="input" type="date" id="jmDate"></div>
+  </div>
+  <div class="field"><label for="jmNote">Nota</label><input class="input" id="jmNote" autocomplete="off"></div>
+  <div class="fx-hint" id="jmHint"></div>
+  <div class="err" id="jmErr"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="jmCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="jmSave">Guardar</button>
   </div>
 </div>
 
@@ -665,6 +753,28 @@ function cardWhenText(e){
   return n > 1 ? `${n} cuotas, la primera el ${shortDate(first)}` : `Va al pago del ${shortDate(first)}`;
 }
 
+/* ---------- Ahorros: frascos ----------
+   jar: { id, name, currency:"ARS"|"USD", goal|null, color }
+   data.jarMoves: movimientos manuales { id, jarId, date:"YYYY-MM-DD", amount (+ suma / - saca), kind:"deposit"|"withdraw"|"adjust", note }
+   Los gastos de categoría Ahorro y las compras de dólares llevan jarId y suman solos al frasco. */
+if (!Array.isArray(data.jars)) data.jars = [];
+if (!Array.isArray(data.jarMoves)) data.jarMoves = [];
+if (!data.lastJar || typeof data.lastJar !== "object") data.lastJar = {};
+const JAR_COLORS = ["#1E8A5B","#2F5BEA","#C9A227","#7A5AC8","#E08A2C","#1FA3B3","#D0485E"];
+const jarById = id => data.jars.find(j => j.id === id);
+function jarEntries(j){
+  const out = [];
+  data.expenses.forEach(e => {
+    if (e.jarId !== j.id) return;
+    if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra de dólares a ${fmtARS.format(e.fx.rate)}`, src:e });
+    else if (e.currency === j.currency) out.push({ date:e.date.slice(0,10), amount:eff(e), label: e.note || "Ahorro", src:e });
+  });
+  data.jarMoves.filter(m => m.jarId === j.id).forEach(m => out.push({ date:m.date, amount:m.amount,
+    label: m.note || (m.kind === "withdraw" ? "Sacaste" : m.kind === "adjust" ? "Ajuste de valor" : "Sumaste"), move:m }));
+  return out.sort((a,b) => b.date.localeCompare(a.date));
+}
+const jarBalance = j => round2(jarEntries(j).reduce((s,x) => s + x.amount, 0));
+
 /* ---------- Estado de vista ---------- */
 const now = new Date();
 /* Cobro: "lb" = último día hábil del mes anterior (el sueldo de octubre se cobra a fin de septiembre),
@@ -732,6 +842,7 @@ function render(){
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
   if (tab === "dash") { renderDash(); return; }
+  if (tab === "jars") { renderJars(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
   const inMonth = [...data.expenses, ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
@@ -972,6 +1083,7 @@ function setMode(m){
   $("amountRow").hidden = m === "fx";
   if (m === "fx") fxCalc();
   $("catField").hidden = m === "fx";
+  updateJarField();
   $("note").placeholder = m === "fx" ? "Ej: ahorro, viaje…" : $("note").placeholder;
   renderCats();
 }
@@ -998,6 +1110,25 @@ function updateCardWhen(){
 }
 $("cuotas").onchange = updateCardWhen;
 $("date").addEventListener("change", updateCardWhen);
+let jarSel = null, jarUserPicked = false;
+function jarFieldCurrency(){ return mode === "fx" ? "USD" : currency; }
+function defaultJar(cur){ const id = data.lastJar[cur]; return jarById(id) ? id : null; }
+function updateJarField(){
+  const show = mode === "fx" || (mode === "expense" && category === "ahorro");
+  $("jarField").hidden = !show; if (!show) return;
+  const cur = jarFieldCurrency(), jars = data.jars.filter(j => j.currency === cur);
+  if (!editing && !jarUserPicked) jarSel = defaultJar(cur);
+  if (jarSel && !jars.some(j => j.id === jarSel)) jarSel = null;
+  const box = $("jarChips"); box.innerHTML = "";
+  const chip = (label, active, onclick, color) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(active));
+    if (color){ const t = document.createElement("span"); t.className = "card-tag"; t.style.background = color; b.append(t); }
+    b.append(label); b.onclick = onclick; box.append(b);
+  };
+  jars.forEach(j => chip(j.name, jarSel === j.id, () => { jarSel = j.id; jarUserPicked = true; updateJarField(); }, j.color));
+  chip("Sin frasco", !jarSel, () => { jarSel = null; jarUserPicked = true; updateJarField(); });
+  chip("+ Frasco", false, () => openJar(null, cur));
+}
 function updateUntilField(){
   const sueldo = mode === "income" && incomeKind === "sueldo";
   $("untilField").hidden = !(sueldo && isFree());
@@ -1022,7 +1153,7 @@ function renderCats(){
     b.setAttribute("aria-pressed", String(c.id === sel));
     const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
     b.append(dot, document.createTextNode(c.name));
-    b.onclick = () => { if (mode === "income") incomeKind = c.id; else category = c.id; renderCats(); updateUntilField(); };
+    b.onclick = () => { if (mode === "income") incomeKind = c.id; else category = c.id; renderCats(); updateUntilField(); updateJarField(); };
     box.append(b);
   });
 }
@@ -1095,6 +1226,7 @@ function setCurrency(cur){
   currency = cur;
   document.querySelectorAll(".cur button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cur === cur)));
   if (splitOn()) renderFoot();
+  if (typeof updateJarField === "function" && $("sheet").classList.contains("open")) updateJarField();
 }
 /* Compra de dólares: cuántos dólares + (cotización o total pagado) */
 let fxMode = "rate";
@@ -1146,6 +1278,8 @@ function openSheet(exp){
   else { method = data.lastMethod || "cash"; cardId = method === "card" ? data.lastCardId : null; if (method === "card" && !cardById(cardId)){ method = "cash"; cardId = null; } }
   $("cuotas").value = exp && exp.installments ? exp.installments : 1;
   renderMethods();
+  jarSel = exp ? (exp.jarId || null) : null;
+  jarUserPicked = false;
   $("typeTabs").hidden = !!exp;
   setMode(exp ? (isIncome(exp) ? "income" : exp.fx ? "fx" : "expense") : "expense");
   $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
@@ -1163,7 +1297,8 @@ $("sheet").addEventListener("submit", ev => {
     const { usd, ars } = fxValues();
     if (!(usd > 0) || !(ars > 0)){ $("err").textContent = fxMode === "rate" ? "Completá los dólares y la cotización." : "Completá los dólares y cuánto pagaste."; return; }
     const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
-    const fields = { amount: round2(ars), currency:"ARS", category:"ahorro", date, note: $("note").value.trim(), split:null, fx:{ usd: round2(usd), rate: round2(ars/usd) } };
+    const fields = { amount: round2(ars), currency:"ARS", category:"ahorro", date, note: $("note").value.trim(), split:null, fx:{ usd: round2(usd), rate: round2(ars/usd) }, jarId: jarSel };
+    if (jarSel) data.lastJar.USD = jarSel;
     if (editing) Object.assign(editing, fields);
     else data.expenses.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), source:"manual", items:[], ...fields });
     data.lastRate = fields.fx.rate;
@@ -1186,6 +1321,8 @@ $("sheet").addEventListener("submit", ev => {
     fields.method = method; fields.cardId = method === "card" ? cardId : null;
     fields.installments = method === "card" ? Number($("cuotas").value) : 1;
     data.lastMethod = method; data.lastCardId = fields.cardId;
+    fields.jarId = !$("jarField").hidden ? jarSel : null;
+    if (fields.jarId) data.lastJar[currency] = fields.jarId;
   }
   if (mode === "income" && isFree() && incomeKind === "sueldo"){
     const until = $("until").value;
@@ -1211,7 +1348,9 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("cardSheet").classList.contains("open")) closeCard();
+  if ($("jarSheet").classList.contains("open")) closeJar();
+  else if ($("jmSheet").classList.contains("open")) closeJarMove();
+  else if ($("cardSheet").classList.contains("open")) closeCard();
   else if ($("cpSheet").classList.contains("open")) closeCardPay();
   else if ($("paySheet").classList.contains("open")) closePay(); else closeSheet(); });
 document.querySelectorAll(".cur button").forEach(b => b.onclick = () => setCurrency(b.dataset.cur));
@@ -1534,9 +1673,175 @@ function setTab(t){
   tab = t;
   $("tabList").setAttribute("aria-selected", String(t==="list"));
   $("tabDash").setAttribute("aria-selected", String(t==="dash"));
-  $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash";
+  $("tabJars").setAttribute("aria-selected", String(t==="jars"));
+  $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars";
+  $("monthNav").hidden = t === "jars";
   render();
 }
+$("tabJars").onclick = () => setTab("jars");
+
+let jarCur = "ARS";
+const openJars = new Set();
+function renderJars(){
+  // Totales
+  const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
+  const loose = cur => data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur))
+    .reduce((s,e) => s + (e.fx ? e.fx.usd : eff(e)), 0);
+  const tA = tot("ARS") + loose("ARS"), tU = tot("USD") + loose("USD");
+  const tb = $("jarTotals"); tb.innerHTML = "";
+  [["Ahorrado en pesos", fmtARS.format(tA), ""], ["Ahorrado en dólares", fmtUSD.format(tU), "usd"]].forEach(([l,v,c]) => {
+    const f = document.createElement("div"); f.className = "fact";
+    f.innerHTML = '<div class="l"></div><div class="v"></div>'; f.querySelector(".l").textContent = l;
+    const vv = f.querySelector(".v"); vv.textContent = v; if (c) vv.classList.add(c); tb.append(f);
+  });
+  // Frascos
+  const list = $("jarList"); list.innerHTML = "";
+  if (!data.jars.length){
+    list.innerHTML = '<div class="empty"><strong>Todavía no tenés frascos</strong>Creá uno para cada ahorro: dólares, plazo fijo, un viaje. Lo que cargues como Ahorro o compra de dólares se va sumando solo.</div>';
+  }
+  data.jars.forEach(j => {
+    const bal = jarBalance(j), money2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n), open = openJars.has(j.id);
+    const el = document.createElement("div"); el.className = "jar";
+    const head = document.createElement("button"); head.type = "button"; head.className = "jar-head"; head.setAttribute("aria-expanded", String(open));
+    const dot = document.createElement("span"); dot.className = "jar-dot"; dot.style.background = j.color;
+    const mid = document.createElement("div");
+    const nm = document.createElement("div"); nm.className = "jar-name"; nm.textContent = j.name;
+    const sb = document.createElement("div"); sb.className = "jar-sub";
+    sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `Meta ${money2(j.goal)}. Te falta ${money2(round2(j.goal - bal))}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
+    mid.append(nm, sb);
+    const b = document.createElement("div"); b.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); b.textContent = money2(bal);
+    head.append(dot, mid, b);
+    head.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
+    el.append(head);
+    if (j.goal){ const m = document.createElement("div"); m.className = "meter"; const sp = document.createElement("span");
+      sp.style.width = Math.max(0, Math.min(100, bal / j.goal * 100)) + "%"; sp.style.background = j.color; m.append(sp); el.append(m); }
+    if (open){
+      const body = document.createElement("div"); body.className = "jar-body";
+      const acts = document.createElement("div"); acts.className = "jar-actions";
+      [["Sumar", () => openJarMove(j, "deposit")], ["Sacar", () => openJarMove(j, "withdraw")], ["Actualizar valor", () => openJarMove(j, "adjust")], ["Editar", () => openJar(j)]]
+        .forEach(([t, fn]) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn"; x.textContent = t; x.onclick = fn; acts.append(x); });
+      body.append(acts);
+      const hist = jarEntries(j), ul = document.createElement("ul"); ul.className = "jar-hist";
+      if (!hist.length){ const li = document.createElement("li"); li.textContent = "Sin movimientos todavía."; li.style.display = "block"; li.style.color = "var(--muted)"; ul.append(li); }
+      hist.slice(0, 30).forEach(x => {
+        const li = document.createElement("li");
+        const d = document.createElement("span"); d.className = "d"; d.textContent = shortDate(dateOnly(x.date));
+        const t = document.createElement("span"); t.className = "t"; t.textContent = x.label;
+        const a = document.createElement("span"); a.className = "a" + (x.amount < 0 ? " neg" : ""); a.textContent = (x.amount >= 0 ? "+ " : "− ") + money2(Math.abs(x.amount));
+        li.append(d, t, a);
+        if (x.move){ const del = document.createElement("button"); del.type = "button"; del.className = "x"; del.textContent = "×"; del.setAttribute("aria-label","Borrar movimiento");
+          del.onclick = () => { if (!confirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); renderJars(); };
+          li.style.gridTemplateColumns = "auto minmax(0,1fr) auto auto"; li.append(del); }
+        ul.append(li);
+      });
+      body.append(ul); el.append(body);
+    }
+    list.append(el);
+  });
+  const lA = loose("ARS"), lU = loose("USD");
+  if (lA || lU){
+    const p = document.createElement("p"); p.className = "fx-hint";
+    p.textContent = `Tenés ${[lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ")} ahorrados sin frasco. Editá esos movimientos para asignarles uno.`;
+    list.append(p);
+  }
+  // Crecimiento: saldo al final de cada mes, últimos 6 meses
+  const box = $("jarGrowth"); box.innerHTML = "";
+  const jarsC = data.jars.filter(j => j.currency === jarCur);
+  const all = jarsC.flatMap(j => jarEntries(j));
+  data.expenses.filter(e => !e.jarId && (e.fx ? jarCur === "USD" : e.category === "ahorro" && e.currency === jarCur))
+    .forEach(e => all.push({ date:e.date.slice(0,10), amount: e.fx ? e.fx.usd : eff(e) }));
+  if (!all.length){ box.innerHTML = '<p class="fx-hint" style="margin:0">Todavía no hay ahorros en esta moneda.</p>'; return; }
+  const now = new Date(), months = [];
+  for (let i = 5; i >= 0; i--){ const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push(d); }
+  const vals = months.map(d => { const end = toLocalInput(new Date(d.getFullYear(), d.getMonth()+1, 0)); return all.filter(x => x.date <= end).reduce((s,x) => s + x.amount, 0); });
+  const max = Math.max(...vals, 1), W = 320, H = 170, top = 22, bottom = 24, bw = 34, step = W/6;
+  const svg = svgEl("svg", { viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Ahorro acumulado por mes" });
+  svg.append(svgEl("line", { x1:0, x2:W, y1:H-bottom, y2:H-bottom, stroke:"var(--line)" }));
+  months.forEach((d,i) => {
+    const v = Math.max(0, vals[i]), h = v / max * (H-top-bottom), x = step*i + (step-bw)/2, last = i === 5;
+    svg.append(svgEl("rect", { x, y:H-bottom-h, width:bw, height:Math.max(h, v ? 2 : 0), rx:5, fill: last ? "var(--usd)" : "var(--line)" }));
+    const t = svgEl("text", { x:x+bw/2, y:H-6, "text-anchor":"middle", "font-size":11, fill:"var(--muted)" });
+    t.textContent = d.toLocaleDateString("es-AR",{month:"short"}).replace(".",""); svg.append(t);
+    if (v){ const tv = svgEl("text", { x:x+bw/2, y:H-bottom-h-6, "text-anchor":"middle", "font-size":10.5, fill: last ? "var(--ink)" : "var(--muted)", "font-weight": last ? 600 : 400 });
+      tv.textContent = shortMoney(v, jarCur); svg.append(tv); }
+  });
+  box.append(svg);
+}
+document.querySelectorAll("[data-jcur]").forEach(b => b.onclick = () => {
+  jarCur = b.dataset.jcur; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderJars();
+});
+
+/* Modal de frasco */
+let editingJar = null, jarDraftCur = "ARS", jarFromSheet = false;
+function setJarCur(c){ jarDraftCur = c; document.querySelectorAll("[data-jarcur]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.jarcur === c))); }
+document.querySelectorAll("[data-jarcur]").forEach(b => b.onclick = () => setJarCur(b.dataset.jarcur));
+function openJar(j, cur){
+  editingJar = j || null; jarFromSheet = !j && $("sheet").classList.contains("open");
+  $("jarTitle").textContent = j ? "Editar frasco" : "Nuevo frasco";
+  $("jarName").value = j ? j.name : "";
+  $("jarGoal").value = j && j.goal ? String(j.goal).replace(".",",") : "";
+  $("jarStart").value = ""; $("jarStart").parentElement.hidden = !!j;
+  setJarCur(j ? j.currency : (cur || "ARS"));
+  document.querySelectorAll("[data-jarcur]").forEach(b => b.disabled = !!j);
+  $("jarDel").hidden = !j; $("jarErr").textContent = "";
+  $("jarBg").classList.add("open"); $("jarSheet").classList.add("open");
+  setTimeout(() => $("jarName").focus(), 120);
+}
+function closeJar(){ $("jarBg").classList.remove("open"); $("jarSheet").classList.remove("open"); }
+$("jarCancel").onclick = closeJar; $("jarBg").onclick = closeJar;
+$("newJar").onclick = () => openJar(null, jarCur);
+$("jarSave").onclick = () => {
+  const name = $("jarName").value.trim();
+  if (!name){ $("jarErr").textContent = "Ponele un nombre al frasco."; $("jarName").focus(); return; }
+  const goal = parseAmount($("jarGoal").value);
+  let j = editingJar;
+  if (j){ j.name = name; j.goal = goal > 0 ? round2(goal) : null; }
+  else {
+    j = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, currency: jarDraftCur, goal: goal > 0 ? round2(goal) : null,
+      color: JAR_COLORS[data.jars.length % JAR_COLORS.length] };
+    data.jars.push(j);
+    const start = parseAmount($("jarStart").value);
+    if (start > 0) data.jarMoves.push({ id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+1)), jarId: j.id, date: toLocalInput(new Date()), amount: round2(start), kind:"deposit", note:"Saldo inicial" });
+  }
+  persist(); closeJar();
+  if (jarFromSheet){ jarSel = j.id; jarUserPicked = true; updateJarField(); }
+  render();
+};
+$("jarDel").onclick = () => {
+  const j = editingJar; if (!j) return;
+  const linked = data.expenses.filter(e => e.jarId === j.id).length;
+  if (!confirm(linked ? `¿Borrar ${j.name}? Sus ${linked} ahorros cargados quedan sin frasco.` : `¿Borrar ${j.name}?`)) return;
+  data.expenses.forEach(e => { if (e.jarId === j.id) e.jarId = null; });
+  data.jars = data.jars.filter(x => x !== j); data.jarMoves = data.jarMoves.filter(m => m.jarId !== j.id);
+  persist(); closeJar(); render();
+};
+
+/* Sumar / sacar / actualizar valor */
+let jmJar = null, jmKind = "deposit";
+function openJarMove(j, kind){
+  jmJar = j; jmKind = kind;
+  const m = j.currency === "USD" ? fmtUSD : fmtARS;
+  $("jmTitle").textContent = kind === "deposit" ? `Sumar a ${j.name}` : kind === "withdraw" ? `Sacar de ${j.name}` : `Actualizar ${j.name}`;
+  $("jmAmountLbl").textContent = kind === "adjust" ? "¿Cuánto hay hoy?" : "Monto";
+  $("jmAmount").value = ""; $("jmDate").value = toLocalInput(new Date()); $("jmNote").value = "";
+  $("jmNote").placeholder = kind === "adjust" ? "Ej: intereses del plazo fijo" : kind === "withdraw" ? "Ej: para el viaje" : "Ej: me sobró del mes";
+  $("jmHint").textContent = kind === "adjust" ? `Hoy figura ${m.format(jarBalance(j))}. La diferencia queda como ajuste (intereses, rendimiento, cotización).`
+    : kind === "deposit" ? "Esto no cuenta como gasto del mes. Si la plata sale de tu sueldo, mejor cargala como gasto con categoría Ahorro." : "";
+  $("jmErr").textContent = "";
+  $("jmBg").classList.add("open"); $("jmSheet").classList.add("open");
+  setTimeout(() => $("jmAmount").focus(), 120);
+}
+function closeJarMove(){ $("jmBg").classList.remove("open"); $("jmSheet").classList.remove("open"); }
+$("jmCancel").onclick = closeJarMove; $("jmBg").onclick = closeJarMove;
+$("jmSave").onclick = () => {
+  const v = parseAmount($("jmAmount").value), date = $("jmDate").value || toLocalInput(new Date());
+  if (!(v >= 0) || (jmKind !== "adjust" && !(v > 0))){ $("jmErr").textContent = "Poné un monto."; return; }
+  let amount = jmKind === "deposit" ? v : jmKind === "withdraw" ? -v : round2(v - jarBalance(jmJar));
+  if (jmKind === "withdraw" && v > jarBalance(jmJar) + 0.001){ $("jmErr").textContent = "No podés sacar más de lo que hay en el frasco."; return; }
+  if (jmKind === "adjust" && Math.abs(amount) < 0.005){ closeJarMove(); return; }
+  data.jarMoves.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), jarId: jmJar.id, date, amount: round2(amount), kind: jmKind, note: $("jmNote").value.trim() });
+  persist(); closeJarMove(); feedRecy(); render();
+};
 $("tabList").onclick = () => setTab("list");
 $("tabDash").onclick = () => setTab("dash");
 document.querySelectorAll("[data-dcur]").forEach(b => b.onclick = () => {
@@ -1557,6 +1862,7 @@ const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const DRIVE_FILENAME = "receater-data.json";
 const TOKEN_KEY = "receater.gtoken";
 const BANNER_KEY = "receater.bannerDismissed";
+const USER_KEY = "receater.user";
 
 window.cloud = (() => {
   let token = null, fileId = null, ready = false, timer = null, busy = false;
@@ -1569,6 +1875,18 @@ window.cloud = (() => {
   function status(text, cls){
     btn.hidden = false; btn.textContent = text;
     btn.classList.toggle("ok", cls === "ok"); btn.classList.toggle("warn", cls === "warn");
+  }
+  function showUser(name){
+    const el = $("hello");
+    if (!name){ el.hidden = true; el.textContent = ""; return; }
+    el.hidden = false; el.textContent = `¡Hola, ${name.split(" ")[0]}!`; el.title = name;
+  }
+  async function loadUser(){
+    try {
+      const u = (await (await api("https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)")).json()).user || {};
+      const name = u.displayName || (u.emailAddress || "").split("@")[0];
+      if (name){ ls.set(USER_KEY, name); showUser(name); }
+    } catch {}
   }
   function savedToken(){
     try { const t = JSON.parse(ls.get(TOKEN_KEY) || "null"); return t && Date.now() < t.expiresAt ? t.token : null; } catch { return null; }
@@ -1626,6 +1944,7 @@ window.cloud = (() => {
   async function sync(){
     status("Conectando…");
     try {
+      loadUser();
       fileId = await findFile();
       if (!fileId){ fileId = await createFile(); ready = true; status("En tu Drive ✓", "ok"); return; }
       const remote = await (await api(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)).json();
@@ -1649,7 +1968,7 @@ window.cloud = (() => {
   function logout(){
     if (!confirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
     try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
-    ls.del(TOKEN_KEY); ls.del(STORE_KEY); location.reload();
+    ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); location.reload();
   }
   btn.onclick = () => { if (ready) logout(); else connect(); };
   $("cloudLogin").onclick = connect;
@@ -1657,6 +1976,7 @@ window.cloud = (() => {
 
   function init(){
     if (!onLine()) return;   // abierto como archivo local: funciona sin nube
+    showUser(ls.get(USER_KEY));
     token = savedToken();
     if (token) sync();
     else { status("Entrar"); if (!ls.get(BANNER_KEY)) $("cloudBanner").hidden = false; }
