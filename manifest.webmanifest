@@ -1,0 +1,12 @@
+{
+  "name": "Receater",
+  "short_name": "Receater",
+  "description": "Cargá tus gastos y mirá en qué se te va la plata. Recy se come tus tickets.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E6E9ED",
+  "theme_color": "#2F5BEA",
+  "lang": "es-AR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

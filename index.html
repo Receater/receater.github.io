@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Receater</title>
+<meta name="description" content="Receater: cargá tus gastos, tu sueldo y tus tarjetas, y mirá en qué se te va la plata. Recy se come tus tickets.">
+<meta name="theme-color" content="#2F5BEA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6E9ED; --paper:#FFFFFF; --ink:#1B2430; --muted:#66707D; --line:#D5DAE0;
+  --accent:#2F5BEA; --accent-ink:#FFFFFF; --usd:#1E8A5B; --danger:#C2412D;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161C; --paper:#1D232C; --ink:#E9EDF2; --muted:#98A2AE; --line:#2E3642;
+    --accent:#6F8FFF; --accent-ink:#0E1420; --usd:#4CC08A; --danger:#F07A63;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161C; --paper:#1D232C; --ink:#E9EDF2; --muted:#98A2AE; --line:#2E3642;
+  --accent:#6F8FFF; --accent-ink:#0E1420; --usd:#4CC08A; --danger:#F07A63;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 120px}
+
+/* Mes */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.month-nav h1{font-family:var(--display);font-weight:700;font-size:1.5rem;margin:0;letter-spacing:-.01em}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:grid;place-items:center;font-size:1.1rem}
+
+/* Ticket del mes */
+.receipt{background:var(--paper);padding:20px 20px 28px;position:relative;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%;
+  border-radius:6px 6px 0 0}
+.receipt .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.receipt .big{font-family:var(--display);font-weight:700;font-size:clamp(2rem,9vw,2.6rem);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.receipt .usd{color:var(--usd);font-family:var(--display);font-weight:500;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.receipt .meta{color:var(--muted);font-size:.9rem;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+
+/* Lista */
+.day{margin-top:22px}
+.day h2{font-size:.9rem;font-weight:600;color:var(--muted);margin:0 0 6px 4px;text-transform:capitalize}
+.list{background:var(--paper);border-radius:10px;overflow:hidden}
+.item{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:0;background:none;width:100%;text-align:left}
+.list > * + *{border-top:1px solid var(--line)}
+.dot{width:10px;height:10px;border-radius:50%}
+.item .cat{font-weight:600}
+.item .sub{color:var(--muted);font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .amt{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.item .amt.is-usd{color:var(--usd)}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+.empty strong{display:block;color:var(--ink);font-family:var(--display);font-size:1.2rem;margin-bottom:4px}
+
+/* Botón cargar */
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:0;margin-bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:15px 28px;font-weight:600;font-size:1rem;box-shadow:0 6px 20px rgba(30,50,120,.28)}
+
+/* Hoja de carga */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,14,20,.45);display:none;z-index:10}
+.sheet-bg.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--paper);border-radius:18px 18px 0 0;
+  max-width:560px;margin:0 auto;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  display:none;max-height:92vh;overflow-y:auto;overscroll-behavior:contain}
+.sheet.open{display:block;animation:sheetIn .25s ease}
+@keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.sheet.open{animation:none}}
+.sheet h3{font-family:var(--display);margin:0 0 14px;font-size:1.25rem}
+.amount-row{display:flex;gap:8px;align-items:stretch}
+.amount-row input{flex:1;min-width:0;font-family:var(--display);font-size:2rem;font-weight:700;border:0;border-bottom:2px solid var(--line);background:none;padding:4px 2px;font-variant-numeric:tabular-nums}
+.amount-row input:focus{outline:none;border-bottom-color:var(--accent)}
+.cur{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;align-self:center}
+.cur button{border:0;background:none;padding:8px 12px;font-weight:600;color:var(--muted)}
+.cur button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.field{margin-top:16px}
+.field label,.field .lbl{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:7px 12px;font-size:.92rem;display:flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.input{width:100%;border:1px solid var(--line);border-radius:10px;background:none;padding:10px 12px}
+.actions{display:flex;gap:10px;margin-top:20px}
+.btn{flex:1;border:0;border-radius:12px;padding:14px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:none;border:1px solid var(--line)}
+.btn.danger{background:none;border:1px solid var(--danger);color:var(--danger);flex:0 0 auto;padding:14px 16px}
+.lbl-sm{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.err{color:var(--danger);font-size:.88rem;margin-top:8px;min-height:1.2em}
+
+/* Pestañas */
+.tabs{display:flex;background:var(--paper);border-radius:12px;padding:4px;margin-bottom:14px;border:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+
+/* Resumen */
+.card{background:var(--paper);border-radius:12px;padding:18px;margin-top:14px}
+.card h2{font-family:var(--display);font-size:1.1rem;margin:0 0 12px;font-weight:700}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.card-head h2{margin:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:none;padding:6px 11px;font-weight:600;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.donut-wrap{display:grid;place-items:center;position:relative;margin:4px 0 14px}
+.donut-wrap svg{width:min(240px,70vw);height:auto;display:block}
+.donut-center{position:absolute;text-align:center;pointer-events:none}
+.donut-center .v{font-family:var(--display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.donut-center .l{color:var(--muted);font-size:.82rem}
+.legend{list-style:none;margin:0;padding:0}
+.legend li{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:9px 0}
+.legend li + li{border-top:1px solid var(--line)}
+.legend .n{font-weight:600}
+.legend .d{font-size:.82rem;color:var(--muted)}
+.legend .d.up{color:var(--danger)}
+.legend .d.down{color:var(--usd)}
+.legend .a{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.legend .p{display:block;font-weight:400;font-size:.82rem;color:var(--muted)}
+.bars svg{width:100%;height:auto;display:block}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.fact{background:var(--paper);border-radius:12px;padding:14px}
+.fact .l{color:var(--muted);font-size:.82rem}
+.fact .v{font-family:var(--display);font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums;margin-top:2px}
+.fact .s{font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.receipt .big.neg{color:var(--danger)}
+.receipt .meta{white-space:pre-line}
+.meter{height:8px;border-radius:99px;background:var(--line);margin-top:14px;overflow:hidden}
+.meter span{display:block;height:100%;background:var(--accent);border-radius:99px}
+.meter.over span{background:var(--danger)}
+.item .amt.is-inc{color:var(--accent)}
+.sheet .tabs{margin-bottom:16px}
+
+/* Compartidos */
+.split-panel{padding:2px 14px 14px 36px;display:grid;gap:10px}
+.split-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;font-size:.95rem}
+.split-row .s{font-variant-numeric:tabular-nums;font-weight:600}
+.pill{border:1px solid var(--line);background:none;border-radius:99px;padding:5px 10px;font-size:.82rem;font-weight:600;min-width:84px}
+.pill.paid{background:var(--usd);border-color:var(--usd);color:var(--paper)}
+.pill.owe{color:var(--danger);border-color:var(--danger)}
+.pill.me{visibility:hidden}
+.split-sum{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.85rem;border-top:1px dashed var(--line);padding-top:10px}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:6px 0}
+.item .of{display:block;font-weight:400;font-size:.8rem;color:var(--muted);text-align:right}
+.chev{display:inline-block;transition:transform .2s;margin-right:4px}
+.is-open .chev{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+.field .switch{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink);font-size:.95rem;margin:0}
+.switch input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.split-add{display:flex;gap:8px;margin:12px 0 8px}
+.split-add .btn{flex:0 0 auto;padding:10px 14px}
+.person{display:grid;grid-template-columns:1fr 104px auto 32px;gap:8px;align-items:center;margin-top:8px}
+.person input{text-align:right}
+.person .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{border:0;background:none;color:var(--muted);font-size:1.3rem;width:32px;height:32px;padding:0}
+.split-foot{margin-top:10px;font-size:.9rem;color:var(--muted)}
+.split-foot strong{color:var(--ink)}
+.suggest{margin-bottom:4px}
+.suggest .chip{padding:5px 10px;font-size:.85rem}
+
+.cur-tag{align-self:center;font-weight:700;color:var(--usd);font-size:1.1rem;padding:0 4px}
+.fx-hint{font-size:.85rem;color:var(--muted);margin-top:8px}
+
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:2px 0 10px}
+.logo{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
+.logo span{color:var(--accent)}
+.payday{font-size:.88rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.payday select{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 6px;font-weight:600}
+
+.title-wrap{text-align:center;min-width:0}
+.range{font-size:.85rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.range input{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:2px 6px;font-size:.85rem;color:var(--ink)}
+.range .reset{border:0;background:none;color:var(--accent);font-weight:600;font-size:.85rem;padding:2px}
+
+/* Recy */
+.recy-row{display:flex;align-items:flex-end;gap:8px;padding-left:4px;margin-bottom:-2px}
+.recy{flex:0 0 auto}
+.recy svg{width:84px;height:auto;display:block;transform-origin:50% 100%}
+.bubble{background:var(--paper);border-radius:14px 14px 14px 4px;padding:9px 13px;font-size:.95rem;margin-bottom:30px;max-width:72%}
+@keyframes chomp{0%,100%{transform:none}20%{transform:scale(1.08,.88)}45%{transform:scale(.95,1.06) rotate(-4deg)}70%{transform:scale(1.04,.94) rotate(3deg)}}
+.recy.chomp svg{animation:chomp .7s ease}
+@media (prefers-reduced-motion:reduce){.recy.chomp svg{animation:none}}
+
+/* Cobro */
+.pay-btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:600;color:var(--ink)}
+.range-btn{border:0;background:none;color:var(--muted);font-size:.85rem;padding:2px 4px;text-decoration:underline dotted;text-underline-offset:3px}
+#payBg{z-index:12}
+#paySheet{z-index:13}
+.opts{display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.opt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
+.opt strong{display:block}
+.opt span{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}
+.opt:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.opt-extra{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.92rem}
+.opt-extra select{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:6px 8px;font-weight:600}
+.period-box{margin-top:18px;border-top:1px dashed var(--line);padding-top:14px}
+.period-box h4{margin:0 0 8px;font-size:.95rem}
+.period-box .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.92rem}
+.period-box input[type=date]{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:6px 8px}
+.period-box p{margin:0;color:var(--muted);font-size:.88rem}
+.pay-note{font-size:.88rem;color:var(--muted);margin-top:14px}
+.pay-note button{border:0;background:none;color:var(--accent);font-weight:600;padding:0 2px}
+
+/* Medios de pago y tarjetas */
+.item .amt.muted{color:var(--muted);font-weight:500}
+.card-tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#cardBg,#cpBg{z-index:14}
+#cardSheet,#cpSheet{z-index:15}
+.cardx{border-top:1px solid var(--line);padding:14px 0}
+.cardx:first-of-type{border-top:0;padding-top:4px}
+.cardx-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cardx-head strong{font-size:1rem}
+.cardx-head .t{font-variant-numeric:tabular-nums;font-weight:600}
+.cardx .next{color:var(--muted);font-size:.86rem;margin-top:2px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.stack{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line);margin:10px 0 8px}
+.stack span{display:block;height:100%}
+.mini{list-style:none;margin:0;padding:0;font-size:.88rem}
+.mini li{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;padding:3px 0}
+.mini .a{font-variant-numeric:tabular-nums}
+.small-btn{border:1px solid var(--line);background:none;border-radius:99px;padding:6px 12px;font-weight:600;font-size:.85rem}
+.small-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* Arreglos de layout */
+[hidden]{display:none !important}
+.wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.item > div, .legend li > div, .fact, .title-wrap{min-width:0}
+.facts, .two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.input{min-width:0;max-width:100%}
+.input[type="date"],.input[type="time"]{min-height:44px;-webkit-appearance:none;appearance:none}
+.person{grid-template-columns:minmax(0,1fr) 92px auto 28px}
+.split-row{grid-template-columns:minmax(0,1fr) auto auto}
+.split-row > span:first-child{overflow-wrap:anywhere}
+.mini li{grid-template-columns:10px minmax(0,1fr) auto}
+.brand{min-width:0}
+.pay-btn{max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.title-wrap{flex:1}
+.cardx-head strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.receipt .meta{overflow-wrap:anywhere}
+
+/* Google Drive */
+.brand-actions{display:flex;gap:6px;min-width:0;justify-content:flex-end}
+.brand-actions .pay-btn{max-width:none}
+#payBtn{max-width:48vw}
+#syncBtn.ok{color:var(--usd)}
+#syncBtn.warn{color:var(--danger)}
+.cloud-banner{background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--line)}
+.cloud-banner p{margin:0 0 10px;font-size:.93rem}
+.cloud-banner .row{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="brand">
+    <span class="logo">Rec<span>eater</span></span>
+    <div class="brand-actions">
+      <button type="button" class="pay-btn" id="syncBtn" hidden></button>
+      <button type="button" class="pay-btn" id="payBtn"></button>
+    </div>
+  </header>
+  <div class="month-nav">
+    <button class="icon-btn" id="prev" aria-label="Mes anterior">‹</button>
+    <div class="title-wrap">
+      <h1 id="monthTitle"></h1>
+      <div class="range" id="rangeLine"></div>
+    </div>
+    <button class="icon-btn" id="next" aria-label="Mes siguiente">›</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
+    <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
+  </div>
+
+  <div class="cloud-banner" id="cloudBanner" hidden>
+    <p>Entrá con Google para guardar tus datos en tu Drive y verlos desde cualquier celu o compu.</p>
+    <div class="row">
+      <button type="button" class="small-btn primary" id="cloudLogin">Entrar con Google</button>
+      <button type="button" class="small-btn" id="cloudLater">Ahora no</button>
+    </div>
+  </div>
+
+  <div id="viewList">
+  <div class="recy-row">
+    <div class="recy" id="recy" aria-hidden="true"></div>
+    <p class="bubble" id="bubble" aria-live="polite"></p>
+  </div>
+  <section class="receipt" aria-label="Total del mes">
+    <div class="row"><span id="bigLabel">Gastaste</span></div>
+    <div class="big" id="totalArs">$ 0</div>
+    <div class="usd" id="totalUsd" hidden></div>
+    <div class="meter" id="meter" hidden><span></span></div>
+    <div class="meta" id="meta">Sin gastos todavía</div>
+  </section>
+
+  <div id="days"></div>
+  </div>
+
+  <div id="viewDash" hidden>
+    <section class="card">
+      <div class="card-head">
+        <h2 id="donutTitle">En qué se te va</h2>
+        <div class="seg" role="group" aria-label="Moneda del resumen">
+          <button type="button" data-dcur="ARS" aria-pressed="true">$</button>
+          <button type="button" data-dcur="USD" aria-pressed="false">US$</button>
+        </div>
+      </div>
+      <div id="donutBox"></div>
+    </section>
+    <div class="facts" id="facts"></div>
+    <section class="card">
+      <div class="card-head"><h2>Tarjetas</h2><button type="button" class="small-btn" id="addCardDash">Agregar tarjeta</button></div>
+      <div id="cardsBox"></div>
+    </section>
+    <section class="card bars">
+      <h2>Gastos de los últimos 6 meses</h2>
+      <div id="barsBox"></div>
+    </section>
+  </div>
+</main>
+
+<button class="fab" id="openAdd">Darle a Recy</button>
+
+<div class="sheet-bg" id="sheetBg"></div>
+<form class="sheet" id="sheet" aria-label="Cargar gasto" novalidate>
+  <div class="tabs" id="typeTabs" role="group" aria-label="Tipo de movimiento">
+    <button type="button" data-type="expense" aria-selected="true">Gasto</button>
+    <button type="button" data-type="income" aria-selected="false">Ingreso</button>
+    <button type="button" data-type="fx" aria-selected="false">Dólares</button>
+  </div>
+  <h3 id="sheetTitle">Nuevo gasto</h3>
+  <div id="fxBox" hidden>
+    <div class="amount-row">
+      <input id="fxUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Dólares que compraste">
+      <span class="cur-tag">US$</span>
+    </div>
+    <div class="field">
+      <span class="lbl">¿Qué dato tenés?</span>
+      <div class="seg" role="group" aria-label="Qué dato tenés">
+        <button type="button" data-fxm="rate" aria-pressed="true">La cotización</button>
+        <button type="button" data-fxm="total" aria-pressed="false">Cuánto pagué</button>
+      </div>
+    </div>
+    <div class="field">
+      <input class="input" id="fxRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar">
+      <input class="input" id="fxArs" inputmode="decimal" placeholder="$ que pagaste en total" autocomplete="off" aria-label="Pesos que pagaste en total" hidden>
+      <div class="fx-hint" id="fxCalc"></div>
+    </div>
+  </div>
+  <div class="amount-row" id="amountRow">
+    <input id="amount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Monto">
+    <div class="cur" role="group" aria-label="Moneda">
+      <button type="button" data-cur="ARS" aria-pressed="true">$</button>
+      <button type="button" data-cur="USD" aria-pressed="false">US$</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+
+  <div class="field" id="catField">
+    <span class="lbl" id="catLabel">Categoría</span>
+    <div class="chips" id="cats"></div>
+  </div>
+
+  <div class="pay-note" id="payNote" hidden></div>
+
+  <div class="field" id="untilField" hidden>
+    <label for="until">¿Hasta cuándo te tiene que durar?</label>
+    <input class="input" type="date" id="until">
+    <div class="fx-hint">Poné cuándo creés que vas a volver a cobrar.</div>
+  </div>
+
+  <div class="field" id="methodField">
+    <span class="lbl">¿Cómo pagaste?</span>
+    <div class="chips" id="methods"></div>
+    <div id="cardExtra" hidden>
+      <div class="opt-extra">Cuotas <select id="cuotas" aria-label="Cantidad de cuotas"></select></div>
+      <div class="fx-hint" id="cardWhen"></div>
+    </div>
+  </div>
+
+  <div class="field" id="splitField">
+    <label class="switch"><input type="checkbox" id="splitOn"> Lo pagué yo y lo dividimos</label>
+    <div id="splitBox" hidden>
+      <div class="split-add">
+        <input class="input" id="personName" placeholder="¿Con quién?" autocomplete="off" enterkeyhint="done">
+        <button type="button" class="btn ghost" id="addPerson">Agregar</button>
+      </div>
+      <div class="chips suggest" id="suggest"></div>
+      <div id="people"></div>
+      <div class="split-foot" id="splitFoot"></div>
+      <button type="button" class="linkbtn" id="equalSplit">Dividir en partes iguales</button>
+    </div>
+  </div>
+
+  <div class="field two">
+    <div><label for="date">Fecha</label><input class="input" type="date" id="date"></div>
+    <div><label for="time">Hora</label><input class="input" type="time" id="time"></div>
+  </div>
+
+  <div class="field">
+    <label for="note">Nota</label>
+    <input class="input" id="note" placeholder="Ej: nafta, cumple de Juli…" autocomplete="off">
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn danger" id="del" hidden>Borrar</button>
+    <button type="button" class="btn ghost" id="cancel">Cancelar</button>
+    <button type="submit" class="btn primary" id="save">Guardar</button>
+  </div>
+</form>
+
+<div class="sheet-bg" id="payBg"></div>
+<div class="sheet" id="paySheet" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+  <h3 id="payTitle">¿Cómo cobrás?</h3>
+  <div class="opts" role="radiogroup" aria-labelledby="payTitle">
+    <label class="opt"><input type="radio" name="payRule" value="fixed">
+      <div><strong>Un día fijo del mes</strong><span>Por ejemplo, todos los 5. El sueldo cuenta desde ese día hasta el anterior del mes que viene.</span>
+        <div class="opt-extra" id="fixedExtra">Día <select id="payDay" aria-label="Día de cobro"></select></div></div></label>
+    <label class="opt"><input type="radio" name="payRule" value="lb">
+      <div><strong>El último día hábil</strong><span>Lo que cobrás a fin de mes es para bancar el mes siguiente.</span></div></label>
+    <label class="opt"><input type="radio" name="payRule" value="free">
+      <div><strong>Sin día fijo</strong><span>Cada vez que cargás un sueldo te preguntamos hasta cuándo te tiene que durar.</span></div></label>
+  </div>
+  <div class="period-box" id="periodBox"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="payCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="paySave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="cardBg"></div>
+<div class="sheet" id="cardSheet" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+  <h3 id="cardTitle">Nueva tarjeta</h3>
+  <div class="field"><label for="cardName">Nombre</label><input class="input" id="cardName" placeholder="Ej: Visa Galicia" autocomplete="off"></div>
+  <div class="field"><label for="cardClose">Día de cierre</label>
+    <select class="input" id="cardClose"><option value="">No sé o cambia cada mes</option></select>
+    <div class="fx-hint">Las compras hasta ese día entran en el próximo pago. Si no lo sabés, cada compra va al pago siguiente.</div></div>
+  <div class="field"><span class="lbl">¿Cuándo la pagás?</span>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="cardRule" value="due"><div><strong>Al vencimiento</strong>
+        <div class="opt-extra">Vence el día <select id="cardDueDay" aria-label="Día de vencimiento"></select></div></div></label>
+      <label class="opt"><input type="radio" name="cardRule" value="salary"><div><strong>Cuando cobro</strong><span>La pagás el día que te llega el sueldo.</span></div></label>
+      <label class="opt"><input type="radio" name="cardRule" value="fixed"><div><strong>Un día fijo del mes</strong>
+        <div class="opt-extra">El día <select id="cardFixedDay" aria-label="Día en que la pagás"></select></div></div></label>
+      <label class="opt"><input type="radio" name="cardRule" value="open"><div><strong>La dejo abierta</strong><span>Las compras quedan pendientes hasta que cargues que pagaste la tarjeta.</span></div></label>
+    </div></div>
+  <div class="err" id="cardErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="cardDel" hidden>Borrar</button>
+    <button type="button" class="btn ghost" id="cardCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="cardSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="cpBg"></div>
+<div class="sheet" id="cpSheet" role="dialog" aria-modal="true" aria-labelledby="cpTitle">
+  <h3 id="cpTitle">Pagué la tarjeta</h3>
+  <div class="field two">
+    <div><label for="cpDate">Fecha</label><input class="input" type="date" id="cpDate"></div>
+    <div><label for="cpAmount">Cuánto pagaste</label><input class="input" id="cpAmount" inputmode="decimal" autocomplete="off"></div>
+  </div>
+  <div class="fx-hint" id="cpHint"></div>
+  <div class="err" id="cpErr"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="cpCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="cpSave">Guardar pago</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Categorías ---------- */
+const CATEGORIES = [
+  {id:"super",       name:"Super",             color:"#7BAE3A"},
+  {id:"comida",      name:"Comida afuera",     color:"#E08A2C"},
+  {id:"transporte",  name:"Transporte",        color:"#3B7DD8"},
+  {id:"casa",        name:"Casa y servicios",  color:"#7A5AC8"},
+  {id:"salud",       name:"Salud",             color:"#D0485E"},
+  {id:"salidas",     name:"Salidas",           color:"#C9A227"},
+  {id:"suscripciones",name:"Suscripciones",    color:"#1FA3B3"},
+  {id:"ropa",        name:"Ropa",              color:"#B05BA8"},
+  {id:"trabajo",     name:"Trabajo y software",color:"#5B6B82"},
+  {id:"otros",       name:"Otros",             color:"#8C8C8C"},
+  {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
+  {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
+];
+const catById = id => CATEGORIES.find(c => c.id === id) || CATEGORIES.at(-1);
+
+/* ---------- Almacenamiento (fácil de cambiar después) ---------- */
+const STORE_KEY = "gastos.v1";
+const store = {
+  load(){
+    try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : {expenses:[]}; }
+    catch { return {expenses:[]}; }
+  },
+  save(data, fromCloud){
+    if (!fromCloud) data.updatedAt = Date.now();
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch { return false; }
+    if (!fromCloud && window.cloud) window.cloud.schedule();
+    return true;
+  }
+};
+let data = store.load();
+if (!Array.isArray(data.expenses)) data = {expenses:[]};
+if (!Array.isArray(data.incomes)) data.incomes = [];
+const INCOME_KINDS = [
+  {id:"sueldo",    name:"Sueldo",         color:"var(--accent)"},
+  {id:"extra",     name:"Trabajos extra", color:"var(--accent)"},
+  {id:"otro_ing",  name:"Otro ingreso",   color:"var(--accent)"},
+];
+const kindById = id => INCOME_KINDS.find(k => k.id === id) || INCOME_KINDS.at(-1);
+const isIncome = e => e.type === "income";
+const round2 = n => Math.round(n*100)/100;
+const isSaving = e => !isIncome(e) && e.category === "ahorro";
+const repaid = e => e.split ? e.split.people.filter(p => p.paid).reduce((s,p) => s + p.share, 0) : 0;
+const owed   = e => e.split ? e.split.people.filter(p => !p.paid).reduce((s,p) => s + p.share, 0) : 0;
+const myShare = e => e.split ? round2(e.amount - e.split.people.reduce((s,p) => s + p.share, 0)) : e.amount;
+/* Lo que realmente pusiste: el total menos lo que ya te devolvieron */
+const eff = e => isIncome(e) ? e.amount : round2(e.amount - repaid(e));
+const expanded = new Set();
+
+/* Modelo de gasto:
+   { id, amount, currency:"ARS"|"USD", category, date:"YYYY-MM-DDTHH:mm",
+     note, source:"manual", items:[] }   // items: para el detalle del ticket (fase 2) */
+
+/* ---------- Formato ---------- */
+const fmtARS = new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:2,minimumFractionDigits:0});
+const fmtUSD = new Intl.NumberFormat("es-AR",{style:"currency",currency:"USD",maximumFractionDigits:2,minimumFractionDigits:0});
+const money = (n,cur) => cur === "USD" ? fmtUSD.format(n) : fmtARS.format(n);
+const pad = n => String(n).padStart(2,"0");
+const toLocalInput = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const toTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function parseAmount(s){
+  s = String(s).trim().replace(/\s|\$|US/gi,"");
+  if (!s) return NaN;
+  // "12.345,67" o "12345.67" o "12345,5"
+  if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  else if ((s.match(/\./g)||[]).length > 1 || /\.\d{3}$/.test(s)) s = s.replace(/\./g,"");
+  return Number(s);
+}
+
+/* ---------- Recy (versión simple, reemplazable) ---------- */
+function recySVG(mood){
+  const eyes = mood === "full"
+    ? `<path d="M31 47 Q38 40 45 47 M55 47 Q62 40 69 47" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+    : `<circle cx="38" cy="46" r="8" fill="#fff"/><circle cx="62" cy="46" r="8" fill="#fff"/>
+       <circle cx="${mood==="hungry"?39:38}" cy="${mood==="hungry"?43:47}" r="3.6" fill="#0E1A45"/>
+       <circle cx="${mood==="hungry"?63:62}" cy="${mood==="hungry"?43:47}" r="3.6" fill="#0E1A45"/>`;
+  const brows = mood === "worried"
+    ? `<path d="M30 38 L44 34 M70 38 L56 34" stroke="#0E1A45" stroke-width="3" stroke-linecap="round"/>
+       <path d="M82 40 q3 5 0 8 q-3 -3 0 -8z" fill="#9CC8FF"/>` : "";
+  const mouth = {
+    happy:   `<path d="M40 61 Q50 70 60 61" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
+    full:    `<path d="M38 59 Q50 73 62 59 Z" fill="#0E1A45"/><circle cx="28" cy="58" r="4" fill="#FF9DB5" opacity=".8"/><circle cx="72" cy="58" r="4" fill="#FF9DB5" opacity=".8"/>`,
+    worried: `<path d="M40 66 Q45 61 50 66 Q55 71 60 66" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
+    hungry:  `<ellipse cx="50" cy="63" rx="7" ry="6" fill="#0E1A45"/><ellipse cx="50" cy="66" rx="4" ry="2.4" fill="#FF7A95"/>`,
+  }[mood];
+  return `<svg viewBox="0 0 100 92" role="img" aria-label="Recy">
+    <rect x="30" y="80" width="3" height="9" rx="1" fill="#fff" stroke="#D5DAE0"/>
+    <rect x="42" y="80" width="3" height="11" rx="1" fill="#fff" stroke="#D5DAE0"/>
+    <rect x="54" y="80" width="3" height="8" rx="1" fill="#fff" stroke="#D5DAE0"/>
+    <rect x="66" y="80" width="3" height="10" rx="1" fill="#fff" stroke="#D5DAE0"/>
+    <rect x="18" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/><rect x="68" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/>
+    <rect x="12" y="24" width="76" height="56" rx="12" fill="#2F5BEA"/>
+    <rect x="8" y="12" width="84" height="18" rx="7" fill="#1F3FB0"/>
+    <rect x="24" y="19" width="52" height="4" rx="2" fill="#0E1A45"/>
+    ${eyes}${brows}${mouth}
+  </svg>`;
+}
+let recyFlash = null;
+function setRecy(mood, line){
+  if (recyFlash && Date.now() < recyFlash.until){ mood = "full"; line = recyFlash.line; }
+  $("recy").innerHTML = recySVG(mood);
+  $("bubble").textContent = line;
+}
+function feedRecy(){
+  recyFlash = { line: "¡Ñam! Gracias.", until: Date.now() + 2500 };
+  const r = $("recy"); r.classList.remove("chomp"); void r.offsetWidth; r.classList.add("chomp");
+  setTimeout(() => { recyFlash = null; if (tab === "list") render(); }, 2600);
+}
+
+/* ---------- Tarjetas ----------
+   card: { id, name, color, closeDay|null, rule:"due"|"salary"|"fixed"|"open", day|null }
+   data.cardPayments: pagos cargados a mano de tarjetas abiertas { id, cardId, date:"YYYY-MM-DD", amount }
+   Gasto con tarjeta: { method:"card", cardId, installments } → cada cuota cuenta el día que se paga */
+if (!Array.isArray(data.cards)) data.cards = [];
+if (!Array.isArray(data.cardPayments)) data.cardPayments = [];
+const CARD_COLORS = ["#2F5BEA","#E08A2C","#7A5AC8","#1FA3B3","#D0485E","#5B6B82","#7BAE3A"];
+const METHODS = [{id:"cash",name:"Efectivo"},{id:"debit",name:"Débito"},{id:"transfer",name:"Transferencia"}];
+const cardById = id => data.cards.find(c => c.id === id);
+const isCardExp = e => !isIncome(e) && e.method === "card" && cardById(e.cardId);
+function dayIn(Y, M, day){ const f = new Date(Y, M, 1); return new Date(f.getFullYear(), f.getMonth(), Math.min(day, daysIn(f.getFullYear(), f.getMonth()))); }
+function nextDayAfter(date, day){ let c = dayIn(date.getFullYear(), date.getMonth(), day); if (c <= date) c = dayIn(date.getFullYear(), date.getMonth()+1, day); return c; }
+function nextSalaryAfter(c){
+  if (isFree()){
+    const s = data.incomes.filter(e => e.category === "sueldo" && dateOnly(e.date) > c).sort((a,b) => a.date.localeCompare(b.date))[0];
+    if (s) return dateOnly(s.date);
+    const lc = latestCobro(); return lc && dateOnly(lc.until) > c ? dateOnly(lc.until) : null;
+  }
+  const [y,m] = periodOf(c);
+  let p = payDate(y, m+1); if (+p === +c) p = payDate(y, m+2);
+  return p;
+}
+/* Fechas de pago de cada cuota (null = pendiente) */
+function cardSchedule(e){
+  const card = cardById(e.cardId), n = Math.max(1, e.installments || 1), pd = dateOnly(e.date), out = [];
+  if (card.rule === "open"){
+    const pays = data.cardPayments.filter(p => p.cardId === card.id && dateOnly(p.date) > pd).sort((a,b) => a.date.localeCompare(b.date));
+    for (let i = 0; i < n; i++) out.push(pays[i] ? dateOnly(pays[i].date) : null);
+    return out;
+  }
+  for (let i = 0; i < n; i++){
+    let c;
+    if (card.closeDay){ c = dayIn(pd.getFullYear(), pd.getMonth(), card.closeDay); if (pd > c) c = dayIn(pd.getFullYear(), pd.getMonth()+1, card.closeDay); c = dayIn(c.getFullYear(), c.getMonth()+i, card.closeDay); }
+    else c = dayIn(pd.getFullYear(), pd.getMonth()+i, pd.getDate());
+    out.push(card.rule === "salary" ? nextSalaryAfter(c) : nextDayAfter(c, card.day || 10));
+  }
+  return out;
+}
+/* Todo lo que cuenta para los totales: gastos normales el día que los hiciste, cuotas de tarjeta el día que se pagan */
+function entries(){
+  const out = [];
+  data.expenses.forEach(e => {
+    if (!isCardExp(e)){ out.push({ ...e, split:null, amount: eff(e), src:e }); return; }
+    const sched = cardSchedule(e), n = sched.length, per = round2(eff(e) / n);
+    sched.forEach((d,i) => { if (d) out.push({ id:`${e.id}:${i}`, amount: i === n-1 ? round2(eff(e) - per*(n-1)) : per, currency:e.currency,
+      category:e.category, note:e.note, date:`${toLocalInput(d)}T00:00`, cardId:e.cardId, cuota:i+1, of:n, src:e }); });
+  });
+  // Tarjetas abiertas: lo que pagaste de más que las compras va a intereses
+  data.cardPayments.forEach(p => {
+    const assigned = out.filter(x => x.cardId === p.cardId && x.currency === "ARS" && x.date.slice(0,10) === p.date).reduce((s,x) => s + x.amount, 0);
+    const extra = round2(p.amount - assigned);
+    if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category:"intereses", note:"Intereses e impuestos", date:`${p.date}T00:00`, cardId:p.cardId, payId:p.id });
+  });
+  return out;
+}
+function pendingFor(card){
+  // Próximas cuotas sin pagar de una tarjeta abierta (las que entrarían en el próximo pago)
+  let ars = 0, usd = 0;
+  data.expenses.filter(e => isCardExp(e) && e.cardId === card.id).forEach(e => {
+    const sched = cardSchedule(e), i = sched.indexOf(null);
+    if (i < 0) return;
+    const n = sched.length, per = round2(eff(e)/n), amt = i === n-1 ? round2(eff(e) - per*(n-1)) : per;
+    if (e.currency === "USD") usd += amt; else ars += amt;
+  });
+  return { ars: round2(ars), usd: round2(usd) };
+}
+function cardWhenText(e){
+  const sched = cardSchedule(e), first = sched[0], n = sched.length;
+  if (!first) return n > 1 ? `${n} cuotas, pendiente de pago` : "Pendiente de pago";
+  return n > 1 ? `${n} cuotas, la primera el ${shortDate(first)}` : `Va al pago del ${shortDate(first)}`;
+}
+
+/* ---------- Estado de vista ---------- */
+const now = new Date();
+/* Cobro: "lb" = último día hábil del mes anterior (el sueldo de octubre se cobra a fin de septiembre),
+   o un número = ese día de cada mes. data.payOverrides guarda excepciones por mes: {"2026-10":"2026-09-30"} */
+let payRule = data.payRule || (data.payday ? String(data.payday) : "1");
+if (!data.payOverrides || typeof data.payOverrides !== "object") data.payOverrides = {};
+const isFree = () => payRule === "free";
+const isCalendar = () => payRule === "1" || isFree();
+/* Sin día fijo: el último cobro de sueldo marca desde cuándo contamos, y "until" hasta cuándo tiene que durar */
+const latestCobro = () => data.incomes.filter(e => e.category === "sueldo" && e.until && new Date(e.date) <= new Date())
+  .sort((a,b) => b.date.localeCompare(a.date))[0] || null;
+const dateOnly = str => { const [a,b,c] = str.slice(0,10).split("-").map(Number); return new Date(a, b-1, c); };
+const daysIn = (y,m) => new Date(y, m+1, 0).getDate();
+const monthKey = (y,m) => { const f = new Date(y, m, 1); return `${f.getFullYear()}-${pad(f.getMonth()+1)}`; };
+function lastBusinessDay(Y, M){ const d = new Date(Y, M+1, 0); while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate()-1); return d; }
+function defaultPayDate(y,m){
+  const f = new Date(y, m, 1), Y = f.getFullYear(), M = f.getMonth();
+  if (payRule === "lb") return lastBusinessDay(Y, M-1);
+  return new Date(Y, M, Math.min(isFree() ? 1 : Number(payRule), daysIn(Y,M)));
+}
+function payDate(y,m){
+  const ov = data.payOverrides[monthKey(y,m)];
+  if (ov){ const [a,b,c] = ov.split("-").map(Number); return new Date(a, b-1, c); }
+  return defaultPayDate(y,m);
+}
+const inPeriod = (e,y,m) => { const d = new Date(e.date); return d >= payDate(y,m) && d < payDate(y,m+1); };
+function periodOf(date){
+  const d = new Date(date), y = d.getFullYear(), m = d.getMonth();
+  for (const k of [1,0,-1,-2]){
+    const f = new Date(y, m+k, 1), Y = f.getFullYear(), M = f.getMonth();
+    if (d >= payDate(Y,M) && d < payDate(Y,M+1)) return [Y,M];
+  }
+  return [y,m];
+}
+const isCurrentPeriod = (y,m) => { const [cy,cm] = periodOf(new Date()); return y === cy && m === cm; };
+const shortDate = d => d.toLocaleDateString("es-AR",{day:"numeric",month:"short"}).replace(".","");
+const periodTitle = (y,m) => { const f = new Date(y, m, 1), n = f.toLocaleDateString("es-AR",{month:"long"}); return n[0].toUpperCase() + n.slice(1) + " " + f.getFullYear(); };
+const periodShort = (y,m) => "en " + new Date(y,m,1).toLocaleDateString("es-AR",{month:"long"});
+function ruleText(rule = payRule){
+  if (rule === "lb") return "el último día hábil";
+  if (rule === "free") return "sin día fijo";
+  return `el día ${rule}`;
+}
+function renderRange(){
+  const box = $("rangeLine"); box.innerHTML = "";
+  $("payBtn").textContent = "Cobro: " + ruleText();
+  let txt = "";
+  if (isFree()){
+    const c = isCurrentPeriod(viewYear, viewMonth) ? latestCobro() : null;
+    if (c) txt = `Lo calculamos hasta el ${shortDate(dateOnly(c.until))}`;
+  } else if (!(payRule === "1" && !data.payOverrides[monthKey(viewYear, viewMonth)])){
+    const end = new Date(payDate(viewYear, viewMonth+1) - 864e5);
+    txt = `${shortDate(payDate(viewYear, viewMonth))} al ${shortDate(end)}`;
+  }
+  if (!txt) return;
+  const b = document.createElement("button"); b.type = "button"; b.className = "range-btn"; b.textContent = txt;
+  b.setAttribute("aria-label", txt + ". Cambiar fecha de cobro");
+  b.onclick = () => openPay();
+  box.append(b);
+}
+let [viewYear, viewMonth] = periodOf(now);
+const $ = id => document.getElementById(id);
+
+function render(){
+  $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
+  renderRange();
+  if (tab === "dash") { renderDash(); return; }
+
+  const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
+  const inMonth = [...data.expenses, ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
+  const tot = (arr, cur, f = eff) => arr.filter(e => e.currency === cur).reduce((s,e) => s + f(e), 0);
+  const exps = inMonth.filter(e => !isIncome(e)), incs = inMonth.filter(isIncome);
+  const allEnts = entries(), ents = allEnts.filter(inThisMonth);
+  const spentA = tot(ents,"ARS"), spentU = tot(ents,"USD"), incA = tot(incs,"ARS"), incU = tot(incs,"USD");
+  const savA = tot(ents.filter(isSaving),"ARS"), gastoA = spentA - savA;
+  const fxs = exps.filter(e => e.fx), boughtU = fxs.reduce((s,e) => s + e.fx.usd, 0);
+
+  const cobro = isFree() && isCurrentPeriod(viewYear, viewMonth) ? latestCobro() : null;
+  let bIncA = incA, bSpentA = spentA, bSavA = savA, bGastoA = gastoA;
+  if (cobro){
+    const since = e => new Date(e.date) >= new Date(cobro.date);
+    const allE = allEnts.filter(since);
+    bIncA = tot(data.incomes.filter(since),"ARS"); bSpentA = tot(allE,"ARS");
+    bSavA = tot(allE.filter(isSaving),"ARS"); bGastoA = bSpentA - bSavA;
+  }
+  const big = $("totalArs"), meter = $("meter"), lines = [];
+  if (bIncA > 0){
+    const incA = bIncA, spentA = bSpentA, savA = bSavA, gastoA = bGastoA;
+    const left = incA - spentA;
+    $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
+    big.textContent = fmtARS.format(Math.abs(left));
+    big.classList.toggle("neg", left < 0);
+    meter.hidden = false;
+    meter.classList.toggle("over", left < 0);
+    meter.firstElementChild.style.width = Math.min(100, spentA/incA*100) + "%";
+    const pre = cobro ? `Desde el ${shortDate(dateOnly(cobro.date))} entraron` : "Cobraste";
+    lines.push(savA ? `${pre} ${fmtARS.format(incA)}, gastaste ${fmtARS.format(gastoA)} y ahorraste ${fmtARS.format(savA)}`
+                    : `${pre} ${fmtARS.format(incA)} y gastaste ${fmtARS.format(spentA)}`);
+    if (cobro){
+      const until = dateOnly(cobro.until), daysLeft = Math.ceil((until - new Date()) / 864e5);
+      if (daysLeft <= 0) lines.push(`Ya llegó el ${shortDate(until)}. Si cobraste, cargalo; si no, cambiá la fecha.`);
+      else if (left > 0) lines.push(`Te da para ${fmtARS.format(left/daysLeft)} por día hasta el ${shortDate(until)}`);
+    } else if (isCurrentPeriod(viewYear, viewMonth) && left > 0){
+      const daysLeft = Math.max(1, Math.ceil((payDate(viewYear, viewMonth+1) - new Date()) / 864e5));
+      lines.push(`Te da para ${fmtARS.format(left/daysLeft)} por día ${isCalendar() ? "hasta fin de mes" : "hasta que cobres"}`);
+    }
+  } else {
+    $("bigLabel").textContent = "Gastaste";
+    big.textContent = fmtARS.format(gastoA);
+    big.classList.remove("neg");
+    meter.hidden = true;
+    if (savA) lines.push(`Ahorraste ${fmtARS.format(savA)}`);
+    lines.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
+  }
+  const usdLine = $("totalUsd");
+  if (boughtU){
+    const avg = fxs.reduce((s,e) => s + e.amount, 0) / boughtU;
+    lines.push(`Compraste ${fmtUSD.format(boughtU)} a ${fmtARS.format(round2(avg))} promedio`);
+  }
+  if (incU + boughtU > 0){ const l = incU + boughtU - spentU; usdLine.hidden = false;
+    usdLine.textContent = l >= 0 ? `Te quedan ${fmtUSD.format(l)}` : `Te pasaste ${fmtUSD.format(-l)}`; }
+  else if (spentU > 0){ usdLine.hidden = false; usdLine.textContent = `+ ${fmtUSD.format(spentU)} en dólares`; }
+  else usdLine.hidden = true;
+  const oweA = tot(exps,"ARS",owed), oweU = tot(exps,"USD",owed);
+  if (oweA || oweU) lines.push("Te deben " + [oweA && fmtARS.format(oweA), oweU && fmtUSD.format(oweU)].filter(Boolean).join(" y "));
+  $("meta").textContent = lines.join("\n");
+
+  let mood = "happy", line = "Todo tranqui por acá.";
+  const payGroups = {};
+  ents.filter(x => x.cardId).forEach(x => { const k = x.cardId + "|" + x.date.slice(0,10); (payGroups[k] ||= []).push(x); });
+  const rows = [...inMonth.map(e => ({ kind:"item", e, date:e.date })),
+    ...Object.entries(payGroups).map(([k, xs]) => ({ kind:"pay", key:k, xs, date: xs[0].date }))].sort((a,b) => b.date.localeCompare(a.date));
+  if (!rows.length){ mood = "hungry"; line = "Tengo hambre. Dame un ticket."; }
+  else if (bIncA > 0){
+    const ratio = (bIncA - bSpentA) / bIncA, savA = bSavA;
+    if (ratio < 0){ mood = "worried"; line = "Uy, nos pasamos este mes."; }
+    else if (ratio < 0.2){ mood = "worried"; line = "Se viene finito el mes, ojo."; }
+    else if (savA > 0){ mood = "full"; line = "Qué rico cuando ahorrás."; }
+    else if (ratio < 0.5){ line = "Vamos bien, pero sin aflojar."; }
+  } else line = "Contame cuánto cobrás así hago las cuentas.";
+  setRecy(mood, line);
+
+  const days = $("days");
+  days.innerHTML = "";
+  if (!rows.length){
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.innerHTML = "<strong>Recy tiene hambre</strong>Tocá “Darle a Recy” para cargar un gasto o tu sueldo.";
+    days.append(e);
+    return;
+  }
+  const groups = {};
+  rows.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
+  Object.keys(groups).sort().reverse().forEach(key => {
+    const sec = document.createElement("section"); sec.className = "day";
+    const h = document.createElement("h2");
+    const [y,m,d] = key.split("-").map(Number);
+    const dt = new Date(y, m-1, d);
+    const today = toLocalInput(new Date()), yest = toLocalInput(new Date(Date.now()-864e5));
+    h.textContent = key === today ? "Hoy" : key === yest ? "Ayer"
+      : dt.toLocaleDateString("es-AR",{weekday:"long", day:"numeric", month:"short"});
+    const list = document.createElement("div"); list.className = "list";
+    groups[key].forEach(r => list.append(r.kind === "pay" ? renderPayGroup(r) : renderItem(r.e)));
+    sec.append(h, list);
+    days.append(sec);
+  });
+}
+
+function renderPayGroup(r){
+  const [cid, day] = r.key.split("|"), card = cardById(cid), open = expanded.has("pay:" + r.key);
+  const ars = r.xs.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
+  const usd = r.xs.filter(x => x.currency === "USD").reduce((s,x) => s + x.amount, 0);
+  const wrap = document.createElement("div"); if (open) wrap.className = "is-open";
+  const b = document.createElement("button"); b.type = "button"; b.className = "item"; b.setAttribute("aria-expanded", String(open));
+  const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = card.color;
+  const mid = document.createElement("div");
+  const cat = document.createElement("div"); cat.className = "cat"; cat.textContent = card.name;
+  const sub = document.createElement("div"); sub.className = "sub";
+  const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
+  const buys = r.xs.filter(x => !x.payId).length;
+  sub.append(chev, document.createTextNode(`Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}`));
+  mid.append(cat, sub);
+  const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = ars ? fmtARS.format(ars) : fmtUSD.format(usd);
+  if (ars && usd){ const of = document.createElement("span"); of.className = "of"; of.textContent = "+ " + fmtUSD.format(usd); amt.append(of); }
+  b.append(dot, mid, amt);
+  b.onclick = () => { open ? expanded.delete("pay:" + r.key) : expanded.add("pay:" + r.key); render(); };
+  wrap.append(b);
+  if (open){
+    const panel = document.createElement("div"); panel.className = "split-panel";
+    r.xs.forEach(x => {
+      const row = document.createElement("div"); row.className = "split-row";
+      const n = document.createElement("span");
+      n.textContent = (x.payId ? "Intereses e impuestos" : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
+      const v = document.createElement("span"); v.className = "s"; v.textContent = money(x.amount, x.currency);
+      const t = document.createElement("span"); t.className = "pill me";
+      row.append(n, v, t); panel.append(row);
+    });
+    const foot = document.createElement("div"); foot.className = "split-sum";
+    const pay = card.rule === "open" ? data.cardPayments.find(p => p.cardId === cid && p.date === day) : null;
+    const left = document.createElement("span"); left.textContent = pay ? `Pagaste ${fmtARS.format(pay.amount)}` : "Pago programado";
+    foot.append(left);
+    if (pay){
+      const undo = document.createElement("button"); undo.type = "button"; undo.className = "linkbtn"; undo.textContent = "Deshacer pago";
+      undo.onclick = () => { if (!confirm("¿Deshacer este pago? Las compras vuelven a quedar pendientes.")) return;
+        data.cardPayments = data.cardPayments.filter(p => p !== pay); persist(); render(); };
+      foot.append(undo);
+    }
+    panel.append(foot); wrap.append(panel);
+  }
+  return wrap;
+}
+
+function renderItem(e){
+  const inc = isIncome(e), shared = !inc && e.split && e.split.people.length;
+  const c = inc ? kindById(e.category) : catById(e.category);
+  const b = document.createElement("button"); b.className = "item"; b.type = "button";
+  const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+  const mid = document.createElement("div");
+  const cat = document.createElement("div"); cat.className = "cat"; cat.textContent = c.name;
+  const sub = document.createElement("div"); sub.className = "sub";
+  const amt = document.createElement("div");
+  amt.className = "amt" + (inc ? " is-inc" : e.currency === "USD" ? " is-usd" : "");
+  amt.textContent = (inc ? "+ " : "") + money(eff(e), e.currency);
+  b.append(dot, mid, amt);
+  if (e.fx){
+    cat.textContent = "Compra de dólares";
+    const of = document.createElement("span"); of.className = "of"; of.textContent = "= " + fmtUSD.format(e.fx.usd);
+    amt.append(of);
+    sub.textContent = [e.date.slice(11,16), "a " + fmtARS.format(e.fx.rate), e.note].filter(Boolean).join("  ");
+    mid.append(cat, sub);
+    b.setAttribute("aria-label", `Editar compra de ${fmtUSD.format(e.fx.usd)}`);
+    b.onclick = () => openSheet(e);
+    return b;
+  }
+  const card = !inc && isCardExp(e) ? cardById(e.cardId) : null;
+  const methodName = !inc && e.method && e.method !== "card" ? (METHODS.find(m => m.id === e.method) || {}).name : null;
+  if (card) amt.classList.add("muted");
+  if (!shared){
+    sub.textContent = [e.date.slice(11,16), methodName, e.note].filter(Boolean).join("  ");
+    if (card){
+      sub.textContent = "";
+      const tg = document.createElement("span"); tg.className = "card-tag"; tg.style.background = card.color;
+      sub.append(tg, `${card.name}. ${cardWhenText(e)}`, e.note ? `  ${e.note}` : "");
+    }
+    mid.append(cat, sub);
+    b.setAttribute("aria-label", `Editar ${c.name} ${money(e.amount,e.currency)}`);
+    b.onclick = () => openSheet(e);
+    return b;
+  }
+  // Gasto compartido: se despliega
+  const o = owed(e), open = expanded.has(e.id);
+  const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
+  sub.append(chev, document.createTextNode((card ? card.name + ". " : "") + (o ? `Compartido, te deben ${money(o, e.currency)}` : "Compartido, ya te pagaron todos")));
+  mid.append(cat, sub);
+  const of = document.createElement("span"); of.className = "of"; of.textContent = "de " + money(e.amount, e.currency);
+  amt.append(of);
+  b.setAttribute("aria-expanded", String(open));
+  const wrap = document.createElement("div"); if (open) wrap.className = "is-open";
+  b.onclick = () => { open ? expanded.delete(e.id) : expanded.add(e.id); render(); };
+  wrap.append(b);
+  if (open){
+    const panel = document.createElement("div"); panel.className = "split-panel";
+    const row = (name, share, person) => {
+      const r = document.createElement("div"); r.className = "split-row";
+      const n = document.createElement("span"); n.textContent = name;
+      const v = document.createElement("span"); v.className = "s"; v.textContent = money(share, e.currency);
+      const t = document.createElement("button"); t.type = "button";
+      if (!person){ t.className = "pill me"; t.tabIndex = -1; t.setAttribute("aria-hidden","true"); t.textContent = "-"; }
+      else {
+        t.className = "pill " + (person.paid ? "paid" : "owe");
+        t.textContent = person.paid ? "Devolvió ✓" : "Le falta";
+        t.setAttribute("aria-label", `${person.name}: ${person.paid ? "ya devolvió, tocar para marcar que le falta" : "le falta, tocar para marcar que devolvió"}`);
+        t.onclick = () => { person.paid = !person.paid; persist(); render(); };
+      }
+      r.append(n, v, t); panel.append(r);
+    };
+    row("Vos", myShare(e));
+    e.split.people.forEach(p => row(p.name, p.share, p));
+    const sum = document.createElement("div"); sum.className = "split-sum";
+    const left = document.createElement("span");
+    left.textContent = [e.date.slice(11,16), e.note].filter(Boolean).join("  ") || " ";
+    const edit = document.createElement("button"); edit.type = "button"; edit.className = "linkbtn"; edit.textContent = "Editar";
+    edit.onclick = () => openSheet(e);
+    sum.append(left, edit);
+    panel.append(sum);
+    wrap.append(panel);
+  }
+  return wrap;
+}
+
+/* ---------- Hoja de carga ---------- */
+let editing = null, currency = "ARS", category = "super", incomeKind = "sueldo", mode = "expense";
+let method = data.lastMethod || "cash", cardId = null;
+function setMode(m){
+  mode = m;
+  document.querySelectorAll("#typeTabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.type === m)));
+  $("catLabel").textContent = m === "income" ? "Tipo" : "Categoría";
+  $("note").placeholder = m === "income" ? "Ej: sueldo de septiembre" : "Ej: nafta, cumple de Juli…";
+  $("sheetTitle").textContent = m === "fx" ? (editing ? "Editar compra de dólares" : "Compra de dólares")
+    : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
+  $("splitField").hidden = m !== "expense";
+  $("methodField").hidden = m !== "expense";
+  updateUntilField();
+  $("fxBox").hidden = m !== "fx";
+  $("amountRow").hidden = m === "fx";
+  if (m === "fx") fxCalc();
+  $("catField").hidden = m === "fx";
+  $("note").placeholder = m === "fx" ? "Ej: ahorro, viaje…" : $("note").placeholder;
+  renderCats();
+}
+document.querySelectorAll("#typeTabs button").forEach(b => b.onclick = () => setMode(b.dataset.type));
+
+(() => { const s = $("cuotas"); [1,2,3,4,5,6,9,12,18,24].forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n === 1 ? "1 pago" : `${n} cuotas`; s.append(o); }); })();
+function renderMethods(){
+  const box = $("methods"); box.innerHTML = "";
+  const chip = (label, active, onclick, color) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(active));
+    if (color){ const t = document.createElement("span"); t.className = "card-tag"; t.style.background = color; b.append(t); }
+    b.append(label); b.onclick = onclick; box.append(b);
+  };
+  METHODS.forEach(m => chip(m.name, method === m.id, () => { method = m.id; cardId = null; renderMethods(); }));
+  data.cards.forEach(c => chip(c.name, method === "card" && cardId === c.id, () => { method = "card"; cardId = c.id; renderMethods(); }, c.color));
+  chip("+ Tarjeta", false, () => openCard(null, true));
+  $("cardExtra").hidden = method !== "card";
+  updateCardWhen();
+}
+function updateCardWhen(){
+  if (method !== "card" || !cardById(cardId)){ $("cardWhen").textContent = ""; return; }
+  const fake = { method:"card", cardId, installments: Number($("cuotas").value), date:`${$("date").value || toLocalInput(new Date())}T12:00`, amount:1 };
+  $("cardWhen").textContent = cardWhenText(fake) + ". Te resta recién cuando se paga.";
+}
+$("cuotas").onchange = updateCardWhen;
+$("date").addEventListener("change", updateCardWhen);
+function updateUntilField(){
+  const sueldo = mode === "income" && incomeKind === "sueldo";
+  $("untilField").hidden = !(sueldo && isFree());
+  const note = $("payNote"); note.hidden = !sueldo; note.innerHTML = "";
+  if (!sueldo) return;
+  let txt = `Cobrás ${ruleText()}.`;
+  if (!isFree() && $("date").value){
+    const [y,m] = periodOf(`${$("date").value}T${$("time").value || "12:00"}`);
+    txt += ` Este sueldo cuenta para ${periodTitle(y,m).toLowerCase()}.`;
+  }
+  note.append(txt + " ");
+  const b = document.createElement("button"); b.type = "button"; b.textContent = "Cambiar"; b.onclick = () => openPay();
+  note.append(b);
+}
+$("date").addEventListener("change", () => updateUntilField());
+function renderCats(){
+  const box = $("cats"); box.innerHTML = "";
+  const list = mode === "income" ? INCOME_KINDS : CATEGORIES.filter(c => !c.hidden || c.id === category);
+  const sel = mode === "income" ? incomeKind : category;
+  list.forEach(c => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
+    b.setAttribute("aria-pressed", String(c.id === sel));
+    const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+    b.append(dot, document.createTextNode(c.name));
+    b.onclick = () => { if (mode === "income") incomeKind = c.id; else category = c.id; renderCats(); updateUntilField(); };
+    box.append(b);
+  });
+}
+let splitPeople = [], splitManual = false;
+const splitOn = () => $("splitOn").checked;
+function knownNames(){
+  const names = new Map();
+  data.expenses.forEach(e => e.split && e.split.people.forEach(p => names.set(p.name.toLowerCase(), p.name)));
+  return [...names.values()];
+}
+function equalize(){
+  const total = parseAmount($("amount").value) || 0;
+  const each = splitPeople.length ? round2(total / (splitPeople.length + 1)) : 0;
+  splitPeople.forEach(p => p.share = each);
+  splitManual = false;
+}
+function renderSplit(){
+  $("splitBox").hidden = !splitOn();
+  if (!splitOn()) return;
+  const box = $("people"); box.innerHTML = "";
+  splitPeople.forEach((p, i) => {
+    const r = document.createElement("div"); r.className = "person";
+    const n = document.createElement("span"); n.className = "nm"; n.textContent = p.name;
+    const inp = document.createElement("input"); inp.className = "input"; inp.inputMode = "decimal";
+    inp.value = p.share ? String(p.share).replace(".",",") : ""; inp.setAttribute("aria-label", `Parte de ${p.name}`);
+    inp.oninput = () => { p.share = round2(parseAmount(inp.value) || 0); splitManual = true; renderFoot(); };
+    const t = document.createElement("button"); t.type = "button";
+    t.className = "pill " + (p.paid ? "paid" : "owe"); t.textContent = p.paid ? "Devolvió ✓" : "Le falta";
+    t.onclick = () => { p.paid = !p.paid; renderSplit(); };
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×";
+    x.setAttribute("aria-label", `Sacar a ${p.name}`);
+    x.onclick = () => { splitPeople.splice(i,1); if (!splitManual) equalize(); renderSplit(); };
+    r.append(n, inp, t, x); box.append(r);
+  });
+  const sg = $("suggest"); sg.innerHTML = "";
+  const taken = new Set(splitPeople.map(p => p.name.toLowerCase()));
+  knownNames().filter(n => !taken.has(n.toLowerCase())).slice(0,8).forEach(n => {
+    const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = "+ " + n;
+    c.onclick = () => addPerson(n); sg.append(c);
+  });
+  renderFoot();
+}
+function renderFoot(){
+  const total = parseAmount($("amount").value) || 0;
+  const others = splitPeople.reduce((s,p) => s + p.share, 0);
+  const mine = round2(total - others);
+  const f = $("splitFoot");
+  if (!splitPeople.length){ f.textContent = "Agregá a las personas con las que lo dividiste."; return; }
+  f.innerHTML = "";
+  f.append("Tu parte: ");
+  const st = document.createElement("strong"); st.textContent = money(mine, currency); f.append(st);
+  if (mine < 0) f.append(". Las partes suman más que el total.");
+}
+function addPerson(name){
+  name = (name || $("personName").value).trim();
+  if (!name) return;
+  if (splitPeople.some(p => p.name.toLowerCase() === name.toLowerCase())) { $("personName").value = ""; return; }
+  splitPeople.push({ name, share: 0, paid: false });
+  if (!splitManual) equalize();
+  $("personName").value = "";
+  renderSplit();
+}
+$("addPerson").onclick = () => addPerson();
+$("personName").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); addPerson(); } });
+$("splitOn").onchange = () => { if (splitOn() && !splitManual) equalize(); renderSplit(); };
+$("equalSplit").onclick = () => { equalize(); renderSplit(); };
+$("amount").addEventListener("input", () => { if (splitOn()){ if (!splitManual) equalize(); renderSplit(); } });
+
+function setCurrency(cur){
+  currency = cur;
+  document.querySelectorAll(".cur button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cur === cur)));
+  if (splitOn()) renderFoot();
+}
+/* Compra de dólares: cuántos dólares + (cotización o total pagado) */
+let fxMode = "rate";
+const fxNum = id => parseAmount($(id).value) || 0;
+const fxSet = (id, n) => { $(id).value = n ? String(round2(n)).replace(".",",") : ""; };
+function fxValues(){
+  const usd = fxNum("fxUsd");
+  const ars = fxMode === "rate" ? usd * fxNum("fxRate") : fxNum("fxArs");
+  return { usd, ars, rate: usd ? ars / usd : 0 };
+}
+function setFxMode(m){
+  const { ars, rate } = fxValues();
+  fxMode = m;
+  document.querySelectorAll("[data-fxm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fxm === m)));
+  $("fxRate").hidden = m !== "rate"; $("fxArs").hidden = m !== "total";
+  if (m === "rate" && rate) fxSet("fxRate", rate);
+  if (m === "total" && ars) fxSet("fxArs", ars);
+  fxCalc();
+}
+function fxCalc(){
+  const { usd, ars, rate } = fxValues();
+  $("fxCalc").textContent = !usd || !ars ? "" :
+    fxMode === "rate" ? `Te sale ${fmtARS.format(round2(ars))} en total.` : `Te salió a ${fmtARS.format(round2(rate))} por dólar.`;
+}
+document.querySelectorAll("[data-fxm]").forEach(b => b.onclick = () => setFxMode(b.dataset.fxm));
+["fxUsd","fxRate","fxArs"].forEach(id => $(id).addEventListener("input", fxCalc));
+function openSheet(exp){
+  editing = exp || null;
+  const d = exp ? new Date(exp.date) : new Date();
+  $("amount").value = exp ? String(exp.amount).replace(".",",") : "";
+  $("note").value = exp ? exp.note || "" : "";
+  $("date").value = toLocalInput(d);
+  $("time").value = toTime(d);
+  $("del").hidden = !exp;
+  $("err").textContent = "";
+  if (exp && isIncome(exp)) incomeKind = exp.category; else if (exp) category = exp.category;
+  splitPeople = exp && exp.split ? exp.split.people.map(p => ({...p})) : [];
+  splitManual = !!(exp && exp.split);
+  $("splitOn").checked = splitPeople.length > 0;
+  $("personName").value = "";
+  setCurrency(exp ? exp.currency : currency);
+  renderSplit();
+  fxSet("fxUsd", exp && exp.fx ? exp.fx.usd : 0);
+  fxSet("fxRate", exp && exp.fx ? exp.fx.rate : (data.lastRate || 0));
+  fxSet("fxArs", exp && exp.fx ? exp.amount : 0);
+  setFxMode("rate");
+  $("until").value = exp && exp.until ? exp.until : toLocalInput(new Date(Date.now() + 30*864e5));
+  if (exp && !isIncome(exp)){ method = exp.method || "cash"; cardId = exp.method === "card" ? exp.cardId : null; }
+  else { method = data.lastMethod || "cash"; cardId = method === "card" ? data.lastCardId : null; if (method === "card" && !cardById(cardId)){ method = "cash"; cardId = null; } }
+  $("cuotas").value = exp && exp.installments ? exp.installments : 1;
+  renderMethods();
+  $("typeTabs").hidden = !!exp;
+  setMode(exp ? (isIncome(exp) ? "income" : exp.fx ? "fx" : "expense") : "expense");
+  $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
+  setTimeout(() => (mode === "fx" ? $("fxUsd") : $("amount")).focus(), 120);
+}
+function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
+
+function persist(){
+  if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
+}
+
+$("sheet").addEventListener("submit", ev => {
+  ev.preventDefault();
+  if (mode === "fx"){
+    const { usd, ars } = fxValues();
+    if (!(usd > 0) || !(ars > 0)){ $("err").textContent = fxMode === "rate" ? "Completá los dólares y la cotización." : "Completá los dólares y cuánto pagaste."; return; }
+    const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
+    const fields = { amount: round2(ars), currency:"ARS", category:"ahorro", date, note: $("note").value.trim(), split:null, fx:{ usd: round2(usd), rate: round2(ars/usd) } };
+    if (editing) Object.assign(editing, fields);
+    else data.expenses.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), source:"manual", items:[], ...fields });
+    data.lastRate = fields.fx.rate;
+    persist();
+    [viewYear, viewMonth] = periodOf(date);
+    closeSheet(); feedRecy(); render(); return;
+  }
+  const amount = parseAmount($("amount").value);
+  if (!(amount > 0)){ $("err").textContent = "Poné un monto mayor a cero."; $("amount").focus(); return; }
+  const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
+  const fields = { amount: Math.round(amount*100)/100, currency, category: mode === "income" ? incomeKind : category, date, note: $("note").value.trim() };
+  if (mode === "expense"){
+    const pending = $("personName").value.trim();
+    if (splitOn() && pending) addPerson(pending);
+    const people = splitOn() ? splitPeople.filter(p => p.share > 0) : [];
+    if (splitOn() && !people.length){ $("err").textContent = "Agregá al menos una persona con su parte, o sacá la opción de dividir."; return; }
+    if (people.reduce((s,p) => s + p.share, 0) > fields.amount + 0.001){ $("err").textContent = "Las partes de los demás suman más que el total."; return; }
+    fields.split = people.length ? { people: people.map(p => ({ name:p.name, share:p.share, paid:!!p.paid })) } : null;
+    if (method === "card" && !cardById(cardId)){ $("err").textContent = "Elegí la tarjeta."; return; }
+    fields.method = method; fields.cardId = method === "card" ? cardId : null;
+    fields.installments = method === "card" ? Number($("cuotas").value) : 1;
+    data.lastMethod = method; data.lastCardId = fields.cardId;
+  }
+  if (mode === "income" && isFree() && incomeKind === "sueldo"){
+    const until = $("until").value;
+    if (!until || until <= date.slice(0,10)){ $("err").textContent = "Poné hasta cuándo te tiene que durar, una fecha después del cobro."; $("until").focus(); return; }
+    fields.until = until;
+  }
+  const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+  if (editing){ Object.assign(editing, fields); delete editing.fx; }
+  else if (mode === "income") data.incomes.push({ id, type:"income", ...fields });
+  else data.expenses.push({ id, source:"manual", items:[], ...fields });
+  const askPay = !editing && mode === "income" && incomeKind === "sueldo" && !data.payRule;
+  persist();
+  [viewYear, viewMonth] = periodOf(date);
+  closeSheet(); feedRecy(); render();
+  if (askPay) setTimeout(openPay, 400);
+});
+$("del").onclick = () => {
+  if (!editing || !confirm(isIncome(editing) ? "¿Borrar este ingreso?" : "¿Borrar este gasto?")) return;
+  data.expenses = data.expenses.filter(e => e !== editing);
+  data.incomes = data.incomes.filter(e => e !== editing);
+  persist(); closeSheet(); render();
+};
+$("cancel").onclick = closeSheet;
+$("sheetBg").onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
+  if ($("cardSheet").classList.contains("open")) closeCard();
+  else if ($("cpSheet").classList.contains("open")) closeCardPay();
+  else if ($("paySheet").classList.contains("open")) closePay(); else closeSheet(); });
+document.querySelectorAll(".cur button").forEach(b => b.onclick = () => setCurrency(b.dataset.cur));
+$("openAdd").onclick = () => openSheet();
+$("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } render(); };
+$("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } render(); };
+
+/* ---------- Modal de tarjeta ---------- */
+(() => {
+  const days = (id) => { const s = $(id); for (let i = 1; i <= 31; i++){ const o = document.createElement("option"); o.value = i; o.textContent = i; s.append(o); } };
+  days("cardClose"); days("cardDueDay"); days("cardFixedDay");
+})();
+let editingCard = null, cardFromSheet = false;
+function openCard(card, fromSheet){
+  editingCard = card || null; cardFromSheet = !!fromSheet;
+  $("cardTitle").textContent = card ? "Editar tarjeta" : "Nueva tarjeta";
+  $("cardName").value = card ? card.name : "";
+  $("cardClose").value = card && card.closeDay ? card.closeDay : "";
+  const rule = card ? card.rule : "due";
+  document.querySelectorAll('input[name="cardRule"]').forEach(r => r.checked = r.value === rule);
+  $("cardDueDay").value = card && card.rule === "due" ? card.day : 10;
+  $("cardFixedDay").value = card && card.rule === "fixed" ? card.day : 10;
+  $("cardDel").hidden = !card; $("cardErr").textContent = "";
+  $("cardBg").classList.add("open"); $("cardSheet").classList.add("open");
+  setTimeout(() => $("cardName").focus(), 120);
+}
+function closeCard(){ $("cardBg").classList.remove("open"); $("cardSheet").classList.remove("open"); }
+$("cardCancel").onclick = closeCard; $("cardBg").onclick = closeCard;
+$("cardSave").onclick = () => {
+  const name = $("cardName").value.trim();
+  if (!name){ $("cardErr").textContent = "Ponele un nombre a la tarjeta."; $("cardName").focus(); return; }
+  const rule = (document.querySelector('input[name="cardRule"]:checked') || {}).value || "due";
+  const fields = { name, closeDay: Number($("cardClose").value) || null, rule,
+    day: rule === "due" ? Number($("cardDueDay").value) : rule === "fixed" ? Number($("cardFixedDay").value) : null };
+  let card = editingCard;
+  if (card) Object.assign(card, fields);
+  else { card = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), color: CARD_COLORS[data.cards.length % CARD_COLORS.length], ...fields }; data.cards.push(card); }
+  persist(); closeCard();
+  if (cardFromSheet){ method = "card"; cardId = card.id; renderMethods(); }
+  render();
+};
+$("cardDel").onclick = () => {
+  const c = editingCard; if (!c) return;
+  if (data.expenses.some(e => e.cardId === c.id)){ $("cardErr").textContent = "Esta tarjeta tiene compras cargadas. Cambialas de medio de pago antes de borrarla."; return; }
+  if (!confirm(`¿Borrar ${c.name}?`)) return;
+  data.cards = data.cards.filter(x => x !== c); data.cardPayments = data.cardPayments.filter(p => p.cardId !== c.id);
+  persist(); closeCard(); render();
+};
+
+/* ---------- Pagar tarjeta abierta ---------- */
+let payingCard = null;
+function openCardPay(card){
+  payingCard = card;
+  const pend = pendingFor(card);
+  $("cpTitle").textContent = `Pagué ${card.name}`;
+  $("cpDate").value = toLocalInput(new Date());
+  $("cpAmount").value = pend.ars ? String(pend.ars).replace(".",",") : "";
+  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia va a intereses e impuestos.`;
+  $("cpErr").textContent = "";
+  $("cpBg").classList.add("open"); $("cpSheet").classList.add("open");
+}
+function closeCardPay(){ $("cpBg").classList.remove("open"); $("cpSheet").classList.remove("open"); }
+$("cpCancel").onclick = closeCardPay; $("cpBg").onclick = closeCardPay;
+$("cpSave").onclick = () => {
+  const amount = parseAmount($("cpAmount").value), date = $("cpDate").value;
+  if (!date){ $("cpErr").textContent = "Poné la fecha del pago."; return; }
+  if (!(amount >= 0)){ $("cpErr").textContent = "Poné cuánto pagaste."; return; }
+  if (data.cardPayments.some(p => p.cardId === payingCard.id && p.date === date)){ $("cpErr").textContent = "Ya hay un pago de esta tarjeta ese día."; return; }
+  data.cardPayments.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), cardId: payingCard.id, date, amount: round2(amount) });
+  persist(); closeCardPay(); feedRecy();
+  [viewYear, viewMonth] = periodOf(`${date}T12:00`); render();
+};
+$("addCardDash").onclick = () => openCard(null, false);
+
+/* ---------- Modal de cobro ---------- */
+(() => { const sel = $("payDay"); for (let i = 1; i <= 31; i++){ const o = document.createElement("option"); o.value = i; o.textContent = i; sel.append(o); } })();
+const draftRule = () => (document.querySelector('input[name="payRule"]:checked') || {}).value;
+function openPay(){
+  const kind = payRule === "lb" || payRule === "free" ? payRule : "fixed";
+  document.querySelectorAll('input[name="payRule"]').forEach(r => r.checked = r.value === kind);
+  $("payDay").value = kind === "fixed" ? payRule : (data.lastFixedDay || "1");
+  syncPay();
+  $("payBg").classList.add("open"); $("paySheet").classList.add("open");
+}
+function closePay(){ $("payBg").classList.remove("open"); $("paySheet").classList.remove("open"); }
+function draftValue(){ const k = draftRule(); return k === "fixed" ? String($("payDay").value) : k; }
+function syncPay(){
+  $("fixedExtra").hidden = draftRule() !== "fixed";
+  const box = $("periodBox"); box.innerHTML = "";
+  if (draftValue() !== payRule){ const p = document.createElement("p"); p.textContent = "Guardá para ajustar la fecha de este mes."; box.append(p); return; }
+  const h = document.createElement("h4"); box.append(h);
+  const row = document.createElement("div"); row.className = "row"; box.append(row);
+  if (isFree()){
+    const c = data.incomes.filter(e => e.category === "sueldo" && new Date(e.date) <= new Date()).sort((a,b) => b.date.localeCompare(a.date))[0];
+    h.textContent = "Tu último cobro";
+    if (!c){ row.textContent = "Todavía no cargaste ningún sueldo. Cuando lo cargues, te preguntamos hasta cuándo te tiene que durar."; return; }
+    row.append(`Cobraste el ${shortDate(dateOnly(c.date))}. Lo calculamos hasta el `);
+    const inp = document.createElement("input"); inp.type = "date"; inp.value = c.until || ""; inp.min = c.date.slice(0,10);
+    inp.setAttribute("aria-label", "Hasta cuándo te tiene que durar");
+    inp.onchange = () => { if (inp.value && inp.value > c.date.slice(0,10)){ c.until = inp.value; persist(); render(); } };
+    row.append(inp);
+    return;
+  }
+  const k = monthKey(viewYear, viewMonth);
+  h.textContent = `Sueldo de ${periodTitle(viewYear, viewMonth).toLowerCase()}`;
+  row.append("Lo cobrás el ");
+  const inp = document.createElement("input"); inp.type = "date"; inp.value = toLocalInput(payDate(viewYear, viewMonth));
+  inp.setAttribute("aria-label", "Día que cobrás este sueldo");
+  inp.onchange = () => {
+    if (!inp.value) return;
+    if (inp.value === toLocalInput(defaultPayDate(viewYear, viewMonth))) delete data.payOverrides[k];
+    else data.payOverrides[k] = inp.value;
+    persist(); render(); syncPay();
+  };
+  row.append(inp);
+  if (data.payOverrides[k]){
+    const r = document.createElement("button"); r.type = "button"; r.className = "linkbtn"; r.textContent = "Usar la regla";
+    r.onclick = () => { delete data.payOverrides[k]; persist(); render(); syncPay(); };
+    row.append(r);
+  }
+  const p = document.createElement("p"); p.style.marginTop = "6px";
+  p.textContent = "Si un mes cobrás otro día (un feriado, un adelanto), cambialo acá y solo afecta a ese mes.";
+  box.append(p);
+}
+document.querySelectorAll('input[name="payRule"]').forEach(r => r.onchange = syncPay);
+$("payDay").onchange = syncPay;
+$("payBtn").onclick = openPay;
+$("payBg").onclick = closePay;
+$("payCancel").onclick = closePay;
+$("paySave").onclick = () => {
+  const v = draftValue(); if (!v) return;
+  payRule = v; data.payRule = v; delete data.payday;
+  if (draftRule() === "fixed") data.lastFixedDay = v;
+  persist(); closePay();
+  [viewYear, viewMonth] = periodOf(new Date());
+  render(); updateUntilField();
+};
+
+/* ---------- Resumen ---------- */
+let tab = "list", dashCur = "ARS";
+const monthExpenses = (y,m,cur) => entries().filter(e => inPeriod(e,y,m) && (!cur || e.currency===cur));
+const sum = arr => arr.reduce((s,e) => s + eff(e), 0);
+const byCat = arr => { const o = {}; arr.forEach(e => o[e.category] = (o[e.category]||0) + eff(e)); return o; };
+const monthName = (y,m,opt={month:"long"}) => new Date(y,m,1).toLocaleDateString("es-AR",opt);
+const svgEl = (tag, attrs) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
+const shortMoney = (n,cur) => {
+  const pre = cur==="USD" ? "US$" : "$";
+  if (n >= 1e6) return pre + (n/1e6).toLocaleString("es-AR",{maximumFractionDigits:1}) + "M";
+  if (n >= 1e3) return pre + Math.round(n/1e3).toLocaleString("es-AR") + "k";
+  return pre + Math.round(n);
+};
+
+function renderDash(){
+  const cur = dashCur;
+  const list = monthExpenses(viewYear, viewMonth, cur);
+  const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
+  const prevName = monthName(py,pm);
+  const prev = byCat(monthExpenses(py, pm, cur));
+  const cats = byCat(list), total = sum(list);
+  const inc = data.incomes.filter(e => inPeriod(e,viewYear,viewMonth) && e.currency===cur).reduce((s,e)=>s+e.amount,0);
+  const base = inc > 0 ? Math.max(inc, total) : total;
+  const pctLbl = v => Math.round(v/base*100) + "%" + (inc > 0 ? " del sueldo" : "");
+  $("donutTitle").textContent = inc > 0 ? "En qué se te va el sueldo" : "En qué se te va";
+  const box = $("donutBox"); box.innerHTML = "";
+
+  const later = data.expenses.filter(e => isCardExp(e) && inPeriod(e, viewYear, viewMonth) && e.currency === cur).reduce((acc, e) => {
+    const sched = cardSchedule(e), per = eff(e) / sched.length;
+    return acc + sched.filter(d => !d || !inPeriod({ date:`${toLocalInput(d)}T00:00` }, viewYear, viewMonth)).length * per;
+  }, 0);
+  const laterNote = () => { if (later < 0.5) return; const p = document.createElement("p"); p.className = "fx-hint";
+    p.textContent = `Además compraste ${money(round2(later), cur)} con tarjeta en este período. Eso aparece en el mes en que se paga.`; box.append(p); };
+  if (!total){
+    box.innerHTML = `<div class="empty"><strong>Sin gastos en ${cur==="USD"?"dólares":"pesos"}</strong>Cargá gastos este mes para ver el reparto.</div>`;
+    laterNote();
+  } else {
+    // Torta (donut)
+    const wrap = document.createElement("div"); wrap.className = "donut-wrap";
+    const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":"Reparto por categoría"});
+    const r = 78, C = 2*Math.PI*r;
+    svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
+    const sorted = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+    let off = 0;
+    sorted.forEach(([id,v]) => {
+      const len = v/base*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
+      svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:catById(id).color,"stroke-width":26,
+        "stroke-dasharray":`${Math.max(len-gap,0.01)} ${C}`,"stroke-dashoffset":-off,transform:"rotate(-90 100 100)"}));
+      off += len;
+    });
+    const center = document.createElement("div"); center.className = "donut-center";
+    center.innerHTML = `<div class="v"></div><div class="l"></div>`;
+    center.querySelector(".l").textContent = inc > 0 ? `de ${money(inc,cur)} cobrados` : periodShort(viewYear,viewMonth);
+    center.querySelector(".v").textContent = money(total, cur);
+    wrap.append(svg, center); box.append(wrap);
+
+    // Leyenda con comparación
+    const ul = document.createElement("ul"); ul.className = "legend";
+    sorted.forEach(([id,v]) => {
+      const c = catById(id), p = prev[id] || 0;
+      const li = document.createElement("li");
+      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+      const mid = document.createElement("div");
+      const n = document.createElement("div"); n.className = "n"; n.textContent = c.name;
+      const d = document.createElement("div"); d.className = "d";
+      if (!p) d.textContent = `No tenías en ${prevName}`;
+      else {
+        const pct = Math.round((v-p)/p*100);
+        d.textContent = pct === 0 ? `Igual que ${prevName}` : `${pct>0?"▲":"▼"} ${Math.abs(pct)}% vs ${prevName}`;
+        d.classList.add(pct>0 ? "up" : pct<0 ? "down" : "");
+      }
+      mid.append(n,d);
+      const a = document.createElement("div"); a.className = "a"; a.textContent = money(v,cur);
+      const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(v);
+      a.append(pc);
+      li.append(dot, mid, a); ul.append(li);
+    });
+    if (inc > total){
+      const li = document.createElement("li");
+      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "var(--line)";
+      const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda";
+      const a = document.createElement("div"); a.className = "a"; a.textContent = money(inc-total,cur);
+      const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(inc-total); a.append(pc);
+      li.append(dot, n, a); ul.append(li);
+    }
+    box.append(ul);
+    laterNote();
+  }
+
+  // Datos sueltos
+  const facts = $("facts"); facts.innerHTML = "";
+  const isCurrent = isCurrentPeriod(viewYear, viewMonth);
+  const pStart = payDate(viewYear, viewMonth);
+  const daysCount = Math.max(1, Math.ceil(((isCurrent ? new Date() : payDate(viewYear, viewMonth+1)) - pStart) / 864e5));
+  const prevTotal = Object.values(prev).reduce((a,b)=>a+b,0);
+  const spendList = list.filter(e => !isSaving(e)), gasto = sum(spendList), sav = total - gasto;
+  const biggest = spendList.slice().sort((a,b)=>eff(b)-eff(a))[0];
+  const addFact = (l,v,s) => { const f = document.createElement("div"); f.className = "fact";
+    f.innerHTML = '<div class="l"></div><div class="v"></div><div class="s"></div>';
+    f.querySelector(".l").textContent = l; f.querySelector(".v").textContent = v; f.querySelector(".s").textContent = s || "";
+    facts.append(f); };
+  addFact("Promedio por día", money(gasto/daysCount, cur), `${spendList.length} ${spendList.length===1?"gasto":"gastos"}`);
+  addFact(`Vs ${prevName}`,
+    prevTotal ? `${total>=prevTotal?"+":"−"}${money(Math.abs(total-prevTotal),cur)}` : "—",
+    prevTotal ? (isCurrent ? "en lo que va del mes" : "diferencia total") : "Sin datos del mes anterior");
+  if (biggest) addFact("Gasto más grande", money(eff(biggest),cur), [catById(biggest.category).name, biggest.note].filter(Boolean).join(", "));
+  const topCat = Object.entries(cats).filter(([id]) => id !== "ahorro").sort((a,b)=>b[1]-a[1])[0];
+  if (inc > 0) addFact("De lo que cobraste", `${Math.round(gasto/inc*100)}% en gastos`,
+    sav ? `${Math.round(sav/inc*100)}% a ahorro` : total <= inc ? `Te sobran ${money(inc-total,cur)}` : `Te pasaste ${money(total-inc,cur)}`);
+  else if (sav) addFact("Ahorraste", money(sav,cur), "este mes");
+  if (topCat) addFact("Donde más gastás", catById(topCat[0]).name, `${Math.round(topCat[1]/(gasto||1)*100)}% de tus gastos`);
+
+  // Barras últimos 6 meses
+  const months = [];
+  for (let i=5;i>=0;i--){ const d = new Date(viewYear, viewMonth-i, 1); months.push([d.getFullYear(), d.getMonth()]); }
+  const vals = months.map(([y,m]) => sum(monthExpenses(y,m,cur).filter(e => !isSaving(e))));
+  const max = Math.max(...vals, 1);
+  const W=320,H=170,top=22,bottom=24,bw=34, step=W/6;
+  const bs = svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Gasto por mes, últimos 6 meses"});
+  bs.append(svgEl("line",{x1:0,x2:W,y1:H-bottom,y2:H-bottom,stroke:"var(--line)"}));
+  months.forEach(([y,m],i) => {
+    const h = vals[i]/max*(H-top-bottom), x = step*i + (step-bw)/2, last = i===5;
+    bs.append(svgEl("rect",{x,y:H-bottom-h,width:bw,height:Math.max(h, vals[i]?2:0),rx:5,
+      fill: last ? "var(--accent)" : "var(--line)"}));
+    const t = svgEl("text",{x:x+bw/2,y:H-6,"text-anchor":"middle","font-size":11,fill:"var(--muted)"});
+    t.textContent = monthName(y,m,{month:"short"}).replace(".",""); bs.append(t);
+    if (vals[i]){ const v = svgEl("text",{x:x+bw/2,y:H-bottom-h-6,"text-anchor":"middle","font-size":10.5,
+      fill: last ? "var(--ink)" : "var(--muted)","font-weight":last?600:400}); v.textContent = shortMoney(vals[i],cur); bs.append(v); }
+  });
+  const bb = $("barsBox"); bb.innerHTML = ""; bb.append(bs);
+  renderCardsDash(list, cur);
+}
+
+function renderCardsDash(list, cur){
+  const box = $("cardsBox"); box.innerHTML = "";
+  if (!data.cards.length){ box.innerHTML = '<p class="fx-hint" style="margin:0">Agregá tus tarjetas para ver en qué gastás con cada una y cuándo las pagás.</p>'; return; }
+  const today = dateOnly(toLocalInput(new Date()));
+  const all = entries();
+  data.cards.forEach(card => {
+    const xs = list.filter(x => x.cardId === card.id), total = xs.reduce((s,x) => s + x.amount, 0);
+    const el = document.createElement("div"); el.className = "cardx";
+    const head = document.createElement("div"); head.className = "cardx-head";
+    const nm = document.createElement("strong"); const tg = document.createElement("span"); tg.className = "card-tag"; tg.style.background = card.color;
+    nm.append(tg, card.name);
+    const t = document.createElement("span"); t.className = "t"; t.textContent = money(total, cur);
+    head.append(nm, t); el.append(head);
+    const next = document.createElement("div"); next.className = "next";
+    const info = document.createElement("span");
+    if (card.rule === "open"){
+      const p = pendingFor(card);
+      info.textContent = p.ars || p.usd ? `Pendiente: ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")}` : "Nada pendiente";
+      next.append(info);
+      if (p.ars || p.usd){ const b = document.createElement("button"); b.type = "button"; b.className = "small-btn primary"; b.textContent = "Pagué la tarjeta"; b.onclick = () => openCardPay(card); next.append(b); }
+    } else {
+      const up = all.filter(x => x.cardId === card.id && dateOnly(x.date) >= today).sort((a,b) => a.date.localeCompare(b.date));
+      if (up.length){
+        const d = up[0].date.slice(0,10), amtA = up.filter(x => x.date.slice(0,10) === d && x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
+        const amtU = up.filter(x => x.date.slice(0,10) === d && x.currency === "USD").reduce((s,x) => s + x.amount, 0);
+        info.textContent = `Próximo pago: ${[amtA && fmtARS.format(amtA), amtU && fmtUSD.format(amtU)].filter(Boolean).join(" y ")} el ${shortDate(dateOnly(d))}`;
+      } else info.textContent = "Sin pagos próximos";
+      next.append(info);
+    }
+    const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
+    next.append(ed); el.append(next);
+    if (total > 0){
+      const byC = {}; xs.forEach(x => byC[x.category] = (byC[x.category]||0) + x.amount);
+      const sorted = Object.entries(byC).sort((a,b) => b[1]-a[1]);
+      const st = document.createElement("div"); st.className = "stack"; st.setAttribute("role","img");
+      st.setAttribute("aria-label", "Reparto: " + sorted.map(([id,v]) => `${catById(id).name} ${Math.round(v/total*100)}%`).join(", "));
+      sorted.forEach(([id,v]) => { const sp = document.createElement("span"); sp.style.width = (v/total*100) + "%"; sp.style.background = catById(id).color; st.append(sp); });
+      const ul = document.createElement("ul"); ul.className = "mini";
+      sorted.forEach(([id,v]) => { const li = document.createElement("li"); const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = catById(id).color;
+        const n = document.createElement("span"); n.textContent = catById(id).name; const a = document.createElement("span"); a.className = "a"; a.textContent = money(v, cur);
+        li.append(dot, n, a); ul.append(li); });
+      el.append(st, ul);
+    } else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
+    box.append(el);
+  });
+}
+
+function setTab(t){
+  tab = t;
+  $("tabList").setAttribute("aria-selected", String(t==="list"));
+  $("tabDash").setAttribute("aria-selected", String(t==="dash"));
+  $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash";
+  render();
+}
+$("tabList").onclick = () => setTab("list");
+$("tabDash").onclick = () => setTab("dash");
+document.querySelectorAll("[data-dcur]").forEach(b => b.onclick = () => {
+  dashCur = b.dataset.dcur;
+  document.querySelectorAll("[data-dcur]").forEach(x => x.setAttribute("aria-pressed", String(x===b)));
+  renderDash();
+});
+
+/* ============================================================
+   Sincronización con Google Drive (mismo sistema que Artdeas)
+   - Login con Google Identity Services (token client).
+   - Scope drive.file: la app solo ve el archivo que ella misma crea.
+   - Cada usuario guarda sus datos en SU Drive, en receater-data.json.
+   - localStorage queda como caché local para abrir rápido y offline.
+   ============================================================ */
+const GOOGLE_CLIENT_ID = "1024164485431-9h1o8dauc3nrf2o0gbc7hqugkurf57uv.apps.googleusercontent.com";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const DRIVE_FILENAME = "receater-data.json";
+const TOKEN_KEY = "receater.gtoken";
+const BANNER_KEY = "receater.bannerDismissed";
+
+window.cloud = (() => {
+  let token = null, fileId = null, ready = false, timer = null, busy = false;
+  const btn = $("syncBtn");
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+               set: (k,v) => { try { localStorage.setItem(k, v); } catch {} },
+               del: k => { try { localStorage.removeItem(k); } catch {} } };
+  const onLine = () => location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+  function status(text, cls){
+    btn.hidden = false; btn.textContent = text;
+    btn.classList.toggle("ok", cls === "ok"); btn.classList.toggle("warn", cls === "warn");
+  }
+  function savedToken(){
+    try { const t = JSON.parse(ls.get(TOKEN_KEY) || "null"); return t && Date.now() < t.expiresAt ? t.token : null; } catch { return null; }
+  }
+  function loadGis(){
+    return new Promise((res, rej) => {
+      if (window.google && google.accounts && google.accounts.oauth2) return res();
+      const s = document.createElement("script"); s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+      s.onload = res; s.onerror = () => rej(new Error("No se pudo cargar Google")); document.head.append(s);
+    });
+  }
+  async function login(prompt){
+    await loadGis();
+    return new Promise(res => {
+      const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE,
+        callback: r => {
+          if (r.error){ res(false); return; }
+          token = r.access_token;
+          ls.set(TOKEN_KEY, JSON.stringify({ token, expiresAt: Date.now() + (r.expires_in - 60) * 1000 }));
+          res(true);
+        },
+        error_callback: () => res(false) });
+      client.requestAccessToken({ prompt });
+    });
+  }
+  async function api(url, opts = {}){
+    const r = await fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...(opts.headers || {}) } });
+    if (r.status === 401){ ls.del(TOKEN_KEY); token = null; ready = false; throw new Error("expired"); }
+    if (!r.ok) throw new Error("Drive " + r.status);
+    return r;
+  }
+  async function findFile(){
+    const q = encodeURIComponent(`name='${DRIVE_FILENAME}' and trashed=false`);
+    const r = await api(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,modifiedTime)&orderBy=modifiedTime desc`);
+    const j = await r.json(); return j.files && j.files[0] ? j.files[0].id : null;
+  }
+  async function createFile(){
+    const b = "receater-boundary";
+    const body = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: DRIVE_FILENAME, mimeType: "application/json" })}\r\n` +
+                 `--${b}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(data)}\r\n--${b}--`;
+    const r = await api("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
+      { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${b}` }, body });
+    return (await r.json()).id;
+  }
+  async function upload(){
+    if (!ready || busy) return;
+    busy = true; status("Guardando…");
+    try {
+      await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+        { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      status("En tu Drive ✓", "ok");
+    } catch (e) { status(e.message === "expired" ? "Reconectar" : "Sin sincronizar", "warn"); }
+    busy = false;
+  }
+  async function sync(){
+    status("Conectando…");
+    try {
+      fileId = await findFile();
+      if (!fileId){ fileId = await createFile(); ready = true; status("En tu Drive ✓", "ok"); return; }
+      const remote = await (await api(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)).json();
+      ready = true;
+      const rT = remote && remote.updatedAt || 0, lT = data.updatedAt || 0;
+      const localEmpty = !data.expenses.length && !data.incomes.length;
+      if (remote && Array.isArray(remote.expenses) && (rT > lT || localEmpty) && rT !== lT){
+        store.save(remote, true); location.reload(); return;   // trae lo de Drive
+      }
+      if (lT > rT) await upload(); else status("En tu Drive ✓", "ok");
+    } catch (e) { status(e.message === "expired" ? "Reconectar" : "Sin sincronizar", "warn"); }
+  }
+  async function connect(){
+    if (!onLine()){ alert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
+    status("Conectando…");
+    const ok = await login("");
+    if (!ok){ status("Entrar", "warn"); return; }
+    $("cloudBanner").hidden = true;
+    await sync();
+  }
+  function logout(){
+    if (!confirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
+    try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
+    ls.del(TOKEN_KEY); ls.del(STORE_KEY); location.reload();
+  }
+  btn.onclick = () => { if (ready) logout(); else connect(); };
+  $("cloudLogin").onclick = connect;
+  $("cloudLater").onclick = () => { ls.set(BANNER_KEY, "1"); $("cloudBanner").hidden = true; status("Entrar"); };
+
+  function init(){
+    if (!onLine()) return;   // abierto como archivo local: funciona sin nube
+    token = savedToken();
+    if (token) sync();
+    else { status("Entrar"); if (!ls.get(BANNER_KEY)) $("cloudBanner").hidden = false; }
+  }
+  return { init, connect, schedule(){ clearTimeout(timer); if (ready) timer = setTimeout(upload, 1200); } };
+})();
+
+render();
+cloud.init();
+</script>
+</body>
+</html>
