@@ -395,6 +395,33 @@ button{cursor:pointer}
 
 .pay-sum.first{border-top:0;padding-top:0;padding-bottom:8px;border-bottom:1px dashed var(--line)}
 .pay-h{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* ===== Gastos fijos ===== */
+#fixBg,#fmBg{z-index:14}
+#fixSheet,#fmSheet{z-index:15}
+.fixed-sum{display:grid;gap:6px}
+.fixed-sum .big{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:1.3rem}
+.fixed-sum .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:.92rem;color:var(--muted)}
+.fixed-sum .meter{margin-top:4px}
+.fx-item{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;border:0;background:none;text-align:left;padding:11px 14px 8px}
+.fx-item > div{min-width:0}
+.fx-item .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-item .st{font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fx-item .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;text-align:right;white-space:nowrap}
+.fx-item .a.usd{color:var(--usd)}
+.stamp.warn{color:var(--danger)}
+.stamp.wait{color:#C9A227}
+.fixed-pend{background:var(--paper);border-radius:12px;padding:12px 14px;margin:0 0 6px}
+.fixed-pend h3{margin:0 0 6px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.fixed-pend h3 .linkbtn{padding:0;font-size:.8rem;text-transform:none;letter-spacing:0}
+.fp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;width:100%;border:0;background:none;text-align:left;padding:7px 0;border-top:1px solid var(--line);align-items:center}
+.fp-row:first-of-type{border-top:0}
+.fp-row .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-row .n small{color:var(--muted);margin-left:6px}
+.fp-row .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600}
+.chip.fixc .st{font-size:.75rem;color:var(--muted);margin-left:4px}
+.chip.fixc[aria-pressed="true"] .st{color:inherit;opacity:.8}
+.tabs button{font-size:.92rem}
 </style>
 </head>
 <body>
@@ -412,6 +439,7 @@ button{cursor:pointer}
   <div class="tabs" role="tablist">
     <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
     <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
+    <button role="tab" id="tabFixed" aria-selected="false">Fijos</button>
     <button role="tab" id="tabJars" aria-selected="false">Ahorros</button>
   </div>
   <div class="month-nav" id="monthNav">
@@ -448,6 +476,7 @@ button{cursor:pointer}
     </div>
   </section>
 
+  <section class="fixed-pend" id="fixedPend" hidden></section>
   <div id="days"></div>
   </div>
 
@@ -471,6 +500,12 @@ button{cursor:pointer}
       <h2>Gastos de los últimos 6 meses</h2>
       <div id="barsBox"></div>
     </section>
+  </div>
+
+  <div id="viewFixed" hidden>
+    <section class="card fixed-sum" id="fixedSum"></section>
+    <div id="fixedList"></div>
+    <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newFixed">+ Nuevo gasto fijo</button></div>
   </div>
 
   <div id="viewJars" hidden>
@@ -579,6 +614,18 @@ button{cursor:pointer}
     <div class="fx-hint">Poné cuándo creés que vas a volver a cobrar.</div>
   </div>
 
+  <div class="field" id="fixField" hidden>
+    <span class="lbl">¿Es un gasto fijo?</span>
+    <div class="chips" id="fixChips"></div>
+    <div id="fixDiff" hidden>
+      <div class="fx-hint" id="fixDiffTxt"></div>
+      <div class="seg" role="group" aria-label="Qué pasó con el monto" style="margin-top:8px">
+        <button type="button" data-fixd="partial" aria-pressed="true">Pago parcial</button>
+        <button type="button" data-fixd="raise" aria-pressed="false">Cambió el precio</button>
+      </div>
+    </div>
+  </div>
+
   <div class="field" id="jarField" hidden>
     <span class="lbl">¿A qué frasco va?</span>
     <div class="chips" id="jarChips"></div>
@@ -664,6 +711,47 @@ button{cursor:pointer}
     <button type="button" class="btn danger" id="cardDel" hidden>Borrar</button>
     <button type="button" class="btn ghost" id="cardCancel">Cancelar</button>
     <button type="button" class="btn primary" id="cardSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="fixBg"></div>
+<div class="sheet" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
+  <h3 id="fixTitle">Nuevo gasto fijo</h3>
+  <div class="field"><label for="fixName">Nombre</label><input class="input" id="fixName" placeholder="Ej: Alquiler, Netflix, Taller de dibujo" autocomplete="off"></div>
+  <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select></div>
+  <div class="field two">
+    <div><label for="fixAmount">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Vacío si cambia" autocomplete="off"></div>
+    <div><span class="lbl-sm">Moneda</span>
+      <div class="seg" role="group" aria-label="Moneda del fijo">
+        <button type="button" data-fixcur="ARS" aria-pressed="true">$</button>
+        <button type="button" data-fixcur="USD" aria-pressed="false">US$</button>
+      </div></div>
+  </div>
+  <div class="field"><label for="fixDay">Día del mes que se paga</label><select class="input" id="fixDay"></select></div>
+  <div class="field"><span class="lbl">¿Cómo se paga?</span>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="fixHow" value="manual"><div><strong>Lo pago yo</strong><span>Efectivo, transferencia o débito. Queda pendiente hasta que lo cargás.</span></div></label>
+      <label class="opt"><input type="radio" name="fixHow" value="auto"><div><strong>Débito automático</strong><span>Queda "a debitar" hasta que confirmes que te lo debitaron.</span></div></label>
+      <label class="opt"><input type="radio" name="fixHow" value="card"><div><strong>Con tarjeta</strong><span>Se suma solo a la tarjeta cada mes y queda pagado cuando pagás la tarjeta.</span>
+        <div class="opt-extra">Tarjeta <select id="fixCard" aria-label="Tarjeta"></select></div></div></label>
+    </div></div>
+  <div class="err" id="fixErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="fixDel" hidden>Ya no lo pago</button>
+    <button type="button" class="btn ghost" id="fixCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="fixSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="fmBg"></div>
+<div class="sheet" id="fmSheet" role="dialog" aria-modal="true" aria-labelledby="fmTitle">
+  <h3 id="fmTitle">Monto de este mes</h3>
+  <div class="field"><label for="fmAmount" id="fmLbl">Monto</label><input class="input" id="fmAmount" inputmode="decimal" autocomplete="off"></div>
+  <div class="fx-hint" id="fmHint"></div>
+  <div class="err" id="fmErr"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="fmCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="fmSave">Guardar</button>
   </div>
 </div>
 
@@ -871,6 +959,72 @@ const CARD_COLORS = ["#2F5BEA","#E08A2C","#7A5AC8","#1FA3B3","#D0485E","#5B6B82"
 const METHODS = [{id:"cash",name:"Efectivo"},{id:"debit",name:"Débito"},{id:"transfer",name:"Transferencia"}];
 const cardById = id => data.cards.find(c => c.id === id);
 const isCardExp = e => !isIncome(e) && e.method === "card" && cardById(e.cardId);
+/* ---------- Gastos fijos ----------
+   fijo: { id, name, category, currency, amount|null (null = variable), day, how:"manual"|"auto"|"card", cardId,
+           start:"YYYY-MM", end:"YYYY-MM"|null (último mes), history:[{from:"YYYY-MM", amount}], monthAmounts:{ "YYYY-MM": monto } }
+   Cada período (mes) tiene una "instancia" del fijo, con clave fijo.id|YYYY-MM.
+   - A mano y débito automático: se pagan cargando un gasto con fixedId + fixedKey.
+   - Con tarjeta: se genera solo una compra de esa tarjeta el día que toca, y queda pagado cuando pagás la tarjeta. */
+if (!Array.isArray(data.fixed)) data.fixed = [];
+const fixById = id => data.fixed.find(f => f.id === id);
+function fixAmountFor(f, key){
+  if (f.monthAmounts && f.monthAmounts[key] != null) return f.monthAmounts[key];
+  const h = (f.history || []).filter(x => x.from <= key).sort((a,b) => a.from.localeCompare(b.from)).pop();
+  return h ? h.amount : (f.amount == null ? null : f.amount);
+}
+function fixDue(f, y, m){
+  // Fecha del fijo dentro del período (y,m): el día elegido, en el mes que caiga dentro del período
+  const a = payDate(y, m), b = payDate(y, m+1);
+  for (const k of [0, 1, -1]){ const d = dayIn(y, m+k, f.day || 1); if (d >= a && d < b) return d; }
+  return dayIn(y, m, f.day || 1);
+}
+const fixActiveIn = (f, key) => f.start <= key && (!f.end || key <= f.end);
+/* Compras de tarjeta que generan los fijos con tarjeta, desde que empezaron hasta el mes que viene */
+function virtualFixed(){
+  const out = [], [cy, cm] = periodOf(new Date());
+  data.fixed.filter(f => f.how === "card" && cardById(f.cardId)).forEach(f => {
+    let [y, m] = f.start.split("-").map(Number); m--;
+    for (let guard = 0; guard < 60; guard++){
+      const key = monthKey(y, m);
+      if (key > monthKey(cy, cm+1)) break;
+      if (fixActiveIn(f, key)){
+        const amt = fixAmountFor(f, key);
+        if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
+          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(fixDue(f, y, m))}T09:00`, note:f.name, items:[] });
+      }
+      m++; if (m > 11){ m = 0; y++; }
+    }
+  });
+  return out;
+}
+const allExpenses = () => [...data.expenses, ...virtualFixed()];
+/* Estado de un fijo en un período */
+function fixInstance(f, y, m){
+  const key = monthKey(y, m), expected = fixAmountFor(f, key), due = fixDue(f, y, m);
+  const base = { f, key, due, expected, currency: f.currency };
+  if (f.how === "card"){
+    if (!expected) return { ...base, state:"noamount", paid:0 };
+    const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(due)}T09:00`, amount:expected, currency:f.currency };
+    const card = cardById(f.cardId); if (!card) return { ...base, state:"pending", paid:0 };
+    const pays = paysFrom(f.cardId, due, f.currency);
+    if (pays[0]) return { ...base, state:"cardpaid", paid:expected, payDate: dateOnly(pays[0].date) };
+    const sch = cardSchedule(v)[0];
+    return { ...base, state:"incard", paid:0, payDate: sch };
+  }
+  const paid = round2(data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key).reduce((s,e) => s + eff(e), 0));
+  if (expected ? paid >= expected - 0.5 : paid > 0) return { ...base, state:"paid", paid };
+  if (paid > 0) return { ...base, state:"partial", paid };
+  return { ...base, state: f.how === "auto" ? "todebit" : "pending", paid };
+}
+function fixInstances(y, m){
+  const key = monthKey(y, m);
+  return data.fixed.filter(f => fixActiveIn(f, key)).map(f => fixInstance(f, y, m)).sort((a,b) => a.due - b.due);
+}
+/* Lo que falta pagar de los fijos a mano / débito automático en un período (en pesos) */
+function fixedPendingARS(y, m){
+  return round2(fixInstances(y, m).filter(i => i.f.how !== "card" && i.currency === "ARS" && i.state !== "paid")
+    .reduce((s,i) => s + Math.max(0, (i.expected || 0) - i.paid), 0));
+}
 function dayIn(Y, M, day){ const f = new Date(Y, M, 1); return new Date(f.getFullYear(), f.getMonth(), Math.min(day, daysIn(f.getFullYear(), f.getMonth()))); }
 function nextDayAfter(date, day){ let c = dayIn(date.getFullYear(), date.getMonth(), day); if (c <= date) c = dayIn(date.getFullYear(), date.getMonth()+1, day); return c; }
 function nextSalaryAfter(c){
@@ -885,14 +1039,15 @@ function nextSalaryAfter(c){
 }
 /* Fechas de pago de cada cuota (null = pendiente) */
 /* Pagos cargados de una tarjeta desde el día de una compra (incluido) */
-const paysFrom = (cardId, pd) => data.cardPayments.filter(p => p.cardId === cardId && dateOnly(p.date) >= pd).sort((a,b) => a.date.localeCompare(b.date));
+const paysFrom = (cardId, pd, cur) => data.cardPayments.filter(p => p.cardId === cardId && dateOnly(p.date) >= pd
+  && (cur === "USD" ? p.usd > 0 : cur === "ARS" ? (p.amount > 0 || !p.usd) : true)).sort((a,b) => a.date.localeCompare(b.date));
 /* Fechas de pago de cada cuota (null = pendiente).
    Cuando pagás una tarjeta, ese pago se queda con la cuota que toque de cada compra hecha antes:
    la 1ª cuota va al primer pago después de la compra, la 2ª al segundo, etc.
    Lo que todavía no pagaste se proyecta según cómo pagás la tarjeta (o queda pendiente si es abierta). */
 function cardSchedule(e){
   const card = cardById(e.cardId), n = Math.max(1, e.installments || 1), pd = dateOnly(e.date), out = [];
-  const pays = paysFrom(card.id, pd);
+  const pays = paysFrom(card.id, pd, e.currency);
   for (let i = 0; i < n && pays[i]; i++) out.push(dateOnly(pays[i].date));
   const u = out.length;
   if (u >= n) return out;
@@ -909,7 +1064,7 @@ function cardSchedule(e){
 /* Todo lo que cuenta para los totales: gastos normales el día que los hiciste, cuotas de tarjeta el día que se pagan */
 function entries(){
   const out = [];
-  data.expenses.forEach(e => {
+  allExpenses().forEach(e => {
     if (!isCardExp(e)){ out.push({ ...e, split:null, amount: eff(e), src:e }); return; }
     const sched = cardSchedule(e), n = sched.length, per = round2(eff(e) / n);
     sched.forEach((d,i) => { if (d) out.push({ id:`${e.id}:${i}`, amount: i === n-1 ? round2(eff(e) - per*(n-1)) : per, currency:e.currency,
@@ -943,8 +1098,8 @@ function pendingFor(card, upTo){
   // Lo que todavía no pagaste de esta tarjeta: la próxima cuota de cada compra hecha hasta hoy
   const lim = upTo || dateOnly(toLocalInput(new Date()));
   let ars = 0, usd = 0;
-  data.expenses.filter(e => isCardExp(e) && e.cardId === card.id && dateOnly(e.date) <= lim).forEach(e => {
-    const n = Math.max(1, e.installments || 1), i = paysFrom(card.id, dateOnly(e.date)).length;
+  allExpenses().filter(e => isCardExp(e) && e.cardId === card.id && dateOnly(e.date) <= lim).forEach(e => {
+    const n = Math.max(1, e.installments || 1), i = paysFrom(card.id, dateOnly(e.date), e.currency).length;
     if (i >= n) return;
     const per = round2(eff(e)/n), amt = i === n-1 ? round2(eff(e) - per*(n-1)) : per;
     if (e.currency === "USD") usd += amt; else ars += amt;
@@ -1047,9 +1202,10 @@ function render(){
   renderRange();
   if (tab === "dash") { renderDash(); return; }
   if (tab === "jars") { renderJars(); return; }
+  if (tab === "fixed") { renderFixed(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
-  const inMonth = [...data.expenses, ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
+  const inMonth = [...allExpenses(), ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
   const tot = (arr, cur, f = eff) => arr.filter(e => e.currency === cur).reduce((s,e) => s + f(e), 0);
   const exps = inMonth.filter(e => !isIncome(e)), incs = inMonth.filter(isIncome);
   const allEnts = entries(), ents = allEnts.filter(inThisMonth);
@@ -1069,6 +1225,8 @@ function render(){
   if (bIncA > 0){
     const incA = bIncA, spentA = bSpentA, savA = bSavA, gastoA = bGastoA;
     const left = incA - spentA;
+    const fixP = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
+    const free = left - fixP;
     $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
     big.textContent = fmtARS.format(Math.abs(left));
     big.classList.toggle("neg", left < 0);
@@ -1081,11 +1239,12 @@ function render(){
     if (cobro){
       const until = dateOnly(cobro.until), daysLeft = Math.ceil((until - new Date()) / 864e5);
       if (daysLeft <= 0) lines.push(`Ya llegó el ${shortDate(until)}. Si cobraste, cargalo; si no, cambiá la fecha.`);
-      else if (left > 0) lines.push(`Te da para ${fmtARS.format(left/daysLeft)} por día hasta el ${shortDate(until)}`);
-    } else if (isCurrentPeriod(viewYear, viewMonth) && left > 0){
+      else if (free > 0) lines.push(`Te da para ${fmtARS.format(free/daysLeft)} por día hasta el ${shortDate(until)}`);
+    } else if (isCurrentPeriod(viewYear, viewMonth) && free > 0){
       const daysLeft = Math.max(1, Math.ceil((payDate(viewYear, viewMonth+1) - new Date()) / 864e5));
-      lines.push(`Te da para ${fmtARS.format(left/daysLeft)} por día ${isCalendar() ? "hasta fin de mes" : "hasta que cobres"}`);
+      lines.push(`Te da para ${fmtARS.format(free/daysLeft)} por día ${isCalendar() ? "hasta fin de mes" : "hasta que cobres"}`);
     }
+    if (fixP > 0) lines.splice(1, 0, `Fijos por pagar: ${fmtARS.format(fixP)}. Libre: ${fmtARS.format(free)}`);
   } else {
     $("bigLabel").textContent = "Gastaste";
     big.textContent = fmtARS.format(gastoA);
@@ -1122,6 +1281,7 @@ function render(){
   } else line = "Contame cuánto cobrás así hago las cuentas.";
   setRecy(mood, line);
 
+  renderFixedPend();
   const days = $("days");
   days.innerHTML = "";
   if (!rows.length){
@@ -1216,6 +1376,24 @@ function renderPayGroup(r){
   return wrap;
 }
 
+function renderFixedPend(){
+  const box = $("fixedPend"); box.innerHTML = "";
+  const list = fixInstances(viewYear, viewMonth).filter(i => i.f.how !== "card" && i.state !== "paid");
+  if (!list.length){ box.hidden = true; return; }
+  box.hidden = false;
+  const h = document.createElement("h3"); h.append("Fijos pendientes");
+  const all = document.createElement("button"); all.type = "button"; all.className = "linkbtn"; all.textContent = "Ver todos"; all.onclick = () => setTab("fixed");
+  h.append(all); box.append(h);
+  list.forEach(i => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
+    const n = document.createElement("span"); n.className = "n"; n.textContent = i.f.name;
+    const sm = document.createElement("small"); sm.textContent = (i.state === "todebit" ? "a debitar el " : i.state === "partial" ? "falta, vence el " : "vence el ") + shortDate(i.due); n.append(sm);
+    const a = document.createElement("span"); a.className = "a";
+    a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
+    b.append(n, a); b.onclick = () => openSheetForFixed(i); box.append(b);
+  });
+}
+
 function renderItem(e){
   const inc = isIncome(e), shared = !inc && e.split && e.split.people.length;
   const c = inc ? kindById(e.category) : catById(e.category);
@@ -1255,6 +1433,8 @@ function renderItem(e){
     mid.append(cat, sub);
     b.setAttribute("aria-label", `Editar ${c.name} ${money(e.amount,e.currency)}`);
     b.onclick = () => openSheet(e);
+    if (e.fixedId && fixById(e.fixedId)){ amt.append(stampEl("FIJO", "info")); }
+    if (e.virtual){ b.onclick = () => openFixed(fixById(e.fixedId)); b.setAttribute("aria-label", `Gasto fijo ${e.note}`); }
     addStamp();
     return b;
   }
@@ -1312,6 +1492,7 @@ function setMode(m){
     : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
   $("splitField").hidden = m !== "expense";
   $("methodField").hidden = m !== "expense";
+  if (typeof updateFixField === "function") updateFixField();
   updateUntilField();
   $("fxBox").hidden = m !== "fx";
   $("amountRow").hidden = m === "fx" || m === "cardpay";
@@ -1364,6 +1545,64 @@ function updateJarField(){
   jars.forEach(j => chip(j.name, jarSel === j.id, () => { jarSel = j.id; jarUserPicked = true; updateJarField(); }, j.color));
   chip("Sin frasco", !jarSel, () => { jarSel = null; jarUserPicked = true; updateJarField(); });
   chip("+ Frasco", false, () => openJar(null, cur));
+}
+let fixSel = null, fixDiffMode = "partial";
+function fixSelInst(){
+  if (!fixSel) return null;
+  const f = fixById(fixSel.fid); if (!f) return null;
+  const [y, m] = fixSel.key.split("-").map(Number);
+  return fixInstance(f, y, m-1);
+}
+function updateFixField(){
+  const show = mode === "expense" && data.fixed.some(f => f.how !== "card");
+  $("fixField").hidden = !show; if (!show) return;
+  const date = `${$("date").value || toLocalInput(new Date())}T12:00`, [y, m] = periodOf(date);
+  const cand = fixInstances(y, m).filter(i => i.f.how !== "card" && (i.state !== "paid" || (fixSel && fixSel.fid === i.f.id && fixSel.key === i.key)));
+  const box = $("fixChips"); box.innerHTML = "";
+  cand.forEach(i => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip fixc";
+    const on = fixSel && fixSel.fid === i.f.id && fixSel.key === i.key;
+    b.setAttribute("aria-pressed", String(!!on));
+    b.append(i.f.name);
+    const st = document.createElement("span"); st.className = "st";
+    st.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : (i.state === "todebit" ? "a debitar" : "");
+    b.append(st);
+    b.onclick = () => { if (on){ fixSel = null; updateFixField(); return; } pickFixed(i); };
+    box.append(b);
+  });
+  if (!cand.length){ const p = document.createElement("span"); p.className = "fx-hint"; p.textContent = "No tenés fijos pendientes este mes."; box.append(p); }
+  updateFixDiff();
+}
+function pickFixed(i){
+  fixSel = { fid: i.f.id, key: i.key }; fixDiffMode = "partial";
+  const rem = i.expected ? round2(i.expected - i.paid) : 0;
+  $("amount").value = rem ? String(rem).replace(".",",") : "";
+  category = i.f.category; setCurrency(i.f.currency);
+  if (!$("note").value) $("note").value = i.f.name;
+  if (i.f.how === "auto"){ method = "debit"; cardId = null; }
+  renderCats(); renderMethods(); updateFixField();
+}
+function updateFixDiff(){
+  const i = fixSelInst(), box = $("fixDiff");
+  if (!i || !i.expected){ box.hidden = true; return; }
+  const rem = round2(i.expected - i.paid), v = parseAmount($("amount").value) || 0;
+  if (!v || Math.abs(v - rem) < 0.5){ box.hidden = true; return; }
+  box.hidden = false;
+  $("fixDiffTxt").textContent = v < rem ? `${i.f.name} es ${money(i.expected, i.currency)} y estás poniendo menos. ¿Qué pasó?` : `${i.f.name} era ${money(i.expected, i.currency)} y estás poniendo más. ¿Qué pasó?`;
+  document.querySelectorAll("[data-fixd]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fixd === fixDiffMode)));
+  document.querySelector('[data-fixd="partial"]').textContent = v < rem ? "Pago parcial" : "Pagué de más esta vez";
+}
+document.querySelectorAll("[data-fixd]").forEach(b => b.onclick = () => { fixDiffMode = b.dataset.fixd; updateFixDiff(); });
+$("amount").addEventListener("input", () => { if (fixSel) updateFixDiff(); });
+$("date").addEventListener("change", () => {
+  if (mode === "expense") updateFixField();
+  if (mode === "cardpay" && !editingPay){ $("cpkAmount").value = ""; $("cpkUsd").value = ""; $("cpkUsdArs").value = ""; renderCpk(); }
+});
+function openSheetForFixed(i){
+  openSheet(null);
+  $("date").value = toLocalInput(new Date());
+  pickFixed(i);
+  setTimeout(() => $("amount").focus(), 150);
 }
 function updateUntilField(){
   const sueldo = mode === "income" && incomeKind === "sueldo";
@@ -1595,7 +1834,7 @@ function renderCpk(){
   let pre = 0, preU = 0;
   if (editingPay){ hint.textContent = "Estás editando un pago. Se queda con las compras sin pagar hechas hasta esa fecha."; }
   else {
-    const p = pendingFor(card); pre = p.ars; preU = p.usd;
+    const p = pendingFor(card, dateOnly($("date").value || toLocalInput(new Date()))); pre = p.ars; preU = p.usd;
     hint.textContent = p.ars || p.usd
       ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia va a intereses.`
       : "No tenés compras cargadas sin pagar en esta tarjeta. Lo que pongas cuenta como un gasto de tarjeta en esta fecha.";
@@ -1655,6 +1894,7 @@ function openSheet(exp){
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
   $("catSearch").value = ""; catEditing = false; editingPay = null;
+  fixSel = exp && exp.fixedId ? { fid: exp.fixedId, key: exp.fixedKey } : null; fixDiffMode = "partial";
   cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
   $("typeTabs").hidden = !!exp;
@@ -1716,6 +1956,14 @@ $("sheet").addEventListener("submit", ev => {
     fields.installments = method === "card" ? Number($("cuotas").value) : 1;
     data.lastMethod = method; data.lastCardId = fields.cardId;
     fields.jarId = !$("jarField").hidden ? jarSel : null;
+    const fi = fixSelInst();
+    if (fi){
+      fields.fixedId = fi.f.id; fields.fixedKey = fi.key;
+      if (fixDiffMode === "raise" && !$("fixDiff").hidden){
+        const newAmt = round2(fi.paid - (editing && editing.fixedId === fi.f.id ? eff(editing) : 0) + fields.amount);
+        fi.f.history = (fi.f.history || []).filter(h => h.from !== fi.key); fi.f.history.push({ from: fi.key, amount: newAmt }); fi.f.amount = newAmt;
+      }
+    } else { fields.fixedId = null; fields.fixedKey = null; }
     if (fields.jarId) data.lastJar[currency] = fields.jarId;
   }
   if (mode === "income" && isFree() && incomeKind === "sueldo"){
@@ -1742,7 +1990,9 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("catSheet").classList.contains("open")) closeCat();
+  if ($("fixSheet").classList.contains("open")) closeFixed();
+  else if ($("fmSheet").classList.contains("open")) closeFixMonth();
+  else if ($("catSheet").classList.contains("open")) closeCat();
   else if ($("jarSheet").classList.contains("open")) closeJar();
   else if ($("jmSheet").classList.contains("open")) closeJarMove();
   else if ($("cardSheet").classList.contains("open")) closeCard();
@@ -2070,11 +2320,153 @@ function setTab(t){
   $("tabList").setAttribute("aria-selected", String(t==="list"));
   $("tabDash").setAttribute("aria-selected", String(t==="dash"));
   $("tabJars").setAttribute("aria-selected", String(t==="jars"));
-  $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars";
+  $("tabFixed").setAttribute("aria-selected", String(t==="fixed"));
+  $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars"; $("viewFixed").hidden = t!=="fixed";
   $("monthNav").hidden = t === "jars";
   render();
 }
 $("tabJars").onclick = () => setTab("jars");
+$("tabFixed").onclick = () => setTab("fixed");
+
+/* ---------- Pestaña Fijos ---------- */
+function fixStatus(i){
+  const card = i.f.cardId ? cardById(i.f.cardId) : null, today = dateOnly(toLocalInput(new Date()));
+  switch (i.state){
+    case "paid": return { st: i.f.how === "auto" ? `Debitado` : `Pagado`, stamp: ["PAGADO","ok"] };
+    case "cardpaid": return { st: `Pagado con ${card ? card.name : "la tarjeta"} el ${shortDate(i.payDate)}`, stamp: ["PAGADO","ok"] };
+    case "incard": return { st: i.payDate ? `En ${card.name}, va al pago del ${shortDate(i.payDate)}` : `En ${card.name}, se paga con la tarjeta`, stamp: ["EN TARJETA","info"] };
+    case "todebit": return { st: `Se debita el ${shortDate(i.due)}`, stamp: ["A DEBITAR","wait"] };
+    case "partial": return { st: `Pagaste ${money(i.paid, i.currency)} de ${money(i.expected, i.currency)}`, stamp: ["PARCIAL","wait"] };
+    case "noamount": return { st: "Poné el monto de este mes", stamp: null };
+    default: return { st: `Vence el ${shortDate(i.due)}`, stamp: i.due < today ? ["VENCIDO","warn"] : null };
+  }
+}
+function renderFixed(){
+  const list = fixInstances(viewYear, viewMonth), sum = $("fixedSum"), box = $("fixedList");
+  sum.innerHTML = ""; box.innerHTML = "";
+  if (!data.fixed.length){
+    sum.hidden = true;
+    box.innerHTML = '<div class="empty"><strong>Todavía no tenés gastos fijos</strong>Cargá lo que pagás todos los meses: alquiler, servicios, suscripciones. Te los recuerdo y te los descuento de lo que te queda.</div>';
+    return;
+  }
+  sum.hidden = false;
+  const done = list.filter(i => i.state === "paid" || i.state === "cardpaid").length;
+  const tot = cur => list.filter(i => i.currency === cur).reduce((s,i) => s + (i.expected || i.paid || 0), 0);
+  const left = (cur, card) => list.filter(i => i.currency === cur && (card ? i.state === "incard" : ["pending","todebit","partial"].includes(i.state)))
+    .reduce((s,i) => s + Math.max(0, (i.expected || 0) - i.paid), 0);
+  const big = document.createElement("div"); big.className = "big"; big.textContent = `${done} de ${list.length} pagados`;
+  sum.append(big);
+  const row = (a, b) => { const r = document.createElement("div"); r.className = "row"; const x = document.createElement("span"); x.textContent = a; const y = document.createElement("strong"); y.textContent = b; r.append(x, y); sum.append(r); };
+  const fa = left("ARS"), fu = left("USD"), ca = left("ARS", 1), cu = left("USD", 1);
+  if (fa || fu) row("Falta pagar", [fa && fmtARS.format(fa), fu && fmtUSD.format(fu)].filter(Boolean).join(" y "));
+  if (ca || cu) row("En tarjetas, sin pagar", [ca && fmtARS.format(ca), cu && fmtUSD.format(cu)].filter(Boolean).join(" y "));
+  const ta = tot("ARS"), tu = tot("USD");
+  row("Total del mes", [ta && fmtARS.format(ta), tu && fmtUSD.format(tu)].filter(Boolean).join(" y ") || "—");
+  const m = document.createElement("div"); m.className = "meter"; const sp = document.createElement("span"); sp.style.width = (list.length ? done / list.length * 100 : 0) + "%"; m.append(sp); sum.append(m);
+  if (!list.length){ box.innerHTML = '<p class="fx-hint">No hay fijos en este mes.</p>'; return; }
+  const lst = document.createElement("div"); lst.className = "list";
+  list.forEach(i => {
+    const t = document.createElement("div"); t.className = "ticket";
+    const b = document.createElement("button"); b.type = "button"; b.className = "fx-item";
+    const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = catById(i.f.category).color;
+    const mid = document.createElement("div");
+    const n = document.createElement("div"); n.className = "n"; n.textContent = i.f.name;
+    const info = fixStatus(i);
+    const st = document.createElement("div"); st.className = "st";
+    st.textContent = info.st + (i.f.how === "auto" && i.state !== "paid" ? "" : "");
+    mid.append(n, st);
+    const a = document.createElement("div"); a.className = "a" + (i.currency === "USD" ? " usd" : "");
+    a.textContent = i.expected ? money(i.expected, i.currency) : "—";
+    if (info.stamp) a.append(stampEl(...info.stamp));
+    b.append(dot, mid, a);
+    b.onclick = () => {
+      if (i.f.how === "card" || i.state === "noamount") openFixMonth(i);
+      else if (i.state === "paid") openFixed(i.f);
+      else openSheetForFixed(i);
+    };
+    t.append(b); lst.append(t);
+  });
+  box.append(lst);
+}
+$("newFixed").onclick = () => openFixed(null);
+
+/* Modal: crear / editar fijo */
+let editingFix = null, fixCur = "ARS";
+(() => { const s = $("fixDay"); for (let i = 1; i <= 31; i++){ const o = document.createElement("option"); o.value = i; o.textContent = `El ${i}`; s.append(o); } })();
+document.querySelectorAll("[data-fixcur]").forEach(b => b.onclick = () => { fixCur = b.dataset.fixcur; document.querySelectorAll("[data-fixcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+function openFixed(f){
+  editingFix = f || null;
+  $("fixTitle").textContent = f ? "Editar gasto fijo" : "Nuevo gasto fijo";
+  const cs = $("fixCat"); cs.innerHTML = "";
+  allCats().filter(c => !c.hidden).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cs.append(o); });
+  cs.value = f ? f.category : "casa";
+  const cards = $("fixCard"); cards.innerHTML = "";
+  data.cards.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cards.append(o); });
+  if (!data.cards.length){ const o = document.createElement("option"); o.value = ""; o.textContent = "Primero creá una tarjeta"; cards.append(o); }
+  $("fixName").value = f ? f.name : "";
+  const cur = f ? fixAmountFor(f, monthKey(viewYear, viewMonth)) : null;
+  $("fixAmount").value = f && (cur ?? f.amount) != null ? String(cur ?? f.amount).replace(".",",") : "";
+  fixCur = f ? f.currency : "ARS"; document.querySelectorAll("[data-fixcur]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.fixcur === fixCur)));
+  $("fixDay").value = f ? f.day : 10;
+  document.querySelectorAll('input[name="fixHow"]').forEach(r => r.checked = r.value === (f ? f.how : "manual"));
+  if (f && f.cardId) cards.value = f.cardId;
+  $("fixDel").hidden = !f; $("fixErr").textContent = "";
+  $("fixBg").classList.add("open"); $("fixSheet").classList.add("open");
+  setTimeout(() => $("fixName").focus(), 120);
+}
+function closeFixed(){ $("fixBg").classList.remove("open"); $("fixSheet").classList.remove("open"); }
+$("fixCancel").onclick = closeFixed; $("fixBg").onclick = closeFixed;
+$("fixSave").onclick = () => {
+  const name = $("fixName").value.trim();
+  if (!name){ $("fixErr").textContent = "Ponele un nombre."; $("fixName").focus(); return; }
+  const how = (document.querySelector('input[name="fixHow"]:checked') || {}).value || "manual";
+  if (how === "card" && !cardById($("fixCard").value)){ $("fixErr").textContent = "Elegí la tarjeta, o creala primero desde Darle a Recy → Tarjeta."; return; }
+  const v = parseAmount($("fixAmount").value), amount = v > 0 ? round2(v) : null;
+  if (how === "card" && !amount){ $("fixErr").textContent = "Los fijos con tarjeta necesitan un monto (después podés cambiarlo cada mes)."; return; }
+  const key = monthKey(...periodOf(new Date()));
+  let f = editingFix;
+  if (f){
+    if (amount !== fixAmountFor(f, key)){ f.history = (f.history || []).filter(h => h.from !== key); f.history.push({ from:key, amount }); }
+    Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount });
+  } else {
+    f = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, category:$("fixCat").value, currency:fixCur, amount,
+      day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, start:key, end:null,
+      history: amount ? [{ from:key, amount }] : [], monthAmounts:{} };
+    data.fixed.push(f);
+  }
+  persist(); closeFixed(); render();
+};
+$("fixDel").onclick = () => {
+  const f = editingFix; if (!f) return;
+  const [y, m] = periodOf(new Date()), key = monthKey(y, m), i = fixInstance(f, y, m);
+  const used = data.expenses.some(e => e.fixedId === f.id) || (f.how === "card" && f.start < key);
+  if (!confirm(`¿Dejás de pagar ${f.name}? Lo que ya pagaste queda registrado.`)) return;
+  if (!used && f.start >= key && !["paid","cardpaid","partial"].includes(i.state)) data.fixed = data.fixed.filter(x => x !== f);
+  else f.end = ["paid","cardpaid","partial"].includes(i.state) ? key : monthKey(y, m-1);
+  persist(); closeFixed(); render();
+};
+
+/* Modal: monto de este mes (fijos con tarjeta o variables) */
+let fmInst = null;
+function openFixMonth(i){
+  fmInst = i;
+  $("fmTitle").textContent = `${i.f.name}, ${periodTitle(...i.key.split("-").map((v,k) => k ? Number(v)-1 : Number(v))).toLowerCase()}`;
+  $("fmLbl").textContent = `Monto de este mes (${i.currency === "USD" ? "US$" : "$"})`;
+  $("fmAmount").value = i.expected ? String(i.expected).replace(".",",") : "";
+  $("fmHint").textContent = i.f.how === "card" ? "Solo cambia este mes. Si el precio cambió de acá en adelante, editalo desde el fijo." : "Para los fijos que cambian todos los meses, como la luz.";
+  $("fmErr").textContent = "";
+  $("fmBg").classList.add("open"); $("fmSheet").classList.add("open");
+  setTimeout(() => $("fmAmount").focus(), 120);
+}
+function closeFixMonth(){ $("fmBg").classList.remove("open"); $("fmSheet").classList.remove("open"); }
+$("fmCancel").onclick = closeFixMonth; $("fmBg").onclick = closeFixMonth;
+$("fmSave").onclick = () => { if (!fmInst) return closeFixMonth();
+  const v = parseAmount($("fmAmount").value);
+  if (!(v > 0)){ $("fmErr").textContent = "Poné un monto."; return; }
+  fmInst.f.monthAmounts = fmInst.f.monthAmounts || {};
+  fmInst.f.monthAmounts[fmInst.key] = round2(v);
+  persist(); closeFixMonth(); render();
+};
 
 let jarCur = "ARS";
 const openJars = new Set();
