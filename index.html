@@ -996,7 +996,7 @@ function virtualFixed(){
       if (fixActiveIn(f, key)){
         const amt = fixAmountFor(f, key);
         if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
-          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(fixDue(f, y, m))}T09:00`, note:f.name, items:[] });
+          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[] });
       }
       m++; if (m > 11){ m = 0; y++; }
     }
@@ -1010,9 +1010,9 @@ function fixInstance(f, y, m){
   const base = { f, key, due, expected, currency: f.currency };
   if (f.how === "card"){
     if (!expected) return { ...base, state:"noamount", paid:0 };
-    const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(due)}T09:00`, amount:expected, currency:f.currency };
+    const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, amount:expected, currency:f.currency };
     const card = cardById(f.cardId); if (!card) return { ...base, state:"pending", paid:0 };
-    const pays = paysFrom(f.cardId, due, f.currency);
+    const pays = paysFrom(f.cardId, payDate(y, m), f.currency);
     if (pays[0]) return { ...base, state:"cardpaid", paid:expected, payDate: dateOnly(pays[0].date) };
     const sch = cardSchedule(v)[0];
     return { ...base, state:"incard", paid:0, payDate: sch };
@@ -1220,7 +1220,7 @@ function render(){
   if (tab === "fixed") { renderFixed(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
-  const inMonth = [...allExpenses(), ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
+  const inMonth = [...data.expenses, ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
   const tot = (arr, cur, f = eff) => arr.filter(e => e.currency === cur).reduce((s,e) => s + f(e), 0);
   const exps = inMonth.filter(e => !isIncome(e)), incs = inMonth.filter(isIncome);
   const allEnts = entries(), ents = allEnts.filter(inThisMonth);
@@ -1393,7 +1393,7 @@ function renderPayGroup(r){
 
 function renderFixedPend(){
   const box = $("fixedPend"); box.innerHTML = "";
-  const list = fixInstances(viewYear, viewMonth).filter(i => i.f.how !== "card" && i.state !== "paid");
+  const list = fixInstances(viewYear, viewMonth).filter(i => !["paid","cardpaid"].includes(i.state));
   if (!list.length){ box.hidden = true; return; }
   box.hidden = false;
   const h = document.createElement("h3"); h.append("Fijos pendientes");
@@ -1402,10 +1402,14 @@ function renderFixedPend(){
   list.forEach(i => {
     const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
     const n = document.createElement("span"); n.className = "n"; n.textContent = i.f.name;
-    const sm = document.createElement("small"); sm.textContent = (i.state === "todebit" ? "a debitar el " : i.state === "partial" ? "falta, vence el " : "vence el ") + shortDate(i.due); n.append(sm);
+    const card = i.f.how === "card" ? cardById(i.f.cardId) : null;
+    const sm = document.createElement("small");
+    sm.textContent = card ? (i.state === "noamount" ? `en ${card.name}, falta el monto` : `en ${card.name}` + (i.payDate ? `, va al pago del ${shortDate(i.payDate)}` : ""))
+      : (i.state === "todebit" ? "a debitar el " : i.state === "partial" ? "falta, vence el " : "vence el ") + shortDate(i.due);
+    n.append(sm);
     const a = document.createElement("span"); a.className = "a";
     a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
-    b.append(n, a); b.onclick = () => openSheetForFixed(i); box.append(b);
+    b.append(n, a); b.onclick = () => card ? openFixMonth(i) : openSheetForFixed(i); box.append(b);
   });
 }
 
