@@ -527,12 +527,10 @@ button{cursor:pointer}
         </div>
         <div id="cpkUsdHow">
           <div id="cpkFx">
-            <div class="seg" role="group" aria-label="Qué dato tenés de los dólares" style="margin-top:12px">
-              <button type="button" data-cpkm="rate" aria-pressed="true">Sé la cotización</button>
-              <button type="button" data-cpkm="total" aria-pressed="false">Sé cuánto pagué en $</button>
+            <div class="two" style="display:grid;gap:10px;margin-top:12px">
+              <div><label class="lbl-sm" for="cpkRate">Cotización</label><input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off"></div>
+              <div><label class="lbl-sm" for="cpkUsdArs">Te salieron</label><input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ en total" autocomplete="off"></div>
             </div>
-            <input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar" style="margin-top:10px">
-            <input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ que te salieron los dólares" autocomplete="off" aria-label="Pesos que te salieron los dólares" hidden style="margin-top:10px">
           </div>
         </div>
         <div class="fx-hint" id="cpkUsdCalc"></div>
@@ -546,18 +544,11 @@ button{cursor:pointer}
       <input id="fxUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Dólares que compraste">
       <span class="cur-tag">US$</span>
     </div>
-    <div class="field">
-      <span class="lbl">¿Qué dato tenés?</span>
-      <div class="seg" role="group" aria-label="Qué dato tenés">
-        <button type="button" data-fxm="rate" aria-pressed="true">La cotización</button>
-        <button type="button" data-fxm="total" aria-pressed="false">Cuánto pagué</button>
-      </div>
+    <div class="field two">
+      <div><label class="lbl-sm" for="fxRate">Cotización</label><input class="input" id="fxRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off"></div>
+      <div><label class="lbl-sm" for="fxArs">Te salieron</label><input class="input" id="fxArs" inputmode="decimal" placeholder="$ en total" autocomplete="off"></div>
     </div>
-    <div class="field">
-      <input class="input" id="fxRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar">
-      <input class="input" id="fxArs" inputmode="decimal" placeholder="$ que pagaste en total" autocomplete="off" aria-label="Pesos que pagaste en total" hidden>
-      <div class="fx-hint" id="fxCalc"></div>
-    </div>
+    <div class="fx-hint" id="fxCalc">Completá dos datos y el tercero se calcula solo.</div>
   </div>
   <div class="amount-row" id="amountRow">
     <input id="amount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Monto">
@@ -1511,17 +1502,36 @@ $("equalSplit").onclick = () => { equalize(); renderSplit(); };
 $("amount").addEventListener("input", () => { if (splitOn()){ if (!splitManual) equalize(); renderSplit(); } });
 
 /* ---------- Pagar una tarjeta desde Cargar ---------- */
+/* Tres datos enlazados: dólares, cotización y pesos. Con dos cualquiera se calcula el tercero:
+   se recalcula el que hace más tiempo que no tocaste. */
+function linkFx(usdId, rateId, arsId, after){
+  const order = [arsId, rateId, usdId];
+  const num = id => parseAmount($(id).value) || 0;
+  const set = (id, n) => { $(id).value = n ? String(round2(n)).replace(".",",") : ""; };
+  const fill = () => {
+    const target = order[0], a = order[1], b = order[2];
+    if (!num(a) || !num(b)) { after && after(); return; }
+    const u = num(usdId), r = num(rateId), p = num(arsId);
+    if (target === usdId && r) set(usdId, p / r);
+    else if (target === rateId && u) set(rateId, p / u);
+    else if (target === arsId) set(arsId, u * r);
+    after && after();
+  };
+  [usdId, rateId, arsId].forEach(id => $(id).addEventListener("input", () => {
+    order.splice(order.indexOf(id), 1); order.push(id); fill();
+  }));
+  return { reset(){ order.splice(0, 3, arsId, rateId, usdId); }, fill };
+}
 let cpkCard = null, cpkFor = null, cpkHow = "ars", cpkMode = "rate";
 function cpkValues(){
   const ars = parseAmount($("cpkAmount").value) || 0, usd = parseAmount($("cpkUsd").value) || 0;
-  let rate = 0;
-  if (usd && cpkHow === "ars") rate = cpkMode === "rate" ? (parseAmount($("cpkRate").value) || 0) : ((parseAmount($("cpkUsdArs").value) || 0) / usd);
+  const r = parseAmount($("cpkRate").value) || 0, p = parseAmount($("cpkUsdArs").value) || 0;
+  const rate = usd ? (r || (p ? p / usd : 0)) : 0;
   return { ars, usd, rate };
 }
 function cpkUpdate(){
   const { ars, usd, rate } = cpkValues();
   $("cpkFx").hidden = cpkHow !== "ars";
-  $("cpkRate").hidden = cpkMode !== "rate"; $("cpkUsdArs").hidden = cpkMode !== "total";
   document.querySelectorAll("[data-cpkhow]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkhow === cpkHow)));
   document.querySelectorAll("[data-cpkm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkm === cpkMode)));
   const usdArs = usd > 0 && rate > 0 ? round2(usd * rate) : 0;
@@ -1530,15 +1540,10 @@ function cpkUpdate(){
   $("cpkCalc").innerHTML = "";
   if (total > 0){ const a = document.createElement("span"); a.textContent = "Total del pago"; const b = document.createElement("strong"); b.textContent = fmtARS.format(total); $("cpkCalc").append(a, b); }
 }
-["cpkAmount","cpkUsd","cpkRate","cpkUsdArs"].forEach(id => $(id).addEventListener("input", cpkUpdate));
+$("cpkAmount").addEventListener("input", cpkUpdate);
+const cpkLink = linkFx("cpkUsd", "cpkRate", "cpkUsdArs", () => cpkUpdate());
 document.querySelectorAll("[data-cpkhow]").forEach(b => b.onclick = () => { cpkHow = b.dataset.cpkhow; cpkUpdate(); });
-document.querySelectorAll("[data-cpkm]").forEach(b => b.onclick = () => {
-  const { usd, rate } = cpkValues();
-  cpkMode = b.dataset.cpkm;
-  if (cpkMode === "rate" && rate) $("cpkRate").value = String(round2(rate)).replace(".",",");
-  if (cpkMode === "total" && rate && usd) $("cpkUsdArs").value = String(round2(rate * usd)).replace(".",",");
-  cpkUpdate();
-});
+
 function nextCardDue(card){
   // Próximo pago programado sin pago cargado (o el más reciente de los últimos 20 días)
   const from = toLocalInput(new Date(Date.now() - 60*864e5));
@@ -1577,7 +1582,7 @@ function renderCpk(){
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
   if (!$("cpkUsd").value && preU) $("cpkUsd").value = String(preU).replace(".",",");
   if (!$("cpkRate").value && data.lastRate) $("cpkRate").value = String(data.lastRate).replace(".",",");
-  cpkUpdate();
+  cpkLink.reset(); cpkLink.fill();
 }
 
 function setCurrency(cur){
@@ -1586,31 +1591,21 @@ function setCurrency(cur){
   if (splitOn()) renderFoot();
   if (typeof updateJarField === "function" && $("sheet").classList.contains("open")) updateJarField();
 }
-/* Compra de dólares: cuántos dólares + (cotización o total pagado) */
+/* Compra de dólares: dólares, cotización y total enlazados */
 let fxMode = "rate";
 const fxNum = id => parseAmount($(id).value) || 0;
 const fxSet = (id, n) => { $(id).value = n ? String(round2(n)).replace(".",",") : ""; };
 function fxValues(){
-  const usd = fxNum("fxUsd");
-  const ars = fxMode === "rate" ? usd * fxNum("fxRate") : fxNum("fxArs");
+  const usd = fxNum("fxUsd"), r = fxNum("fxRate"), p = fxNum("fxArs");
+  const ars = p || usd * r;
   return { usd, ars, rate: usd ? ars / usd : 0 };
 }
-function setFxMode(m){
-  const { ars, rate } = fxValues();
-  fxMode = m;
-  document.querySelectorAll("[data-fxm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fxm === m)));
-  $("fxRate").hidden = m !== "rate"; $("fxArs").hidden = m !== "total";
-  if (m === "rate" && rate) fxSet("fxRate", rate);
-  if (m === "total" && ars) fxSet("fxArs", ars);
-  fxCalc();
-}
+function setFxMode(){ fxLink.reset(); fxCalc(); }
 function fxCalc(){
   const { usd, ars, rate } = fxValues();
-  $("fxCalc").textContent = !usd || !ars ? "" :
-    fxMode === "rate" ? `Te sale ${fmtARS.format(round2(ars))} en total.` : `Te salió a ${fmtARS.format(round2(rate))} por dólar.`;
+  $("fxCalc").textContent = usd && ars ? `${fmtUSD.format(usd)} a ${fmtARS.format(round2(rate))} = ${fmtARS.format(round2(ars))}` : "Completá dos datos y el tercero se calcula solo.";
 }
-document.querySelectorAll("[data-fxm]").forEach(b => b.onclick = () => setFxMode(b.dataset.fxm));
-["fxUsd","fxRate","fxArs"].forEach(id => $(id).addEventListener("input", fxCalc));
+const fxLink = linkFx("fxUsd", "fxRate", "fxArs", fxCalc);
 function openSheet(exp){
   editing = exp || null;
   const d = exp ? new Date(exp.date) : new Date();
@@ -1659,7 +1654,7 @@ $("sheet").addEventListener("submit", ev => {
     const { ars: amount, usd, rate } = cpkValues();
     if (!card){ $("err").textContent = "Elegí qué tarjeta pagaste."; return; }
     if (!(amount > 0) && !(usd > 0)){ $("err").textContent = "Poné cuánto pagaste."; return; }
-    if (usd > 0 && cpkHow === "ars" && !(rate > 0)){ $("err").textContent = cpkMode === "rate" ? "Poné la cotización de los dólares." : "Poné cuánto pagaste en pesos por los dólares."; return; }
+    if (usd > 0 && !(rate > 0)){ $("err").textContent = "Poné la cotización o cuánto te salieron los dólares en pesos."; return; }
     if ((card.rule === "open" || !cpkFor) && data.cardPayments.some(p => p.cardId === card.id && !p.forDate && p.date === date)){ $("err").textContent = "Ya cargaste un pago de esta tarjeta ese día."; return; }
     const pay = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), cardId: card.id, date, amount: round2(amount) };
     if (card.rule !== "open" && cpkFor) pay.forDate = cpkFor;
@@ -1670,7 +1665,7 @@ $("sheet").addEventListener("submit", ev => {
   }
   if (mode === "fx"){
     const { usd, ars } = fxValues();
-    if (!(usd > 0) || !(ars > 0)){ $("err").textContent = fxMode === "rate" ? "Completá los dólares y la cotización." : "Completá los dólares y cuánto pagaste."; return; }
+    if (!(usd > 0) || !(ars > 0)){ $("err").textContent = "Completá dos de los tres datos: dólares, cotización o cuánto te salieron."; return; }
     const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
     const fields = { amount: round2(ars), currency:"ARS", category:"ahorro", date, note: $("note").value.trim(), split:null, fx:{ usd: round2(usd), rate: round2(ars/usd) }, jarId: jarSel };
     if (jarSel) data.lastJar.USD = jarSel;
