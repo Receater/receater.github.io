@@ -347,12 +347,17 @@ button{cursor:pointer}
 .board-legs i{width:5px;background:#3A4454;border-radius:0 0 2px 2px}
 .lcd-meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.74rem;line-height:1.5;color:#C9F5DF;opacity:.92;white-space:pre-line;margin-top:8px;overflow-wrap:anywhere}
 .r-paper{opacity:0}
+.r-bits{opacity:0}
+.r-strip,.r-bits{transform-box:fill-box;transform-origin:50% 0}
+@keyframes rbits{0%{opacity:0;transform:translateY(-6px)}25%{opacity:1}100%{opacity:0;transform:translateY(22px) rotate(25deg)}}
+@keyframes rstrip2{0%{transform:scaleY(.1)}60%{transform:scaleY(1.5)}100%{transform:scaleY(1)}}
+.recy-stage.chomp .r-bits{animation:rbits .8s ease-in .95s}
 @keyframes rpaper{0%{opacity:1;transform:translateY(-6px)}75%{opacity:1;transform:translateY(28px)}100%{opacity:0;transform:translateY(32px)}}
 @keyframes rstrip{0%{opacity:0;transform:translateY(-8px)}100%{opacity:1;transform:none}}
 .recy-stage.chomp .r-paper{animation:rpaper .55s ease-in}
 .recy-stage.chomp .recy svg{animation:chomp .7s ease .45s}
-.recy-stage.chomp .r-strip{animation:rstrip .4s ease-out .9s both}
-@media (prefers-reduced-motion:reduce){.recy-stage.chomp .r-paper,.recy-stage.chomp .recy svg,.recy-stage.chomp .r-strip{animation:none}}
+.recy-stage.chomp .r-strip{animation:rstrip2 .5s ease-out .9s both}
+@media (prefers-reduced-motion:reduce){.recy-stage.chomp .r-paper,.recy-stage.chomp .recy svg,.recy-stage.chomp .r-strip,.recy-stage.chomp .r-bits{animation:none}}
 
 /* ===== Backup ===== */
 .data-tools{text-align:center;margin-top:28px;font-size:.9rem;color:var(--muted)}
@@ -744,6 +749,9 @@ function recySVG(mood, faceOnly){
     <g class="r-strip"><rect x="42" y="80" width="3" height="11" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
     <g class="r-strip"><rect x="54" y="80" width="3" height="8" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
     <g class="r-strip"><rect x="66" y="80" width="3" height="10" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
+    <g class="r-bits"><rect x="36" y="84" width="2.5" height="6" rx="1" fill="#fff" stroke="#D5DAE0"/>
+      <rect x="48" y="86" width="2.5" height="5" rx="1" fill="#fff" stroke="#D5DAE0"/>
+      <rect x="60" y="84" width="2.5" height="6" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
     <rect x="18" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/><rect x="68" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/>
     <rect x="12" y="24" width="76" height="56" rx="12" fill="#2F5BEA"/>
     <rect x="8" y="12" width="84" height="18" rx="7" fill="#1F3FB0"/>
@@ -757,13 +765,17 @@ function recySVG(mood, faceOnly){
 let recyFlash = null;
 function setRecy(mood, line){
   if (recyFlash && Date.now() < recyFlash.until){ mood = "full"; line = recyFlash.line; }
-  $("recy").innerHTML = recySVG(mood);
+  const el = $("recy");
+  if (el.dataset.mood !== mood){ el.innerHTML = recySVG(mood); el.dataset.mood = mood; }
   $("bubble").textContent = line;
 }
 function feedRecy(){
   recyFlash = { line: "¡Ñam! Gracias.", until: Date.now() + 2500 };
-  const r = $("recyHero"); r.classList.remove("chomp"); void r.offsetWidth; r.classList.add("chomp");
-  setTimeout(() => { recyFlash = null; if (tab === "list") render(); }, 2600);
+  const r = $("recyHero");
+  r.classList.remove("chomp"); void r.offsetWidth; r.classList.add("chomp");
+  clearTimeout(feedRecy.t1); clearTimeout(feedRecy.t2);
+  feedRecy.t1 = setTimeout(() => r.classList.remove("chomp"), 1900);   // se saca para que no se repita en cada render
+  feedRecy.t2 = setTimeout(() => { recyFlash = null; if (tab === "list") render(); }, 2600);
 }
 
 /* ---------- Tarjetas ----------
