@@ -385,6 +385,13 @@ button{cursor:pointer}
 .pay-sum{border-top:1px dashed var(--line);padding-top:8px;display:grid;gap:6px}
 .pay-sum .split-row{font-size:.92rem}
 .pay-sum .tot{font-weight:700}
+
+.pay-boxes{display:grid;gap:10px;margin-top:14px}
+.cur-box{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.cur-box-h{margin:0 0 2px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cur-box .amount-row input{font-size:1.7rem}
+.pay-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding:0 4px;font-size:.95rem}
+.pay-total strong{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.2rem}
 </style>
 </head>
 <body>
@@ -504,38 +511,34 @@ button{cursor:pointer}
       <div class="chips" id="cpkCards"></div>
     </div>
     <div class="fx-hint" id="cpkHint"></div>
-    <div class="field">
-      <label class="lbl-sm" for="cpkAmount">Lo que pagaste en pesos</label>
-      <div class="amount-row">
-        <input id="cpkAmount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en pesos">
-        <span class="cur-tag" style="color:var(--ink)">$</span>
-      </div>
-    </div>
-    <div class="usd-box">
-    <div class="field" style="margin-top:0">
-      <label class="lbl-sm" for="cpkUsd">Lo que pagaste en dólares</label>
-      <div class="amount-row">
-        <input id="cpkUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en dólares">
-        <span class="cur-tag">US$</span>
-      </div>
-    </div>
-    <div id="cpkUsdHow">
-      <div id="cpkFx">
-        <div class="field">
-          <span class="lbl">¿Qué dato tenés de los dólares?</span>
-          <div class="seg" role="group" aria-label="Qué dato tenés de los dólares">
-            <button type="button" data-cpkm="rate" aria-pressed="true">La cotización</button>
-            <button type="button" data-cpkm="total" aria-pressed="false">Cuánto me salieron en pesos</button>
+    <div class="pay-boxes">
+      <section class="cur-box" aria-labelledby="cpkArsH">
+        <h4 class="cur-box-h" id="cpkArsH">Pesos</h4>
+        <div class="amount-row">
+          <input id="cpkAmount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en pesos">
+          <span class="cur-tag" style="color:var(--ink)">$</span>
+        </div>
+      </section>
+      <section class="cur-box" aria-labelledby="cpkUsdH">
+        <h4 class="cur-box-h" id="cpkUsdH">Dólares</h4>
+        <div class="amount-row">
+          <input id="cpkUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en dólares">
+          <span class="cur-tag">US$</span>
+        </div>
+        <div id="cpkUsdHow">
+          <div id="cpkFx">
+            <div class="seg" role="group" aria-label="Qué dato tenés de los dólares" style="margin-top:12px">
+              <button type="button" data-cpkm="rate" aria-pressed="true">Sé la cotización</button>
+              <button type="button" data-cpkm="total" aria-pressed="false">Sé cuánto pagué en $</button>
+            </div>
+            <input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar" style="margin-top:10px">
+            <input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ que te salieron los dólares" autocomplete="off" aria-label="Pesos que te salieron los dólares" hidden style="margin-top:10px">
           </div>
         </div>
-        <div class="field">
-          <input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar">
-          <input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ que pagaste por los dólares" autocomplete="off" aria-label="Pesos que pagaste por los dólares" hidden>
-        </div>
-      </div>
+        <div class="fx-hint" id="cpkUsdCalc"></div>
+      </section>
     </div>
-    <div class="fx-hint" id="cpkCalc"></div>
-    </div>
+    <div class="pay-total" id="cpkCalc"></div>
   </div>
 
   <div id="fxBox" hidden>
@@ -1521,13 +1524,11 @@ function cpkUpdate(){
   $("cpkRate").hidden = cpkMode !== "rate"; $("cpkUsdArs").hidden = cpkMode !== "total";
   document.querySelectorAll("[data-cpkhow]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkhow === cpkHow)));
   document.querySelectorAll("[data-cpkm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkm === cpkMode)));
-  let t = "";
-  if (usd > 0 && cpkHow === "ars" && rate > 0){
-    const usdArs = round2(usd * rate);
-    t = `${fmtUSD.format(usd)} a ${fmtARS.format(round2(rate))} = ${fmtARS.format(usdArs)}. Total del pago en pesos: ${fmtARS.format(round2(ars + usdArs))}.`;
-  } else if (usd > 0 && cpkHow === "usd") t = `Se descuentan ${fmtUSD.format(usd)} de tus dólares.`;
-  else if (!usd) t = "Si no pagaste nada en dólares, dejalo en 0. Todo el pago se suma en pesos.";
-  $("cpkCalc").textContent = t;
+  const usdArs = usd > 0 && rate > 0 ? round2(usd * rate) : 0;
+  $("cpkUsdCalc").textContent = usd > 0 ? (rate > 0 ? `${fmtUSD.format(usd)} a ${fmtARS.format(round2(rate))} = ${fmtARS.format(usdArs)}` : "Falta la cotización.") : "Si no pagaste en dólares, dejalo en 0.";
+  const total = round2(ars + usdArs);
+  $("cpkCalc").innerHTML = "";
+  if (total > 0){ const a = document.createElement("span"); a.textContent = "Total del pago"; const b = document.createElement("strong"); b.textContent = fmtARS.format(total); $("cpkCalc").append(a, b); }
 }
 ["cpkAmount","cpkUsd","cpkRate","cpkUsdArs"].forEach(id => $(id).addEventListener("input", cpkUpdate));
 document.querySelectorAll("[data-cpkhow]").forEach(b => b.onclick = () => { cpkHow = b.dataset.cpkhow; cpkUpdate(); });
