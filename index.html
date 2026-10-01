@@ -482,11 +482,44 @@ button{cursor:pointer}
       <span class="lbl">¿Qué tarjeta pagaste?</span>
       <div class="chips" id="cpkCards"></div>
     </div>
-    <div class="amount-row" style="margin-top:14px">
-      <input id="cpkAmount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Cuánto pagaste">
-      <span class="cur-tag" style="color:var(--ink)">$</span>
-    </div>
     <div class="fx-hint" id="cpkHint"></div>
+    <div class="field">
+      <label class="lbl-sm" for="cpkAmount">Lo que pagaste en pesos</label>
+      <div class="amount-row">
+        <input id="cpkAmount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en pesos">
+        <span class="cur-tag" style="color:var(--ink)">$</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl-sm" for="cpkUsd">Lo que pagaste en dólares</label>
+      <div class="amount-row">
+        <input id="cpkUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Lo que pagaste en dólares">
+        <span class="cur-tag">US$</span>
+      </div>
+    </div>
+    <div id="cpkUsdHow" hidden>
+      <div class="field">
+        <span class="lbl">¿Con qué pagaste los dólares?</span>
+        <div class="seg" role="group" aria-label="Con qué pagaste los dólares">
+          <button type="button" data-cpkhow="ars" aria-pressed="true">Con pesos</button>
+          <button type="button" data-cpkhow="usd" aria-pressed="false">Con dólares que tenía</button>
+        </div>
+      </div>
+      <div id="cpkFx">
+        <div class="field">
+          <span class="lbl">¿Qué dato tenés?</span>
+          <div class="seg" role="group" aria-label="Qué dato tenés">
+            <button type="button" data-cpkm="rate" aria-pressed="true">La cotización</button>
+            <button type="button" data-cpkm="total" aria-pressed="false">Cuánto pagué en pesos</button>
+          </div>
+        </div>
+        <div class="field">
+          <input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off" aria-label="Cotización, pesos por dólar">
+          <input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ que pagaste por los dólares" autocomplete="off" aria-label="Pesos que pagaste por los dólares" hidden>
+        </div>
+      </div>
+    </div>
+    <div class="fx-hint" id="cpkCalc"></div>
   </div>
 
   <div id="fxBox" hidden>
@@ -842,9 +875,19 @@ function entries(){
   // Tarjetas abiertas: lo que pagaste de más que las compras va a intereses
   data.cardPayments.forEach(p => {
     const d = p.forDate || p.date;
-    const assigned = out.filter(x => x.cardId === p.cardId && x.currency === "ARS" && x.date.slice(0,10) === d).reduce((s,x) => s + x.amount, 0);
-    const extra = round2(p.amount - assigned);
+    const mine = out.filter(x => x.cardId === p.cardId && !x.payId && x.date.slice(0,10) === d);
+    const assigned = mine.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
+    const extra = round2((p.amount || 0) - assigned);
     if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category:"intereses", note:"Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+    if (p.usd > 0){
+      const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
+      const extraU = round2(p.usd - assignedU);
+      if (p.usdMode === "ars" && p.rate > 0){
+        // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
+        usdItems.forEach(x => { x.note = [x.note, `${fmtUSD.format(x.amount)} a ${fmtARS.format(p.rate)}`].filter(Boolean).join(", "); x.amount = round2(x.amount * p.rate); x.currency = "ARS"; });
+        if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:round2(extraU * p.rate), currency:"ARS", category:"intereses", note:"Intereses e impuestos (dólares)", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+      } else if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:extraU, currency:"USD", category:"intereses", note:"Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+    }
   });
   return out;
 }
@@ -1087,14 +1130,14 @@ function renderPayGroup(r){
     r.xs.forEach(x => {
       const row = document.createElement("div"); row.className = "split-row";
       const n = document.createElement("span");
-      n.textContent = (x.payId ? "Intereses e impuestos" : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
+      n.textContent = (x.payId ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
       const v = document.createElement("span"); v.className = "s"; v.textContent = money(x.amount, x.currency);
       const t = document.createElement("span"); t.className = "pill me";
       row.append(n, v, t); panel.append(row);
     });
     const foot = document.createElement("div"); foot.className = "split-sum";
     const pay = data.cardPayments.find(p => p.cardId === cid && (p.forDate ? p.forDate === day : (card.rule === "open" && p.date === day)));
-    const left = document.createElement("span"); left.textContent = pay ? `Pagaste ${fmtARS.format(pay.amount)}` : "Pago programado";
+    const left = document.createElement("span"); left.textContent = pay ? "Pagaste " + [pay.amount && fmtARS.format(pay.amount), pay.usd && (fmtUSD.format(pay.usd) + (pay.usdMode === "ars" && pay.rate ? ` a ${fmtARS.format(pay.rate)}` : ""))].filter(Boolean).join(" y ") : "Pago programado";
     foot.append(left);
     if (pay){
       const undo = document.createElement("button"); undo.type = "button"; undo.className = "linkbtn"; undo.textContent = "Deshacer pago";
@@ -1350,7 +1393,36 @@ $("equalSplit").onclick = () => { equalize(); renderSplit(); };
 $("amount").addEventListener("input", () => { if (splitOn()){ if (!splitManual) equalize(); renderSplit(); } });
 
 /* ---------- Pagar una tarjeta desde Cargar ---------- */
-let cpkCard = null, cpkFor = null;
+let cpkCard = null, cpkFor = null, cpkHow = "ars", cpkMode = "rate";
+function cpkValues(){
+  const ars = parseAmount($("cpkAmount").value) || 0, usd = parseAmount($("cpkUsd").value) || 0;
+  let rate = 0;
+  if (usd && cpkHow === "ars") rate = cpkMode === "rate" ? (parseAmount($("cpkRate").value) || 0) : ((parseAmount($("cpkUsdArs").value) || 0) / usd);
+  return { ars, usd, rate };
+}
+function cpkUpdate(){
+  const { ars, usd, rate } = cpkValues();
+  $("cpkUsdHow").hidden = !(usd > 0);
+  $("cpkFx").hidden = cpkHow !== "ars";
+  $("cpkRate").hidden = cpkMode !== "rate"; $("cpkUsdArs").hidden = cpkMode !== "total";
+  document.querySelectorAll("[data-cpkhow]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkhow === cpkHow)));
+  document.querySelectorAll("[data-cpkm]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cpkm === cpkMode)));
+  let t = "";
+  if (usd > 0 && cpkHow === "ars" && rate > 0){
+    const usdArs = round2(usd * rate);
+    t = (cpkMode === "rate" ? `Los dólares te salieron ${fmtARS.format(usdArs)}.` : `Te salió a ${fmtARS.format(round2(rate))} por dólar.`) + ` En total pagaste ${fmtARS.format(round2(ars + usdArs))}.`;
+  } else if (usd > 0 && cpkHow === "usd") t = `Se descuentan ${fmtUSD.format(usd)} de tus dólares.`;
+  $("cpkCalc").textContent = t;
+}
+["cpkAmount","cpkUsd","cpkRate","cpkUsdArs"].forEach(id => $(id).addEventListener("input", cpkUpdate));
+document.querySelectorAll("[data-cpkhow]").forEach(b => b.onclick = () => { cpkHow = b.dataset.cpkhow; cpkUpdate(); });
+document.querySelectorAll("[data-cpkm]").forEach(b => b.onclick = () => {
+  const { usd, rate } = cpkValues();
+  cpkMode = b.dataset.cpkm;
+  if (cpkMode === "rate" && rate) $("cpkRate").value = String(round2(rate)).replace(".",",");
+  if (cpkMode === "total" && rate && usd) $("cpkUsdArs").value = String(round2(rate * usd)).replace(".",",");
+  cpkUpdate();
+});
 function nextCardDue(card){
   // Próximo pago programado sin pago cargado (o el más reciente de los últimos 20 días)
   const from = toLocalInput(new Date(Date.now() - 20*864e5));
@@ -1369,24 +1441,27 @@ function renderCpk(){
   data.cards.forEach(c => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(cpkCard === c.id));
     const t = document.createElement("span"); t.className = "card-tag"; t.style.background = c.color; b.append(t, c.name);
-    b.onclick = () => { cpkCard = c.id; $("cpkAmount").value = ""; renderCpk(); }; box.append(b);
+    b.onclick = () => { cpkCard = c.id; $("cpkAmount").value = ""; $("cpkUsd").value = ""; renderCpk(); }; box.append(b);
   });
   const add = document.createElement("button"); add.type = "button"; add.className = "chip"; add.textContent = "+ Tarjeta";
   add.onclick = () => openCard(null, false); box.append(add);
   const hint = $("cpkHint"), card = cardById(cpkCard); cpkFor = null;
-  if (!data.cards.length){ hint.textContent = "Todavía no cargaste ninguna tarjeta."; return; }
-  if (!card){ hint.textContent = "Elegí la tarjeta."; return; }
-  let pre = 0;
+  if (!data.cards.length){ hint.textContent = "Todavía no cargaste ninguna tarjeta. Creá una con + Tarjeta."; cpkUpdate(); return; }
+  if (!card){ hint.textContent = "Elegí la tarjeta."; cpkUpdate(); return; }
+  let pre = 0, preU = 0;
   if (card.rule === "open"){
-    const p = pendingFor(card); pre = p.ars;
-    hint.textContent = p.ars || p.usd ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} pendiente. Si pagaste más, la diferencia va a intereses e impuestos.` : "No tenés compras pendientes en esta tarjeta.";
+    const p = pendingFor(card); pre = p.ars; preU = p.usd;
+    hint.textContent = p.ars || p.usd ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} pendiente. Si pagaste más, la diferencia va a intereses.` : "No tenés compras pendientes en esta tarjeta.";
   } else {
     const n = nextCardDue(card);
-    if (n){ cpkFor = n.date; pre = n.ars;
-      hint.textContent = `Pago del ${shortDate(dateOnly(n.date))}: ${[n.ars && fmtARS.format(n.ars), n.usd && fmtUSD.format(n.usd)].filter(Boolean).join(" y ")}. Si pagaste más, la diferencia va a intereses e impuestos.`; }
+    if (n){ cpkFor = n.date; pre = n.ars; preU = n.usd;
+      hint.textContent = `Pago del ${shortDate(dateOnly(n.date))}: ${[n.ars && fmtARS.format(n.ars), n.usd && fmtUSD.format(n.usd)].filter(Boolean).join(" y ")}. Si pagaste más, la diferencia va a intereses.`; }
     else hint.textContent = "Esta tarjeta no tiene pagos programados cerca.";
   }
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
+  if (!$("cpkUsd").value && preU) $("cpkUsd").value = String(preU).replace(".",",");
+  if (!$("cpkRate").value && data.lastRate) $("cpkRate").value = String(data.lastRate).replace(".",",");
+  cpkUpdate();
 }
 
 function setCurrency(cur){
@@ -1446,6 +1521,8 @@ function openSheet(exp){
   $("cuotas").value = exp && exp.installments ? exp.installments : 1;
   renderMethods();
   jarSel = exp ? (exp.jarId || null) : null;
+  ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
+  cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
   $("typeTabs").hidden = !!exp;
   setMode(exp ? (isIncome(exp) ? "income" : exp.fx ? "fx" : "expense") : "expense");
@@ -1461,13 +1538,16 @@ function persist(){
 $("sheet").addEventListener("submit", ev => {
   ev.preventDefault();
   if (mode === "cardpay"){
-    const card = cardById(cpkCard), amount = parseAmount($("cpkAmount").value), date = $("date").value || toLocalInput(new Date());
+    const card = cardById(cpkCard), date = $("date").value || toLocalInput(new Date());
+    const { ars: amount, usd, rate } = cpkValues();
     if (!card){ $("err").textContent = "Elegí qué tarjeta pagaste."; return; }
-    if (!(amount > 0)){ $("err").textContent = "Poné cuánto pagaste."; return; }
+    if (!(amount > 0) && !(usd > 0)){ $("err").textContent = "Poné cuánto pagaste."; return; }
+    if (usd > 0 && cpkHow === "ars" && !(rate > 0)){ $("err").textContent = cpkMode === "rate" ? "Poné la cotización de los dólares." : "Poné cuánto pagaste en pesos por los dólares."; return; }
     if (card.rule !== "open" && !cpkFor){ $("err").textContent = "Esta tarjeta no tiene un pago programado para asociar."; return; }
     if (card.rule === "open" && data.cardPayments.some(p => p.cardId === card.id && p.date === date)){ $("err").textContent = "Ya cargaste un pago de esta tarjeta ese día."; return; }
     const pay = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), cardId: card.id, date, amount: round2(amount) };
     if (card.rule !== "open") pay.forDate = cpkFor;
+    if (usd > 0){ pay.usd = round2(usd); pay.usdMode = cpkHow; if (cpkHow === "ars"){ pay.rate = round2(rate); data.lastRate = pay.rate; } }
     data.cardPayments.push(pay);
     persist(); closeSheet(); feedRecy();
     [viewYear, viewMonth] = periodOf(`${pay.forDate || date}T12:00`); render(); return;
