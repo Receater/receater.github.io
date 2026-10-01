@@ -230,6 +230,9 @@ button{cursor:pointer}
 .cardx-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .cardx-head strong{font-size:1rem}
 .cardx-head .t{font-variant-numeric:tabular-nums;font-weight:600}
+.cardx .due-wrap{display:flex;flex-direction:column;gap:1px;color:var(--muted);font-size:.86rem}
+.cardx .due strong{color:var(--ink);font-variant-numeric:tabular-nums}
+.cardx .due-br{font-size:.78rem}
 .cardx .next{color:var(--muted);font-size:.86rem;margin-top:2px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
 .stack{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line);margin:10px 0 8px}
 .stack span{display:block;height:100%}
@@ -988,7 +991,8 @@ function virtualFixed(){
     let [y, m] = f.start.split("-").map(Number); m--;
     for (let guard = 0; guard < 60; guard++){
       const key = monthKey(y, m);
-      if (key > monthKey(cy, cm+1)) break;
+      const lim = monthKey(cy, cm+1), vk = typeof viewYear === "number" ? monthKey(viewYear, viewMonth+1) : lim;
+      if (key > (vk > lim ? vk : lim)) break;
       if (fixActiveIn(f, key)){
         const amt = fixAmountFor(f, key);
         if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
@@ -2228,7 +2232,7 @@ function renderDash(){
       else {
         const pct = Math.round((v-p)/p*100);
         d.textContent = pct === 0 ? `Igual que ${prevName}` : `${pct>0?"▲":"▼"} ${Math.abs(pct)}% vs ${prevName}`;
-        d.classList.add(pct>0 ? "up" : pct<0 ? "down" : "");
+        if (pct) d.classList.add(pct>0 ? "up" : "down");
       }
       mid.append(n,d);
       const a = document.createElement("div"); a.className = "a"; a.textContent = money(v,cur);
@@ -2313,13 +2317,22 @@ function renderCardsDash(list, cur){
       next.append(info);
       if (p.ars || p.usd){ const b = document.createElement("button"); b.type = "button"; b.className = "small-btn primary"; b.textContent = "Pagué la tarjeta"; b.onclick = () => openCardPay(card); next.append(b); }
     } else {
-      const up = all.filter(x => x.cardId === card.id && dateOnly(x.date) >= today).sort((a,b) => a.date.localeCompare(b.date));
-      if (up.length){
-        const d = up[0].date.slice(0,10), amtA = up.filter(x => x.date.slice(0,10) === d && x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
-        const amtU = up.filter(x => x.date.slice(0,10) === d && x.currency === "USD").reduce((s,x) => s + x.amount, 0);
-        info.textContent = `Próximo pago: ${[amtA && fmtARS.format(amtA), amtU && fmtUSD.format(amtU)].filter(Boolean).join(" y ")} el ${shortDate(dateOnly(d))}`;
-      } else info.textContent = "Sin pagos próximos";
-      next.append(info);
+      // Lo que te llega de esta tarjeta en el mes que estás mirando: cuotas + compras + fijos, todo sumado
+      const mine = all.filter(x => x.cardId === card.id && inPeriod(x, viewYear, viewMonth));
+      const dates = [...new Set(mine.map(x => x.date.slice(0,10)))].sort();
+      const both = xs => [["ARS", fmtARS], ["USD", fmtUSD]].map(([c, f]) => { const v = round2(xs.filter(x => x.currency === c).reduce((s,x) => s + x.amount, 0)); return v ? f.format(v) : ""; }).filter(Boolean).join(" + ");
+      if (!dates.length){ info.textContent = "Este mes no te llega nada"; next.append(info); }
+      dates.forEach((d, i) => {
+        const ds = mine.filter(x => x.date.slice(0,10) === d), paid = data.cardPayments.some(p => p.cardId === card.id && p.date === d);
+        const ln = document.createElement("span"); ln.className = "due";
+        const strong = document.createElement("strong"); strong.textContent = both(ds);
+        ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
+        const parts = [["Cuotas", ds.filter(x => !x.payId && !x.src.virtual && x.of > 1)], ["Compras", ds.filter(x => !x.payId && !x.src.virtual && !(x.of > 1))],
+          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
+        const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
+        const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
+        if (i === 0) next.append(w); else el.append(w);
+      });
     }
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
     next.append(ed); el.append(next);
