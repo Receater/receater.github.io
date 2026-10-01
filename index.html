@@ -333,6 +333,31 @@ button{cursor:pointer}
 .stamp{display:block;width:fit-content;margin:4px 0 0 auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.6rem;font-weight:600;letter-spacing:.1em;line-height:1.3;padding:1px 5px;border:1.5px solid currentColor;border-radius:3px;transform:rotate(-5deg);opacity:.85}
 .stamp.ok{color:var(--usd)}
 .stamp.info{color:var(--accent)}
+
+/* ===== Recy con su pizarra ===== */
+.bubble{margin:4px auto 10px 0;max-width:82%}
+.bubble::after{left:34px}
+.recy-stage{display:flex;align-items:flex-end;gap:2px;margin-bottom:16px}
+.recy-stage .recy{flex:0 0 auto;width:min(112px,29vw)}
+.recy-stage .recy svg{width:100%;height:auto;display:block;overflow:visible;transform-origin:40% 100%}
+.board{flex:1;min-width:0;display:flex;flex-direction:column}
+.board .lcd{box-shadow:inset 0 2px 10px rgba(0,0,0,.55),0 0 0 4px #3A4454;border-radius:10px;padding:10px 12px}
+.board .lcd-big{font-size:clamp(2rem,10vw,2.9rem)}
+.board-legs{display:flex;justify-content:space-around;height:16px;margin-top:4px}
+.board-legs i{width:5px;background:#3A4454;border-radius:0 0 2px 2px}
+.lcd-meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.74rem;line-height:1.5;color:#C9F5DF;opacity:.92;white-space:pre-line;margin-top:8px;overflow-wrap:anywhere}
+.r-paper{opacity:0}
+@keyframes rpaper{0%{opacity:1;transform:translateY(-6px)}75%{opacity:1;transform:translateY(28px)}100%{opacity:0;transform:translateY(32px)}}
+@keyframes rstrip{0%{opacity:0;transform:translateY(-8px)}100%{opacity:1;transform:none}}
+.recy-stage.chomp .r-paper{animation:rpaper .55s ease-in}
+.recy-stage.chomp .recy svg{animation:chomp .7s ease .45s}
+.recy-stage.chomp .r-strip{animation:rstrip .4s ease-out .9s both}
+@media (prefers-reduced-motion:reduce){.recy-stage.chomp .r-paper,.recy-stage.chomp .recy svg,.recy-stage.chomp .r-strip{animation:none}}
+
+/* ===== Backup ===== */
+.data-tools{text-align:center;margin-top:28px;font-size:.9rem;color:var(--muted)}
+.data-tools .linkbtn{font-size:.9rem}
+.data-tools p{margin:4px 0 0}
 </style>
 </head>
 <body>
@@ -347,6 +372,11 @@ button{cursor:pointer}
       <button type="button" class="pay-btn" id="payBtn"></button>
     </div>
   </header>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
+    <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
+    <button role="tab" id="tabJars" aria-selected="false">Ahorros</button>
+  </div>
   <div class="month-nav" id="monthNav">
     <button class="icon-btn" id="prev" aria-label="Mes anterior">‹</button>
     <div class="title-wrap">
@@ -356,11 +386,6 @@ button{cursor:pointer}
     <button class="icon-btn" id="next" aria-label="Mes siguiente">›</button>
   </div>
 
-  <div class="tabs" role="tablist">
-    <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
-    <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
-    <button role="tab" id="tabJars" aria-selected="false">Ahorros</button>
-  </div>
 
   <div class="cloud-banner" id="cloudBanner" hidden>
     <p>Entrá con Google para guardar tus datos en tu Drive y verlos desde cualquier celu o compu.</p>
@@ -372,20 +397,18 @@ button{cursor:pointer}
 
   <div id="viewList">
   <p class="bubble" id="bubble" aria-live="polite"></p>
-  <section class="recy-hero" id="recyHero" aria-label="Resumen del período">
-    <div class="feed-paper" aria-hidden="true"></div>
-    <div class="recy-lid" aria-hidden="true"></div>
-    <div class="recy-body">
-      <div class="recy-face" id="recy" aria-hidden="true"></div>
+  <section class="recy-stage" id="recyHero" aria-label="Resumen del período">
+    <div class="recy" id="recy" aria-hidden="true"></div>
+    <div class="board">
       <div class="lcd">
         <div class="lcd-label" id="bigLabel">Gastaste</div>
         <div class="lcd-big" id="totalArs">$ 0</div>
         <div class="lcd-usd" id="totalUsd" hidden></div>
         <div class="leds" id="meter" hidden><span></span></div>
+        <div class="lcd-meta" id="meta">Sin gastos todavía</div>
       </div>
-      <div class="recy-meta" id="meta">Sin gastos todavía</div>
+      <div class="board-legs" aria-hidden="true"><i></i><i></i></div>
     </div>
-    <div class="recy-feet" aria-hidden="true"><i></i><b></b><b></b><b></b><b></b><i></i></div>
   </section>
 
   <div id="days"></div>
@@ -428,6 +451,13 @@ button{cursor:pointer}
     </section>
     <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newJar">+ Nuevo frasco</button></div>
   </div>
+
+  <footer class="data-tools">
+    <button type="button" class="linkbtn" id="exportBtn">Exportar backup</button> ·
+    <button type="button" class="linkbtn" id="importBtn">Importar backup</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <p class="fx-hint">Un archivo con todos tus datos, para guardarlo donde quieras.</p>
+  </footer>
 </main>
 
 <button class="fab" id="openAdd">Darle a Recy</button>
@@ -707,22 +737,27 @@ function recySVG(mood, faceOnly){
     hungry:  `<ellipse cx="50" cy="63" rx="7" ry="6" fill="#0E1A45"/><ellipse cx="50" cy="66" rx="4" ry="2.4" fill="#FF7A95"/>`,
   }[mood];
   if (faceOnly) return `<svg viewBox="16 32 68 42" role="img" aria-label="Recy">${eyes}${brows}${mouth}</svg>`;
-  return `<svg viewBox="0 0 100 92" role="img" aria-label="Recy">
-    <rect x="30" y="80" width="3" height="9" rx="1" fill="#fff" stroke="#D5DAE0"/>
-    <rect x="42" y="80" width="3" height="11" rx="1" fill="#fff" stroke="#D5DAE0"/>
-    <rect x="54" y="80" width="3" height="8" rx="1" fill="#fff" stroke="#D5DAE0"/>
-    <rect x="66" y="80" width="3" height="10" rx="1" fill="#fff" stroke="#D5DAE0"/>
+  return `<svg viewBox="0 -26 118 120" role="img" aria-label="Recy">
+    <g class="r-paper"><rect x="35" y="-22" width="30" height="34" rx="2" fill="#fff" stroke="#D5DAE0"/>
+      <path d="M40 -15 H60 M40 -9 H56 M40 -3 H60" stroke="#C9CED6" stroke-width="2"/></g>
+    <g class="r-strip"><rect x="30" y="80" width="3" height="9" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
+    <g class="r-strip"><rect x="42" y="80" width="3" height="11" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
+    <g class="r-strip"><rect x="54" y="80" width="3" height="8" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
+    <g class="r-strip"><rect x="66" y="80" width="3" height="10" rx="1" fill="#fff" stroke="#D5DAE0"/></g>
     <rect x="18" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/><rect x="68" y="76" width="14" height="8" rx="3" fill="#1F3FB0"/>
     <rect x="12" y="24" width="76" height="56" rx="12" fill="#2F5BEA"/>
     <rect x="8" y="12" width="84" height="18" rx="7" fill="#1F3FB0"/>
     <rect x="24" y="19" width="52" height="4" rx="2" fill="#0E1A45"/>
     ${eyes}${brows}${mouth}
+    <path d="M86 56 Q98 50 104 34" stroke="#1F3FB0" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="M104 34 L114 6" stroke="#0E1A45" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="104" cy="34" r="4" fill="#1F3FB0"/>
   </svg>`;
 }
 let recyFlash = null;
 function setRecy(mood, line){
   if (recyFlash && Date.now() < recyFlash.until){ mood = "full"; line = recyFlash.line; }
-  $("recy").innerHTML = recySVG(mood, true);
+  $("recy").innerHTML = recySVG(mood);
   $("bubble").textContent = line;
 }
 function feedRecy(){
@@ -2046,6 +2081,29 @@ window.cloud = (() => {
   }
   return { init, connect, schedule(){ clearTimeout(timer); if (ready) timer = setTimeout(upload, 1200); } };
 })();
+
+/* ---------- Backup: exportar e importar ---------- */
+$("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `receater-backup-${toLocalInput(new Date())}.json`;
+  document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+};
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = async () => {
+  const inp = $("importFile"), f = inp.files && inp.files[0];
+  inp.value = "";
+  if (!f) return;
+  let j;
+  try { j = JSON.parse(await f.text()); } catch { alert("Ese archivo no es un backup de Receater."); return; }
+  if (!j || !Array.isArray(j.expenses)){ alert("Ese archivo no es un backup de Receater."); return; }
+  const n = j.expenses.length + (Array.isArray(j.incomes) ? j.incomes.length : 0);
+  if (!confirm(`Este backup tiene ${n} movimientos. Va a reemplazar todo lo que tenés ahora en la app${$("syncBtn").classList.contains("ok") ? " y en tu Drive" : ""}. ¿Seguimos?`)) return;
+  if (!store.save(j)){ alert("No se pudo guardar el backup en este navegador."); return; }
+  location.reload();
+};
 
 render();
 cloud.init();
