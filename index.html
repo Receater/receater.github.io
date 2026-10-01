@@ -379,8 +379,8 @@ button{cursor:pointer}
 .swatch[aria-checked="true"]{border-color:var(--paper);box-shadow:0 0 0 2px var(--ink)}
 .custom-color{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:.9rem;color:var(--muted)}
 .custom-color input{width:44px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
-#catBg{z-index:14}
-#catSheet{z-index:15}
+#catBg{z-index:16}
+#catSheet{z-index:17}
 
 .pay-sum{border-top:1px dashed var(--line);padding-top:8px;display:grid;gap:6px}
 .pay-sum .split-row{font-size:.92rem}
@@ -718,7 +718,8 @@ button{cursor:pointer}
 <div class="sheet" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
   <h3 id="fixTitle">Nuevo gasto fijo</h3>
   <div class="field"><label for="fixName">Nombre</label><input class="input" id="fixName" placeholder="Ej: Alquiler, Netflix, Taller de dibujo" autocomplete="off"></div>
-  <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select></div>
+  <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select>
+    <button type="button" class="linkbtn" id="fixNewCat">+ Nueva categoría</button></div>
   <div class="field two">
     <div><label for="fixAmount">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Vacío si cambia" autocomplete="off"></div>
     <div><span class="lbl-sm">Moneda</span>
@@ -1656,7 +1657,7 @@ $("catEditToggle").onclick = () => { catEditing = !catEditing; renderCats(); };
 
 /* Modal de categoría propia */
 const CAT_SWATCHES = ["#E4572E","#F3A712","#C9A227","#7BAE3A","#2F9E6E","#1FA3B3","#3B7DD8","#2F5BEA","#7A5AC8","#B05BA8","#D0485E","#8C6A4F","#5B6B82","#222831"];
-let editingCat = null, catColor = CAT_SWATCHES[0];
+let editingCat = null, catColor = CAT_SWATCHES[0], catFromFix = false;
 function setCatColor(c){
   catColor = c; $("catColor").value = c;
   document.querySelectorAll("#catSwatches .swatch").forEach(s => s.setAttribute("aria-checked", String(s.dataset.c.toLowerCase() === c.toLowerCase())));
@@ -1674,14 +1675,19 @@ function openCat(c, name){
   $("catBg").classList.add("open"); $("catSheet").classList.add("open");
   setTimeout(() => $("catName").focus(), 120);
 }
-function closeCat(){ $("catBg").classList.remove("open"); $("catSheet").classList.remove("open"); }
+function closeCat(){ $("catBg").classList.remove("open"); $("catSheet").classList.remove("open"); catFromFix = false; }
 $("catCancel").onclick = closeCat; $("catBg").onclick = closeCat;
 $("catSave").onclick = () => {
   const name = $("catName").value.trim();
   if (!name){ $("catErr").textContent = "Ponele un nombre."; $("catName").focus(); return; }
   if (allCats().some(x => x !== editingCat && norm(x.name) === norm(name))){ $("catErr").textContent = "Ya hay una categoría con ese nombre."; return; }
   if (editingCat){ editingCat.name = name; editingCat.color = catColor; }
-  else { const c = { id: "c_" + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Date.now()), name, color: catColor }; data.customCats.push(c); category = c.id; }
+  else {
+    const c = { id: "c_" + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Date.now()), name, color: catColor }; data.customCats.push(c);
+    if (catFromFix) fillFixCats(c.id); else category = c.id;
+  }
+  if (catFromFix && editingCat) fillFixCats($("fixCat").value);
+  catFromFix = false;
   persist(); closeCat(); $("catSearch").value = ""; renderCats(); render();
 };
 $("catDel").onclick = () => {
@@ -2394,12 +2400,16 @@ $("newFixed").onclick = () => openFixed(null);
 let editingFix = null, fixCur = "ARS";
 (() => { const s = $("fixDay"); for (let i = 1; i <= 31; i++){ const o = document.createElement("option"); o.value = i; o.textContent = `El ${i}`; s.append(o); } })();
 document.querySelectorAll("[data-fixcur]").forEach(b => b.onclick = () => { fixCur = b.dataset.fixcur; document.querySelectorAll("[data-fixcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+function fillFixCats(sel){
+  const cs = $("fixCat"); cs.innerHTML = "";
+  allCats().filter(c => !c.hidden).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cs.append(o); });
+  cs.value = sel;
+}
+$("fixNewCat").onclick = () => { catFromFix = true; openCat(null, ""); };
 function openFixed(f){
   editingFix = f || null;
   $("fixTitle").textContent = f ? "Editar gasto fijo" : "Nuevo gasto fijo";
-  const cs = $("fixCat"); cs.innerHTML = "";
-  allCats().filter(c => !c.hidden).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cs.append(o); });
-  cs.value = f ? f.category : "casa";
+  fillFixCats(f ? f.category : "casa");
   const cards = $("fixCard"); cards.innerHTML = "";
   data.cards.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cards.append(o); });
   if (!data.cards.length){ const o = document.createElement("option"); o.value = ""; o.textContent = "Primero creá una tarjeta"; cards.append(o); }
