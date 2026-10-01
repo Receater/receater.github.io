@@ -635,7 +635,8 @@ button{cursor:pointer}
     <span class="lbl">¿Cómo pagaste?</span>
     <div class="chips" id="methods"></div>
     <div id="cardExtra" hidden>
-      <div class="opt-extra">Cuotas <select id="cuotas" aria-label="Cantidad de cuotas"></select></div>
+      <div class="opt-extra">Cuotas <select id="cuotas" aria-label="Cantidad de cuotas"></select>
+        <span id="paidWrap" hidden>· ya pagué <select id="paidCuotas" aria-label="Cuotas que ya pagaste"></select></span></div>
       <div class="fx-hint" id="cardWhen"></div>
     </div>
   </div>
@@ -1048,18 +1049,26 @@ const paysFrom = (cardId, pd, cur) => data.cardPayments.filter(p => p.cardId ===
    Lo que todavía no pagaste se proyecta según cómo pagás la tarjeta (o queda pendiente si es abierta). */
 function cardSchedule(e){
   const card = cardById(e.cardId), n = Math.max(1, e.installments || 1), pd = dateOnly(e.date), out = [];
+  const k = Math.min(n - 1, Math.max(0, e.paidInstallments || 0));   // cuotas que ya pagaste antes de cargarla
+  for (let i = 0; i < k; i++) out.push(false);
   const pays = paysFrom(card.id, pd, e.currency);
-  for (let i = 0; i < n && pays[i]; i++) out.push(dateOnly(pays[i].date));
-  const u = out.length;
-  if (u >= n) return out;
+  for (let i = 0; out.length < n && pays[i]; i++) out.push(dateOnly(pays[i].date));
+  const u = out.length - k;
+  if (out.length >= n) return out;
   if (card.rule === "open"){ while (out.length < n) out.push(null); return out; }
+  const today = dateOnly(toLocalInput(new Date()));
   const base = u ? new Date(dateOnly(pays[u-1].date).getTime() + 864e5) : pd;
-  for (let j = 0; j < n - u; j++){
+  // Si ya pagaste cuotas por fuera, las que faltan arrancan en el próximo pago desde hoy
+  const minDate = !u && k ? today : null;
+  for (let j = 0, got = 0, left = n - out.length; got < left && j < left + 36; j++){
     let c;
     if (card.closeDay){ c = dayIn(base.getFullYear(), base.getMonth(), card.closeDay); if (base > c) c = dayIn(base.getFullYear(), base.getMonth()+1, card.closeDay); c = dayIn(c.getFullYear(), c.getMonth()+j, card.closeDay); }
     else c = dayIn(base.getFullYear(), base.getMonth()+j, base.getDate());
-    out.push(card.rule === "salary" ? nextSalaryAfter(c) : nextDayAfter(c, card.day || 10));
+    const d = card.rule === "salary" ? nextSalaryAfter(c) : nextDayAfter(c, card.day || 10);
+    if (minDate && d && d < minDate) continue;
+    out.push(d); got++;
   }
+  while (out.length < n) out.push(null);
   return out;
 }
 /* Todo lo que cuenta para los totales: gastos normales el día que los hiciste, cuotas de tarjeta el día que se pagan */
@@ -1100,7 +1109,7 @@ function pendingFor(card, upTo){
   const lim = upTo || dateOnly(toLocalInput(new Date()));
   let ars = 0, usd = 0;
   allExpenses().filter(e => isCardExp(e) && e.cardId === card.id && dateOnly(e.date) <= lim).forEach(e => {
-    const n = Math.max(1, e.installments || 1), i = paysFrom(card.id, dateOnly(e.date), e.currency).length;
+    const n = Math.max(1, e.installments || 1), i = Math.min(n - 1, e.paidInstallments || 0) + paysFrom(card.id, dateOnly(e.date), e.currency).length;
     if (i >= n) return;
     const per = round2(eff(e)/n), amt = i === n-1 ? round2(eff(e) - per*(n-1)) : per;
     if (e.currency === "USD") usd += amt; else ars += amt;
@@ -1108,9 +1117,10 @@ function pendingFor(card, upTo){
   return { ars: round2(ars), usd: round2(usd) };
 }
 function cardWhenText(e){
-  const sched = cardSchedule(e), first = sched[0], n = sched.length;
-  if (!first) return n > 1 ? `${n} cuotas, pendiente de pago` : "Pendiente de pago";
-  return n > 1 ? `${n} cuotas, la primera el ${shortDate(first)}` : `Va al pago del ${shortDate(first)}`;
+  const sched = cardSchedule(e), n = sched.length, k = Math.min(n - 1, e.paidInstallments || 0), first = sched[k];
+  const pre = k ? `${n} cuotas, ya pagaste ${k}` : `${n} cuotas`;
+  if (!first) return n > 1 ? `${pre}, pendiente de pago` : "Pendiente de pago";
+  return n > 1 ? `${pre}, la ${k ? "próxima" : "primera"} el ${shortDate(first)}` : `Va al pago del ${shortDate(first)}`;
 }
 
 /* ---------- Ahorros: frascos ----------
@@ -1523,10 +1533,15 @@ function renderMethods(){
 }
 function updateCardWhen(){
   if (method !== "card" || !cardById(cardId)){ $("cardWhen").textContent = ""; return; }
-  const fake = { method:"card", cardId, installments: Number($("cuotas").value), date:`${$("date").value || toLocalInput(new Date())}T12:00`, amount:1 };
+  const n = Number($("cuotas").value), ps = $("paidCuotas"), prev = Number(ps.value) || 0;
+  $("paidWrap").hidden = n < 2;
+  ps.innerHTML = ""; for (let i = 0; i < n; i++){ const o = document.createElement("option"); o.value = i; o.textContent = i; ps.append(o); }
+  ps.value = Math.min(prev, n - 1);
+  const fake = { method:"card", cardId, installments: n, paidInstallments: Number(ps.value) || 0, date:`${$("date").value || toLocalInput(new Date())}T12:00`, amount:1 };
   $("cardWhen").textContent = cardWhenText(fake) + ". Te resta recién cuando se paga.";
 }
 $("cuotas").onchange = updateCardWhen;
+$("paidCuotas").onchange = updateCardWhen;
 $("date").addEventListener("change", updateCardWhen);
 let jarSel = null, jarUserPicked = false;
 function jarFieldCurrency(){ return mode === "fx" ? "USD" : currency; }
@@ -1896,6 +1911,8 @@ function openSheet(exp){
   if (exp && !isIncome(exp)){ method = exp.method || "cash"; cardId = exp.method === "card" ? exp.cardId : null; }
   else { method = data.lastMethod || "cash"; cardId = method === "card" ? data.lastCardId : null; if (method === "card" && !cardById(cardId)){ method = "cash"; cardId = null; } }
   $("cuotas").value = exp && exp.installments ? exp.installments : 1;
+  $("paidCuotas").innerHTML = '<option value="0">0</option>'; $("paidCuotas").value = 0;
+  if (exp && exp.paidInstallments){ const o = document.createElement("option"); o.value = exp.paidInstallments; $("paidCuotas").append(o); $("paidCuotas").value = exp.paidInstallments; }
   renderMethods();
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
@@ -1960,6 +1977,7 @@ $("sheet").addEventListener("submit", ev => {
     if (method === "card" && !cardById(cardId)){ $("err").textContent = "Elegí la tarjeta."; return; }
     fields.method = method; fields.cardId = method === "card" ? cardId : null;
     fields.installments = method === "card" ? Number($("cuotas").value) : 1;
+    fields.paidInstallments = method === "card" && fields.installments > 1 ? Math.min(fields.installments - 1, Number($("paidCuotas").value) || 0) : 0;
     data.lastMethod = method; data.lastCardId = fields.cardId;
     fields.jarId = !$("jarField").hidden ? jarSel : null;
     const fi = fixSelInst();
