@@ -1961,6 +1961,8 @@ const DRIVE_FILENAME = "receater-data.json";
 const TOKEN_KEY = "receater.gtoken";
 const BANNER_KEY = "receater.bannerDismissed";
 const USER_KEY = "receater.user";
+const LINKED_KEY = "receater.linked";          // este navegador ya está vinculado a un Drive
+const PRELOGIN_KEY = "receater.localAntesDeEntrar"; // copia de lo local antes de traer el Drive
 
 window.cloud = (() => {
   let token = null, fileId = null, ready = false, timer = null, busy = false;
@@ -2044,13 +2046,21 @@ window.cloud = (() => {
     try {
       loadUser();
       fileId = await findFile();
-      if (!fileId){ fileId = await createFile(); ready = true; status("En tu Drive ✓", "ok"); return; }
+      if (!fileId){ fileId = await createFile(); ready = true; ls.set(LINKED_KEY, "1"); status("En tu Drive ✓", "ok"); return; }
       const remote = await (await api(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`)).json();
       ready = true;
       const rT = remote && remote.updatedAt || 0, lT = data.updatedAt || 0;
       const localEmpty = !data.expenses.length && !data.incomes.length;
-      if (remote && Array.isArray(remote.expenses) && (rT > lT || localEmpty) && rT !== lT){
-        store.save(remote, true); location.reload(); return;   // trae lo de Drive
+      const firstTime = !ls.get(LINKED_KEY);   // primera vez que este navegador entra con Google
+      ls.set(LINKED_KEY, "1");
+      const valid = remote && Array.isArray(remote.expenses);
+      if (valid && firstTime && JSON.stringify(remote) !== JSON.stringify(data)){
+        // Al entrar por primera vez, manda lo que está en Drive. Lo local se guarda aparte por las dudas.
+        if (!localEmpty) ls.set(PRELOGIN_KEY, JSON.stringify(data));
+        store.save(remote, true); location.reload(); return;
+      }
+      if (valid && (rT > lT || localEmpty) && rT !== lT){
+        store.save(remote, true); location.reload(); return;   // trae lo de Drive si es más nuevo
       }
       if (lT > rT) await upload(); else status("En tu Drive ✓", "ok");
     } catch (e) { status(e.message === "expired" ? "Reconectar" : "Sin sincronizar", "warn"); }
@@ -2066,7 +2076,7 @@ window.cloud = (() => {
   function logout(){
     if (!confirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
     try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
-    ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); location.reload();
+    ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); ls.del(LINKED_KEY); location.reload();
   }
   btn.onclick = () => { if (ready) logout(); else connect(); };
   $("cloudLogin").onclick = connect;
