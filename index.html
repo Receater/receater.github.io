@@ -755,6 +755,7 @@ const CATEGORIES = [
   {id:"otros",       name:"Otros",             color:"#8C8C8C"},
   {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
   {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
+  {id:"tarjeta_sd",  name:"Tarjeta sin detalle", color:"#5B6B82", hidden:true},
 ];
 const allCats = () => [...CATEGORIES, ...((typeof data !== "undefined" && Array.isArray(data.customCats)) ? data.customCats : [])];
 const catById = id => allCats().find(c => c.id === id) || CATEGORIES.find(c => c.id === "otros");
@@ -919,15 +920,18 @@ function entries(){
     const mine = out.filter(x => x.cardId === p.cardId && !x.payId && x.date.slice(0,10) === d);
     const assigned = mine.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
     const extra = round2((p.amount || 0) - assigned);
-    if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category:"intereses", note:"Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+    const noDetail = !mine.length;   // pagaste una tarjeta sin compras cargadas: cuenta entero como gasto de tarjeta
+    if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: noDetail ? "tarjeta_sd" : "intereses",
+      note: noDetail ? "Pago sin compras cargadas" : "Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     if (p.usd > 0){
       const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
       const extraU = round2(p.usd - assignedU);
+      const catU = noDetail ? "tarjeta_sd" : "intereses", noteU = noDetail ? "Pago sin compras cargadas (dólares)" : "Intereses e impuestos (dólares)";
       if (p.usdMode === "ars" && p.rate > 0){
         // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
         usdItems.forEach(x => { x.note = [x.note, `${fmtUSD.format(x.amount)} a ${fmtARS.format(p.rate)}`].filter(Boolean).join(", "); x.amount = round2(x.amount * p.rate); x.currency = "ARS"; });
-        if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:round2(extraU * p.rate), currency:"ARS", category:"intereses", note:"Intereses e impuestos (dólares)", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
-      } else if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:extraU, currency:"USD", category:"intereses", note:"Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+        if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:round2(extraU * p.rate), currency:"ARS", category:catU, note:noteU, date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+      } else if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:extraU, currency:"USD", category:catU, note:noteU, date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     }
   });
   return out;
@@ -1158,11 +1162,11 @@ function renderPayGroup(r){
   const sub = document.createElement("div"); sub.className = "sub";
   const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
   const buys = r.xs.filter(x => !x.payId).length;
-  sub.append(chev, document.createTextNode(`Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}`));
+  sub.append(chev, document.createTextNode(buys ? `Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}` : "Pago de tarjeta"));
   mid.append(cat, sub);
   const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = ars ? fmtARS.format(ars) : fmtUSD.format(usd);
   if (ars && usd){ const of = document.createElement("span"); of.className = "of"; of.textContent = "+ " + fmtUSD.format(usd); amt.append(of); }
-  if (data.cardPayments.some(p => p.cardId === cid && (p.forDate ? p.forDate === day : (card.rule === "open" && p.date === day)))) amt.append(stampEl("PAGADO", "ok"));
+  if (data.cardPayments.some(p => p.cardId === cid && (p.forDate || p.date) === day)) amt.append(stampEl("PAGADO", "ok"));
   b.append(dot, mid, amt);
   b.onclick = () => { open ? expanded.delete("pay:" + r.key) : expanded.add("pay:" + r.key); render(); };
   wrap.append(b);
@@ -1177,7 +1181,7 @@ function renderPayGroup(r){
       row.append(n, v, t); panel.append(row);
     });
     const foot = document.createElement("div"); foot.className = "split-sum";
-    const pay = data.cardPayments.find(p => p.cardId === cid && (p.forDate ? p.forDate === day : (card.rule === "open" && p.date === day)));
+    const pay = data.cardPayments.find(p => p.cardId === cid && (p.forDate || p.date) === day);
     const left = document.createElement("span"); left.textContent = pay ? "Pagaste " + [pay.amount && fmtARS.format(pay.amount), pay.usd && (fmtUSD.format(pay.usd) + (pay.usdMode === "ars" && pay.rate ? ` a ${fmtARS.format(pay.rate)}` : ""))].filter(Boolean).join(" y ") : "Pago programado";
     foot.append(left);
     if (pay){
@@ -1528,7 +1532,7 @@ document.querySelectorAll("[data-cpkm]").forEach(b => b.onclick = () => {
 });
 function nextCardDue(card){
   // Próximo pago programado sin pago cargado (o el más reciente de los últimos 20 días)
-  const from = toLocalInput(new Date(Date.now() - 20*864e5));
+  const from = toLocalInput(new Date(Date.now() - 60*864e5));
   const paid = new Set(data.cardPayments.filter(p => p.cardId === card.id && p.forDate).map(p => p.forDate));
   const dates = [...new Set(entries().filter(x => x.cardId === card.id && !x.payId && x.date.slice(0,10) >= from).map(x => x.date.slice(0,10)))]
     .filter(d => !paid.has(d)).sort();
@@ -1559,7 +1563,7 @@ function renderCpk(){
     const n = nextCardDue(card);
     if (n){ cpkFor = n.date; pre = n.ars; preU = n.usd;
       hint.textContent = `Pago del ${shortDate(dateOnly(n.date))}: ${[n.ars && fmtARS.format(n.ars), n.usd && fmtUSD.format(n.usd)].filter(Boolean).join(" y ")}. Si pagaste más, la diferencia va a intereses.`; }
-    else hint.textContent = "Esta tarjeta no tiene pagos programados cerca.";
+    else hint.textContent = "No tenés compras cargadas para el próximo pago de esta tarjeta. Lo que pongas cuenta como un gasto de tarjeta en esta fecha.";
   }
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
   if (!$("cpkUsd").value && preU) $("cpkUsd").value = String(preU).replace(".",",");
@@ -1647,10 +1651,9 @@ $("sheet").addEventListener("submit", ev => {
     if (!card){ $("err").textContent = "Elegí qué tarjeta pagaste."; return; }
     if (!(amount > 0) && !(usd > 0)){ $("err").textContent = "Poné cuánto pagaste."; return; }
     if (usd > 0 && cpkHow === "ars" && !(rate > 0)){ $("err").textContent = cpkMode === "rate" ? "Poné la cotización de los dólares." : "Poné cuánto pagaste en pesos por los dólares."; return; }
-    if (card.rule !== "open" && !cpkFor){ $("err").textContent = "Esta tarjeta no tiene un pago programado para asociar."; return; }
-    if (card.rule === "open" && data.cardPayments.some(p => p.cardId === card.id && p.date === date)){ $("err").textContent = "Ya cargaste un pago de esta tarjeta ese día."; return; }
+    if ((card.rule === "open" || !cpkFor) && data.cardPayments.some(p => p.cardId === card.id && !p.forDate && p.date === date)){ $("err").textContent = "Ya cargaste un pago de esta tarjeta ese día."; return; }
     const pay = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), cardId: card.id, date, amount: round2(amount) };
-    if (card.rule !== "open") pay.forDate = cpkFor;
+    if (card.rule !== "open" && cpkFor) pay.forDate = cpkFor;
     if (usd > 0){ pay.usd = round2(usd); pay.usdMode = cpkHow; if (cpkHow === "ars"){ pay.rate = round2(rate); data.lastRate = pay.rate; } }
     data.cardPayments.push(pay);
     persist(); closeSheet(); feedRecy();
