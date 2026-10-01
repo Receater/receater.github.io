@@ -364,6 +364,21 @@ button{cursor:pointer}
 .data-tools{text-align:center;margin-top:28px;font-size:.9rem;color:var(--muted)}
 .data-tools .linkbtn{font-size:.9rem}
 .data-tools p{margin:4px 0 0}
+
+/* Categorías propias */
+.cat-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cat-head .lbl{margin-bottom:6px}
+.cat-head .linkbtn{padding:0 0 6px;font-size:.85rem}
+.cat-search{margin-bottom:10px;padding:8px 12px}
+.chip.edit{border-style:dashed}
+.chip.add{color:var(--accent);border-color:var(--accent)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;padding:0;box-shadow:0 0 0 1px var(--line)}
+.swatch[aria-checked="true"]{border-color:var(--paper);box-shadow:0 0 0 2px var(--ink)}
+.custom-color{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:.9rem;color:var(--muted)}
+.custom-color input{width:44px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
+#catBg{z-index:14}
+#catSheet{z-index:15}
 </style>
 </head>
 <body>
@@ -550,7 +565,11 @@ button{cursor:pointer}
   <div class="err" id="err"></div>
 
   <div class="field" id="catField">
-    <span class="lbl" id="catLabel">Categoría</span>
+    <div class="cat-head">
+      <span class="lbl" id="catLabel">Categoría</span>
+      <button type="button" class="linkbtn" id="catEditToggle" hidden>Editar mías</button>
+    </div>
+    <input class="input cat-search" id="catSearch" type="search" placeholder="Buscar categoría" autocomplete="off" aria-label="Buscar categoría">
     <div class="chips" id="cats"></div>
   </div>
 
@@ -650,6 +669,22 @@ button{cursor:pointer}
   </div>
 </div>
 
+<div class="sheet-bg" id="catBg"></div>
+<div class="sheet" id="catSheet" role="dialog" aria-modal="true" aria-labelledby="catTitle">
+  <h3 id="catTitle">Nueva categoría</h3>
+  <div class="field"><label for="catName">Nombre</label><input class="input" id="catName" placeholder="Ej: Mascotas, Taller, Regalos" autocomplete="off"></div>
+  <div class="field"><span class="lbl">Color</span>
+    <div class="swatches" id="catSwatches" role="radiogroup" aria-label="Color"></div>
+    <label class="custom-color">Otro color <input type="color" id="catColor" value="#2F5BEA"></label>
+  </div>
+  <div class="err" id="catErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="catDel" hidden>Borrar</button>
+    <button type="button" class="btn ghost" id="catCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="catSave">Guardar</button>
+  </div>
+</div>
+
 <div class="sheet-bg" id="jarBg"></div>
 <div class="sheet" id="jarSheet" role="dialog" aria-modal="true" aria-labelledby="jarTitle">
   <h3 id="jarTitle">Nuevo frasco</h3>
@@ -717,7 +752,8 @@ const CATEGORIES = [
   {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
   {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
 ];
-const catById = id => CATEGORIES.find(c => c.id === id) || CATEGORIES.at(-1);
+const allCats = () => [...CATEGORIES, ...((typeof data !== "undefined" && Array.isArray(data.customCats)) ? data.customCats : [])];
+const catById = id => allCats().find(c => c.id === id) || CATEGORIES.find(c => c.id === "otros");
 
 /* ---------- Almacenamiento (fácil de cambiar después) ---------- */
 const STORE_KEY = "gastos.v1";
@@ -830,6 +866,7 @@ function feedRecy(){
    data.cardPayments: pagos cargados a mano de tarjetas abiertas { id, cardId, date:"YYYY-MM-DD", amount }
    Gasto con tarjeta: { method:"card", cardId, installments } → cada cuota cuenta el día que se paga */
 if (!Array.isArray(data.cards)) data.cards = [];
+if (!Array.isArray(data.customCats)) data.customCats = [];
 if (!Array.isArray(data.cardPayments)) data.cardPayments = [];
 const CARD_COLORS = ["#2F5BEA","#E08A2C","#7A5AC8","#1FA3B3","#D0485E","#5B6B82","#7BAE3A"];
 const METHODS = [{id:"cash",name:"Efectivo"},{id:"debit",name:"Débito"},{id:"transfer",name:"Transferencia"}];
@@ -1314,19 +1351,81 @@ function updateUntilField(){
   note.append(b);
 }
 $("date").addEventListener("change", () => updateUntilField());
+let catEditing = false;
+const norm = t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 function renderCats(){
   const box = $("cats"); box.innerHTML = "";
-  const list = mode === "income" ? INCOME_KINDS : CATEGORIES.filter(c => !c.hidden || c.id === category);
-  const sel = mode === "income" ? incomeKind : category;
+  const isExp = mode !== "income";
+  $("catSearch").hidden = !isExp;
+  $("catEditToggle").hidden = !isExp || !data.customCats.length;
+  $("catEditToggle").textContent = catEditing ? "Listo" : "Editar mías";
+  if (!isExp) catEditing = false;
+  const q = isExp ? norm($("catSearch").value.trim()) : "";
+  let list = isExp ? allCats().filter(c => !c.hidden || c.id === category) : INCOME_KINDS;
+  if (q) list = list.filter(c => norm(c.name).includes(q));
+  const sel = isExp ? category : incomeKind;
   list.forEach(c => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
-    b.setAttribute("aria-pressed", String(c.id === sel));
+    const custom = isExp && data.customCats.some(x => x.id === c.id);
+    if (catEditing && !custom) return;
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip" + (catEditing ? " edit" : "");
+    b.setAttribute("aria-pressed", String(!catEditing && c.id === sel));
     const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
-    b.append(dot, document.createTextNode(c.name));
-    b.onclick = () => { if (mode === "income") incomeKind = c.id; else category = c.id; renderCats(); updateUntilField(); updateJarField(); };
+    b.append(dot, document.createTextNode(c.name + (catEditing ? " ✎" : "")));
+    b.onclick = catEditing ? () => openCat(c)
+      : () => { if (mode === "income") incomeKind = c.id; else category = c.id; renderCats(); updateUntilField(); updateJarField(); };
     box.append(b);
   });
+  if (isExp && !catEditing){
+    const raw = $("catSearch").value.trim();
+    const add = document.createElement("button"); add.type = "button"; add.className = "chip add";
+    add.textContent = raw && !list.length ? `+ Crear "${raw}"` : "+ Categoría";
+    add.onclick = () => openCat(null, raw && !list.length ? raw : "");
+    box.append(add);
+  }
 }
+$("catSearch").addEventListener("input", renderCats);
+$("catEditToggle").onclick = () => { catEditing = !catEditing; renderCats(); };
+
+/* Modal de categoría propia */
+const CAT_SWATCHES = ["#E4572E","#F3A712","#C9A227","#7BAE3A","#2F9E6E","#1FA3B3","#3B7DD8","#2F5BEA","#7A5AC8","#B05BA8","#D0485E","#8C6A4F","#5B6B82","#222831"];
+let editingCat = null, catColor = CAT_SWATCHES[0];
+function setCatColor(c){
+  catColor = c; $("catColor").value = c;
+  document.querySelectorAll("#catSwatches .swatch").forEach(s => s.setAttribute("aria-checked", String(s.dataset.c.toLowerCase() === c.toLowerCase())));
+}
+(() => { const box = $("catSwatches"); CAT_SWATCHES.forEach(c => { const b = document.createElement("button"); b.type = "button"; b.className = "swatch";
+  b.dataset.c = c; b.style.background = c; b.setAttribute("role","radio"); b.setAttribute("aria-label", "Color " + c); b.onclick = () => setCatColor(c); box.append(b); }); })();
+$("catColor").addEventListener("input", () => setCatColor($("catColor").value));
+function openCat(c, name){
+  editingCat = c || null;
+  $("catTitle").textContent = c ? "Editar categoría" : "Nueva categoría";
+  $("catName").value = c ? c.name : (name || "");
+  const used = new Set(allCats().map(x => x.color.toLowerCase()));
+  setCatColor(c ? c.color : (CAT_SWATCHES.find(x => !used.has(x.toLowerCase())) || CAT_SWATCHES[0]));
+  $("catDel").hidden = !c; $("catErr").textContent = "";
+  $("catBg").classList.add("open"); $("catSheet").classList.add("open");
+  setTimeout(() => $("catName").focus(), 120);
+}
+function closeCat(){ $("catBg").classList.remove("open"); $("catSheet").classList.remove("open"); }
+$("catCancel").onclick = closeCat; $("catBg").onclick = closeCat;
+$("catSave").onclick = () => {
+  const name = $("catName").value.trim();
+  if (!name){ $("catErr").textContent = "Ponele un nombre."; $("catName").focus(); return; }
+  if (allCats().some(x => x !== editingCat && norm(x.name) === norm(name))){ $("catErr").textContent = "Ya hay una categoría con ese nombre."; return; }
+  if (editingCat){ editingCat.name = name; editingCat.color = catColor; }
+  else { const c = { id: "c_" + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Date.now()), name, color: catColor }; data.customCats.push(c); category = c.id; }
+  persist(); closeCat(); $("catSearch").value = ""; renderCats(); render();
+};
+$("catDel").onclick = () => {
+  const c = editingCat; if (!c) return;
+  const n = data.expenses.filter(e => e.category === c.id).length;
+  if (!confirm(n ? `¿Borrar "${c.name}"? Sus ${n} gastos pasan a Otros.` : `¿Borrar "${c.name}"?`)) return;
+  data.expenses.forEach(e => { if (e.category === c.id) e.category = "otros"; });
+  data.customCats = data.customCats.filter(x => x !== c);
+  if (category === c.id) category = "otros";
+  if (!data.customCats.length) catEditing = false;
+  persist(); closeCat(); renderCats(); render();
+};
 let splitPeople = [], splitManual = false;
 const splitOn = () => $("splitOn").checked;
 function knownNames(){
@@ -1522,6 +1621,7 @@ function openSheet(exp){
   renderMethods();
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
+  $("catSearch").value = ""; catEditing = false;
   cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
   $("typeTabs").hidden = !!exp;
@@ -1607,7 +1707,8 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("jarSheet").classList.contains("open")) closeJar();
+  if ($("catSheet").classList.contains("open")) closeCat();
+  else if ($("jarSheet").classList.contains("open")) closeJar();
   else if ($("jmSheet").classList.contains("open")) closeJarMove();
   else if ($("cardSheet").classList.contains("open")) closeCard();
   else if ($("cpSheet").classList.contains("open")) closeCardPay();
