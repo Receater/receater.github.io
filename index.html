@@ -425,6 +425,21 @@ button{cursor:pointer}
 .chip.fixc .st{font-size:.75rem;color:var(--muted);margin-left:4px}
 .chip.fixc[aria-pressed="true"] .st{color:inherit;opacity:.8}
 .tabs button{font-size:.92rem}
+
+/* ===== Pantalla a todo el ancho, Recy adelante abajo a la izquierda ===== */
+:root{--recy-w:min(116px,30vw)}
+.recy-stage{display:block;position:relative;margin:4px 0 26px}
+.recy-stage .board{display:block}
+.board .lcd{padding:12px 14px 14px}
+.board .lcd-big{white-space:nowrap;font-size:clamp(2rem,10.5vw,3rem)}
+.board .lcd-meta{margin-left:calc(var(--recy-w) - 4px);min-height:84px}
+.recy-stage .recy{position:absolute;left:-8px;bottom:-20px;width:var(--recy-w);z-index:2;cursor:pointer}
+.recy-stage .bubble{position:absolute;left:calc(var(--recy-w) * .5);bottom:calc(var(--recy-w) * .92);margin:0;max-width:min(250px,62%);z-index:3;
+  border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,.28);opacity:0;transform:translateY(6px) scale(.97);transform-origin:10% 100%;
+  pointer-events:none;transition:opacity .3s ease,transform .3s ease}
+.recy-stage .bubble.show{opacity:1;transform:none}
+.recy-stage .bubble::after{left:16px}
+@media (prefers-reduced-motion:reduce){.recy-stage .bubble{transition:opacity .2s}}
 </style>
 </head>
 <body>
@@ -464,9 +479,7 @@ button{cursor:pointer}
   </div>
 
   <div id="viewList">
-  <p class="bubble" id="bubble" aria-live="polite"></p>
   <section class="recy-stage" id="recyHero" aria-label="Resumen del período">
-    <div class="recy" id="recy" aria-hidden="true"></div>
     <div class="board">
       <div class="lcd">
         <div class="lcd-label" id="bigLabel">Gastaste</div>
@@ -475,8 +488,9 @@ button{cursor:pointer}
         <div class="leds" id="meter" hidden><span></span></div>
         <div class="lcd-meta" id="meta">Sin gastos todavía</div>
       </div>
-      <div class="board-legs" aria-hidden="true"><i></i><i></i></div>
     </div>
+    <div class="recy" id="recy" aria-hidden="true"></div>
+    <p class="bubble" id="bubble" aria-live="polite"></p>
   </section>
 
   <section class="fixed-pend" id="fixedPend" hidden></section>
@@ -974,8 +988,16 @@ function setRecy(mood, line){
   if (recyFlash && Date.now() < recyFlash.until){ mood = "full"; line = recyFlash.line; }
   const el = $("recy");
   if (el.dataset.mood !== mood){ el.innerHTML = recySVG(mood); el.dataset.mood = mood; }
-  $("bubble").textContent = line;
+  const bub = $("bubble");
+  if (bub.textContent !== line){ bub.textContent = line; showBubble(); }
 }
+/* El globito aparece unos segundos y se va, para no tapar la pantalla */
+function showBubble(ms){
+  const bub = $("bubble"); if (!bub.textContent) return;
+  bub.classList.add("show");
+  clearTimeout(showBubble.t); showBubble.t = setTimeout(() => bub.classList.remove("show"), ms || 3500);
+}
+document.getElementById("recy").addEventListener("click", () => showBubble());
 function feedRecy(){
   recyFlash = { line: "¡Ñam! Gracias.", until: Date.now() + 2500 };
   const r = $("recyHero");
