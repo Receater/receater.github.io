@@ -440,6 +440,20 @@ button{cursor:pointer}
 .recy-stage .bubble.show{opacity:1;transform:none}
 .recy-stage .bubble::after{left:16px}
 @media (prefers-reduced-motion:reduce){.recy-stage .bubble{transition:opacity .2s}}
+
+/* ===== Frascos ===== */
+.jar-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+.jar-tile{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:var(--paper);border-radius:14px;padding:12px 10px 12px;text-align:center;min-width:0}
+.jar-tile[aria-expanded="true"]{box-shadow:0 0 0 2px var(--accent)}
+.jar-tile svg{width:78px;height:auto;display:block;margin-bottom:6px;overflow:visible}
+.jar-tile .jar-name{font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jar-tile .jar-bal{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;text-align:center}
+.jar-tile .jar-sub{font-size:.78rem;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jar-detail{grid-column:1/-1;background:var(--paper);border-radius:14px;padding:4px 14px 14px}
+.jar-detail h4{margin:10px 0 0;font-size:1rem}
+.jar-liquid{transition:y .6s ease,height .6s ease}
+@media (prefers-reduced-motion:reduce){.jar-liquid{transition:none}}
+#jarTotals{display:none}
 </style>
 </head>
 <body>
@@ -498,6 +512,7 @@ button{cursor:pointer}
   </div>
 
   <div id="viewDash" hidden>
+    <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
     <section class="card">
       <div class="card-head">
         <h2 id="donutTitle">En qué se te va</h2>
@@ -520,12 +535,14 @@ button{cursor:pointer}
   </div>
 
   <div id="viewFixed" hidden>
+    <section class="recy-stage" id="stageFixed" aria-label="Fijos del período"></section>
     <section class="card fixed-sum" id="fixedSum"></section>
     <div id="fixedList"></div>
     <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newFixed">+ Nuevo gasto fijo</button></div>
   </div>
 
   <div id="viewJars" hidden>
+    <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
     <div class="jar-total" id="jarTotals"></div>
     <div id="jarList"></div>
     <section class="card" id="jarGrowthCard">
@@ -1269,9 +1286,9 @@ const $ = id => document.getElementById(id);
 function render(){
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
-  if (tab === "dash") { renderDash(); return; }
-  if (tab === "jars") { renderJars(); return; }
-  if (tab === "fixed") { renderFixed(); return; }
+  if (tab === "dash") { renderDash(); stageDash(); return; }
+  if (tab === "jars") { renderJars(); stageJars(); return; }
+  if (tab === "fixed") { renderFixed(); stageFixed(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
   const inMonth = [...data.expenses, ...data.incomes].filter(inThisMonth).sort((a,b) => b.date.localeCompare(a.date));
@@ -2423,6 +2440,72 @@ function renderCardsDash(list, cur){
   });
 }
 
+/* ---------- Recy en cada pestaña ---------- */
+function renderStage(id, c){
+  const el = $(id);
+  el.innerHTML = '<div class="board"><div class="lcd"><div class="lcd-label"></div><div class="lcd-big"></div><div class="leds" hidden><span></span></div><div class="lcd-meta"></div></div></div><div class="recy" aria-hidden="true"></div><p class="bubble" aria-live="polite"></p>';
+  el.querySelector(".lcd-label").textContent = c.label;
+  const big = el.querySelector(".lcd-big"); big.textContent = c.big; big.classList.toggle("neg", !!c.neg);
+  if (c.bar != null){ const l = el.querySelector(".leds"); l.hidden = false; l.classList.toggle("over", !!c.over); l.firstElementChild.style.width = Math.max(0, Math.min(100, c.bar * 100)) + "%"; }
+  el.querySelector(".lcd-meta").textContent = (c.lines || []).filter(Boolean).join("\n");
+  el.querySelector(".recy").innerHTML = recySVG(c.mood || "happy");
+  const bub = el.querySelector(".bubble"); bub.textContent = c.line || "";
+  el.querySelector(".recy").onclick = () => flashStage(el);
+  if (el.dataset.line !== c.line){ el.dataset.line = c.line || ""; flashStage(el); }
+}
+function flashStage(el){
+  const bub = el.querySelector(".bubble"); if (!bub || !bub.textContent) return;
+  bub.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => bub.classList.remove("show"), 3500);
+}
+function stageDash(){
+  const py = viewMonth === 0 ? viewYear - 1 : viewYear, pm = viewMonth === 0 ? 11 : viewMonth - 1;
+  const spend = (y, m) => monthExpenses(y, m, "ARS").filter(x => !isSaving(x)).reduce((s,x) => s + x.amount, 0);
+  const now = spend(viewYear, viewMonth), before = spend(py, pm);
+  const inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS").reduce((s,e) => s + e.amount, 0);
+  const cats = {}; monthExpenses(viewYear, viewMonth, "ARS").filter(x => !isSaving(x)).forEach(x => cats[x.category] = (cats[x.category] || 0) + x.amount);
+  const top = Object.entries(cats).sort((a,b) => b[1] - a[1])[0];
+  const pct = top && now ? Math.round(top[1] / now * 100) : 0;
+  const diff = now - before;
+  renderStage("stageDash", {
+    label: "Gastaste", big: fmtARS.format(round2(now)),
+    bar: inc ? now / inc : null, over: inc && now > inc,
+    lines: [inc && `Es el ${Math.round(now / inc * 100)}% de lo que cobraste`, top && `Donde más: ${catById(top[0]).name} (${pct}%)`,
+      before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}` : null],
+    mood: !now ? "hungry" : inc && now > inc * 0.8 ? "worried" : "happy",
+    line: !now ? "Todavía no tengo nada para analizar." : top ? `${catById(top[0]).name} se lleva la mayor parte.` : "Acá va el resumen del mes."
+  });
+}
+function stageFixed(){
+  const list = fixInstances(viewYear, viewMonth), today = dateOnly(toLocalInput(new Date()));
+  const done = list.filter(i => i.state === "paid" || i.state === "cardpaid").length;
+  const pend = list.filter(i => !["paid","cardpaid","noamount"].includes(i.state) && i.currency === "ARS").reduce((s,i) => s + Math.max(0, (i.expected || 0) - i.paid), 0);
+  const late = list.filter(i => ["pending","partial"].includes(i.state) && i.due < today);
+  const next = list.filter(i => !["paid","cardpaid"].includes(i.state) && i.due >= today)[0];
+  renderStage("stageFixed", {
+    label: "Fijos por pagar", big: fmtARS.format(round2(pend)),
+    bar: list.length ? done / list.length : null,
+    lines: [list.length && `Pagados ${done} de ${list.length}`, next && `Próximo: ${next.f.name} el ${shortDate(next.due)}`, late.length && `Vencidos: ${late.length}`],
+    mood: !data.fixed.length ? "hungry" : late.length ? "worried" : list.length && done === list.length ? "full" : "happy",
+    line: !data.fixed.length ? "Cargá tus fijos y te los recuerdo." : late.length ? `Ojo, tenés ${late.length === 1 ? "un fijo vencido" : late.length + " fijos vencidos"}.`
+      : list.length && done === list.length ? "Todos los fijos pagados. ¡Bien ahí!" : next ? `Lo próximo es ${next.f.name}.` : "Vamos al día."
+  });
+}
+function stageJars(){
+  const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
+  const loose = cur => data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur)).reduce((s,e) => s + (e.fx ? e.fx.usd : eff(e)), 0);
+  const tA = round2(tot("ARS") + loose("ARS")), tU = round2(tot("USD") + loose("USD"));
+  const goals = data.jars.filter(j => j.goal).map(j => ({ j, p: Math.min(1, Math.max(0, jarBalance(j) / j.goal)) }));
+  const best = goals.filter(g => g.p < 1).sort((a,b) => b.p - a.p)[0];
+  renderStage("stageJars", {
+    label: "Ahorrado", big: tA || !tU ? fmtARS.format(tA) : fmtUSD.format(tU),
+    bar: goals.length ? goals.reduce((s,g) => s + g.p, 0) / goals.length : null,
+    lines: [tA && tU ? `Y ${fmtUSD.format(tU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
+      best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
+    mood: !data.jars.length && !tA && !tU ? "hungry" : "full",
+    line: !data.jars.length ? "Armemos tu primer frasco." : best ? `Te falta poco para ${best.j.name}.` : "Qué rico cuando ahorrás."
+  });
+}
+
 function setTab(t){
   tab = t;
   $("tabList").setAttribute("aria-selected", String(t==="list"));
@@ -2582,6 +2665,26 @@ $("fmSave").onclick = () => { if (!fmInst) return closeFixMonth();
 
 let jarCur = "ARS";
 const openJars = new Set();
+/* Frasco dibujado: vidrio, tapa y el líquido del color del frasco hasta el nivel */
+function jarSVG(color, level, full){
+  const top = 28, bottom = 104, h = (bottom - top) * level, y = bottom - h;
+  const id = "jc" + Math.random().toString(36).slice(2, 8);
+  return `<svg viewBox="0 0 80 110" aria-hidden="true">
+    <defs><clipPath id="${id}"><rect x="9" y="26" width="62" height="80" rx="16"/></clipPath></defs>
+    <rect x="9" y="26" width="62" height="80" rx="16" fill="var(--bg)"/>
+    <g clip-path="url(#${id})">
+      <rect class="jar-liquid" x="0" y="${y}" width="80" height="${h + 4}" fill="${color}" opacity=".9"/>
+      ${level > 0.02 ? `<path d="M0 ${y} Q 20 ${y - 4} 40 ${y} T 80 ${y} V ${y + 6} H 0 Z" fill="${color}"/>` : ""}
+      ${level > 0.08 ? `<circle cx="28" cy="${Math.min(bottom - 8, y + 14)}" r="2.5" fill="#fff" opacity=".45"/><circle cx="50" cy="${Math.min(bottom - 6, y + 24)}" r="1.8" fill="#fff" opacity=".4"/>` : ""}
+    </g>
+    <rect x="9" y="26" width="62" height="80" rx="16" fill="none" stroke="var(--muted)" stroke-width="2.5" opacity=".7"/>
+    <path d="M18 40 V 88" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+    <rect x="16" y="18" width="48" height="10" rx="3" fill="var(--muted)" opacity=".55"/>
+    <rect x="13" y="6" width="54" height="14" rx="4" fill="${color}"/>
+    <rect x="13" y="6" width="54" height="5" rx="3" fill="#fff" opacity=".18"/>
+    ${full ? `<path d="M64 2 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#F3C64B"/>` : ""}
+  </svg>`;
+}
 function renderJars(){
   // Totales
   const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
@@ -2599,24 +2702,25 @@ function renderJars(){
   if (!data.jars.length){
     list.innerHTML = '<div class="empty"><strong>Todavía no tenés frascos</strong>Creá uno para cada ahorro: dólares, plazo fijo, un viaje. Lo que cargues como Ahorro o compra de dólares se va sumando solo.</div>';
   }
+  const grid = document.createElement("div"); grid.className = "jar-grid"; list.append(grid);
+  const maxBal = cur => Math.max(1, ...data.jars.filter(j => j.currency === cur).map(j => jarBalance(j)));
   data.jars.forEach(j => {
     const bal = jarBalance(j), money2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n), open = openJars.has(j.id);
-    const el = document.createElement("div"); el.className = "jar";
-    const head = document.createElement("button"); head.type = "button"; head.className = "jar-head"; head.setAttribute("aria-expanded", String(open));
-    const dot = document.createElement("span"); dot.className = "jar-dot"; dot.style.background = j.color;
-    const mid = document.createElement("div");
+    const level = j.goal ? Math.min(1, Math.max(0, bal / j.goal)) : Math.min(1, Math.max(0, bal / maxBal(j.currency))) * 0.85;
+    const tile = document.createElement("button"); tile.type = "button"; tile.className = "jar-tile"; tile.setAttribute("aria-expanded", String(open));
+    tile.setAttribute("aria-label", `${j.name}: ${money2(bal)}${j.goal ? `, meta ${money2(j.goal)}` : ""}`);
+    tile.innerHTML = jarSVG(j.color, level, j.goal && bal >= j.goal);
     const nm = document.createElement("div"); nm.className = "jar-name"; nm.textContent = j.name;
+    const bb = document.createElement("div"); bb.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); bb.textContent = money2(bal);
     const sb = document.createElement("div"); sb.className = "jar-sub";
-    sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `Meta ${money2(j.goal)}. Te falta ${money2(round2(j.goal - bal))}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
-    mid.append(nm, sb);
-    const b = document.createElement("div"); b.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); b.textContent = money2(bal);
-    head.append(dot, mid, b);
-    head.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
-    el.append(head);
-    if (j.goal){ const m = document.createElement("div"); m.className = "meter"; const sp = document.createElement("span");
-      sp.style.width = Math.max(0, Math.min(100, bal / j.goal * 100)) + "%"; sp.style.background = j.color; m.append(sp); el.append(m); }
+    sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
+    tile.append(nm, bb, sb);
+    tile.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
+    grid.append(tile);
     if (open){
-      const body = document.createElement("div"); body.className = "jar-body";
+      const el = document.createElement("div"); el.className = "jar-detail";
+      const h = document.createElement("h4"); h.textContent = j.name + (j.goal && bal < j.goal ? `: te falta ${money2(round2(j.goal - bal))}` : ""); el.append(h);
+      const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
       [["Sumar", () => openJarMove(j, "deposit")], ["Sacar", () => openJarMove(j, "withdraw")], ["Actualizar valor", () => openJarMove(j, "adjust")], ["Editar", () => openJar(j)]]
         .forEach(([t, fn]) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn"; x.textContent = t; x.onclick = fn; acts.append(x); });
@@ -2630,13 +2734,13 @@ function renderJars(){
         const a = document.createElement("span"); a.className = "a" + (x.amount < 0 ? " neg" : ""); a.textContent = (x.amount >= 0 ? "+ " : "− ") + money2(Math.abs(x.amount));
         li.append(d, t, a);
         if (x.move){ const del = document.createElement("button"); del.type = "button"; del.className = "x"; del.textContent = "×"; del.setAttribute("aria-label","Borrar movimiento");
-          del.onclick = () => { if (!confirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); renderJars(); };
+          del.onclick = () => { if (!confirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); render(); };
           li.style.gridTemplateColumns = "auto minmax(0,1fr) auto auto"; li.append(del); }
         ul.append(li);
       });
       body.append(ul); el.append(body);
+      grid.append(el);
     }
-    list.append(el);
   });
   const lA = loose("ARS"), lU = loose("USD");
   if (lA || lU){
