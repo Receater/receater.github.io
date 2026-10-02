@@ -575,6 +575,8 @@ button{cursor:pointer}
 .fx-acts{display:flex;gap:8px;padding:0 14px 12px 36px;flex-wrap:wrap}
 .fp-row .pay-btn2{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 .fp-row{grid-template-columns:minmax(0,1fr) auto auto}
+
+.fx-shares{padding:0 14px 12px 22px}
 </style>
 </head>
 <body>
@@ -1361,7 +1363,7 @@ function fixInstance(f, y, m){
     const sch = cardSchedule(v)[0];
     return { ...base, state:"incard", paid:0, payDate: sch };
   }
-  const paid = round2(data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key).reduce((s,e) => s + eff(e), 0));
+  const paid = round2(data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key).reduce((s,e) => s + e.amount, 0));
   if (expected ? paid >= expected - 0.5 : paid > 0) return { ...base, state:"paid", paid };
   if (paid > 0) return { ...base, state:"partial", paid };
   return { ...base, state: f.how === "auto" ? "todebit" : "pending", paid };
@@ -3380,6 +3382,20 @@ function renderFixed(){
       else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
       btn("Editar", "", () => openFixed(i.f));
       t.append(acts);
+      if (fixShared(i.f)){
+        const sh = document.createElement("div"); sh.className = "fx-shares";
+        i.f.shares.forEach(p => {
+          const paid = fixSharePaid(i.f, i.key, p.name);
+          const r = document.createElement("div"); r.className = "fp-sub";
+          const nm = document.createElement("span"); nm.textContent = paid ? `${p.name} te devolvió` : `${p.name} te debe`;
+          const v = document.createElement("span"); v.className = "a"; v.textContent = money(p.share, i.currency);
+          const tg = document.createElement("button"); tg.type = "button"; tg.className = "pill " + (paid ? "paid" : "owe"); tg.textContent = paid ? "Devolvió ✓" : "Le falta";
+          tg.setAttribute("aria-label", `${p.name}: ${paid ? "ya devolvió" : "le falta"}. Tocar para cambiar`);
+          tg.onclick = () => { setFixSharePaid(i.f, i.key, p.name, !paid); persist(); render(); };
+          r.append(nm, v, tg); sh.append(r);
+        });
+        t.append(sh);
+      }
     }
     lst.append(t);
   });
