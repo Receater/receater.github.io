@@ -510,6 +510,28 @@ button{cursor:pointer}
 .donut-center .v{font-size:clamp(.95rem,4.6vw,1.2rem);white-space:nowrap}
 .donut-center .l{font-size:.7rem;line-height:1.25}
 .paper .donut-center .v{font-family:"Playfair Display",Georgia,serif}
+
+/* Diario simplificado: papel blanco, letra de la app, secciones claras */
+.paper,
+:root[data-theme="dark"] .paper{--np:#FFFFFF;--np-ink:#111111;--np-mut:#5E5E5E;--np-rule:#111111;--line:rgba(0,0,0,.14);--accent:#2F5BEA;--accent-ink:#fff;
+  font-family:var(--body);padding:14px 16px 16px;border-radius:6px}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .paper{--np:#FFFFFF;--np-ink:#111111;--np-mut:#5E5E5E;--np-rule:#111111;--line:rgba(0,0,0,.14);--accent:#2F5BEA;--accent-ink:#fff}
+}
+.paper .kicker{color:var(--np-mut);text-align:center;margin:0 0 4px}
+.paper .sec-h,.paper .sec-head h3{font-family:var(--body);font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase}
+.paper .sec-h{border-bottom:2px solid var(--np-rule);border-top:1px solid var(--np-rule);padding:5px 0;margin-bottom:10px}
+.paper .sec-head{border-bottom:2px solid var(--np-rule);border-top:1px solid var(--np-rule);padding:5px 0;margin-bottom:10px;align-items:center}
+.paper > section{margin-top:20px}
+.paper .facts{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.paper .fact{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.paper .fact:first-child{border-top:1px solid var(--line);padding-top:10px}
+.paper .fact .v,.paper .legend .n,.paper .donut-center .v{font-family:var(--display)}
+.paper .fact .v{font-size:1.05rem}
+.paper .caption{font-style:normal;font-size:.78rem}
+.paper-foot{font-style:normal}
+.paper .seg button[aria-pressed="true"]{background:#111;color:#fff}
+.paper .seg{border-color:var(--line)}
 </style>
 </head>
 <body>
@@ -575,12 +597,9 @@ button{cursor:pointer}
         <h1 class="mast-title">El Diario de Recy</h1>
         <div class="mast-bottom"><span id="paperDate"></span><span>Año 1</span></div>
       </header>
-      <section class="lead">
-        <p class="kicker" id="leadKicker">Economía personal</p>
-        <h2 class="headline" id="leadHead"></h2>
-        <p class="deck" id="leadDeck"></p>
-      </section>
-      <div class="cols">
+      <p class="kicker" id="leadKicker">Economía personal</p>
+      <h2 class="headline" id="leadHead" hidden></h2>
+      <p class="deck" id="leadDeck" hidden></p>
         <section>
           <div class="sec-head">
             <h3 id="donutTitle">En qué se te va</h3>
@@ -596,15 +615,13 @@ button{cursor:pointer}
           <h3 class="sec-h">Breves</h3>
           <div class="facts" id="facts"></div>
         </section>
-      </div>
-      <section class="bars">
-        <h3 class="sec-h">Tendencia: últimos 6 meses</h3>
-        <div id="barsBox"></div>
-        <p class="caption">Lo que gastaste cada mes, sin contar ahorros.</p>
-      </section>
       <section>
         <div class="sec-head"><h3>Tarjetas</h3><button type="button" class="small-btn" id="addCardDash">Agregar tarjeta</button></div>
         <div id="cardsBox"></div>
+      </section>
+      <section class="bars">
+        <h3 class="sec-h">Gastos de los últimos 6 meses</h3>
+        <div id="barsBox"></div>
       </section>
       <footer class="paper-foot">Recy, corresponsal en tu billetera. Impreso con tus tickets triturados.</footer>
     </article>
