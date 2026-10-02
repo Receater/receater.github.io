@@ -543,6 +543,12 @@ button{cursor:pointer}
 
 .quotes .chip{padding:6px 10px;font-size:.85rem}
 .quotes .chip b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;margin-left:4px}
+
+.tell{background:var(--bg);border-radius:12px;padding:10px;margin:-4px 0 14px}
+.tell-row{display:flex;gap:8px}
+.tell-row .input{flex:1}
+.tell-row .small-btn{flex:0 0 auto}
+.tell .fx-hint{margin-top:6px}
 </style>
 </head>
 <body>
@@ -682,6 +688,13 @@ button{cursor:pointer}
     <button type="button" data-type="cardpay" aria-selected="false">Tarjeta</button>
   </div>
   <h3 id="sheetTitle">Nuevo gasto</h3>
+  <div class="tell" id="tellBox">
+    <div class="tell-row">
+      <input class="input" id="tellInput" placeholder="Contale a Recy: ayer 4500 de nafta con la visa" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste">
+      <button type="button" class="small-btn primary" id="tellGo">Completar</button>
+    </div>
+    <div class="fx-hint" id="tellMsg">Podés dictarlo con el micrófono del teclado.</div>
+  </div>
   <div id="cpkBox" hidden>
     <div class="field" style="margin-top:0">
       <span class="lbl">¿Qué tarjeta pagaste?</span>
@@ -1757,6 +1770,7 @@ function setMode(m){
     : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
   $("splitField").hidden = m !== "expense";
   $("methodField").hidden = m !== "expense";
+  $("tellBox").hidden = !!editing || !(m === "expense" || m === "income");
   updateBorrowField(); updateLendField();
   if (typeof updateFixField === "function") updateFixField();
   updateUntilField();
@@ -2269,6 +2283,84 @@ function fxCalc(){
   $("fxCalc").textContent = usd && ars ? `${fmtUSD.format(usd)} a ${fmtARS.format(round2(rate))} = ${fmtARS.format(round2(ars))}` : "Completá dos datos y el tercero se calcula solo.";
 }
 const fxLink = linkFx("fxUsd", "fxRate", "fxArs", fxCalc);
+/* ---------- Contale a Recy: entender frases y completar el formulario ---------- */
+const TELL_CATS = {
+  super: ["super","supermercado","chino","verduleria","carniceria","almacen","dietetica","coto","carrefour","dia","jumbo","disco","vea","mercado"],
+  comida: ["almuerzo","cena","desayuno","merienda","delivery","pedidosya","pedidos ya","rappi","cafe","restaurant","resto","pizza","empanadas","hamburguesa","sushi","helado","comida"],
+  transporte: ["nafta","combustible","sube","uber","cabify","didi","taxi","remis","colectivo","bondi","subte","tren","peaje","estacionamiento","cochera","ypf","shell","axion"],
+  casa: ["luz","gas","agua","internet","expensas","alquiler","edenor","edesur","metrogas","aysa","fibertel","telecentro","personal","movistar","claro","limpieza","ferreteria"],
+  salud: ["farmacia","medico","remedios","dentista","psicologo","obra social","prepaga","osde","swiss","analisis","kinesio"],
+  salidas: ["bar","cine","birra","cerveza","cervezas","boliche","recital","teatro","entrada","salida","fernet","vino"],
+  suscripciones: ["netflix","spotify","claude","chatgpt","youtube","disney","hbo","max","icloud","prime","amazon prime","paramount","suscripcion"],
+  ropa: ["ropa","zapatillas","remera","jean","pantalon","campera","buzo","medias","zapatos"],
+  trabajo: ["software","licencia","adobe","figma","hosting","dominio","curso","libro"],
+  ahorro: ["ahorro","plazo fijo"]
+};
+const norm2 = t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function tellParse(raw){
+  let t = " " + norm2(raw) + " ", out = { notes: [] };
+  const take = re => { const m = t.match(re); if (m) t = t.replace(m[0], " "); return m; };
+  // ingreso
+  if (/\b(cobre|me pagaron|me depositaron|ingreso|sueldo|cobro)\b/.test(t)){ out.mode = "income"; out.kind = /\bsueldo\b/.test(t) ? "sueldo" : /\b(freelance|trabajo|laburo)\b/.test(t) ? "extra" : (/\bsueldo|cobre\b/.test(t) ? "sueldo" : "otro_ing"); }
+  // moneda
+  if (take(/\b(usd|us\$|u\$s|dolares|dolar|verdes)\b/)) out.currency = "USD";
+  // cuotas
+  let m = take(/\ben (\d{1,2}) cuotas\b/) || take(/\b(\d{1,2}) cuotas\b/); if (m) out.cuotas = Number(m[1]);
+  // monto: 15 mil, 4 lucas, 4,5k, 4.500, 4500
+  m = take(/\b(\d+(?:[.,]\d+)?)\s*(mil|lucas|luca|k)\b/);
+  if (m) out.amount = parseFloat(m[1].replace(",", ".")) * 1000;
+  else { m = take(/\$?\s*(\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?)/); if (m) out.amount = parseAmount(m[1]); }
+  // fecha
+  const today = new Date(); let d = null;
+  if (take(/\banteayer\b/)) d = new Date(today.getTime() - 2*864e5);
+  else if (take(/\bayer\b/)) d = new Date(today.getTime() - 864e5);
+  else if (take(/\bhoy\b/)) d = today;
+  else {
+    const days = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+    m = take(new RegExp("\\b(el )?(" + days.join("|") + ")\\b"));
+    if (m){ const k = days.indexOf(m[2]); const back = (today.getDay() - k + 7) % 7; d = new Date(today.getTime() - back*864e5); }
+    else { m = take(/\bel (\d{1,2})\b/); if (m){ const n = Number(m[1]); d = new Date(today.getFullYear(), today.getMonth(), n); if (d > today) d = new Date(today.getFullYear(), today.getMonth()-1, n); } }
+  }
+  if (d) out.date = toLocalInput(d);
+  // medio de pago y tarjeta
+  for (const c of data.cards){ const n = norm2(c.name); const words = n.split(/\s+/).filter(w => w.length > 2);
+    if (t.includes(n) || words.some(w => new RegExp("\\b" + w + "\\b").test(t))){ out.method = "card"; out.cardId = c.id; words.forEach(w => t = t.replace(new RegExp("\\b" + w + "\\b"), " ")); break; } }
+  if (!out.method){
+    if (take(/\b(con |en |por )?(efectivo|cash)\b/)) out.method = "cash";
+    else if (take(/\b(con |en |por )?(debito|tarjeta de debito)\b/)) out.method = "debit";
+    else if (take(/\b(con |por )?(transferencia|transferi|mercado ?pago|mp)\b/)) out.method = "transfer";
+    else if (take(/\b(con |en )?(tarjeta|credito)\b/) && data.cards.length === 1){ out.method = "card"; out.cardId = data.cards[0].id; }
+  }
+  // categoría: primero las tuyas, después las palabras conocidas
+  if (out.mode !== "income"){
+    for (const c of data.customCats){ if (new RegExp("\\b" + norm2(c.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(t)){ out.category = c.id; break; } }
+    if (!out.category) for (const [cat, words] of Object.entries(TELL_CATS)){ if (words.some(w => new RegExp("\\b" + w + "\\b").test(t))){ out.category = cat; break; } }
+  }
+  // nota: lo que queda, sin palabras de relleno
+  const note = t.replace(/\b(de|del|en|con|por|para|un|una|el|la|los|las|me|gaste|pague|compre|cobre|me pagaron|y|a|al|pesos|\$)\b/g, " ").replace(/\s+/g, " ").trim();
+  out.note = note ? note.charAt(0).toUpperCase() + note.slice(1) : "";
+  return out;
+}
+function tellApply(){
+  const raw = $("tellInput").value.trim(); if (!raw) return;
+  const r = tellParse(raw), got = [];
+  if (r.mode === "income" && mode !== "income"){ setMode("income"); }
+  if (r.mode !== "income" && mode !== "expense" && mode !== "income") setMode("expense");
+  if (r.mode === "income" && r.kind){ incomeKind = r.kind; renderCats(); updateUntilField(); got.push("ingreso"); }
+  if (r.amount){ $("amount").value = String(round2(r.amount)).replace(".",","); $("amount").dispatchEvent(new Event("input")); got.push("monto"); }
+  setCurrency(r.currency || "ARS"); if (r.currency) got.push("dólares");
+  if (r.date){ $("date").value = r.date; $("date").dispatchEvent(new Event("change")); got.push("fecha"); }
+  if (mode === "expense"){
+    if (r.category){ category = r.category; renderCats(); updateJarField(); got.push("categoría"); }
+    if (r.method){ method = r.method; cardId = r.cardId || null; renderMethods(); got.push(r.method === "card" ? "tarjeta" : "medio de pago"); }
+    if (r.cuotas && method === "card"){ $("cuotas").value = String(r.cuotas); $("cuotas").dispatchEvent(new Event("change")); got.push("cuotas"); }
+  }
+  if (r.note && !$("note").value) $("note").value = r.note;
+  $("tellMsg").textContent = got.length ? `Listo, completé: ${got.join(", ")}. Revisá y guardá.` : "No entendí bien. Probá con algo como: ayer 4500 de nafta con débito.";
+}
+$("tellGo").onclick = tellApply;
+$("tellInput").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); tellApply(); } });
+
 function openSheet(exp){
   editing = exp || null;
   const d = exp ? new Date(exp.date) : new Date();
@@ -2303,6 +2395,7 @@ function openSheet(exp){
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
   $("catSearch").value = ""; catEditing = false; editingPay = null;
+  $("tellInput").value = ""; $("tellMsg").textContent = "Podés dictarlo con el micrófono del teclado.";
   fixSel = exp && exp.fixedId ? { fid: exp.fixedId, key: exp.fixedKey } : null; fixDiffMode = "partial";
   cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
