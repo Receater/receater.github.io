@@ -538,6 +538,8 @@ button{cursor:pointer}
 
 #xlBg{z-index:14}
 #xlSheet{z-index:15}
+
+.fixed-sum{margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -662,6 +664,7 @@ button{cursor:pointer}
     <input type="file" id="importFile" accept="application/json,.json" hidden>
     </div>
     <p class="fx-hint">El backup es un archivo con todos tus datos, para guardarlo donde quieras.</p>
+    <button type="button" class="linkbtn" id="wipeBtn" style="color:var(--danger);margin-top:6px" hidden>Borrar todo lo cargado en este dispositivo</button>
   </footer>
 </main>
 
@@ -1497,6 +1500,8 @@ function render(){
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
   const repayScreen = isCurrentPeriod(viewYear, viewMonth) ? toRepayARS(viewYear, viewMonth) : 0;
   if (repayScreen > 0) screen.push(`A devolver ${fmtARS.format(repayScreen)}`);
+  const owedScreen = data.expenses.filter(e => e.currency === "ARS" && e.split).reduce((s2,e) => s2 + owed(e), 0);
+  if (owedScreen > 0.5) screen.push(`Te deben ${fmtARS.format(owedScreen)}`);
   if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
     const freeD = bIncA - bSpentA - fixScreen - repayScreen;
     const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
@@ -3409,6 +3414,17 @@ function buildXls(X, range){
   const tag = range === "all" ? "todo" : range === "year" ? String(yr) : monthKey(viewYear, viewMonth);
   X.writeFile(wb, `receater-${tag}.xlsx`);
 }
+
+/* ---------- Borrar los datos locales (solo sin sesión de Google) ---------- */
+(() => {
+  const linked = (() => { try { return !!localStorage.getItem("receater.linked"); } catch { return false; } })();
+  $("wipeBtn").hidden = linked;
+  $("wipeBtn").onclick = () => {
+    if (!confirm("¿Borrar todos los gastos, ingresos, tarjetas, fijos y ahorros de este dispositivo? No se puede deshacer. Si querés guardarlos, exportá un backup antes.")) return;
+    try { localStorage.removeItem(STORE_KEY); localStorage.removeItem("receater.tab"); } catch {}
+    location.reload();
+  };
+})();
 
 /* ---------- Backup: exportar e importar ---------- */
 $("exportBtn").onclick = () => {
