@@ -560,6 +560,17 @@ button{cursor:pointer}
 .fp-sub .a{font-family:"IBM Plex Mono",ui-monospace,monospace}
 .fp-sub .pill{min-width:84px}
 .fp-row.paid .n{color:var(--muted)}
+
+.ai-steps{display:grid;gap:10px}
+.ai-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px}
+.ai-step strong{display:block}
+.ai-step span{display:block;color:var(--muted);font-size:.9rem;margin-top:2px}
+.ai-n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.ai-manual{margin-top:12px;font-size:.9rem}
+.ai-manual summary{cursor:pointer;color:var(--accent);font-weight:600}
+.ai-invite{display:flex;gap:12px;align-items:center;background:var(--bg);border-radius:12px;padding:12px;margin:-4px 0 14px}
+.ai-invite p{margin:0;font-size:.9rem}
+.ai-invite .small-btn{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -590,6 +601,13 @@ button{cursor:pointer}
   </div>
 
 
+  <div class="cloud-banner" id="aiCard" hidden>
+    <p>✨ <strong>¿Querés que Recy cargue por vos?</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Se activa en un minuto.</p>
+    <div class="row">
+      <button type="button" class="small-btn primary" id="aiCardGo">Activar</button>
+      <button type="button" class="small-btn" id="aiCardLater">Ahora no</button>
+    </div>
+  </div>
   <div class="cloud-banner" id="cloudBanner" hidden>
     <p>Entrá con Google para guardar tus datos en tu Drive y verlos desde cualquier celu o compu.</p>
     <div class="row">
@@ -699,6 +717,10 @@ button{cursor:pointer}
     <button type="button" data-type="cardpay" aria-selected="false">Tarjeta</button>
   </div>
   <h3 id="sheetTitle">Nuevo gasto</h3>
+  <div class="ai-invite" id="aiInvite" hidden>
+    <p>✨ <strong>Recy puede cargar por vos.</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Para eso necesita que lo actives una vez.</p>
+    <button type="button" class="small-btn primary" id="aiInviteBtn">Activar</button>
+  </div>
   <div class="tell" id="tellBox">
     <textarea class="input" id="tellInput" rows="2" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
     <div class="tell-row" style="margin-top:8px">
@@ -708,7 +730,7 @@ button{cursor:pointer}
       <button type="button" class="small-btn primary" id="tellGo">Completar</button>
     </div>
     <div class="fx-hint" id="tellMsg">Podés dictarlo con el micrófono del teclado.</div>
-    <div class="fx-hint"><button type="button" class="linkbtn" id="aiSetup" style="padding:0;font-size:.82rem"></button></div>
+    <div class="fx-hint"><button type="button" class="linkbtn" id="aiSetup" style="padding:0;font-size:.82rem">Recy inteligente activado ✓</button></div>
   </div>
   <div id="cpkBox" hidden>
     <div class="field" style="margin-top:0">
@@ -1022,20 +1044,24 @@ button{cursor:pointer}
 
 <div class="sheet-bg" id="aiBg"></div>
 <div class="sheet" id="aiSheet" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
-  <h3 id="aiTitle">Recy inteligente</h3>
-  <p class="fx-hint" style="margin:0 0 10px">Con una clave gratis de Gemini (Google), Recy entiende frases largas y lee fotos de tickets. Se carga una sola vez: si entrás con Google, queda guardada en tu Drive junto con tus datos.</p>
-  <ol class="fx-hint" style="margin:0 0 10px;padding-left:18px;line-height:1.6">
-    <li>Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
-    <li>Tocá "Create API key" y copiala.</li>
-    <li>Pegala acá abajo y guardá.</li>
-  </ol>
-  <div class="field"><label for="aiKey">Clave de Gemini</label><input class="input" id="aiKey" type="password" autocomplete="off" placeholder="AIza…"></div>
-  <p class="fx-hint">En el plan gratis, Google puede usar lo que le mandás para mejorar sus modelos. No le mandes nada que no quieras que se lea.</p>
+  <h3 id="aiTitle">Activá Recy inteligente</h3>
+  <p style="margin:0 0 12px;font-size:.95rem">Así Recy entiende lo que le contás con tus palabras y lee las fotos de tus tickets. Usa la IA gratis de Google, con tu propia cuenta. Se hace <strong>una sola vez</strong>.</p>
+  <div class="ai-steps">
+    <div class="ai-step"><span class="ai-n">1</span><div><strong>Pedile a Google tu código</strong><span>Se abre una página de Google. Si te pide aceptar condiciones, aceptá. Después tocá el botón azul <b>"Create API key"</b> y copiá el código que aparece.</span>
+      <button type="button" class="small-btn primary" id="aiOpen" style="margin-top:8px">Ir a Google</button></div></div>
+    <div class="ai-step"><span class="ai-n">2</span><div><strong>Volvé acá y pegalo</strong><span>Recy lo prueba y queda listo.</span>
+      <button type="button" class="small-btn primary" id="aiPaste" style="margin-top:8px">Pegar código</button></div></div>
+  </div>
+  <details class="ai-manual"><summary>¿No se pegó? Escribilo o pegalo acá</summary>
+    <input class="input" id="aiKey" type="password" autocomplete="off" placeholder="Empieza con AIza…" aria-label="Código de Google Gemini" style="margin-top:8px">
+    <button type="button" class="small-btn" id="aiSave" style="margin-top:8px">Probar y guardar</button>
+  </details>
+  <p class="fx-hint" id="aiOkTxt" hidden>✓ Recy inteligente está activado en tu cuenta.</p>
+  <p class="fx-hint" style="margin-top:12px">Este código es tuyo y gratis, solo sirve para usar la IA de Google y lo usa únicamente Receater. Si entrás con Google, queda guardado en tu Drive. En el plan gratis, Google puede usar lo que le mandás para mejorar su IA.</p>
   <div class="err" id="aiErr"></div>
   <div class="actions">
-    <button type="button" class="btn danger" id="aiDel">Quitar</button>
+    <button type="button" class="btn danger" id="aiDel">Desactivar</button>
     <button type="button" class="btn ghost" id="aiCancel">Cerrar</button>
-    <button type="button" class="btn primary" id="aiSave">Probar y guardar</button>
   </div>
 </div>
 
@@ -1871,7 +1897,9 @@ function setMode(m){
     : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
   $("splitField").hidden = m !== "expense";
   $("methodField").hidden = m !== "expense";
-  $("tellBox").hidden = !!editing || !(m === "expense" || m === "income");
+  const tellOk = !editing && (m === "expense" || m === "income");
+  $("tellBox").hidden = !tellOk || !aiKey();
+  $("aiInvite").hidden = !tellOk || !!aiKey();
   updateBorrowField(); updateLendField();
   if (typeof updateFixField === "function") updateFixField();
   updateUntilField();
@@ -2471,7 +2499,15 @@ const AI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite
 const aiKey = () => { if (data.aiKey) return data.aiKey; try { return localStorage.getItem(AI_KEY) || ""; } catch { return ""; } };
 function setAiKey(k){ if (k) data.aiKey = k; else delete data.aiKey; try { k ? localStorage.setItem(AI_KEY, k) : localStorage.removeItem(AI_KEY); } catch {} persist(); }
 let tellItems = null;
-function aiSetupLabel(){ $("aiSetup").textContent = aiKey() ? "Recy inteligente activado ✓ · cambiar" : "Activá Recy inteligente para frases largas y fotos de tickets"; }
+function aiSetupLabel(){
+  $("aiSetup").textContent = "Recy inteligente activado ✓";
+  if ($("sheet").classList.contains("open")){
+    const tellOk = !editing && (mode === "expense" || mode === "income");
+    $("tellBox").hidden = !tellOk || !aiKey(); $("aiInvite").hidden = !tellOk || !!aiKey();
+  }
+  let dis = false; try { dis = !!localStorage.getItem("receater.aiInviteOff"); } catch {}
+  $("aiCard").hidden = !!aiKey() || dis;
+}
 async function aiCall(parts){
   const key = aiKey(); if (!key) throw { code: "nokey" };
   let lastErr = null;
@@ -2588,21 +2624,35 @@ $("tellFile").onchange = async () => {
   $("tellPhoto").disabled = false; $("tellGo").disabled = false;
 };
 /* Modal de la clave */
-function openAi(){ $("aiKey").value = aiKey(); $("aiErr").textContent = ""; $("aiDel").hidden = !aiKey(); $("aiBg").classList.add("open"); $("aiSheet").classList.add("open"); }
+function openAi(){
+  $("aiKey").value = ""; $("aiErr").textContent = ""; $("aiDel").hidden = !aiKey(); $("aiOkTxt").hidden = !aiKey();
+  $("aiBg").classList.add("open"); $("aiSheet").classList.add("open");
+}
+$("aiOpen").onclick = () => window.open("https://aistudio.google.com/apikey", "_blank", "noopener");
+$("aiPaste").onclick = async () => {
+  let t = "";
+  try { t = (await navigator.clipboard.readText() || "").trim(); } catch {}
+  if (!t){ $("aiErr").textContent = "No pude leer lo que copiaste. Abrí \"¿No se pegó?\" y pegalo ahí."; document.querySelector(".ai-manual").open = true; return; }
+  if (!/^AIza[\w-]{20,}$/.test(t)){ $("aiErr").textContent = "Lo que copiaste no parece el código de Google. Tiene que empezar con AIza. Volvé a copiarlo."; return; }
+  $("aiKey").value = t; $("aiSave").onclick();
+};
+$("aiInviteBtn").onclick = openAi;
 function closeAi(){ $("aiBg").classList.remove("open"); $("aiSheet").classList.remove("open"); aiSetupLabel(); }
 $("aiSetup").onclick = openAi; $("aiCancel").onclick = closeAi; $("aiBg").onclick = closeAi;
 $("aiDel").onclick = () => { setAiKey(""); closeAi(); };
 $("aiSave").onclick = async () => {
-  const k = $("aiKey").value.trim(); if (!k){ $("aiErr").textContent = "Pegá la clave."; return; }
+  const k = $("aiKey").value.trim(); if (!k){ $("aiErr").textContent = "Pegá el código que copiaste."; return; }
   const prev = aiKey(); setAiKey(k);
-  $("aiSave").disabled = true; $("aiErr").textContent = "Probando…";
-  try { await aiCall([{ text: 'Respondé solo este JSON: {"ok":true}' }]); $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Recy inteligente activado. Contale lo que gastaste."; }
+  $("aiSave").disabled = true; $("aiPaste").disabled = true; $("aiErr").textContent = "Recy está probando el código…";
+  try { await aiCall([{ text: 'Respondé solo este JSON: {"ok":true}' }]); $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "¡Listo! Ahora contame lo que gastaste o sacale una foto al ticket."; feedRecy(); }
   catch (e){
-    if (e && e.code === "quota"){ $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Clave guardada. Gemini está sin cupo en este momento, probá en un rato."; }
-    else { setAiKey(prev); $("aiErr").textContent = e && e.code === "badkey" ? "Esa clave no funciona. Fijate que esté completa." : "No pude probarla. Revisá tu conexión e intentá de nuevo."; }
+    if (e && e.code === "quota"){ $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Listo, quedó guardado. Google está con mucha demanda, probá en un rato."; }
+    else { setAiKey(prev); $("aiErr").textContent = e && e.code === "badkey" ? "Ese código no funcionó. Fijate de copiarlo completo y probá de nuevo." : "No pude probarlo. Revisá tu conexión e intentá de nuevo."; }
   }
-  $("aiSave").disabled = false;
+  $("aiSave").disabled = false; $("aiPaste").disabled = false;
 };
+$("aiCardGo").onclick = openAi;
+$("aiCardLater").onclick = () => { try { localStorage.setItem("receater.aiInviteOff", "1"); } catch {} aiSetupLabel(); };
 aiSetupLabel();
 
 function openSheet(exp){
