@@ -571,6 +571,10 @@ button{cursor:pointer}
 .ai-invite{display:flex;gap:12px;align-items:center;background:var(--bg);border-radius:12px;padding:12px;margin:-4px 0 14px}
 .ai-invite p{margin:0;font-size:.9rem}
 .ai-invite .small-btn{flex:0 0 auto}
+
+.fx-acts{display:flex;gap:8px;padding:0 14px 12px 36px;flex-wrap:wrap}
+.fp-row .pay-btn2{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
+.fp-row{grid-template-columns:minmax(0,1fr) auto auto}
 </style>
 </head>
 <body>
@@ -1759,7 +1763,10 @@ function renderFixedPend(){
     a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
     const done = ["paid","cardpaid"].includes(i.state);
     if (done){ b.classList.add("paid"); sm.textContent = "pagado"; a.textContent = money(i.expected || i.paid, i.currency); }
-    b.append(n, a); b.onclick = () => done ? setTab("fixed") : card ? openFixMonth(i) : openSheetForFixed(i); box.append(b);
+    b.append(n, a);
+    if (!done && !card){ const pb = document.createElement("span"); pb.className = "pay-btn2"; pb.textContent = "Pagar"; b.append(pb); }
+    else b.append(document.createElement("span"));
+    b.onclick = () => done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i); box.append(b);
     if (fixShared(i.f)) i.f.shares.forEach(p => {
       const paid = fixSharePaid(i.f, i.key, p.name);
       const r = document.createElement("div"); r.className = "fp-sub";
@@ -3332,12 +3339,20 @@ function renderFixed(){
     a.textContent = i.expected ? money(i.expected, i.currency) : "—";
     if (info.stamp) a.append(stampEl(...info.stamp));
     b.append(dot, mid, a);
-    b.onclick = () => {
-      if (i.f.how === "card" || i.state === "noamount") openFixMonth(i);
-      else if (i.state === "paid") openFixed(i.f);
-      else openSheetForFixed(i);
-    };
-    t.append(b); lst.append(t);
+    const key = "fx:" + i.f.id + "|" + i.key, open = expanded.has(key);
+    b.setAttribute("aria-expanded", String(open));
+    b.onclick = () => { open ? expanded.delete(key) : expanded.add(key); renderFixed(); };
+    t.append(b);
+    if (open){
+      const acts = document.createElement("div"); acts.className = "fx-acts";
+      const btn = (txt, cls, fn) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn " + cls; x.textContent = txt; x.onclick = fn; acts.append(x); };
+      const paid = ["paid","cardpaid"].includes(i.state);
+      if (i.f.how === "card") btn("Monto de este mes", "", () => openFixMonth(i));
+      else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
+      btn("Editar", "", () => openFixed(i.f));
+      t.append(acts);
+    }
+    lst.append(t);
   });
   box.append(lst);
 }
