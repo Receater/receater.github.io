@@ -532,6 +532,9 @@ button{cursor:pointer}
 .paper-foot{font-style:normal}
 .paper .seg button[aria-pressed="true"]{background:#111;color:#fff}
 .paper .seg{border-color:var(--line)}
+
+.seg{display:inline-flex}
+.seg button{flex:1 1 0;min-width:44px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -593,7 +596,7 @@ button{cursor:pointer}
     <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
     <article class="paper" aria-label="El Diario de Recy">
       <header class="masthead">
-        <div class="mast-top"><span id="paperEdition"></span><span>Precio: tus tickets</span></div>
+        <div class="mast-top"><span id="paperEdition"></span><span>Resumen de todo el mes</span></div>
         <h1 class="mast-title">El Diario de Recy</h1>
         <div class="mast-bottom"><span id="paperDate"></span><span>Año 1</span></div>
       </header>
@@ -603,10 +606,6 @@ button{cursor:pointer}
         <section>
           <div class="sec-head">
             <h3 id="donutTitle">En qué se te va</h3>
-            <div class="seg" role="group" aria-label="Moneda del resumen">
-              <button type="button" data-dcur="ARS" aria-pressed="true">$</button>
-              <button type="button" data-dcur="USD" aria-pressed="false">US$</button>
-            </div>
           </div>
           <div id="donutBox"></div>
           <p class="caption">Tocá una categoría para ver sus gastos.</p>
@@ -1304,7 +1303,7 @@ function jarEntries(j){
   const out = [];
   data.expenses.forEach(e => {
     if (e.jarId !== j.id) return;
-    if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra de dólares a ${fmtARS.format(e.fx.rate)}`, src:e });
+    if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}`, src:e });
     else if (e.currency === j.currency) out.push({ date:e.date.slice(0,10), amount:eff(e), label: e.note || "Ahorro", src:e });
   });
   data.jarMoves.filter(m => m.jarId === j.id).forEach(m => out.push({ date:m.date, amount:m.amount,
@@ -2483,6 +2482,8 @@ function renderDash(){
     sav ? `${Math.round(sav/inc*100)}% a ahorro` : total <= inc ? `Te sobran ${money(inc-total,cur)}` : `Te pasaste ${money(total-inc,cur)}`);
   else if (sav) addFact("Ahorraste", money(sav,cur), "este mes");
   if (topCat) addFact("Donde más gastás", catById(topCat[0]).name, `${Math.round(topCat[1]/(gasto||1)*100)}% de tus gastos`);
+  const usdSpent = monthExpenses(viewYear, viewMonth, "USD").filter(x => !isSaving(x)).reduce((s2,x) => s2 + x.amount, 0);
+  if (cur === "ARS" && usdSpent > 0) addFact("Gastado en dólares", fmtUSD.format(round2(usdSpent)), "Aparte de lo que ves en pesos");
 
   // Barras últimos 6 meses
   const months = [];
@@ -2607,7 +2608,7 @@ function renderPaper(){
   $("leadKicker").textContent = "Economía personal · " + periodTitle(viewYear, viewMonth);
   $("paperEdition").textContent = "Edición " + periodTitle(viewYear, viewMonth);
   const d = new Date().toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
-  $("paperDate").textContent = d.charAt(0).toUpperCase() + d.slice(1);
+  $("paperDate").textContent = "Hoy, " + d.replace(",", "");
 }
 function stageDash(){
   const py = viewMonth === 0 ? viewYear - 1 : viewYear, pm = viewMonth === 0 ? 11 : viewMonth - 1;
@@ -2660,6 +2661,7 @@ function stageJars(){
 
 function setTab(t){
   tab = t;
+  try { localStorage.setItem("receater.tab", t); } catch {}
   $("tabList").setAttribute("aria-selected", String(t==="list"));
   $("tabDash").setAttribute("aria-selected", String(t==="dash"));
   $("tabJars").setAttribute("aria-selected", String(t==="jars"));
@@ -2877,6 +2879,13 @@ function renderJars(){
     if (open){
       const el = document.createElement("div"); el.className = "jar-detail";
       const h = document.createElement("h4"); h.textContent = j.name + (j.goal && bal < j.goal ? `: te falta ${money2(round2(j.goal - bal))}` : ""); el.append(h);
+      const buys = data.expenses.filter(e => e.jarId === j.id && e.fx);
+      if (buys.length){
+        const usd = buys.reduce((s2,e) => s2 + e.fx.usd, 0), ars = buys.reduce((s2,e) => s2 + e.amount, 0);
+        const p2 = document.createElement("p"); p2.className = "fx-hint"; p2.style.margin = "4px 0 0";
+        p2.textContent = `Compraste ${fmtUSD.format(usd)} y te costaron ${fmtARS.format(ars)}, a ${fmtARS.format(round2(ars / usd))} promedio.`;
+        el.append(p2);
+      }
       const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
       [["Sumar", () => openJarMove(j, "deposit")], ["Sacar", () => openJarMove(j, "withdraw")], ["Actualizar valor", () => openJarMove(j, "adjust")], ["Editar", () => openJar(j)]]
@@ -3178,7 +3187,7 @@ $("importFile").onchange = async () => {
   location.reload();
 };
 
-render();
+try { const t0 = localStorage.getItem("receater.tab"); if (["list","dash","fixed","jars"].includes(t0)) setTab(t0); else render(); } catch { render(); }
 cloud.init();
 </script>
 </body>
