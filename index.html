@@ -455,7 +455,18 @@ button{cursor:pointer}
 @media (prefers-reduced-motion:reduce){.jar-liquid{transition:none}}
 #jarTotals{display:none}
 
-.jar-meter{width:100%;height:6px;margin-top:8px}
+.jar-meter{width:100%;height:6px;margin:6px 0 4px}
+
+.month-nav.ghost{visibility:hidden}
+/* Resumen: categorías que se despliegan */
+.legend li.cat-row{cursor:pointer;grid-template-columns:10px minmax(0,1fr) auto 14px}
+.legend li.cat-row .chev{color:var(--muted);margin:0;justify-self:end}
+.legend li.cat-row.is-open .chev{transform:rotate(90deg)}
+.legend li.cat-list{display:block;padding:0 0 8px 18px;border-top:0}
+.cat-entry{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;width:100%;border:0;background:none;text-align:left;padding:7px 0;border-top:1px dashed var(--line);font-size:.9rem;align-items:center}
+.cat-entry .d{color:var(--muted);font-size:.8rem;min-width:42px}
+.cat-entry .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-entry .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600}
 </style>
 </head>
 <body>
@@ -2267,6 +2278,14 @@ const shortMoney = (n,cur) => {
   return pre + Math.round(n);
 };
 
+const dashOpen = new Set();
+/* Abrir el detalle de algo que aparece en el resumen: el gasto, el pago de tarjeta o el fijo */
+function openEntry(x){
+  if (x.payId){ const pay = data.cardPayments.find(p => p.id === x.payId); if (pay) openPayEdit(pay); return; }
+  const src = x.src || x;
+  if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }
+  if (data.expenses.includes(src) || data.incomes.includes(src)) openSheet(src);
+}
 function renderDash(){
   const cur = dashCur;
   const list = monthExpenses(viewYear, viewMonth, cur);
@@ -2328,7 +2347,27 @@ function renderDash(){
       const a = document.createElement("div"); a.className = "a"; a.textContent = money(v,cur);
       const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(v);
       a.append(pc);
-      li.append(dot, mid, a); ul.append(li);
+      const open = dashOpen.has(id);
+      li.className = "cat-row" + (open ? " is-open" : "");
+      li.tabIndex = 0; li.setAttribute("role", "button"); li.setAttribute("aria-expanded", String(open));
+      const ch = document.createElement("span"); ch.className = "chev"; ch.textContent = "›";
+      li.append(dot, mid, a, ch); ul.append(li);
+      const toggle = () => { open ? dashOpen.delete(id) : dashOpen.add(id); renderDash(); };
+      li.onclick = toggle; li.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggle(); } };
+      if (open){
+        const box2 = document.createElement("li"); box2.className = "cat-list";
+        list.filter(x => x.category === id).sort((a,b) => b.date.localeCompare(a.date)).forEach(x => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "cat-entry";
+          const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(dateOnly(x.date));
+          const card = x.cardId ? cardById(x.cardId) : null;
+          const tt = document.createElement("span"); tt.className = "t";
+          tt.textContent = [x.note || (x.payId ? "Resto de la tarjeta" : c.name), card && card.name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null].filter(Boolean).join(" · ");
+          const aa = document.createElement("span"); aa.className = "a"; aa.textContent = money(x.amount, x.currency);
+          b.append(dd, tt, aa); b.onclick = () => openEntry(x);
+          box2.append(b);
+        });
+        ul.append(box2);
+      }
     });
     if (inc > total){
       const li = document.createElement("li");
@@ -2515,7 +2554,9 @@ function setTab(t){
   $("tabJars").setAttribute("aria-selected", String(t==="jars"));
   $("tabFixed").setAttribute("aria-selected", String(t==="fixed"));
   $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars"; $("viewFixed").hidden = t!=="fixed";
-  $("monthNav").hidden = t === "jars";
+  $("monthNav").hidden = false;
+  $("monthNav").classList.toggle("ghost", t === "jars");
+  $("monthNav").setAttribute("aria-hidden", String(t === "jars"));
   render();
 }
 $("tabJars").onclick = () => setTab("jars");
@@ -2716,9 +2757,10 @@ function renderJars(){
     const bb = document.createElement("div"); bb.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); bb.textContent = money2(bal);
     const sb = document.createElement("div"); sb.className = "jar-sub";
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
-    tile.append(nm, bb, sb);
+    tile.append(nm, bb);
     if (j.goal){ const m = document.createElement("div"); m.className = "meter jar-meter"; const sp = document.createElement("span");
       sp.style.width = Math.round(level * 100) + "%"; sp.style.background = j.color; m.append(sp); tile.append(m); }
+    tile.append(sb);
     tile.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
     grid.append(tile);
     if (open){
