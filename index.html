@@ -549,6 +549,12 @@ button{cursor:pointer}
 .tell-row .input{flex:1}
 .tell-row .small-btn{flex:0 0 auto}
 .tell .fx-hint{margin-top:6px}
+
+#aiBg{z-index:14}
+#aiSheet{z-index:15}
+.tell textarea{resize:none;min-height:52px;font-size:.95rem;line-height:1.35}
+.tell .small-btn[disabled]{opacity:.5}
+.items-panel .split-row .s{font-weight:500}
 </style>
 </head>
 <body>
@@ -689,11 +695,15 @@ button{cursor:pointer}
   </div>
   <h3 id="sheetTitle">Nuevo gasto</h3>
   <div class="tell" id="tellBox">
-    <div class="tell-row">
-      <input class="input" id="tellInput" placeholder="Contale a Recy: ayer 4500 de nafta con la visa" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste">
+    <textarea class="input" id="tellInput" rows="2" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
+    <div class="tell-row" style="margin-top:8px">
+      <button type="button" class="small-btn" id="tellPhoto" aria-label="Sacar foto del ticket">📷 Foto del ticket</button>
+      <input type="file" id="tellFile" accept="image/*" capture="environment" hidden>
+      <span style="flex:1"></span>
       <button type="button" class="small-btn primary" id="tellGo">Completar</button>
     </div>
     <div class="fx-hint" id="tellMsg">Podés dictarlo con el micrófono del teclado.</div>
+    <div class="fx-hint"><button type="button" class="linkbtn" id="aiSetup" style="padding:0;font-size:.82rem"></button></div>
   </div>
   <div id="cpkBox" hidden>
     <div class="field" style="margin-top:0">
@@ -990,6 +1000,25 @@ button{cursor:pointer}
   <div class="actions">
     <button type="button" class="btn ghost" id="jmCancel">Cancelar</button>
     <button type="button" class="btn primary" id="jmSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="aiBg"></div>
+<div class="sheet" id="aiSheet" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+  <h3 id="aiTitle">Recy inteligente</h3>
+  <p class="fx-hint" style="margin:0 0 10px">Con una clave gratis de Gemini (Google), Recy entiende frases largas y lee fotos de tickets. La clave queda guardada solo en este dispositivo.</p>
+  <ol class="fx-hint" style="margin:0 0 10px;padding-left:18px;line-height:1.6">
+    <li>Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
+    <li>Tocá "Create API key" y copiala.</li>
+    <li>Pegala acá abajo y guardá.</li>
+  </ol>
+  <div class="field"><label for="aiKey">Clave de Gemini</label><input class="input" id="aiKey" type="password" autocomplete="off" placeholder="AIza…"></div>
+  <p class="fx-hint">En el plan gratis, Google puede usar lo que le mandás para mejorar sus modelos. No le mandes nada que no quieras que se lea.</p>
+  <div class="err" id="aiErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="aiDel">Quitar</button>
+    <button type="button" class="btn ghost" id="aiCancel">Cerrar</button>
+    <button type="button" class="btn primary" id="aiSave">Probar y guardar</button>
   </div>
 </div>
 
@@ -1319,7 +1348,16 @@ function cardSchedule(e){
 function entries(){
   const out = [];
   allExpenses().forEach(e => {
-    if (!isCardExp(e)){ out.push({ ...e, split:null, amount: eff(e), src:e }); return; }
+    if (!isCardExp(e)){
+      const its = Array.isArray(e.items) ? e.items.filter(i => i.category && i.price > 0) : [];
+      if (its.length && !e.split){
+        const byC = {}; its.forEach(i => byC[i.category] = (byC[i.category] || 0) + i.price);
+        const sumIt = Object.values(byC).reduce((a,b) => a + b, 0), total = eff(e), k = sumIt > 0 ? total / sumIt : 1;
+        Object.entries(byC).forEach(([c, v], n) => out.push({ ...e, id:`${e.id}:c${n}`, split:null, category:c, amount: round2(v * k), src:e }));
+        return;
+      }
+      out.push({ ...e, split:null, amount: eff(e), src:e }); return;
+    }
     const sched = cardSchedule(e), n = sched.length, per = round2(eff(e) / n);
     sched.forEach((d,i) => { if (d) out.push({ id:`${e.id}:${i}`, amount: i === n-1 ? round2(eff(e) - per*(n-1)) : per, currency:e.currency,
       category:e.category, note:e.note, date:`${toLocalInput(d)}T00:00`, cardId:e.cardId, cuota:i+1, of:n, src:e }); });
@@ -1700,6 +1738,28 @@ function renderItem(e){
     if (card && (e.installments || 1) > 1) amt.append(stampEl("EN CUOTAS", "info"));
     if (shared && owed(e) === 0) amt.append(stampEl("PAGADO", "ok"));
   };
+  if (!shared && Array.isArray(e.items) && e.items.length){
+    const key = "it:" + e.id, open = expanded.has(key);
+    const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
+    sub.append(chev, document.createTextNode([e.note, `${e.items.length} productos`].filter(Boolean).join(", ")));
+    mid.append(cat, sub);
+    const wrap = document.createElement("div"); if (open) wrap.className = "is-open";
+    b.setAttribute("aria-expanded", String(open));
+    b.onclick = () => { open ? expanded.delete(key) : expanded.add(key); render(); };
+    addStamp(); wrap.append(b);
+    if (open){
+      const panel = document.createElement("div"); panel.className = "split-panel items-panel";
+      e.items.forEach(it => { const r = document.createElement("div"); r.className = "split-row";
+        const n = document.createElement("span"); n.textContent = it.name + (it.category && it.category !== e.category ? ` · ${catById(it.category).name}` : "");
+        const v = document.createElement("span"); v.className = "s"; v.textContent = money(it.price, e.currency);
+        r.append(n, v, document.createElement("span")); panel.append(r); });
+      const foot = document.createElement("div"); foot.className = "split-sum";
+      const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar";
+      ed.onclick = () => openSheet(e); foot.append(document.createElement("span"), ed); panel.append(foot);
+      wrap.append(panel);
+    }
+    return wrap;
+  }
   if (!shared){
     sub.textContent = [e.date.slice(11,16), methodName, e.note].filter(Boolean).join("  ");
     if (card){
@@ -2358,8 +2418,144 @@ function tellApply(){
   if (r.note && !$("note").value) $("note").value = r.note;
   $("tellMsg").textContent = got.length ? `Listo, completé: ${got.join(", ")}. Revisá y guardá.` : "No entendí bien. Probá con algo como: ayer 4500 de nafta con débito.";
 }
-$("tellGo").onclick = tellApply;
-$("tellInput").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); tellApply(); } });
+/* ---------- Recy inteligente (Gemini, plan gratis, clave del usuario guardada en el dispositivo) ---------- */
+const AI_KEY = "receater.gkey";
+const AI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
+const aiKey = () => { try { return localStorage.getItem(AI_KEY) || ""; } catch { return ""; } };
+let tellItems = null;
+function aiSetupLabel(){ $("aiSetup").textContent = aiKey() ? "Recy inteligente activado ✓ · cambiar" : "Activá Recy inteligente para frases largas y fotos de tickets"; }
+async function aiCall(parts){
+  const key = aiKey(); if (!key) throw { code: "nokey" };
+  let lastErr = null;
+  for (const model of AI_MODELS){
+    let r;
+    try {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } })
+      });
+    } catch { throw { code: "net" }; }
+    if (!r.ok){
+      const body = await r.text().catch(() => "");
+      if (r.status === 401 || r.status === 403 || /API_KEY_INVALID|API key not valid/i.test(body)) throw { code: "badkey" };
+      if (/location is not supported/i.test(body)) throw { code: "region" };
+      lastErr = { code: r.status === 429 || r.status === 503 ? "quota" : r.status === 404 ? "model" : "other" };
+      continue;
+    }
+    const j = await r.json();
+    const txt = (((j.candidates || [])[0] || {}).content || {}).parts?.map(p => p.text || "").join("") || "";
+    try { return JSON.parse(txt.replace(/```json|```/g, "").trim()); } catch { lastErr = { code: "parse" }; continue; }
+  }
+  throw lastErr || { code: "other" };
+}
+function aiContext(){
+  const cats = allCats().filter(c => !c.hidden).map(c => `${c.id}: ${c.name}`).join("; ");
+  const cards = data.cards.map(c => `${c.id}: ${c.name}`).join("; ") || "ninguna";
+  const people = knownPeople().join(", ") || "ninguno";
+  const d = new Date();
+  return `Hoy es ${d.toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long", year:"numeric" })} (${toLocalInput(d)}), hora ${toTime(d)}. Moneda por defecto: pesos argentinos (ARS).
+Categorías de gasto (id: nombre): ${cats}.
+Tipos de ingreso (id: nombre): sueldo: Sueldo; extra: Trabajos extra; otro_ing: Otro ingreso; prestamo: Préstamo.
+Tarjetas (id: nombre): ${cards}.
+Personas conocidas: ${people}.`;
+}
+const AI_FORMAT = `Respondé SOLO con un objeto JSON, sin texto extra, con esta forma:
+{"tipo":"gasto"|"ingreso","monto":número (lo que pagó en total, sin separadores de miles),"moneda":"ARS"|"USD","fecha":"YYYY-MM-DD" o null,"hora":"HH:MM" o null,
+"categoria":id de categoría de gasto o null,"ingreso_tipo":id de tipo de ingreso o null,"medio":"cash"|"debit"|"transfer"|"card" o null,"tarjeta":id de tarjeta o null,"cuotas":número o null,
+"nota":texto corto que describa el gasto (ej: "Cine con Fede") ,"dividido":[{"nombre":"...","parte":número}] (lo que le corresponde pagar a OTRAS personas, que le deben a la persona) o [],
+"prestamo_a":nombre o null (si le prestó plata a alguien, sin gastar en algo),"prestamo_de":nombre o null (si alguien le prestó plata),"devolver_el":"YYYY-MM-DD" o null,
+"items":[{"nombre":"...","precio":número,"categoria":id}] (solo si es un ticket con productos) o []}
+Reglas: si pagó por otra persona y esa persona le debe, "monto" es el total que pagó y esa parte va en "dividido". Usá la fecha de hoy para resolver "ayer", "el lunes", etc. Elegí la categoría que mejor encaje de la lista. Si menciona una tarjeta de la lista, usá su id y medio "card".`;
+async function aiFromText(text){
+  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Interpretá lo que cuenta el usuario y armá el gasto o ingreso.\n${aiContext()}\n${AI_FORMAT}\n\nLo que contó el usuario: """${text}"""` }]);
+}
+async function aiFromImage(b64, mime){
+  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Esta foto es un ticket o comprobante de compra. Leé el comercio, la fecha, el total pagado y cada producto con su precio final (con descuentos aplicados). Asigná a cada producto una categoría de la lista. La nota debe ser el nombre del comercio. "monto" es el TOTAL del ticket.\n${aiContext()}\n${AI_FORMAT}` },
+    { inline_data: { mime_type: mime, data: b64 } }]);
+}
+/* Volcar lo que entendió la IA en el formulario */
+function aiApply(r){
+  const got = [];
+  if (r.tipo === "ingreso"){ if (mode !== "income") setMode("income"); }
+  else if (mode !== "expense") setMode("expense");
+  if (mode === "income" && r.ingreso_tipo && INCOME_KINDS.some(k => k.id === r.ingreso_tipo)){ incomeKind = r.ingreso_tipo; renderCats(); updateUntilField(); updateBorrowField(); }
+  if (r.monto > 0){ $("amount").value = String(round2(r.monto)).replace(".",","); got.push("monto"); }
+  setCurrency(r.moneda === "USD" ? "USD" : "ARS");
+  if (r.fecha && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)){ $("date").value = r.fecha; $("date").dispatchEvent(new Event("change")); got.push("fecha"); }
+  if (r.hora && /^\d{2}:\d{2}$/.test(r.hora)) $("time").value = r.hora;
+  if (r.nota) $("note").value = r.nota;
+  if (mode === "income" && incomeKind === "prestamo"){ if (r.prestamo_de) $("borrowFrom").value = r.prestamo_de; if (r.devolver_el) $("borrowDue").value = r.devolver_el; }
+  if (mode === "expense"){
+    if (r.categoria && allCats().some(c => c.id === r.categoria)){ category = r.categoria; got.push("categoría"); }
+    if (r.medio === "card" && cardById(r.tarjeta)){ method = "card"; cardId = r.tarjeta; got.push("tarjeta"); }
+    else if (["cash","debit","transfer"].includes(r.medio)){ method = r.medio; cardId = null; got.push("medio de pago"); }
+    renderMethods();
+    if (r.cuotas > 1 && method === "card"){ $("cuotas").value = String(r.cuotas); $("cuotas").dispatchEvent(new Event("change")); }
+    if (r.prestamo_a){ $("lendOn").checked = true; $("lendTo").value = r.prestamo_a; category = "prestamo"; got.push("préstamo"); }
+    else if (Array.isArray(r.dividido) && r.dividido.length){
+      $("lendOn").checked = false; $("splitOn").checked = true;
+      splitPeople = r.dividido.filter(p => p && p.nombre && p.parte > 0).map(p => ({ name: String(p.nombre).trim(), share: round2(p.parte), paid: false }));
+      splitManual = true; renderSplit(); got.push("dividido con " + splitPeople.map(p => p.name).join(", "));
+    }
+    tellItems = Array.isArray(r.items) && r.items.length ? r.items.filter(i => i && i.nombre).map(i => ({ name: String(i.nombre), price: round2(Number(i.precio) || 0), category: allCats().some(c => c.id === i.categoria) ? i.categoria : null })) : null;
+    if (tellItems) got.push(`${tellItems.length} productos`);
+    renderCats(); updateJarField(); updateLendField();
+  }
+  $("tellMsg").textContent = got.length ? `Listo, completé: ${got.join(", ")}. Revisá y guardá.` : "No pude sacar mucho de eso. Completalo a mano.";
+}
+function aiErrorMsg(e){
+  return { nokey: "", region: "Gemini no está disponible desde tu ubicación. Usé el modo simple.", badkey: "La clave de Gemini no funciona. Revisala en Recy inteligente.", quota: "Se terminó el cupo gratis de Gemini por ahora. Usé el modo simple.",
+    net: "No pude conectarme con Gemini. Usé el modo simple.", parse: "Gemini respondió algo raro. Usé el modo simple.", model: "Gemini no respondió. Usé el modo simple.", other: "Gemini no respondió. Usé el modo simple." }[e && e.code] || "Algo falló con Gemini. Usé el modo simple.";
+}
+async function tellSmart(){
+  const raw = $("tellInput").value.trim(); if (!raw) return;
+  if (!aiKey()){ tellApply(); return; }
+  $("tellGo").disabled = true; $("tellMsg").textContent = "Recy está leyendo…";
+  try { aiApply(await aiFromText(raw)); }
+  catch (e){ tellApply(); const m = aiErrorMsg(e); if (m) $("tellMsg").textContent = m + " " + $("tellMsg").textContent; }
+  $("tellGo").disabled = false;
+}
+$("tellGo").onclick = tellSmart;
+$("tellInput").addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); tellSmart(); } });
+/* Foto del ticket: se achica antes de mandarla */
+function shrinkImage(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", 0.85).split(",")[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+$("tellPhoto").onclick = () => { if (!aiKey()){ openAi(); $("aiErr").textContent = "Para leer fotos de tickets, primero activá Recy inteligente."; return; } $("tellFile").click(); };
+$("tellFile").onchange = async () => {
+  const f = $("tellFile").files && $("tellFile").files[0]; $("tellFile").value = ""; if (!f) return;
+  $("tellPhoto").disabled = true; $("tellGo").disabled = true; $("tellMsg").textContent = "Recy está leyendo el ticket…";
+  try { const b64 = await shrinkImage(f); aiApply(await aiFromImage(b64, "image/jpeg")); }
+  catch (e){ $("tellMsg").textContent = aiErrorMsg(e).replace(" Usé el modo simple.", "") || "No pude leer la foto."; }
+  $("tellPhoto").disabled = false; $("tellGo").disabled = false;
+};
+/* Modal de la clave */
+function openAi(){ $("aiKey").value = aiKey(); $("aiErr").textContent = ""; $("aiDel").hidden = !aiKey(); $("aiBg").classList.add("open"); $("aiSheet").classList.add("open"); }
+function closeAi(){ $("aiBg").classList.remove("open"); $("aiSheet").classList.remove("open"); aiSetupLabel(); }
+$("aiSetup").onclick = openAi; $("aiCancel").onclick = closeAi; $("aiBg").onclick = closeAi;
+$("aiDel").onclick = () => { try { localStorage.removeItem(AI_KEY); } catch {} closeAi(); };
+$("aiSave").onclick = async () => {
+  const k = $("aiKey").value.trim(); if (!k){ $("aiErr").textContent = "Pegá la clave."; return; }
+  const prev = aiKey(); try { localStorage.setItem(AI_KEY, k); } catch {}
+  $("aiSave").disabled = true; $("aiErr").textContent = "Probando…";
+  try { await aiCall([{ text: 'Respondé solo este JSON: {"ok":true}' }]); $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Recy inteligente activado. Contale lo que gastaste."; }
+  catch (e){
+    if (e && e.code === "quota"){ $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Clave guardada. Gemini está sin cupo en este momento, probá en un rato."; }
+    else { try { prev ? localStorage.setItem(AI_KEY, prev) : localStorage.removeItem(AI_KEY); } catch {} $("aiErr").textContent = e && e.code === "badkey" ? "Esa clave no funciona. Fijate que esté completa." : "No pude probarla. Revisá tu conexión e intentá de nuevo."; }
+  }
+  $("aiSave").disabled = false;
+};
+aiSetupLabel();
 
 function openSheet(exp){
   editing = exp || null;
@@ -2395,7 +2591,7 @@ function openSheet(exp){
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
   $("catSearch").value = ""; catEditing = false; editingPay = null;
-  $("tellInput").value = ""; $("tellMsg").textContent = "Podés dictarlo con el micrófono del teclado.";
+  $("tellInput").value = ""; $("tellMsg").textContent = "Podés dictarlo con el micrófono del teclado."; tellItems = null; aiSetupLabel();
   fixSel = exp && exp.fixedId ? { fid: exp.fixedId, key: exp.fixedKey } : null; fixDiffMode = "partial";
   cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
@@ -2492,7 +2688,7 @@ $("sheet").addEventListener("submit", ev => {
   const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
   if (editing){ Object.assign(editing, fields); delete editing.fx; }
   else if (mode === "income") data.incomes.push({ id, type:"income", ...fields });
-  else data.expenses.push({ id, source:"manual", items:[], ...fields });
+  else data.expenses.push({ id, source: tellItems ? "ticket" : "manual", items: tellItems || [], ...fields });
   const askPay = !editing && mode === "income" && incomeKind === "sueldo" && !data.payRule;
   persist();
   [viewYear, viewMonth] = periodOf(date);
@@ -2508,7 +2704,8 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("xlSheet").classList.contains("open")) closeXls();
+  if ($("aiSheet").classList.contains("open")) closeAi();
+  else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
   else if ($("catSheet").classList.contains("open")) closeCat();
