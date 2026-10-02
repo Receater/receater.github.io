@@ -540,6 +540,9 @@ button{cursor:pointer}
 #xlSheet{z-index:15}
 
 .fixed-sum{margin-bottom:14px}
+
+.quotes .chip{padding:6px 10px;font-size:.85rem}
+.quotes .chip b{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;margin-left:4px}
 </style>
 </head>
 <body>
@@ -701,6 +704,11 @@ button{cursor:pointer}
         </div>
         <div id="cpkUsdHow">
           <div id="cpkFx">
+            <div style="margin-top:12px">
+              <span class="lbl">¿Qué dólar te cobraron?</span>
+              <div class="chips quotes" id="cpkQuotes"></div>
+              <div class="fx-hint" id="cpkQuoteInfo"></div>
+            </div>
             <div class="two" style="display:grid;gap:10px;margin-top:12px">
               <div><label class="lbl-sm" for="cpkRate">Cotización</label><input class="input" id="cpkRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off"></div>
               <div><label class="lbl-sm" for="cpkUsdArs">Te salieron</label><input class="input" id="cpkUsdArs" inputmode="decimal" placeholder="$ en total" autocomplete="off"></div>
@@ -717,6 +725,11 @@ button{cursor:pointer}
     <div class="amount-row">
       <input id="fxUsd" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Dólares que compraste">
       <span class="cur-tag">US$</span>
+    </div>
+    <div class="field">
+      <span class="lbl">¿Qué dólar compraste?</span>
+      <div class="chips quotes" id="fxQuotes"></div>
+      <div class="fx-hint" id="fxQuoteInfo"></div>
     </div>
     <div class="field two">
       <div><label class="lbl-sm" for="fxRate">Cotización</label><input class="input" id="fxRate" inputmode="decimal" placeholder="$ por dólar" autocomplete="off"></div>
@@ -2177,6 +2190,7 @@ function renderCpk(){
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
   if (!$("cpkUsd").value && preU) $("cpkUsd").value = String(preU).replace(".",",");
   if (!$("cpkRate").value && data.lastRate) $("cpkRate").value = String(data.lastRate).replace(".",",");
+  renderQuotes(CPKQ, !editingPay);
   cpkLink.reset(); cpkLink.fill();
 }
 
@@ -2195,7 +2209,61 @@ function fxValues(){
   const ars = p || usd * r;
   return { usd, ars, rate: usd ? ars / usd : 0 };
 }
-function setFxMode(){ fxLink.reset(); fxCalc(); }
+function setFxMode(){ fxLink.reset(); fxCalc(); renderQuotes(FXQ); }
+
+/* ---------- Dólar del día (DolarApi) ---------- */
+const CASAS = [{ id:"oficial", name:"Oficial" }, { id:"blue", name:"Blue" }, { id:"bolsa", name:"MEP" }, { id:"tarjeta", name:"Tarjeta" }];
+let quotes = null, quotesFail = false, quotesLoading = null;
+function getQuotes(){
+  if (quotes && Date.now() - quotes.at < 30 * 60e3) return Promise.resolve(quotes);
+  if (quotesLoading) return quotesLoading;
+  if (typeof fetch !== "function"){ quotesFail = true; return Promise.resolve(null); }
+  try { const c = JSON.parse(localStorage.getItem("receater.quotes") || "null"); if (c && Date.now() - c.at < 30 * 60e3){ quotes = c; return Promise.resolve(c); } } catch {}
+  const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const t = setTimeout(() => ctl && ctl.abort(), 7000);
+  quotesLoading = fetch("https://dolarapi.com/v1/dolares", ctl ? { signal: ctl.signal } : {})
+    .then(r => { if (!r.ok) throw 0; return r.json(); })
+    .then(list => {
+      const map = {};
+      (Array.isArray(list) ? list : []).forEach(q => { if (q && q.casa && q.venta) map[q.casa] = { venta: Number(q.venta), compra: Number(q.compra) || null, at: q.fechaActualizacion || null }; });
+      if (!Object.keys(map).length) throw 0;
+      quotes = { at: Date.now(), map }; quotesFail = false;
+      try { localStorage.setItem("receater.quotes", JSON.stringify(quotes)); } catch {}
+      return quotes;
+    })
+    .catch(() => { quotesFail = true; return null; })
+    .finally(() => { clearTimeout(t); quotesLoading = null; });
+  return quotesLoading;
+}
+const FXQ = { box:"fxQuotes", info:"fxQuoteInfo", rate:"fxRate", key:"receater.fxCasa" };
+const CPKQ = { box:"cpkQuotes", info:"cpkQuoteInfo", rate:"cpkRate", key:"receater.cpkCasa" };
+const f0ARS = n => new Intl.NumberFormat("es-AR", { style:"currency", currency:"ARS", maximumFractionDigits:0 }).format(n);
+function quoteTime(q){ if (!q || !q.at) return ""; const d = new Date(q.at); return isNaN(d) ? "" : ` · actualizado ${d.toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit", hour12:false })}`; }
+function renderQuotes(ctx, autofill){
+  const box = $(ctx.box), info = $(ctx.info); box.innerHTML = "";
+  let sel = null; try { sel = localStorage.getItem(ctx.key); } catch {}
+  if (!quotes){
+    info.textContent = quotesFail ? "No pude traer el dólar de hoy. Poné la cotización a mano." : "Buscando el dólar de hoy…";
+    if (!quotesFail) getQuotes().then(q => { if (q) renderQuotes(ctx, true); else renderQuotes(ctx); });
+    return;
+  }
+  CASAS.filter(c => quotes.map[c.id]).forEach(c => {
+    const q = quotes.map[c.id], b = document.createElement("button"); b.type = "button"; b.className = "chip";
+    b.setAttribute("aria-pressed", String(sel === c.id));
+    b.append(c.name); const v = document.createElement("b"); v.textContent = f0ARS(q.venta); b.append(v);
+    b.onclick = () => { try { localStorage.setItem(ctx.key, c.id); } catch {} applyQuote(ctx, c.id); renderQuotes(ctx); };
+    box.append(b);
+  });
+  const q = sel && quotes.map[sel];
+  info.textContent = q ? `Dólar ${CASAS.find(c => c.id === sel).name.toLowerCase()} de hoy, precio de venta${quoteTime(q)}.` : "Tocá el que corresponda y completo la cotización.";
+  if (autofill && q && !editing && !editingPay) applyQuote(ctx, sel);
+}
+function applyQuote(ctx, casa){
+  const q = quotes && quotes.map[casa]; if (!q) return;
+  const el = $(ctx.rate); el.value = String(round2(q.venta)).replace(".",",");
+  el.dispatchEvent(new Event("input"));
+}
+getQuotes();
 function fxCalc(){
   const { usd, ars, rate } = fxValues();
   $("fxCalc").textContent = usd && ars ? `${fmtUSD.format(usd)} a ${fmtARS.format(round2(rate))} = ${fmtARS.format(round2(ars))}` : "Completá dos datos y el tercero se calcula solo.";
@@ -3035,6 +3103,12 @@ function renderJars(){
         const p2 = document.createElement("p"); p2.className = "fx-hint"; p2.style.margin = "4px 0 0";
         p2.textContent = `Compraste ${fmtUSD.format(usd)} y te costaron ${fmtARS.format(ars)}, a ${fmtARS.format(round2(ars / usd))} promedio.`;
         el.append(p2);
+      }
+      if (j.currency === "USD" && quotes){
+        let casa = "blue"; try { casa = localStorage.getItem("receater.fxCasa") || "blue"; } catch {}
+        const q = quotes.map[casa] || quotes.map.blue || quotes.map.oficial;
+        if (q){ const p3 = document.createElement("p"); p3.className = "fx-hint"; p3.style.margin = "4px 0 0";
+          p3.textContent = `Hoy valen unos ${f0ARS(bal * q.venta)} (dólar ${(CASAS.find(c => quotes.map[c.id] === q) || {name:""}).name.toLowerCase()}).`; el.append(p3); }
       }
       const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
