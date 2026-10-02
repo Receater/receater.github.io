@@ -1338,6 +1338,12 @@ function render(){
   if (bIncA > 0) screen.push(`Gastaste ${fmtARS.format(bGastoA)}`);
   const fixScreen = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
+  if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
+    const freeD = bIncA - bSpentA - fixScreen;
+    const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
+    const days = Math.ceil((untilD - new Date()) / 864e5);
+    if (freeD > 0 && days > 0) screen.push(`Te da para ${fmtARS.format(freeD / days)} por día`);
+  }
   if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
   $("meta").textContent = screen.join("\n");
   $("totalUsd").hidden = true;
