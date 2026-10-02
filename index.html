@@ -1006,7 +1006,7 @@ button{cursor:pointer}
 <div class="sheet-bg" id="aiBg"></div>
 <div class="sheet" id="aiSheet" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
   <h3 id="aiTitle">Recy inteligente</h3>
-  <p class="fx-hint" style="margin:0 0 10px">Con una clave gratis de Gemini (Google), Recy entiende frases largas y lee fotos de tickets. La clave queda guardada solo en este dispositivo.</p>
+  <p class="fx-hint" style="margin:0 0 10px">Con una clave gratis de Gemini (Google), Recy entiende frases largas y lee fotos de tickets. Se carga una sola vez: si entrás con Google, queda guardada en tu Drive junto con tus datos.</p>
   <ol class="fx-hint" style="margin:0 0 10px;padding-left:18px;line-height:1.6">
     <li>Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
     <li>Tocá "Create API key" y copiala.</li>
@@ -2421,7 +2421,8 @@ function tellApply(){
 /* ---------- Recy inteligente (Gemini, plan gratis, clave del usuario guardada en el dispositivo) ---------- */
 const AI_KEY = "receater.gkey";
 const AI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
-const aiKey = () => { try { return localStorage.getItem(AI_KEY) || ""; } catch { return ""; } };
+const aiKey = () => { if (data.aiKey) return data.aiKey; try { return localStorage.getItem(AI_KEY) || ""; } catch { return ""; } };
+function setAiKey(k){ if (k) data.aiKey = k; else delete data.aiKey; try { k ? localStorage.setItem(AI_KEY, k) : localStorage.removeItem(AI_KEY); } catch {} persist(); }
 let tellItems = null;
 function aiSetupLabel(){ $("aiSetup").textContent = aiKey() ? "Recy inteligente activado ✓ · cambiar" : "Activá Recy inteligente para frases largas y fotos de tickets"; }
 async function aiCall(parts){
@@ -2543,15 +2544,15 @@ $("tellFile").onchange = async () => {
 function openAi(){ $("aiKey").value = aiKey(); $("aiErr").textContent = ""; $("aiDel").hidden = !aiKey(); $("aiBg").classList.add("open"); $("aiSheet").classList.add("open"); }
 function closeAi(){ $("aiBg").classList.remove("open"); $("aiSheet").classList.remove("open"); aiSetupLabel(); }
 $("aiSetup").onclick = openAi; $("aiCancel").onclick = closeAi; $("aiBg").onclick = closeAi;
-$("aiDel").onclick = () => { try { localStorage.removeItem(AI_KEY); } catch {} closeAi(); };
+$("aiDel").onclick = () => { setAiKey(""); closeAi(); };
 $("aiSave").onclick = async () => {
   const k = $("aiKey").value.trim(); if (!k){ $("aiErr").textContent = "Pegá la clave."; return; }
-  const prev = aiKey(); try { localStorage.setItem(AI_KEY, k); } catch {}
+  const prev = aiKey(); setAiKey(k);
   $("aiSave").disabled = true; $("aiErr").textContent = "Probando…";
   try { await aiCall([{ text: 'Respondé solo este JSON: {"ok":true}' }]); $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Recy inteligente activado. Contale lo que gastaste."; }
   catch (e){
     if (e && e.code === "quota"){ $("aiErr").textContent = ""; closeAi(); $("tellMsg").textContent = "Clave guardada. Gemini está sin cupo en este momento, probá en un rato."; }
-    else { try { prev ? localStorage.setItem(AI_KEY, prev) : localStorage.removeItem(AI_KEY); } catch {} $("aiErr").textContent = e && e.code === "badkey" ? "Esa clave no funciona. Fijate que esté completa." : "No pude probarla. Revisá tu conexión e intentá de nuevo."; }
+    else { setAiKey(prev); $("aiErr").textContent = e && e.code === "badkey" ? "Esa clave no funciona. Fijate que esté completa." : "No pude probarla. Revisá tu conexión e intentá de nuevo."; }
   }
   $("aiSave").disabled = false;
 };
@@ -3792,7 +3793,8 @@ function buildXls(X, range){
 
 /* ---------- Backup: exportar e importar ---------- */
 $("exportBtn").onclick = () => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const { aiKey: _omit, ...safe } = data;
+  const blob = new Blob([JSON.stringify(safe, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `receater-backup-${toLocalInput(new Date())}.json`;
@@ -3809,6 +3811,7 @@ $("importFile").onchange = async () => {
   if (!j || !Array.isArray(j.expenses)){ alert("Ese archivo no es un backup de Receater."); return; }
   const n = j.expenses.length + (Array.isArray(j.incomes) ? j.incomes.length : 0);
   if (!confirm(`Este backup tiene ${n} movimientos. Va a reemplazar todo lo que tenés ahora en la app${$("syncBtn").classList.contains("ok") ? " y en tu Drive" : ""}. ¿Seguimos?`)) return;
+  if (data.aiKey && !j.aiKey) j.aiKey = data.aiKey;
   if (!store.save(j)){ alert("No se pudo guardar el backup en este navegador."); return; }
   location.reload();
 };
