@@ -947,14 +947,20 @@ button{cursor:pointer}
   <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select>
     <button type="button" class="linkbtn" id="fixNewCat">+ Nueva categoría</button></div>
   <div class="field two">
-    <div><label for="fixAmount">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Vacío si cambia" autocomplete="off"></div>
+    <div><label for="fixAmount" id="fixAmountLbl">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Vacío si cambia" autocomplete="off"></div>
     <div><span class="lbl-sm">Moneda</span>
       <div class="seg" role="group" aria-label="Moneda del fijo">
         <button type="button" data-fixcur="ARS" aria-pressed="true">$</button>
         <button type="button" data-fixcur="USD" aria-pressed="false">US$</button>
       </div></div>
   </div>
-  <div class="field"><label for="fixDay">Día del mes que se paga</label><select class="input" id="fixDay"></select></div>
+  <div class="field">
+    <label class="switch"><input type="checkbox" id="fixPerSession"> Se paga por sesión (terapia, clases…)</label>
+    <div class="fx-hint" id="fixSessHint" hidden>Cada mes cuento cuántos de ese día hay y te armo el total. Si un mes hay una sesión menos o una más, lo ajustás desde Fijos.</div>
+  </div>
+  <div class="field" id="fixDayField"><label for="fixDay">Día del mes que se paga</label><select class="input" id="fixDay"></select></div>
+  <div class="field" id="fixWeekField" hidden><label for="fixWeekday">¿Qué día tenés la sesión?</label>
+    <select class="input" id="fixWeekday"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
   <div class="field">
     <label class="switch"><input type="checkbox" id="fixShareOn"> Lo pago yo y lo comparto</label>
     <div id="fixShareBox" hidden>
@@ -1293,7 +1299,19 @@ function fixAmountFor(f, key){
   const h = (f.history || []).filter(x => x.from <= key).sort((a,b) => a.from.localeCompare(b.from)).pop();
   return h ? h.amount : (f.amount == null ? null : f.amount);
 }
+/* Fijos por sesión: f.perSession, f.weekday (0 = domingo), f.amount = precio por sesión, f.sessAdj = { "YYYY-MM": ±n } */
+function fixSessions(f, y, m){
+  const a = payDate(y, m), b = payDate(y, m+1); let n = 0;
+  for (let d = new Date(a); d < b; d.setDate(d.getDate() + 1)) if (d.getDay() === f.weekday) n++;
+  return Math.max(0, n + ((f.sessAdj || {})[monthKey(y, m)] || 0));
+}
 function fixDue(f, y, m){
+  if (f.perSession){
+    // la próxima sesión desde hoy dentro del período, o la última
+    const a = payDate(y, m), b = payDate(y, m+1), today = dateOnly(toLocalInput(new Date())); let last = null, next = null;
+    for (let d = new Date(a); d < b; d.setDate(d.getDate() + 1)) if (d.getDay() === f.weekday){ last = new Date(d); if (!next && d >= today) next = new Date(d); }
+    return next || last || a;
+  }
   // Fecha del fijo dentro del período (y,m): el día elegido, en el mes que caiga dentro del período
   const a = payDate(y, m), b = payDate(y, m+1);
   for (const k of [0, 1, -1]){ const d = dayIn(y, m+k, f.day || 1); if (d >= a && d < b) return d; }
@@ -1330,8 +1348,10 @@ function virtualFixed(){
 const allExpenses = () => [...data.expenses, ...virtualFixed()];
 /* Estado de un fijo en un período */
 function fixInstance(f, y, m){
-  const key = monthKey(y, m), expected = fixAmountFor(f, key), due = fixDue(f, y, m);
-  const base = { f, key, due, expected, currency: f.currency };
+  const key = monthKey(y, m), unit = fixAmountFor(f, key), due = fixDue(f, y, m);
+  const sessions = f.perSession ? fixSessions(f, y, m) : null;
+  const expected = f.perSession ? (unit ? round2(unit * sessions) : null) : unit;
+  const base = { f, key, due, expected, currency: f.currency, unit, sessions };
   if (f.how === "card"){
     if (!expected) return { ...base, state:"noamount", paid:0 };
     const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, amount:expected, currency:f.currency };
@@ -1761,6 +1781,7 @@ function renderFixedPend(){
     n.append(sm);
     const a = document.createElement("span"); a.className = "a";
     a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
+    if (i.f.perSession && i.unit){ const left = Math.max(0, i.sessions - Math.floor(i.paid / i.unit + 0.01)); sm.textContent = `${left} de ${i.sessions} ${i.sessions === 1 ? "sesión" : "sesiones"} por pagar`; }
     const done = ["paid","cardpaid"].includes(i.state);
     if (done){ b.classList.add("paid"); sm.textContent = "pagado"; a.textContent = money(i.expected || i.paid, i.currency); }
     b.append(n, a);
@@ -1997,7 +2018,8 @@ function updateFixField(){
 function pickFixed(i){
   fixSel = { fid: i.f.id, key: i.key }; fixDiffMode = "partial";
   const rem = i.expected ? round2(i.expected - i.paid) : 0;
-  $("amount").value = rem ? String(rem).replace(".",",") : "";
+  const pre = i.f.perSession && i.unit ? Math.min(i.unit, rem || i.unit) : rem;
+  $("amount").value = pre ? String(pre).replace(".",",") : "";
   category = i.f.category; setCurrency(i.f.currency);
   if (!$("note").value) $("note").value = i.f.name;
   if (i.f.how === "auto"){ method = "debit"; cardId = null; }
@@ -2011,7 +2033,7 @@ function pickFixed(i){
 }
 function updateFixDiff(){
   const i = fixSelInst(), box = $("fixDiff");
-  if (!i || !i.expected){ box.hidden = true; return; }
+  if (!i || !i.expected || i.f.perSession){ box.hidden = true; return; }
   const rem = round2(i.expected - i.paid), v = parseAmount($("amount").value) || 0;
   if (!v || Math.abs(v - rem) < 0.5){ box.hidden = true; return; }
   box.hidden = false;
@@ -3296,7 +3318,7 @@ function fixStatus(i){
     case "cardpaid": return { st: `Pagado con ${card ? card.name : "la tarjeta"} el ${shortDate(i.payDate)}`, stamp: ["PAGADO","ok"] };
     case "incard": return { st: i.payDate ? `En ${card.name}, va al pago del ${shortDate(i.payDate)}` : `En ${card.name}, se paga con la tarjeta`, stamp: ["EN TARJETA","info"] };
     case "todebit": return { st: `Se debita el ${shortDate(i.due)}`, stamp: ["A DEBITAR","wait"] };
-    case "partial": return { st: `Pagaste ${money(i.paid, i.currency)} de ${money(i.expected, i.currency)}`, stamp: ["PARCIAL","wait"] };
+    case "partial": return { st: i.f.perSession && i.unit ? `${Math.floor(i.paid / i.unit + 0.01)} de ${i.sessions} sesiones pagadas` : `Pagaste ${money(i.paid, i.currency)} de ${money(i.expected, i.currency)}`, stamp: ["PARCIAL","wait"] };
     case "noamount": return { st: "Poné el monto de este mes", stamp: null };
     default: return { st: `Vence el ${shortDate(i.due)}`, stamp: i.due < today ? ["VENCIDO","warn"] : null };
   }
@@ -3332,6 +3354,8 @@ function renderFixed(){
     const mid = document.createElement("div");
     const n = document.createElement("div"); n.className = "n"; n.textContent = i.f.name;
     const info = fixStatus(i);
+    if (i.f.perSession && !["partial","paid"].includes(i.state)){ info.st = `${i.sessions} ${i.sessions === 1 ? "sesión" : "sesiones"} de ${money(i.unit || 0, i.currency)} · próxima el ${shortDate(i.due)}`; info.stamp = i.f.how === "auto" ? info.stamp : null; }
+    if (i.f.perSession && i.state === "paid") info.st = `${i.sessions} ${i.sessions === 1 ? "sesión pagada" : "sesiones pagadas"}`;
     const st = document.createElement("div"); st.className = "st";
     st.textContent = info.st + (i.f.how === "auto" && i.state !== "paid" ? "" : "");
     mid.append(n, st);
@@ -3347,6 +3371,11 @@ function renderFixed(){
       const acts = document.createElement("div"); acts.className = "fx-acts";
       const btn = (txt, cls, fn) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn " + cls; x.textContent = txt; x.onclick = fn; acts.append(x); };
       const paid = ["paid","cardpaid"].includes(i.state);
+      if (i.f.perSession){
+        const adj = d => { i.f.sessAdj = i.f.sessAdj || {}; i.f.sessAdj[i.key] = (i.f.sessAdj[i.key] || 0) + d; persist(); render(); };
+        btn("− 1 sesión", "", () => { if (i.sessions > 0) adj(-1); });
+        btn("+ 1 sesión", "", () => adj(1));
+      }
       if (i.f.how === "card") btn("Monto de este mes", "", () => openFixMonth(i));
       else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
       btn("Editar", "", () => openFixed(i.f));
@@ -3400,6 +3429,15 @@ $("fixShareAdd").onclick = () => fixShareAdd();
 $("fixSharePerson").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); fixShareAdd(); } });
 $("fixAmount").addEventListener("input", () => { if ($("fixShareOn").checked){ if (!fixShareManual) fixShareEqual(); renderFixShare(); } });
 
+function syncPerSession(){
+  const on = $("fixPerSession").checked;
+  $("fixDayField").hidden = on; $("fixWeekField").hidden = !on; $("fixSessHint").hidden = !on;
+  $("fixAmountLbl").textContent = on ? "Precio por sesión" : "Monto por mes";
+  $("fixAmount").placeholder = on ? "Ej: 25000" : "Vacío si cambia";
+  const cardOpt = document.querySelector('input[name="fixHow"][value="card"]');
+  cardOpt.disabled = on; if (on && cardOpt.checked) document.querySelector('input[name="fixHow"][value="manual"]').checked = true;
+}
+$("fixPerSession").onchange = syncPerSession;
 function fillFixCats(sel){
   const cs = $("fixCat"); cs.innerHTML = "";
   allCats().filter(c => !c.hidden).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cs.append(o); });
@@ -3418,6 +3456,7 @@ function openFixed(f){
   $("fixAmount").value = f && (cur ?? f.amount) != null ? String(cur ?? f.amount).replace(".",",") : "";
   fixCur = f ? f.currency : "ARS"; document.querySelectorAll("[data-fixcur]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.fixcur === fixCur)));
   $("fixDay").value = f ? f.day : 10;
+  $("fixPerSession").checked = !!(f && f.perSession); $("fixWeekday").value = f && f.weekday != null ? f.weekday : 1; syncPerSession();
   document.querySelectorAll('input[name="fixHow"]').forEach(r => r.checked = r.value === (f ? f.how : "manual"));
   if (f && f.cardId) cards.value = f.cardId;
   fixSharePeople = f && fixShared(f) ? f.shares.map(p => ({ ...p })) : []; fixShareManual = !!(f && fixShared(f));
@@ -3434,6 +3473,8 @@ $("fixSave").onclick = () => {
   const how = (document.querySelector('input[name="fixHow"]:checked') || {}).value || "manual";
   if (how === "card" && !cardById($("fixCard").value)){ $("fixErr").textContent = "Elegí la tarjeta, o creala primero desde Darle a Recy → Tarjeta."; return; }
   const v = parseAmount($("fixAmount").value), amount = v > 0 ? round2(v) : null;
+  const perSession = $("fixPerSession").checked;
+  if (perSession && !amount){ $("fixErr").textContent = "Poné cuánto sale cada sesión."; $("fixAmount").focus(); return; }
   if (how === "card" && !amount){ $("fixErr").textContent = "Los fijos con tarjeta necesitan un monto (después podés cambiarlo cada mes)."; return; }
   const key = monthKey(...periodOf(new Date()));
   const shares = $("fixShareOn").checked ? fixSharePeople.filter(p => p.share > 0).map(p => ({ name: p.name, share: p.share })) : [];
@@ -3441,10 +3482,12 @@ $("fixSave").onclick = () => {
   let f = editingFix;
   if (f){
     if (amount !== fixAmountFor(f, key)){ f.history = (f.history || []).filter(h => h.from !== key); f.history.push({ from:key, amount }); }
-    Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount, shares: shares });
+    Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount, shares: shares,
+      perSession, weekday: perSession ? Number($("fixWeekday").value) : null });
   } else {
     f = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, category:$("fixCat").value, currency:fixCur, amount,
       day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, start:key, end:null,
+      perSession, weekday: perSession ? Number($("fixWeekday").value) : null, sessAdj:{},
       history: amount ? [{ from:key, amount }] : [], monthAmounts:{}, shares: shares, sharePaid:{} };
     data.fixed.push(f);
   }
