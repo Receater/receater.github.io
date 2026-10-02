@@ -1333,7 +1333,14 @@ function render(){
   else usdLine.hidden = true;
   const oweA = tot(exps,"ARS",owed), oweU = tot(exps,"USD",owed);
   if (oweA || oweU) lines.push("Te deben " + [oweA && fmtARS.format(oweA), oweU && fmtUSD.format(oweU)].filter(Boolean).join(" y "));
-  $("meta").textContent = lines.join("\n");
+  // La pantalla de Recy muestra solo: cuánto gastaste y los fijos por pagar (el "te queda" y la barra van arriba)
+  const screen = [];
+  if (bIncA > 0) screen.push(`Gastaste ${fmtARS.format(bGastoA)}`);
+  const fixScreen = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
+  if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
+  if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
+  $("meta").textContent = screen.join("\n");
+  $("totalUsd").hidden = true;
 
   let mood = "happy", line = "Todo tranqui por acá.";
   const payGroups = {};
