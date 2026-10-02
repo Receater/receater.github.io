@@ -555,6 +555,11 @@ button{cursor:pointer}
 .tell textarea{resize:none;min-height:52px;font-size:.95rem;line-height:1.35}
 .tell .small-btn[disabled]{opacity:.5}
 .items-panel .split-row .s{font-weight:500}
+
+.fp-sub{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:4px 0 4px 14px;font-size:.88rem}
+.fp-sub .a{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.fp-sub .pill{min-width:84px}
+.fp-row.paid .n{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -924,6 +929,18 @@ button{cursor:pointer}
       </div></div>
   </div>
   <div class="field"><label for="fixDay">Día del mes que se paga</label><select class="input" id="fixDay"></select></div>
+  <div class="field">
+    <label class="switch"><input type="checkbox" id="fixShareOn"> Lo pago yo y lo comparto</label>
+    <div id="fixShareBox" hidden>
+      <div class="split-add">
+        <input class="input" id="fixSharePerson" placeholder="¿Con quién?" autocomplete="off">
+        <button type="button" class="btn ghost" id="fixShareAdd">Agregar</button>
+      </div>
+      <div class="chips suggest" id="fixShareSuggest"></div>
+      <div id="fixSharePeople"></div>
+      <div class="split-foot" id="fixShareFoot"></div>
+    </div>
+  </div>
   <div class="field"><span class="lbl">¿Cómo se paga?</span>
     <div class="opts">
       <label class="opt"><input type="radio" name="fixHow" value="manual"><div><strong>Lo pago yo</strong><span>Efectivo, transferencia o débito. Queda pendiente hasta que lo cargás.</span></div></label>
@@ -1253,6 +1270,14 @@ function fixDue(f, y, m){
   return dayIn(y, m, f.day || 1);
 }
 const fixActiveIn = (f, key) => f.start <= key && (!f.end || key <= f.end);
+/* Fijos compartidos: f.shares = [{ name, share }] (lo que le toca a cada uno por mes); f.sharePaid = { "YYYY-MM": { nombre: true } } */
+const fixShared = f => Array.isArray(f.shares) && f.shares.length > 0;
+const fixSharePaid = (f, key, name) => !!(f.sharePaid && f.sharePaid[key] && f.sharePaid[key][name]);
+function setFixSharePaid(f, key, name, paid){
+  f.sharePaid = f.sharePaid || {}; f.sharePaid[key] = f.sharePaid[key] || {}; f.sharePaid[key][name] = paid;
+  data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key && e.split).forEach(e => e.split.people.forEach(p => { if (p.name === name) p.paid = paid; }));
+}
+const fixSplit = (f, key) => fixShared(f) ? { people: f.shares.map(p => ({ name: p.name, share: p.share, paid: fixSharePaid(f, key, p.name) })) } : null;
 /* Compras de tarjeta que generan los fijos con tarjeta, desde que empezaron hasta el mes que viene */
 function virtualFixed(){
   const out = [], [cy, cm] = periodOf(new Date());
@@ -1265,7 +1290,7 @@ function virtualFixed(){
       if (fixActiveIn(f, key)){
         const amt = fixAmountFor(f, key);
         if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
-          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[] });
+          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[], split: fixSplit(f, key) });
       }
       m++; if (m > 11){ m = 0; y++; }
     }
@@ -1564,7 +1589,7 @@ function render(){
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
   const repayScreen = isCurrentPeriod(viewYear, viewMonth) ? toRepayARS(viewYear, viewMonth) : 0;
   if (repayScreen > 0) screen.push(`A devolver ${fmtARS.format(repayScreen)}`);
-  const owedScreen = data.expenses.filter(e => e.currency === "ARS" && e.split).reduce((s2,e) => s2 + owed(e), 0);
+  const owedScreen = allExpenses().filter(e => e.currency === "ARS" && e.split && (!e.virtual || dateOnly(e.date) <= new Date())).reduce((s2,e) => s2 + owed(e), 0);
   if (owedScreen > 0.5) screen.push(`Te deben ${fmtARS.format(owedScreen)}`);
   if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
     const freeD = bIncA - bSpentA - fixScreen - repayScreen;
@@ -1689,7 +1714,8 @@ function renderPayGroup(r){
 
 function renderFixedPend(){
   const box = $("fixedPend"); box.innerHTML = "";
-  const list = fixInstances(viewYear, viewMonth).filter(i => !["paid","cardpaid"].includes(i.state));
+  const owesIn = i => fixShared(i.f) && i.f.shares.some(p => !fixSharePaid(i.f, i.key, p.name));
+  const list = fixInstances(viewYear, viewMonth).filter(i => !["paid","cardpaid"].includes(i.state) || owesIn(i));
   if (!list.length){ box.hidden = true; return; }
   box.hidden = false;
   const h = document.createElement("h3"); h.append("Fijos pendientes");
@@ -1705,7 +1731,19 @@ function renderFixedPend(){
     n.append(sm);
     const a = document.createElement("span"); a.className = "a";
     a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
-    b.append(n, a); b.onclick = () => card ? openFixMonth(i) : openSheetForFixed(i); box.append(b);
+    const done = ["paid","cardpaid"].includes(i.state);
+    if (done){ b.classList.add("paid"); sm.textContent = "pagado"; a.textContent = money(i.expected || i.paid, i.currency); }
+    b.append(n, a); b.onclick = () => done ? setTab("fixed") : card ? openFixMonth(i) : openSheetForFixed(i); box.append(b);
+    if (fixShared(i.f)) i.f.shares.forEach(p => {
+      const paid = fixSharePaid(i.f, i.key, p.name);
+      const r = document.createElement("div"); r.className = "fp-sub";
+      const nm = document.createElement("span"); nm.textContent = paid ? `${p.name} te devolvió` : `${p.name} te debe`;
+      const v = document.createElement("span"); v.className = "a"; v.textContent = money(p.share, i.currency);
+      const t = document.createElement("button"); t.type = "button"; t.className = "pill " + (paid ? "paid" : "owe"); t.textContent = paid ? "Devolvió ✓" : "Le falta";
+      t.setAttribute("aria-label", `${p.name}, ${i.f.name}: ${paid ? "ya devolvió" : "le falta"}. Tocar para cambiar`);
+      t.onclick = () => { setFixSharePaid(i.f, i.key, p.name, !paid); persist(); render(); };
+      r.append(nm, v, t); box.append(r);
+    });
   });
 }
 
@@ -1800,7 +1838,10 @@ function renderItem(e){
         t.className = "pill " + (person.paid ? "paid" : "owe");
         t.textContent = person.paid ? "Devolvió ✓" : "Le falta";
         t.setAttribute("aria-label", `${person.name}: ${person.paid ? "ya devolvió, tocar para marcar que le falta" : "le falta, tocar para marcar que devolvió"}`);
-        t.onclick = () => { person.paid = !person.paid; persist(); render(); };
+        t.onclick = () => {
+          const f = e.fixedId && fixById(e.fixedId);
+          if (f && e.fixedKey) setFixSharePaid(f, e.fixedKey, person.name, !person.paid); else person.paid = !person.paid;
+          persist(); render(); };
       }
       r.append(n, v, t); panel.append(r);
     };
@@ -1925,6 +1966,12 @@ function pickFixed(i){
   category = i.f.category; setCurrency(i.f.currency);
   if (!$("note").value) $("note").value = i.f.name;
   if (i.f.how === "auto"){ method = "debit"; cardId = null; }
+  if (fixShared(i.f)){
+    $("lendOn").checked = false; $("splitOn").checked = true;
+    splitPeople = fixSplit(i.f, i.key).people; splitManual = true;
+    if (rem) $("amount").value = String(i.expected).replace(".",",");
+    renderSplit();
+  }
   renderCats(); renderMethods(); updateFixField();
 }
 function updateFixDiff(){
@@ -3250,6 +3297,44 @@ $("newFixed").onclick = () => openFixed(null);
 let editingFix = null, fixCur = "ARS";
 (() => { const s = $("fixDay"); for (let i = 1; i <= 31; i++){ const o = document.createElement("option"); o.value = i; o.textContent = `El ${i}`; s.append(o); } })();
 document.querySelectorAll("[data-fixcur]").forEach(b => b.onclick = () => { fixCur = b.dataset.fixcur; document.querySelectorAll("[data-fixcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+let fixSharePeople = [], fixShareManual = false;
+function fixShareEqual(){
+  const total = parseAmount($("fixAmount").value) || 0, each = fixSharePeople.length ? round2(total / (fixSharePeople.length + 1)) : 0;
+  fixSharePeople.forEach(p => p.share = each); fixShareManual = false;
+}
+function renderFixShare(){
+  $("fixShareBox").hidden = !$("fixShareOn").checked; if ($("fixShareBox").hidden) return;
+  const box = $("fixSharePeople"); box.innerHTML = "";
+  fixSharePeople.forEach((p, i) => {
+    const r = document.createElement("div"); r.className = "person"; r.style.gridTemplateColumns = "minmax(0,1fr) 110px 28px";
+    const n = document.createElement("span"); n.className = "nm"; n.textContent = p.name;
+    const inp = document.createElement("input"); inp.className = "input"; inp.inputMode = "decimal"; inp.value = p.share ? String(p.share).replace(".",",") : "";
+    inp.setAttribute("aria-label", `Parte de ${p.name} por mes`);
+    inp.oninput = () => { p.share = round2(parseAmount(inp.value) || 0); fixShareManual = true; fixShareFootTxt(); };
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", `Sacar a ${p.name}`);
+    x.onclick = () => { fixSharePeople.splice(i, 1); if (!fixShareManual) fixShareEqual(); renderFixShare(); };
+    r.append(n, inp, x); box.append(r);
+  });
+  const sg = $("fixShareSuggest"); sg.innerHTML = "";
+  const taken = new Set(fixSharePeople.map(p => p.name.toLowerCase()));
+  knownPeople().filter(n => !taken.has(n.toLowerCase())).slice(0, 8).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = "+ " + n; c.onclick = () => fixShareAdd(n); sg.append(c); });
+  fixShareFootTxt();
+}
+function fixShareFootTxt(){
+  const total = parseAmount($("fixAmount").value) || 0, others = fixSharePeople.reduce((a,p) => a + p.share, 0);
+  $("fixShareFoot").textContent = fixSharePeople.length ? `Tu parte por mes: ${money(round2(total - others), fixCur)}` : "Agregá con quién lo compartís.";
+}
+function fixShareAdd(name){
+  name = (name || $("fixSharePerson").value).trim(); if (!name) return;
+  if (!fixSharePeople.some(p => p.name.toLowerCase() === name.toLowerCase())) fixSharePeople.push({ name, share: 0 });
+  if (!fixShareManual) fixShareEqual();
+  $("fixSharePerson").value = ""; renderFixShare();
+}
+$("fixShareOn").onchange = () => { if ($("fixShareOn").checked && !fixShareManual) fixShareEqual(); renderFixShare(); };
+$("fixShareAdd").onclick = () => fixShareAdd();
+$("fixSharePerson").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); fixShareAdd(); } });
+$("fixAmount").addEventListener("input", () => { if ($("fixShareOn").checked){ if (!fixShareManual) fixShareEqual(); renderFixShare(); } });
+
 function fillFixCats(sel){
   const cs = $("fixCat"); cs.innerHTML = "";
   allCats().filter(c => !c.hidden).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; cs.append(o); });
@@ -3270,6 +3355,8 @@ function openFixed(f){
   $("fixDay").value = f ? f.day : 10;
   document.querySelectorAll('input[name="fixHow"]').forEach(r => r.checked = r.value === (f ? f.how : "manual"));
   if (f && f.cardId) cards.value = f.cardId;
+  fixSharePeople = f && fixShared(f) ? f.shares.map(p => ({ ...p })) : []; fixShareManual = !!(f && fixShared(f));
+  $("fixShareOn").checked = fixSharePeople.length > 0; $("fixSharePerson").value = ""; renderFixShare();
   $("fixDel").hidden = !f; $("fixErr").textContent = "";
   $("fixBg").classList.add("open"); $("fixSheet").classList.add("open");
   setTimeout(() => $("fixName").focus(), 120);
@@ -3284,14 +3371,16 @@ $("fixSave").onclick = () => {
   const v = parseAmount($("fixAmount").value), amount = v > 0 ? round2(v) : null;
   if (how === "card" && !amount){ $("fixErr").textContent = "Los fijos con tarjeta necesitan un monto (después podés cambiarlo cada mes)."; return; }
   const key = monthKey(...periodOf(new Date()));
+  const shares = $("fixShareOn").checked ? fixSharePeople.filter(p => p.share > 0).map(p => ({ name: p.name, share: p.share })) : [];
+  if ($("fixShareOn").checked && !shares.length){ $("fixErr").textContent = "Agregá con quién lo compartís y cuánto le toca, o sacá la opción de compartir."; return; }
   let f = editingFix;
   if (f){
     if (amount !== fixAmountFor(f, key)){ f.history = (f.history || []).filter(h => h.from !== key); f.history.push({ from:key, amount }); }
-    Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount });
+    Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount, shares: shares });
   } else {
     f = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, category:$("fixCat").value, currency:fixCur, amount,
       day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, start:key, end:null,
-      history: amount ? [{ from:key, amount }] : [], monthAmounts:{} };
+      history: amount ? [{ from:key, amount }] : [], monthAmounts:{}, shares: shares, sharePaid:{} };
     data.fixed.push(f);
   }
   persist(); closeFixed(); render();
