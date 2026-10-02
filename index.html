@@ -454,6 +454,8 @@ button{cursor:pointer}
 .jar-liquid{transition:y .6s ease,height .6s ease}
 @media (prefers-reduced-motion:reduce){.jar-liquid{transition:none}}
 #jarTotals{display:none}
+
+.jar-meter{width:100%;height:6px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -873,7 +875,7 @@ const CATEGORIES = [
   {id:"otros",       name:"Otros",             color:"#8C8C8C"},
   {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
   {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
-  {id:"tarjeta_sd",  name:"Tarjeta sin detalle", color:"#5B6B82", hidden:true},
+  {id:"tarjeta_sd",  name:"Resto de la tarjeta", color:"#5B6B82", hidden:true},
 ];
 const allCats = () => [...CATEGORIES, ...((typeof data !== "undefined" && Array.isArray(data.customCats)) ? data.customCats : [])];
 const catById = id => allCats().find(c => c.id === id) || CATEGORIES.find(c => c.id === "otros");
@@ -1162,13 +1164,13 @@ function entries(){
     const assigned = mine.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
     const extra = round2((p.amount || 0) - assigned);
     const noDetail = !mine.some(x => x.currency === "ARS");   // sin compras en pesos cargadas: lo pagado en pesos es "sin detalle"
-    if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: noDetail ? "tarjeta_sd" : "intereses",
-      note: noDetail ? "Compras en pesos sin cargar" : "Intereses e impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+    if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: "tarjeta_sd",
+      note: noDetail ? "Compras sin cargar" : "Resto del resumen (compras sin cargar, intereses o impuestos)", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     if (p.usd > 0){
       const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
       const extraU = round2(p.usd - assignedU);
       const noDetailU = !usdItems.length;   // sin compras en dólares cargadas
-      const catU = noDetailU ? "tarjeta_sd" : "intereses", noteU = noDetailU ? "Compras en dólares sin cargar" : "Intereses e impuestos (dólares)";
+      const catU = "tarjeta_sd", noteU = noDetailU ? "Compras en dólares sin cargar" : "Resto del resumen en dólares (compras sin cargar, intereses o impuestos)";
       const rr = p.usdArs ? p.usdArs / p.usd : p.rate;
       if (p.usdMode === "ars" && rr > 0){
         // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
@@ -1949,7 +1951,7 @@ function renderCpk(){
   else {
     const p = pendingFor(card, dateOnly($("date").value || toLocalInput(new Date()))); pre = p.ars; preU = p.usd;
     hint.textContent = p.ars || p.usd
-      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia va a intereses.`
+      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia queda como "Resto de la tarjeta".`
       : "No tenés compras cargadas sin pagar en esta tarjeta. Lo que pongas cuenta como un gasto de tarjeta en esta fecha.";
   }
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
@@ -2170,7 +2172,7 @@ function openCardPay(card){
   $("cpTitle").textContent = `Pagué ${card.name}`;
   $("cpDate").value = toLocalInput(new Date());
   $("cpAmount").value = pend.ars ? String(pend.ars).replace(".",",") : "";
-  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia va a intereses e impuestos.`;
+  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia queda como "Resto de la tarjeta".`;
   $("cpErr").textContent = "";
   $("cpBg").classList.add("open"); $("cpSheet").classList.add("open");
 }
@@ -2715,6 +2717,8 @@ function renderJars(){
     const sb = document.createElement("div"); sb.className = "jar-sub";
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
     tile.append(nm, bb, sb);
+    if (j.goal){ const m = document.createElement("div"); m.className = "meter jar-meter"; const sp = document.createElement("span");
+      sp.style.width = Math.round(level * 100) + "%"; sp.style.background = j.color; m.append(sp); tile.append(m); }
     tile.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
     grid.append(tile);
     if (open){
