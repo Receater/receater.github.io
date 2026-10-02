@@ -785,7 +785,7 @@ button{cursor:pointer}
       <button type="button" data-jarcur="ARS" aria-pressed="true">Pesos</button>
       <button type="button" data-jarcur="USD" aria-pressed="false">Dólares</button>
     </div></div>
-  <div class="field"><label for="jarGoal">Meta (opcional)</label><input class="input" id="jarGoal" inputmode="decimal" placeholder="Ej: 1500" autocomplete="off"></div>
+  <div class="field"><label for="jarGoal">Meta (opcional)</label><input class="input" id="jarGoal" inputmode="decimal" placeholder="Ej: 1.500" autocomplete="off"></div>
   <div class="field"><label for="jarStart">¿Ya tenés algo ahorrado acá? (opcional)</label><input class="input" id="jarStart" inputmode="decimal" placeholder="0" autocomplete="off">
     <div class="fx-hint">Se suma como saldo inicial, sin tocar tus gastos del mes.</div></div>
   <div class="err" id="jarErr"></div>
@@ -899,6 +899,38 @@ function parseAmount(s){
   else if ((s.match(/\./g)||[]).length > 1 || /\.\d{3}$/.test(s)) s = s.replace(/\./g,"");
   return Number(s);
 }
+
+/* Separador de miles en los campos de monto: 60000 -> 60.000, decimales con coma */
+const groupInt = i => (i.replace(/^0+(?=\d)/, "") || "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+function fmtAmountStr(v){
+  if (v === "" || v == null) return "";
+  const n = typeof v === "number" ? v : parseAmount(v);
+  if (!isFinite(n)) return String(v);
+  const [i, d] = String(Math.round(Math.abs(n) * 100) / 100).split(".");
+  return (n < 0 ? "-" : "") + groupInt(i) + (d ? "," + d : "");
+}
+(() => {
+  const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+  Object.defineProperty(HTMLInputElement.prototype, "value", { configurable:true, enumerable:desc.enumerable,
+    get(){ return desc.get.call(this); },
+    set(v){ desc.set.call(this, this.inputMode === "decimal" ? fmtAmountStr(v) : v); } });
+  document.addEventListener("input", e => {
+    const el = e.target;
+    if (!(el instanceof HTMLInputElement) || el.inputMode !== "decimal") return;
+    const raw = desc.get.call(el), caret = el.selectionStart ?? raw.length;
+    let t = raw.replace(/[^\d.,]/g, "");
+    if (!t.includes(",") && /\.$/.test(t) && e.data === ".") t = t.slice(0, -1) + ",";   // punto tipeado al final = coma decimal
+    t = t.replace(/\./g, "");
+    const k = t.indexOf(","), hasC = k >= 0;
+    const ip = hasC ? t.slice(0, k) : t, dp = hasC ? t.slice(k+1).replace(/,/g, "").slice(0, 2) : "";
+    const out = (ip ? groupInt(ip) : (hasC ? "0" : "")) + (hasC ? "," + dp : "");
+    if (out === raw) return;
+    const keep = raw.slice(0, caret).replace(/[^\d,]/g, "").length + (/\.$/.test(raw.slice(0, caret)) && e.data === "." && !raw.includes(",") ? 1 : 0);
+    desc.set.call(el, out);
+    let pos = 0, seen = 0; while (pos < out.length && seen < keep){ if (/[\d,]/.test(out[pos])) seen++; pos++; }
+    try { el.setSelectionRange(pos, pos); } catch {}
+  }, true);
+})();
 
 /* ---------- Recy (versión simple, reemplazable) ---------- */
 function recySVG(mood, faceOnly){
