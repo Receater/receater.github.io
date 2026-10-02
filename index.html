@@ -538,6 +538,10 @@ button{cursor:pointer}
 
 #xlBg{z-index:14}
 #xlSheet{z-index:15}
+
+#lrBg{z-index:14}
+#lrSheet{z-index:15}
+#typeTabs button{font-size:.84rem}
 </style>
 </head>
 <body>
@@ -592,6 +596,7 @@ button{cursor:pointer}
   </section>
 
   <section class="fixed-pend" id="fixedPend" hidden></section>
+  <section class="fixed-pend" id="loanPend" hidden></section>
   <div id="days"></div>
   </div>
 
@@ -673,8 +678,21 @@ button{cursor:pointer}
     <button type="button" data-type="income" aria-selected="false">Ingreso</button>
     <button type="button" data-type="fx" aria-selected="false">Dólares</button>
     <button type="button" data-type="cardpay" aria-selected="false">Tarjeta</button>
+    <button type="button" data-type="loan" aria-selected="false">Préstamo</button>
   </div>
   <h3 id="sheetTitle">Nuevo gasto</h3>
+  <div id="loanBox" hidden>
+    <div class="seg" role="group" aria-label="Tipo de préstamo" style="display:flex;width:100%">
+      <button type="button" data-ldir="lent" aria-pressed="true">Le presté</button>
+      <button type="button" data-ldir="borrowed" aria-pressed="false">Me prestaron</button>
+    </div>
+    <div class="field">
+      <label for="loanPerson" id="loanPersonLbl">¿A quién?</label>
+      <input class="input" id="loanPerson" placeholder="Nombre" autocomplete="off">
+      <div class="chips suggest" id="loanSuggest" style="margin-top:8px"></div>
+    </div>
+  </div>
+
   <div id="cpkBox" hidden>
     <div class="field" style="margin-top:0">
       <span class="lbl">¿Qué tarjeta pagaste?</span>
@@ -938,6 +956,23 @@ button{cursor:pointer}
   <div class="actions">
     <button type="button" class="btn ghost" id="jmCancel">Cancelar</button>
     <button type="button" class="btn primary" id="jmSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="lrBg"></div>
+<div class="sheet" id="lrSheet" role="dialog" aria-modal="true" aria-labelledby="lrTitle">
+  <h3 id="lrTitle">Préstamo</h3>
+  <p class="fx-hint" id="lrInfo" style="margin:0 0 4px"></p>
+  <ul class="jar-hist" id="lrHist"></ul>
+  <div class="field two">
+    <div><label for="lrAmount" id="lrAmountLbl">Te devolvió</label><input class="input" id="lrAmount" inputmode="decimal" autocomplete="off"></div>
+    <div><label for="lrDate">Fecha</label><input class="input" type="date" id="lrDate"></div>
+  </div>
+  <div class="err" id="lrErr"></div>
+  <div class="actions">
+    <button type="button" class="btn danger" id="lrDel">Borrar</button>
+    <button type="button" class="btn ghost" id="lrCancel">Cerrar</button>
+    <button type="button" class="btn primary" id="lrSave">Guardar</button>
   </div>
 </div>
 
@@ -1334,6 +1369,22 @@ function jarEntries(j){
 }
 const jarBalance = j => round2(jarEntries(j).reduce((s,x) => s + x.amount, 0));
 
+/* ---------- Préstamos ----------
+   loan: { id, dir:"lent"|"borrowed", person, amount, currency, date:"YYYY-MM-DDTHH:mm", note, repays:[{ id, date:"YYYY-MM-DD", amount }] }
+   No son gastos: prestar baja lo que te queda y que te devuelvan lo sube (al revés si te prestan). */
+if (!Array.isArray(data.loans)) data.loans = [];
+const loanLeft = l => round2(l.amount - (l.repays || []).reduce((s,r) => s + r.amount, 0));
+function loanEvents(){
+  const out = [];
+  data.loans.forEach(l => {
+    out.push({ loan:l, date:l.date, amount:l.amount, kind:"start" });
+    (l.repays || []).forEach(r => out.push({ loan:l, date:`${r.date}T12:00`, amount:r.amount, kind:"repay", repay:r }));
+  });
+  return out;
+}
+/* Cómo mueve lo que te queda (en pesos): + entra plata, − sale */
+const loanFlow = ev => ev.loan.currency !== "ARS" ? 0 : (ev.loan.dir === "lent" ? (ev.kind === "start" ? -1 : 1) : (ev.kind === "start" ? 1 : -1)) * ev.amount;
+
 /* ---------- Estado de vista ---------- */
 const now = new Date();
 /* Cobro: "lb" = último día hábil del mes anterior (el sueldo de octubre se cobra a fin de septiembre),
@@ -1421,10 +1472,11 @@ function render(){
     bIncA = tot(data.incomes.filter(since),"ARS"); bSpentA = tot(allE,"ARS");
     bSavA = tot(allE.filter(isSaving),"ARS"); bGastoA = bSpentA - bSavA;
   }
+  const loanAdj = loanEvents().filter(ev => cobro ? new Date(ev.date) >= new Date(cobro.date) : inThisMonth(ev)).reduce((s,ev) => s + loanFlow(ev), 0);
   const big = $("totalArs"), meter = $("meter"), lines = [];
   if (bIncA > 0){
     const incA = bIncA, spentA = bSpentA, savA = bSavA, gastoA = bGastoA;
-    const left = incA - spentA;
+    const left = incA - spentA + loanAdj;
     const fixP = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
     const free = left - fixP;
     $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
@@ -1470,7 +1522,7 @@ function render(){
   const fixScreen = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
   if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
-    const freeD = bIncA - bSpentA - fixScreen;
+    const freeD = bIncA - bSpentA + loanAdj - fixScreen;
     const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
     const days = Math.ceil((untilD - new Date()) / 864e5);
     if (freeD > 0 && days > 0) screen.push(`Te da para ${fmtARS.format(freeD / days)} por día`);
@@ -1483,7 +1535,8 @@ function render(){
   const payGroups = {};
   ents.filter(x => x.cardId).forEach(x => { const k = x.cardId + "|" + x.date.slice(0,10); (payGroups[k] ||= []).push(x); });
   const rows = [...inMonth.map(e => ({ kind:"item", e, date:e.date })),
-    ...Object.entries(payGroups).map(([k, xs]) => ({ kind:"pay", key:k, xs, date: xs[0].date }))].sort((a,b) => b.date.localeCompare(a.date));
+    ...Object.entries(payGroups).map(([k, xs]) => ({ kind:"pay", key:k, xs, date: xs[0].date })),
+    ...loanEvents().filter(inThisMonth).map(ev => ({ kind:"loan", ev, date: ev.date }))].sort((a,b) => b.date.localeCompare(a.date));
   if (!rows.length){ mood = "hungry"; line = "Tengo hambre. Dame un ticket."; }
   else if (bIncA > 0){
     const ratio = (bIncA - bSpentA) / bIncA, savA = bSavA;
@@ -1495,6 +1548,7 @@ function render(){
   setRecy(mood, line);
 
   renderFixedPend();
+  renderLoanPend();
   const days = $("days");
   days.innerHTML = "";
   if (!rows.length){
@@ -1518,7 +1572,7 @@ function render(){
     groups[key].forEach(r => {
       const t = document.createElement("div");
       t.className = "ticket" + (r.kind === "item" && isIncome(r.e) ? " inc" : "");
-      t.append(r.kind === "pay" ? renderPayGroup(r) : renderItem(r.e));
+      t.append(r.kind === "pay" ? renderPayGroup(r) : r.kind === "loan" ? renderLoanRow(r.ev) : renderItem(r.e));
       list.append(t);
     });
     sec.append(h, list);
@@ -1608,6 +1662,36 @@ function renderFixedPend(){
     const a = document.createElement("span"); a.className = "a";
     a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
     b.append(n, a); b.onclick = () => card ? openFixMonth(i) : openSheetForFixed(i); box.append(b);
+  });
+}
+
+function renderLoanRow(ev){
+  const l = ev.loan, b = document.createElement("button"); b.type = "button"; b.className = "item";
+  const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "#8C8C8C";
+  const mid = document.createElement("div");
+  const cat = document.createElement("div"); cat.className = "cat";
+  cat.textContent = ev.kind === "start" ? (l.dir === "lent" ? `Le prestaste a ${l.person}` : `Te prestó ${l.person}`) : (l.dir === "lent" ? `${l.person} te devolvió` : `Le devolviste a ${l.person}`);
+  const sub = document.createElement("div"); sub.className = "sub";
+  sub.textContent = ev.kind === "start" ? ["Préstamo", l.note].filter(Boolean).join("  ") : "Devolución de préstamo";
+  mid.append(cat, sub);
+  const amt = document.createElement("div"); const inflow = loanFlow(ev) > 0 || (l.currency !== "ARS" && ((l.dir === "lent") === (ev.kind === "repay")));
+  amt.className = "amt" + (inflow ? " is-inc" : " muted"); amt.textContent = (inflow ? "+ " : "− ") + money(ev.amount, l.currency);
+  amt.append(stampEl(ev.kind === "start" ? "PRÉSTAMO" : "DEVOLUCIÓN", ev.kind === "start" ? "wait" : "ok"));
+  b.append(dot, mid, amt); b.onclick = () => openLoan(l);
+  return b;
+}
+function renderLoanPend(){
+  const box = $("loanPend"); box.innerHTML = "";
+  const open = data.loans.filter(l => loanLeft(l) > 0.005);
+  if (!open.length){ box.hidden = true; return; }
+  box.hidden = false;
+  const h = document.createElement("h3"); h.textContent = "Préstamos"; box.append(h);
+  open.forEach(l => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
+    const n = document.createElement("span"); n.className = "n"; n.textContent = l.dir === "lent" ? `${l.person} te debe` : `Le debés a ${l.person}`;
+    const sm = document.createElement("small"); sm.textContent = `desde el ${shortDate(dateOnly(l.date))}`; n.append(sm);
+    const a = document.createElement("span"); a.className = "a"; a.textContent = money(loanLeft(l), l.currency);
+    b.append(n, a); b.onclick = () => openLoan(l); box.append(b);
   });
 }
 
@@ -1705,7 +1789,7 @@ function setMode(m){
   document.querySelectorAll("#typeTabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.type === m)));
   $("catLabel").textContent = m === "income" ? "Tipo" : "Categoría";
   $("note").placeholder = m === "income" ? "Ej: sueldo de septiembre" : "Ej: nafta, cumple de Juli…";
-  $("sheetTitle").textContent = m === "cardpay" ? "Pagué una tarjeta" : m === "fx" ? (editing ? "Editar compra de dólares" : "Compra de dólares")
+  $("sheetTitle").textContent = m === "loan" ? "Préstamo" : m === "cardpay" ? "Pagué una tarjeta" : m === "fx" ? (editing ? "Editar compra de dólares" : "Compra de dólares")
     : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
   $("splitField").hidden = m !== "expense";
   $("methodField").hidden = m !== "expense";
@@ -1714,9 +1798,11 @@ function setMode(m){
   $("fxBox").hidden = m !== "fx";
   $("amountRow").hidden = m === "fx" || m === "cardpay";
   $("cpkBox").hidden = m !== "cardpay";
+  $("loanBox").hidden = m !== "loan";
+  if (m === "loan") renderLoanBox();
   if (m === "cardpay") renderCpk();
   if (m === "fx") fxCalc();
-  $("catField").hidden = m === "fx" || m === "cardpay";
+  $("catField").hidden = m === "fx" || m === "cardpay" || m === "loan";
   updateJarField();
   $("note").placeholder = m === "fx" ? "Ej: ahorro, viaje…" : $("note").placeholder;
   renderCats();
@@ -2072,6 +2158,60 @@ function renderCpk(){
   cpkLink.reset(); cpkLink.fill();
 }
 
+let loanDir = "lent";
+function renderLoanBox(){
+  document.querySelectorAll("[data-ldir]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.ldir === loanDir)));
+  $("loanPersonLbl").textContent = loanDir === "lent" ? "¿A quién?" : "¿Quién te prestó?";
+  $("note").placeholder = "Ej: para el alquiler, me lo devuelve a fin de mes";
+  const names = new Map();
+  data.loans.forEach(l => names.set(l.person.toLowerCase(), l.person));
+  data.expenses.forEach(e => e.split && e.split.people.forEach(p => names.set(p.name.toLowerCase(), p.name)));
+  const box = $("loanSuggest"); box.innerHTML = "";
+  [...names.values()].slice(0, 8).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = n;
+    c.onclick = () => { $("loanPerson").value = n; }; box.append(c); });
+}
+document.querySelectorAll("[data-ldir]").forEach(b => b.onclick = () => { loanDir = b.dataset.ldir; renderLoanBox(); });
+
+/* Detalle de un préstamo: ver devoluciones, cargar una, borrar */
+let lrLoan = null;
+function openLoan(l){
+  lrLoan = l;
+  const left = loanLeft(l);
+  $("lrTitle").textContent = l.dir === "lent" ? `Le prestaste a ${l.person}` : `Te prestó ${l.person}`;
+  $("lrInfo").textContent = `${money(l.amount, l.currency)} el ${shortDate(dateOnly(l.date))}${l.note ? ` · ${l.note}` : ""}. ` +
+    (left > 0.005 ? (l.dir === "lent" ? `Te debe ${money(left, l.currency)}.` : `Le debés ${money(left, l.currency)}.`) : "Ya está saldado.");
+  const ul = $("lrHist"); ul.innerHTML = "";
+  (l.repays || []).forEach(r => {
+    const li = document.createElement("li");
+    const d = document.createElement("span"); d.className = "d"; d.textContent = shortDate(dateOnly(r.date));
+    const t = document.createElement("span"); t.className = "t"; t.textContent = l.dir === "lent" ? "Te devolvió" : "Le devolviste";
+    const a = document.createElement("span"); a.className = "a"; a.textContent = money(r.amount, l.currency);
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Borrar devolución");
+    x.onclick = () => { l.repays = l.repays.filter(y => y !== r); persist(); render(); openLoan(l); };
+    li.style.gridTemplateColumns = "auto minmax(0,1fr) auto auto"; li.append(d, t, a, x); ul.append(li);
+  });
+  $("lrAmountLbl").textContent = l.dir === "lent" ? "Te devolvió" : "Le devolviste";
+  $("lrAmount").value = left > 0.005 ? String(left).replace(".",",") : "";
+  $("lrDate").value = toLocalInput(new Date());
+  $("lrSave").hidden = !(left > 0.005);
+  $("lrAmount").parentElement.parentElement.hidden = !(left > 0.005);
+  $("lrErr").textContent = "";
+  $("lrBg").classList.add("open"); $("lrSheet").classList.add("open");
+}
+function closeLoan(){ $("lrBg").classList.remove("open"); $("lrSheet").classList.remove("open"); }
+$("lrCancel").onclick = closeLoan; $("lrBg").onclick = closeLoan;
+$("lrSave").onclick = () => {
+  const v = parseAmount($("lrAmount").value), left = loanLeft(lrLoan);
+  if (!(v > 0)){ $("lrErr").textContent = "Poné cuánto."; return; }
+  if (v > left + 0.005){ $("lrErr").textContent = `No puede ser más de ${money(left, lrLoan.currency)}.`; return; }
+  (lrLoan.repays ||= []).push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), date: $("lrDate").value || toLocalInput(new Date()), amount: round2(v) });
+  persist(); closeLoan(); feedRecy(); render();
+};
+$("lrDel").onclick = () => {
+  if (!confirm("¿Borrar este préstamo con sus devoluciones?")) return;
+  data.loans = data.loans.filter(x => x !== lrLoan); persist(); closeLoan(); render();
+};
+
 function setCurrency(cur){
   currency = cur;
   document.querySelectorAll(".cur button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cur === cur)));
@@ -2123,6 +2263,7 @@ function openSheet(exp){
   jarSel = exp ? (exp.jarId || null) : null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
   $("catSearch").value = ""; catEditing = false; editingPay = null;
+  $("loanPerson").value = ""; loanDir = "lent";
   fixSel = exp && exp.fixedId ? { fid: exp.fixedId, key: exp.fixedKey } : null; fixDiffMode = "partial";
   cpkHow = "ars"; cpkMode = "rate";
   jarUserPicked = false;
@@ -2139,6 +2280,15 @@ function persist(){
 
 $("sheet").addEventListener("submit", ev => {
   ev.preventDefault();
+  if (mode === "loan"){
+    const person = $("loanPerson").value.trim(), amount = parseAmount($("amount").value);
+    if (!person){ $("err").textContent = loanDir === "lent" ? "¿A quién le prestaste?" : "¿Quién te prestó?"; $("loanPerson").focus(); return; }
+    if (!(amount > 0)){ $("err").textContent = "Poné un monto mayor a cero."; return; }
+    const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
+    data.loans.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), dir: loanDir, person, amount: round2(amount), currency, date, note: $("note").value.trim(), repays: [] });
+    persist(); closeSheet(); feedRecy();
+    [viewYear, viewMonth] = periodOf(date); render(); return;
+  }
   if (mode === "cardpay"){
     const card = cardById(cpkCard), date = $("date").value || toLocalInput(new Date());
     const { ars: amount, usd, rate, usdArs } = cpkValues();
@@ -2220,7 +2370,8 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("xlSheet").classList.contains("open")) closeXls();
+  if ($("lrSheet").classList.contains("open")) closeLoan();
+  else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
   else if ($("catSheet").classList.contains("open")) closeCat();
