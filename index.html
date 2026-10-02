@@ -535,6 +535,9 @@ button{cursor:pointer}
 
 .seg{display:inline-flex}
 .seg button{flex:1 1 0;min-width:44px;white-space:nowrap}
+
+#xlBg{z-index:14}
+#xlSheet{z-index:15}
 </style>
 </head>
 <body>
@@ -651,10 +654,13 @@ button{cursor:pointer}
   </div>
 
   <footer class="data-tools">
+    <button type="button" class="small-btn primary" id="xlsBtn">Exportar a Excel</button>
+    <div style="margin-top:10px">
     <button type="button" class="linkbtn" id="exportBtn">Exportar backup</button> ·
     <button type="button" class="linkbtn" id="importBtn">Importar backup</button>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
-    <p class="fx-hint">Un archivo con todos tus datos, para guardarlo donde quieras.</p>
+    </div>
+    <p class="fx-hint">El backup es un archivo con todos tus datos, para guardarlo donde quieras.</p>
   </footer>
 </main>
 
@@ -932,6 +938,22 @@ button{cursor:pointer}
   <div class="actions">
     <button type="button" class="btn ghost" id="jmCancel">Cancelar</button>
     <button type="button" class="btn primary" id="jmSave">Guardar</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="xlBg"></div>
+<div class="sheet" id="xlSheet" role="dialog" aria-modal="true" aria-labelledby="xlTitle">
+  <h3 id="xlTitle">Exportar a Excel</h3>
+  <p class="fx-hint" style="margin:0 0 12px">Un archivo con una hoja para cada cosa: movimientos, gastos por categoría y mes, tarjetas, fijos y ahorros.</p>
+  <div class="opts" role="radiogroup" aria-label="Qué período exportar">
+    <label class="opt"><input type="radio" name="xlRange" value="month" checked><div><strong>El mes que estás viendo</strong><span id="xlMonthLbl"></span></div></label>
+    <label class="opt"><input type="radio" name="xlRange" value="year"><div><strong>Este año</strong><span id="xlYearLbl"></span></div></label>
+    <label class="opt"><input type="radio" name="xlRange" value="all"><div><strong>Todo</strong><span>Desde que empezaste a usar Receater.</span></div></label>
+  </div>
+  <div class="err" id="xlErr"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="xlCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="xlGo">Descargar</button>
   </div>
 </div>
 
@@ -2198,7 +2220,8 @@ $("del").onclick = () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("fixSheet").classList.contains("open")) closeFixed();
+  if ($("xlSheet").classList.contains("open")) closeXls();
+  else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
   else if ($("catSheet").classList.contains("open")) closeCat();
   else if ($("jarSheet").classList.contains("open")) closeJar();
@@ -3163,6 +3186,107 @@ window.cloud = (() => {
   }
   return { init, connect, schedule(){ clearTimeout(timer); if (ready) timer = setTimeout(upload, 1200); } };
 })();
+
+/* ---------- Exportar a Excel (SheetJS, se carga solo cuando lo usás) ---------- */
+function loadXLSX(){
+  return new Promise((res, rej) => {
+    if (window.XLSX) return res(window.XLSX);
+    const sc = document.createElement("script");
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    sc.onload = () => res(window.XLSX); sc.onerror = () => rej(new Error("No se pudo cargar")); document.head.append(sc);
+  });
+}
+function openXls(){
+  $("xlMonthLbl").textContent = periodTitle(viewYear, viewMonth);
+  $("xlYearLbl").textContent = String(new Date().getFullYear());
+  $("xlErr").textContent = "";
+  $("xlBg").classList.add("open"); $("xlSheet").classList.add("open");
+}
+function closeXls(){ $("xlBg").classList.remove("open"); $("xlSheet").classList.remove("open"); }
+$("xlsBtn").onclick = openXls; $("xlCancel").onclick = closeXls; $("xlBg").onclick = closeXls;
+$("xlGo").onclick = async () => {
+  const range = (document.querySelector('input[name="xlRange"]:checked') || {}).value || "month";
+  $("xlGo").disabled = true; $("xlGo").textContent = "Armando…";
+  try { const X = await loadXLSX(); buildXls(X, range); closeXls(); }
+  catch { $("xlErr").textContent = "No se pudo armar el Excel. Fijate tu conexión y probá de nuevo."; }
+  $("xlGo").disabled = false; $("xlGo").textContent = "Descargar";
+};
+function buildXls(X, range){
+  const yr = new Date().getFullYear();
+  const inRange = date => range === "all" ? true : range === "year" ? date.slice(0,4) === String(yr) : inPeriod({ date }, viewYear, viewMonth);
+  const mName = { cash:"Efectivo", debit:"Débito", transfer:"Transferencia" };
+  const r2 = n => n == null || n === "" ? "" : Math.round(n * 100) / 100;
+  const wb = X.utils.book_new();
+  const addSheet = (name, rows, widths) => {
+    const ws = X.utils.aoa_to_sheet(rows);
+    ws["!cols"] = widths.map(w => ({ wch: w }));
+    const ref = X.utils.decode_range(ws["!ref"] || "A1");
+    for (let R = 1; R <= ref.e.r; R++) for (let C = 0; C <= ref.e.c; C++){
+      const c = ws[X.utils.encode_cell({ r:R, c:C })]; if (c && c.t === "n") c.z = Number.isInteger(c.v) ? "#,##0" : "#,##0.00";
+    }
+    X.utils.book_append_sheet(wb, ws, name);
+  };
+
+  // 1. Movimientos
+  const mov = [["Fecha","Hora","Tipo","Categoría","Nota","Medio de pago","Cuotas","Moneda","Monto","Te deben","Gasto fijo","Frasco"]];
+  [...data.expenses, ...data.incomes].filter(e => inRange(e.date)).sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
+    const inc = isIncome(e), card = !inc && e.method === "card" ? cardById(e.cardId) : null;
+    mov.push([e.date.slice(0,10), e.date.slice(11,16),
+      inc ? "Ingreso" : e.fx ? "Compra de dólares" : "Gasto",
+      inc ? kindById(e.category).name : catById(e.category).name,
+      e.fx ? `${fmtUSD.format(e.fx.usd)} a ${fmtARS.format(e.fx.rate)}${e.note ? " · " + e.note : ""}` : (e.note || ""),
+      card ? card.name : (mName[e.method] || ""), card && e.installments > 1 ? `${e.installments}${e.paidInstallments ? ` (ya pagadas ${e.paidInstallments})` : ""}` : "",
+      e.currency, r2(e.amount), !inc && e.split ? r2(owed(e)) || "" : "",
+      e.fixedId && fixById(e.fixedId) ? fixById(e.fixedId).name : "", e.jarId && jarById(e.jarId) ? jarById(e.jarId).name : ""]);
+  });
+  addSheet("Movimientos", mov, [11,6,17,20,34,16,10,8,14,11,18,18]);
+
+  // 2. Gastos por categoría y mes (en pesos, como cuentan en la app: tarjetas el mes que se pagan)
+  const ents = entries().filter(x => x.currency === "ARS" && inRange(x.date));
+  const keys = [...new Set(ents.map(x => monthKey(...periodOf(x.date))))].sort();
+  const label = k => { const [y, m] = k.split("-").map(Number); return periodTitle(y, m - 1); };
+  const byCat = {};
+  ents.forEach(x => { const k = monthKey(...periodOf(x.date)); (byCat[x.category] ||= {})[k] = (byCat[x.category][k] || 0) + x.amount; });
+  const cat = [["Categoría", ...keys.map(label), "Total"]];
+  Object.keys(byCat).sort((a,b) => catById(a).name.localeCompare(catById(b).name)).forEach(c => {
+    const vals = keys.map(k => r2(byCat[c][k] || 0)); cat.push([catById(c).name, ...vals, r2(vals.reduce((s2,v) => s2 + v, 0))]);
+  });
+  if (cat.length > 1){ const tot = keys.map((k,i) => r2(cat.slice(1).reduce((s2,row) => s2 + row[i+1], 0))); cat.push(["Total", ...tot, r2(tot.reduce((s2,v) => s2 + v, 0))]); }
+  addSheet("Por categoría", cat, [24, ...keys.map(() => 16), 16]);
+
+  // 3. Tarjetas: cada pago
+  const tj = [["Fecha","Tarjeta","Pagado en pesos","Pagado en dólares","Cotización","Dólares en pesos","Total en pesos","Compras incluidas"]];
+  data.cardPayments.filter(p => inRange(p.date + "T12:00")).sort((a,b) => a.date.localeCompare(b.date)).forEach(p => {
+    const card = cardById(p.cardId), usdArs = p.usd ? (p.usdArs || (p.rate ? p.usd * p.rate : 0)) : 0;
+    const n = entries().filter(x => x.cardId === p.cardId && !x.payId && x.date.slice(0,10) === p.date).length;
+    tj.push([p.date, card ? card.name : "", r2(p.amount || 0), r2(p.usd || 0), p.usd ? r2(usdArs / p.usd) : "", r2(usdArs), r2((p.amount || 0) + usdArs), n]);
+  });
+  addSheet("Tarjetas", tj, [11,18,16,16,12,16,16,16]);
+
+  // 4. Fijos: cada fijo, mes a mes
+  const fx = [["Mes","Fijo","Cómo se paga","Moneda","Monto del mes","Pagado","Estado"]];
+  const howName = { manual:"Lo pago yo", auto:"Débito automático", card:"Con tarjeta" };
+  const stName = { paid:"Pagado", cardpaid:"Pagado con tarjeta", incard:"En la tarjeta", todebit:"A debitar", partial:"Parcial", noamount:"Sin monto", pending:"Pendiente" };
+  const fkeys = range === "month" ? [monthKey(viewYear, viewMonth)] : [...new Set(data.fixed.flatMap(f => {
+    const out = []; let [y, m] = f.start.split("-").map(Number); m--; const [cy, cm] = periodOf(new Date());
+    for (let g = 0; g < 60; g++){ const k = monthKey(y, m); if (k > monthKey(cy, cm)) break; if (fixActiveIn(f, k) && (range === "all" || k.slice(0,4) === String(yr))) out.push(k); m++; if (m > 11){ m = 0; y++; } }
+    return out; }))].sort();
+  fkeys.forEach(k => { const [y, m] = k.split("-").map(Number);
+    fixInstances(y, m - 1).forEach(i => fx.push([label(k), i.f.name, howName[i.f.how] || "", i.currency, r2(i.expected || 0), r2(i.state === "cardpaid" ? i.expected : i.paid), stName[i.state] || ""])); });
+  addSheet("Fijos", fx, [16,22,18,8,14,14,16]);
+
+  // 5. Ahorros
+  const ah = [["Fecha","Frasco","Moneda","Movimiento","Monto","Pagado en pesos"]];
+  data.jars.forEach(j => jarEntries(j).filter(x => inRange(x.date + "T12:00")).forEach(x =>
+    ah.push([x.date, j.name, j.currency, x.label, r2(x.amount), x.src && x.src.fx ? r2(x.src.amount) : ""])));
+  ah.sort((a,b) => typeof a[0] === "string" && a[0] !== "Fecha" && b[0] !== "Fecha" ? a[0].localeCompare(b[0]) : 0);
+  ah.push([]); ah.push(["Saldo de cada frasco hoy"]);
+  data.jars.forEach(j => ah.push(["", j.name, j.currency, j.goal ? `Meta ${j.goal}` : "", r2(jarBalance(j)), ""]));
+  addSheet("Ahorros", ah, [11,24,8,40,14,16]);
+
+  const tag = range === "all" ? "todo" : range === "year" ? String(yr) : monthKey(viewYear, viewMonth);
+  X.writeFile(wb, `receater-${tag}.xlsx`);
+}
 
 /* ---------- Backup: exportar e importar ---------- */
 $("exportBtn").onclick = () => {
