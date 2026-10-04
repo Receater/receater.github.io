@@ -1416,8 +1416,11 @@ function fixInstances(y, m){
 }
 /* Lo que falta pagar de los fijos a mano / débito automático en un período (en pesos) */
 function fixedPendingARS(y, m){
-  return round2(fixInstances(y, m).filter(i => i.f.how !== "card" && i.currency === "ARS" && i.state !== "paid")
-    .reduce((s,i) => s + Math.max(0, (i.expected || 0) - i.paid), 0));
+  // Lo que falta pagar de los fijos a mano o débito. Los que son en dólares se pasan a pesos con el dólar de hoy (o la última cotización)
+  const usdRate = () => { let casa = "oficial"; try { casa = localStorage.getItem("receater.fxCasa") || "oficial"; } catch {}
+    const q = typeof quotes !== "undefined" && quotes && (quotes.map[casa] || quotes.map.oficial); return q ? q.venta : (data.lastRate || 0); };
+  return round2(fixInstances(y, m).filter(i => i.f.how !== "card" && i.state !== "paid")
+    .reduce((s,i) => { const left = Math.max(0, (i.expected || 0) - i.paid); return s + (i.currency === "USD" ? left * usdRate() : left); }, 0));
 }
 function dayIn(Y, M, day){ const f = new Date(Y, M, 1); return new Date(f.getFullYear(), f.getMonth(), Math.min(day, daysIn(f.getFullYear(), f.getMonth()))); }
 function nextDayAfter(date, day){ let c = dayIn(date.getFullYear(), date.getMonth(), day); if (c <= date) c = dayIn(date.getFullYear(), date.getMonth()+1, day); return c; }
