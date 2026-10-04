@@ -586,6 +586,11 @@ button{cursor:pointer}
 .day-sum{background:var(--paper);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:grid;gap:4px}
 .day-sum .row{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
 .day-sum .row b{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+#pplBg{z-index:16}
+#pplSheet{z-index:17}
+.chip.mgr{border-style:dashed;color:var(--muted)}
+.fp-row .settle{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 </style>
 </head>
 <body>
@@ -874,6 +879,19 @@ button{cursor:pointer}
     </div>
   </div>
 
+  <div class="field" id="otherField">
+    <label class="switch"><input type="checkbox" id="otherOn"> Lo pagó otra persona</label>
+    <div id="otherBox" hidden>
+      <input class="input" id="otherWho" placeholder="¿Quién pagó?" autocomplete="off" style="margin-top:10px">
+      <div class="chips suggest" id="otherSuggest" style="margin-top:8px"></div>
+      <div class="field two" style="margin-top:10px">
+        <div><label class="lbl-sm" for="otherMine">Tu parte</label><input class="input" id="otherMine" inputmode="decimal" autocomplete="off"></div>
+        <div style="display:flex;align-items:flex-end"><button type="button" class="linkbtn" id="otherHalf">Mitad y mitad</button></div>
+      </div>
+      <div class="fx-hint">Arriba poné el total que pagó. Vos le debés tu parte, y si esa persona ya te debía algo, se descuenta.</div>
+    </div>
+  </div>
+
   <div class="field" id="lendField">
     <label class="switch"><input type="checkbox" id="lendOn"> Le presté plata a alguien</label>
     <div id="lendBox" hidden>
@@ -1090,6 +1108,15 @@ button{cursor:pointer}
     <button type="button" class="btn danger" id="aiDel">Desactivar</button>
     <button type="button" class="btn ghost" id="aiCancel">Cerrar</button>
   </div>
+</div>
+
+<div class="sheet-bg" id="pplBg"></div>
+<div class="sheet" id="pplSheet" role="dialog" aria-modal="true" aria-labelledby="pplTitle">
+  <h3 id="pplTitle">Personas</h3>
+  <p class="fx-hint" style="margin:0 0 10px">Las personas con las que dividís gastos o te prestás plata. Aparecen como sugerencia al cargar.</p>
+  <div class="split-add"><input class="input" id="pplNew" placeholder="Nombre" autocomplete="off"><button type="button" class="btn ghost" id="pplAdd">Agregar</button></div>
+  <ul class="jar-hist" id="pplList"></ul>
+  <div class="actions"><button type="button" class="btn ghost" id="pplClose">Listo</button></div>
 </div>
 
 <div class="sheet-bg" id="xlBg"></div>
@@ -1656,8 +1683,10 @@ function render(){
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
   const repayScreen = isCurrentPeriod(viewYear, viewMonth) ? toRepayARS(viewYear, viewMonth) : 0;
   if (repayScreen > 0) screen.push(`A devolver ${fmtARS.format(repayScreen)}`);
-  const owedScreen = allExpenses().filter(e => e.currency === "ARS" && e.split && (!e.virtual || dateOnly(e.date) <= new Date())).reduce((s2,e) => s2 + owed(e), 0);
+  const balS = balances();
+  const owedScreen = balS.filter(x => x.ARS > 0).reduce((a,x) => a + x.ARS, 0), oweScreen = balS.filter(x => x.ARS < 0).reduce((a,x) => a - x.ARS, 0);
   if (owedScreen > 0.5) screen.push(`Te deben ${fmtARS.format(owedScreen)}`);
+  if (oweScreen > 0.5) screen.push(`Debés ${fmtARS.format(oweScreen)}`);
   if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
     const freeD = bIncA - bSpentA - fixScreen - repayScreen;
     const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
@@ -1901,6 +1930,13 @@ function renderItem(e){
     }
     return wrap;
   }
+  if (!shared && e.paidBy){
+    sub.textContent = [`Pagó ${e.paidBy.name} (total ${money(e.paidBy.total, e.currency)})`, e.note].filter(Boolean).join("  ");
+    mid.append(cat, sub);
+    amt.append(stampEl(e.paidBy.settled ? "SALDADO" : "LE DEBÉS", e.paidBy.settled ? "ok" : "wait"));
+    b.onclick = () => openSheet(e);
+    return b;
+  }
   if (!shared){
     sub.textContent = [e.date.slice(11,16), methodName, e.note].filter(Boolean).join("  ");
     if (card){
@@ -2105,10 +2141,39 @@ function openSheetForFixed(i){
 /* ---------- Préstamos ----------
    Me prestaron: es un ingreso de tipo "prestamo" con loanFrom y dueDate. Queda "a devolver" hasta que cargás
    un gasto que lo devuelve (repaysId). Le presté: es un gasto con loan:true y split de una persona que te debe todo. */
+if (!Array.isArray(data.people)) data.people = [];
+if (!Array.isArray(data.peopleOff)) data.peopleOff = [];
 const knownPeople = () => { const m = new Map();
-  data.expenses.forEach(e => e.split && e.split.people.forEach(p => m.set(p.name.toLowerCase(), p.name)));
+  data.people.forEach(n => m.set(n.toLowerCase(), n));
+  data.expenses.forEach(e => { e.split && e.split.people.forEach(p => m.set(p.name.toLowerCase(), p.name)); e.paidBy && m.set(e.paidBy.name.toLowerCase(), e.paidBy.name); });
   data.incomes.forEach(i => i.loanFrom && m.set(i.loanFrom.toLowerCase(), i.loanFrom));
-  return [...m.values()]; };
+  data.fixed.forEach(f => (f.shares || []).forEach(p => m.set(p.name.toLowerCase(), p.name)));
+  const off = new Set(data.peopleOff.map(n => n.toLowerCase()));
+  return [...m.values()].filter(n => !off.has(n.toLowerCase())); };
+function rememberPerson(name){
+  if (!name) return; const k = name.toLowerCase();
+  data.peopleOff = data.peopleOff.filter(n => n.toLowerCase() !== k);
+  if (!data.people.some(n => n.toLowerCase() === k)) data.people.push(name);
+}
+/* Cuentas con cada persona: lo que te deben menos lo que les debés */
+function balances(){
+  const b = {}, add = (name, cur, v, ref) => { const k = name.trim().toLowerCase(); (b[k] ||= { name: name.trim(), ARS: 0, USD: 0, refs: [] }); b[k][cur] += v; ref && b[k].refs.push(ref); };
+  data.expenses.forEach(e => {
+    if (e.split) e.split.people.forEach(p => { if (!p.paid) add(p.name, e.currency, p.share, { t: "split", e, p }); });
+    if (e.paidBy && !e.paidBy.settled) add(e.paidBy.name, e.currency, -e.amount, { t: "paidBy", e });
+  });
+  const [cy, cm] = periodOf(new Date()), curKey = monthKey(cy, cm);
+  data.fixed.filter(fixShared).forEach(f => {
+    let [y, m] = f.start.split("-").map(Number); m--;
+    for (let g = 0; g < 60; g++){ const k = monthKey(y, m); if (k > curKey) break;
+      if (fixActiveIn(f, k)) f.shares.forEach(p => { if (!fixSharePaid(f, k, p.name)) add(p.name, f.currency, p.share, { t: "fix", f, k, p }); });
+      m++; if (m > 11){ m = 0; y++; } }
+  });
+  return Object.values(b).filter(x => Math.abs(x.ARS) > 0.5 || Math.abs(x.USD) > 0.005);
+}
+function settleWith(x){
+  x.refs.forEach(r => { if (r.t === "split") r.p.paid = true; else if (r.t === "paidBy") r.e.paidBy.settled = true; else if (r.t === "fix") setFixSharePaid(r.f, r.k, r.p.name, true); });
+}
 const isRepaid = inc => data.expenses.some(e => e.repaysId === inc.id);
 function toRepay(y, m){
   const end = payDate(y, m+1), cur = isCurrentPeriod(y, m);
@@ -2119,9 +2184,28 @@ function toRepay(y, m){
 const toRepayARS = (y, m) => toRepay(y, m).filter(i => i.currency === "ARS").reduce((s,i) => s + i.amount, 0);
 function suggestInto(boxId, inputId){
   const box = $(boxId); box.innerHTML = "";
-  knownPeople().slice(0, 8).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = n;
+  knownPeople().slice(0, 10).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = n;
     c.onclick = () => { $(inputId).value = n; }; box.append(c); });
+  const g = document.createElement("button"); g.type = "button"; g.className = "chip mgr"; g.textContent = "✎ Personas"; g.onclick = openPeople; box.append(g);
 }
+/* Modal de personas */
+function openPeople(){ renderPeople(); $("pplNew").value = ""; $("pplBg").classList.add("open"); $("pplSheet").classList.add("open"); }
+function closePeople(){ $("pplBg").classList.remove("open"); $("pplSheet").classList.remove("open"); persist();
+  ["lendSuggest","otherSuggest","borrowSuggest"].forEach(id => { const box = $(id); if (box && !box.closest("[hidden]")) suggestInto(id, { lendSuggest:"lendTo", otherSuggest:"otherWho", borrowSuggest:"borrowFrom" }[id]); });
+  if (typeof renderSplit === "function" && $("sheet").classList.contains("open")) renderSplit(); }
+function renderPeople(){
+  const ul = $("pplList"); ul.innerHTML = "";
+  const list = knownPeople().sort((a,b) => a.localeCompare(b));
+  if (!list.length){ const li = document.createElement("li"); li.style.display = "block"; li.style.color = "var(--muted)"; li.textContent = "Todavía no hay nadie."; ul.append(li); }
+  list.forEach(n => { const li = document.createElement("li"); li.style.gridTemplateColumns = "minmax(0,1fr) auto";
+    const t = document.createElement("span"); t.className = "t"; t.textContent = n;
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", `Sacar a ${n}`);
+    x.onclick = () => { data.people = data.people.filter(p => p.toLowerCase() !== n.toLowerCase()); data.peopleOff.push(n); renderPeople(); };
+    li.append(t, x); ul.append(li); });
+}
+$("pplAdd").onclick = () => { const n = $("pplNew").value.trim(); if (!n) return; rememberPerson(n); $("pplNew").value = ""; renderPeople(); };
+$("pplNew").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); $("pplAdd").onclick(); } });
+$("pplClose").onclick = closePeople; $("pplBg").onclick = closePeople;
 let repaySel = null;
 function updateBorrowField(){
   const show = mode === "income" && incomeKind === "prestamo";
@@ -2130,12 +2214,19 @@ function updateBorrowField(){
 }
 function updateLendField(){
   const show = mode === "expense" && !repaySel;
-  $("lendField").hidden = !show;
-  const on = show && $("lendOn").checked;
+  const other = show && $("otherOn").checked;
+  $("otherField").hidden = !show || $("lendOn").checked;
+  $("otherBox").hidden = !other;
+  if (other) suggestInto("otherSuggest", "otherWho");
+  $("lendField").hidden = !show || other;
+  const on = show && !other && $("lendOn").checked;
   $("lendBox").hidden = !on;
-  if (on){ suggestInto("lendSuggest", "lendTo"); $("splitField").hidden = true; }
-  else if (mode === "expense") $("splitField").hidden = false;
+  if (on) suggestInto("lendSuggest", "lendTo");
+  if (mode === "expense"){ $("splitField").hidden = on || other; $("methodField").hidden = other; }
 }
+$("otherOn").onchange = () => { if ($("otherOn").checked){ $("splitOn").checked = false; $("lendOn").checked = false; renderSplit(); if (!$("otherMine").value) otherHalf(); } updateLendField(); };
+function otherHalf(){ const t = parseAmount($("amount").value) || 0; $("otherMine").value = t ? String(round2(t / 2)).replace(".",",") : ""; }
+$("otherHalf").onclick = otherHalf;
 $("lendOn").onchange = () => {
   if ($("lendOn").checked){ category = "prestamo"; $("splitOn").checked = false; renderSplit(); }
   else if (category === "prestamo") category = "otros";
@@ -2154,10 +2245,11 @@ function openSheetForRepay(inc){
 function renderLoanPend(){
   const box = $("loanPend"); box.innerHTML = "";
   const owe = toRepay(viewYear, viewMonth);
-  const lent = data.expenses.filter(e => e.loan && e.split && owed(e) > 0.005);
-  if (!owe.length && !lent.length){ box.hidden = true; return; }
+  const bal = balances();
+  if (!owe.length && !bal.length){ box.hidden = true; return; }
   box.hidden = false;
-  const h = document.createElement("h3"); h.textContent = "Préstamos"; box.append(h);
+  const h = document.createElement("h3"); h.append("Cuentas con amigos");
+  const pm = document.createElement("button"); pm.type = "button"; pm.className = "linkbtn"; pm.textContent = "Personas"; pm.onclick = openPeople; h.append(pm); box.append(h);
   const row = (txt, small, amt, fn) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
     const n = document.createElement("span"); n.className = "n"; n.textContent = txt;
@@ -2167,11 +2259,25 @@ function renderLoanPend(){
   };
   owe.forEach(i => row(`Devolverle a ${i.loanFrom}`, dateOnly(i.dueDate) < dateOnly(toLocalInput(new Date())) ? `vencía el ${shortDate(dateOnly(i.dueDate))}` : `el ${shortDate(dateOnly(i.dueDate))}`,
     money(i.amount, i.currency), () => openSheetForRepay(i)));
-  lent.forEach(e => { const p = e.split.people[0];
-    row(`${p.name} te debe`, `desde el ${shortDate(dateOnly(e.date))}`, money(owed(e), e.currency), () => {
-      if (!confirm(`¿${p.name} te devolvió ${money(owed(e), e.currency)}?`)) return;
-      e.split.people.forEach(x => x.paid = true); persist(); feedRecy(); render();
-    }); });
+  bal.forEach(x => {
+    const parts = [];
+    if (Math.abs(x.ARS) > 0.5) parts.push([x.ARS, "ARS"]);
+    if (Math.abs(x.USD) > 0.005) parts.push([x.USD, "USD"]);
+    parts.forEach(([v, cur]) => {
+      const txt = v > 0 ? `${x.name} te debe` : `Le debés a ${x.name}`;
+      const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
+      const n = document.createElement("span"); n.className = "n"; n.textContent = txt;
+      const sm = document.createElement("small"); sm.textContent = `${x.refs.length} ${x.refs.length === 1 ? "cosa" : "cosas"} en cuenta`; n.append(sm);
+      const a = document.createElement("span"); a.className = "a"; a.textContent = money(Math.abs(v), cur);
+      const st = document.createElement("span"); st.className = "settle"; st.textContent = "Saldar";
+      b.append(n, a, st);
+      b.onclick = () => {
+        if (!confirm(v > 0 ? `¿${x.name} te pagó ${money(v, cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, cur)} a ${x.name} y quedan a mano?`)) return;
+        settleWith(x); persist(); feedRecy(); render();
+      };
+      box.append(b);
+    });
+  });
 }
 
 function updateUntilField(){
@@ -2748,6 +2854,8 @@ function openSheet(exp){
   splitManual = !!(exp && exp.split);
   $("splitOn").checked = splitPeople.length > 0;
   $("lendOn").checked = isLend; $("lendTo").value = isLend ? exp.split.people[0].name : "";
+  $("otherOn").checked = !!(exp && exp.paidBy); $("otherWho").value = exp && exp.paidBy ? exp.paidBy.name : "";
+  $("otherMine").value = exp && exp.paidBy ? String(exp.amount).replace(".",",") : "";
   repaySel = exp && exp.repaysId ? exp.repaysId : null;
   $("borrowFrom").value = exp && exp.loanFrom ? exp.loanFrom : ""; $("borrowDue").value = exp && exp.dueDate ? exp.dueDate : "";
   $("personName").value = "";
@@ -2833,6 +2941,16 @@ $("sheet").addEventListener("submit", ev => {
       fields.split = { people: [{ name: to, share: fields.amount, paid: wasPaid }] }; fields.loan = true; fields.category = "prestamo";
     }
     fields.repaysId = repaySel || null;
+    fields.paidBy = null;
+    if ($("otherOn").checked && !$("otherField").hidden){
+      const who = $("otherWho").value.trim(), mine = parseAmount($("otherMine").value);
+      if (!who){ $("err").textContent = "¿Quién pagó?"; $("otherWho").focus(); return; }
+      if (!(mine >= 0) || mine > fields.amount + 0.001){ $("err").textContent = "Tu parte tiene que ser menor o igual al total."; return; }
+      fields.paidBy = { name: who, total: fields.amount, settled: editing && editing.paidBy ? editing.paidBy.settled : false };
+      fields.amount = round2(mine); fields.split = null; fields.loan = false; fields.method = null; fields.cardId = null; fields.installments = 1;
+      rememberPerson(who);
+    }
+    if (fields.split) fields.split.people.forEach(p => rememberPerson(p.name));
     if (method === "card" && !cardById(cardId)){ $("err").textContent = "Elegí la tarjeta."; return; }
     fields.method = method; fields.cardId = method === "card" ? cardId : null;
     fields.installments = method === "card" ? Number($("cuotas").value) : 1;
@@ -2881,6 +2999,7 @@ $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   if ($("aiSheet").classList.contains("open")) closeAi();
+  else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
