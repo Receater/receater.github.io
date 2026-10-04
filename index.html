@@ -577,6 +577,15 @@ button{cursor:pointer}
 .fp-row{grid-template-columns:minmax(0,1fr) auto auto}
 
 .fx-shares{padding:0 14px 12px 22px}
+
+.day-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 12px}
+.day-nav .icon-btn{width:36px;height:36px}
+.day-mid{text-align:center;min-width:0}
+.day-title{font-weight:600;text-transform:capitalize}
+.day-mid .linkbtn{font-size:.82rem;padding:0}
+.day-sum{background:var(--paper);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:grid;gap:4px}
+.day-sum .row{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
+.day-sum .row b{font-family:"IBM Plex Mono",ui-monospace,monospace}
 </style>
 </head>
 <body>
@@ -637,6 +646,12 @@ button{cursor:pointer}
     <p class="bubble" id="bubble" aria-live="polite"></p>
   </section>
 
+  <div class="day-nav" id="dayNav">
+    <button class="icon-btn" id="dayPrev" aria-label="Día anterior">‹</button>
+    <div class="day-mid"><div class="day-title" id="dayTitle">Todo el mes</div><button type="button" class="linkbtn" id="dayAll" hidden>Ver todo el mes</button></div>
+    <button class="icon-btn" id="dayNext" aria-label="Día siguiente">›</button>
+  </div>
+  <section class="day-sum" id="daySum" hidden></section>
   <section class="fixed-pend" id="fixedPend" hidden></section>
   <section class="fixed-pend" id="loanPend" hidden></section>
   <div id="days"></div>
@@ -1681,8 +1696,29 @@ function render(){
 
   renderFixedPend();
   renderLoanPend();
+  // Día elegido
+  const pStart = payDate(viewYear, viewMonth), pEnd = new Date(payDate(viewYear, viewMonth+1) - 864e5);
+  if (viewDay && !inPeriod({ date: viewDay + "T12:00" }, viewYear, viewMonth)) viewDay = null;
+  $("dayTitle").textContent = viewDay ? dateOnly(viewDay).toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" }) : "Todo el mes";
+  $("dayAll").hidden = !viewDay;
+  const ds = $("daySum"); ds.hidden = !viewDay; ds.innerHTML = "";
+  if (viewDay){
+    $("fixedPend").hidden = true; $("loanPend").hidden = true;
+    const dayEnts = allEnts.filter(x => x.date.slice(0,10) === viewDay);
+    const spentA = dayEnts.filter(x => x.currency === "ARS").reduce((a,x) => a + x.amount, 0);
+    const spentU = dayEnts.filter(x => x.currency === "USD").reduce((a,x) => a + x.amount, 0);
+    const incD = data.incomes.filter(e => e.date.slice(0,10) === viewDay && e.currency === "ARS").reduce((a,e) => a + e.amount, 0);
+    const row = (a, b) => { const r = document.createElement("div"); r.className = "row"; const x = document.createElement("span"); x.textContent = a; const y = document.createElement("b"); y.textContent = b; r.append(x, y); ds.append(r); };
+    row("Gastaste ese día", fmtARS.format(spentA));
+    if (spentU) row("En dólares", fmtUSD.format(spentU));
+    if (incD) row("Entró", fmtARS.format(incD));
+    const cards = allExpenses().filter(e => isCardExp(e) && e.date.slice(0,10) === viewDay).reduce((a,e) => a + (e.currency === "ARS" ? e.amount : 0), 0);
+    if (cards) row("Con tarjeta (se paga después)", fmtARS.format(cards));
+  }
+  const shown = viewDay ? rows.filter(r => r.date.slice(0,10) === viewDay) : rows;
   const days = $("days");
   days.innerHTML = "";
+  if (viewDay && !shown.length){ const e = document.createElement("div"); e.className = "empty"; e.innerHTML = "<strong>Nada cargado ese día</strong>Usá las flechas para ver otro día."; days.append(e); return; }
   if (!rows.length){
     const e = document.createElement("div");
     e.className = "empty";
@@ -1691,7 +1727,7 @@ function render(){
     return;
   }
   const groups = {};
-  rows.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
+  shown.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
   Object.keys(groups).sort().reverse().forEach(key => {
     const sec = document.createElement("section"); sec.className = "day";
     const h = document.createElement("h2");
@@ -2856,8 +2892,23 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("paySheet").classList.contains("open")) closePay(); else closeSheet(); });
 document.querySelectorAll(".cur button").forEach(b => b.onclick = () => setCurrency(b.dataset.cur));
 $("openAdd").onclick = () => openSheet();
-$("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } render(); };
-$("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } render(); };
+$("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } viewDay = null; render(); };
+$("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } viewDay = null; render(); };
+let viewDay = null;
+function moveDay(step){
+  const pStart = payDate(viewYear, viewMonth), pEnd = new Date(payDate(viewYear, viewMonth+1) - 864e5);
+  let d;
+  if (!viewDay){
+    const today = dateOnly(toLocalInput(new Date()));
+    d = today >= pStart && today <= pEnd ? today : (step > 0 ? pStart : pEnd);
+  } else d = new Date(dateOnly(viewDay).getTime() + step * 864e5 + 3600e3);
+  d = dateOnly(toLocalInput(d));
+  if (d < pStart || d > pEnd){ [viewYear, viewMonth] = periodOf(`${toLocalInput(d)}T12:00`); }
+  viewDay = toLocalInput(d); render();
+}
+$("dayPrev").onclick = () => moveDay(-1);
+$("dayNext").onclick = () => moveDay(1);
+$("dayAll").onclick = () => { viewDay = null; render(); };
 
 /* ---------- Modal de tarjeta ---------- */
 (() => {
