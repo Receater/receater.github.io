@@ -1647,7 +1647,18 @@ function render(){
     const freeD = bIncA - bSpentA - fixScreen - repayScreen;
     const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
     const days = Math.ceil((untilD - new Date()) / 864e5);
-    if (freeD > 0 && days > 0) screen.push(`Te da para ${fmtARS.format(freeD / days)} por día`);
+    // El "por día" de hoy se calcula con lo que tenías al empezar el día, así no cambia mientras cargás gastos
+    const todayStr = toLocalInput(new Date());
+    const spentToday = allEnts.filter(x => x.currency === "ARS" && x.date.slice(0,10) === todayStr && (!cobro || new Date(x.date) >= new Date(cobro.date)))
+      .reduce((s2,x) => s2 + x.amount, 0);
+    const perDay = days > 0 ? (freeD + spentToday) / days : 0;
+    if (perDay > 0){
+      screen.push(`Te da para ${fmtARS.format(perDay)} por día`);
+      if (spentToday > 0){
+        const leftToday = perDay - spentToday;
+        screen.push(leftToday >= 0 ? `Hoy te quedan ${fmtARS.format(leftToday)}` : `Hoy te pasaste por ${fmtARS.format(-leftToday)}`);
+      }
+    }
   }
   if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
   $("meta").textContent = screen.join("\n");
