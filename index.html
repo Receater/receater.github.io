@@ -1080,7 +1080,7 @@ button{cursor:pointer}
       <button type="button" class="small-btn primary" id="aiPaste" style="margin-top:8px">Pegar código</button></div></div>
   </div>
   <details class="ai-manual"><summary>¿No se pegó? Escribilo o pegalo acá</summary>
-    <input class="input" id="aiKey" type="password" autocomplete="off" placeholder="Empieza con AIza…" aria-label="Código de Google Gemini" style="margin-top:8px">
+    <input class="input" id="aiKey" type="password" autocomplete="off" placeholder="Pegá el código de Google" aria-label="Código de Google Gemini" style="margin-top:8px">
     <button type="button" class="small-btn" id="aiSave" style="margin-top:8px">Probar y guardar</button>
   </details>
   <p class="fx-hint" id="aiOkTxt" hidden>✓ Recy inteligente está activado en tu cuenta.</p>
@@ -2711,7 +2711,7 @@ $("aiPaste").onclick = async () => {
   let t = "";
   try { t = (await navigator.clipboard.readText() || "").trim(); } catch {}
   if (!t){ $("aiErr").textContent = "No pude leer lo que copiaste. Abrí \"¿No se pegó?\" y pegalo ahí."; document.querySelector(".ai-manual").open = true; return; }
-  if (!/^AIza[\w-]{20,}$/.test(t)){ $("aiErr").textContent = "Lo que copiaste no parece el código de Google. Tiene que empezar con AIza. Volvé a copiarlo."; return; }
+  if (!/^[\w.\-]{20,}$/.test(t)){ $("aiErr").textContent = "Lo que copiaste no parece el código de Google. Volvé a copiarlo completo."; return; }
   $("aiKey").value = t; $("aiSave").onclick();
 };
 $("aiInviteBtn").onclick = openAi;
