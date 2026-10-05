@@ -591,6 +591,85 @@ button{cursor:pointer}
 #pplSheet{z-index:17}
 .chip.mgr{border-style:dashed;color:var(--muted)}
 .fp-row .settle{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
+
+/* ================= Revisión de diseño para celular ================= */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-size:16px}
+.wrap{padding-left:18px;padding-right:18px}
+/* Encabezado */
+.brand{margin:4px 0 14px;align-items:center}
+.logo{font-size:1.2rem}
+.hello{font-size:.9rem}
+.icon-btn{width:44px;height:44px;flex:0 0 auto}
+.gear{color:var(--ink)}
+/* Pestañas y mes */
+.tabs{padding:4px;border-radius:14px;margin-bottom:12px}
+.tabs button{min-height:40px;font-size:.88rem;border-radius:10px}
+.month-nav{margin:2px 0 16px}
+.month-nav h1{font-size:1.45rem}
+.range-btn{min-height:32px}
+/* Campos: todos iguales y sin zoom en iPhone (16px o más) */
+input,select,textarea{font-size:16px}
+.input,select.input,textarea.input{font-size:16px;min-height:48px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);width:100%;line-height:1.3}
+.input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)}
+select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appearance:none;appearance:none;padding-right:36px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.opt-extra select,#cuotas,#paidCuotas{min-height:40px;border:1px solid var(--line);border-radius:10px;background-color:var(--paper);color:var(--ink);padding:6px 32px 6px 10px;font-size:16px}
+.input[type="date"],.input[type="time"]{display:flex;align-items:center}
+.amount-row input{font-size:2rem;min-height:56px}
+.field{margin-top:18px}
+.field label,.field .lbl,.lbl-sm{font-size:.9rem;margin-bottom:8px}
+.two{gap:12px}
+.cat-search{min-height:44px;padding:10px 14px}
+.tell textarea{min-height:64px;font-size:16px}
+/* Botones */
+.btn{min-height:48px;border-radius:12px;font-size:1rem}
+.small-btn{min-height:40px;padding:8px 14px;font-size:.92rem;border-radius:999px}
+.linkbtn{min-height:36px;font-size:.92rem}
+.chip{min-height:40px;padding:8px 14px;font-size:.95rem}
+.quotes .chip,.suggest .chip{min-height:36px;padding:6px 12px;font-size:.9rem}
+.seg button{min-height:40px;padding:8px 12px;font-size:.92rem}
+.pill{min-height:34px;font-size:.84rem}
+.fab{padding:16px 30px;font-size:1.02rem}
+/* Ventanas que suben desde abajo */
+.sheet{padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:92vh;max-height:92dvh;border-radius:20px 20px 0 0}
+.sheet-head{position:sticky;top:0;z-index:2;background:var(--paper);margin:0 -18px 6px;padding:6px 14px 10px;border-bottom:1px solid var(--line);touch-action:none}
+.grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:4px auto 8px}
+.sheet-head-row{display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr) minmax(80px,auto);align-items:center;gap:8px}
+.sheet-head-row h3{margin:0;text-align:center;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-head-row .hl{justify-self:start}.sheet-head-row .hr{justify-self:end}
+.head-btn{flex:none;min-height:36px !important;padding:6px 14px !important;font-size:.92rem !important;border-radius:999px !important}
+.head-btn.ghost{border:0 !important;padding-left:4px !important;color:var(--accent)}
+.sheet .actions{margin-top:22px}
+.sheet .actions .btn.danger{flex:1}
+/* Lista y bloques: más aire, sin cortar lo importante */
+.list{gap:10px}
+.ticket .item{padding:13px 16px 10px;gap:12px}
+.item .cat{font-size:1rem}
+.item .sub{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:.86rem;line-height:1.35}
+.item .amt{font-size:1rem}
+.day h2{font-size:.92rem;margin:0 0 8px 4px}
+.day{margin-top:24px}
+.fixed-pend,.day-sum,.cloud-banner{padding:14px 16px;border-radius:14px}
+.fp-row{min-height:48px;padding:8px 0}
+.fp-row .n{white-space:normal}
+.lcd-meta{font-size:.82rem}
+.mast-top,.mast-bottom{font-size:.72rem}
+.fx-hint{font-size:.86rem;line-height:1.4}
+.card{padding:18px 16px}
+.jar-tile{padding:14px 10px}
+/* Ajustes */
+.set-group{margin-top:18px}
+.set-label{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 8px 4px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:56px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--paper);text-align:left;margin-top:8px;color:var(--ink)}
+.set-row strong{display:block;font-size:1rem}
+.set-row span{display:block;font-size:.86rem;color:var(--muted);margin-top:2px}
+.set-row .chev2{font-size:1.4rem;color:var(--muted);margin:0}
+.danger-row strong{color:var(--danger)}
+#setBg{z-index:12}
+#setSheet{z-index:13}
+@media (min-width:700px){ .sheet{max-width:560px} }
 </style>
 </head>
 <body>
@@ -600,10 +679,9 @@ button{cursor:pointer}
       <span class="logo">Rec<span>eater</span></span>
       <span class="hello" id="hello" hidden></span>
     </div>
-    <div class="brand-actions">
-      <button type="button" class="pay-btn" id="syncBtn" hidden></button>
-      <button type="button" class="pay-btn" id="payBtn"></button>
-    </div>
+    <button type="button" class="icon-btn gear" id="setBtn" aria-label="Ajustes">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+    </button>
   </header>
   <div class="tabs" role="tablist">
     <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
@@ -720,16 +798,7 @@ button{cursor:pointer}
     <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newJar">+ Nuevo frasco</button></div>
   </div>
 
-  <footer class="data-tools">
-    <button type="button" class="small-btn primary" id="xlsBtn">Exportar a Excel</button>
-    <div style="margin-top:10px">
-    <button type="button" class="linkbtn" id="exportBtn">Exportar backup</button> ·
-    <button type="button" class="linkbtn" id="importBtn">Importar backup</button>
-    <input type="file" id="importFile" accept="application/json,.json" hidden>
-    </div>
-    <p class="fx-hint">El backup es un archivo con todos tus datos, para guardarlo donde quieras.</p>
-    <button type="button" class="linkbtn" id="wipeBtn" style="color:var(--danger);margin-top:6px" hidden>Borrar todo lo cargado en este dispositivo</button>
-  </footer>
+
 </main>
 
 <button class="fab" id="openAdd">Darle a Recy</button>
@@ -1117,6 +1186,33 @@ button{cursor:pointer}
   <div class="split-add"><input class="input" id="pplNew" placeholder="Nombre" autocomplete="off"><button type="button" class="btn ghost" id="pplAdd">Agregar</button></div>
   <ul class="jar-hist" id="pplList"></ul>
   <div class="actions"><button type="button" class="btn ghost" id="pplClose">Listo</button></div>
+</div>
+
+<div class="sheet-bg" id="setBg"></div>
+<div class="sheet" id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <h3 id="setTitle">Ajustes</h3>
+  <div class="set-group">
+    <div class="set-label">Tu cuenta</div>
+    <div class="set-row"><div><strong id="setWho">Sin entrar</strong><span>Tus datos se guardan en tu Google Drive.</span></div><button type="button" class="small-btn" id="syncBtn" hidden></button></div>
+  </div>
+  <div class="set-group">
+    <div class="set-label">Sueldo</div>
+    <button type="button" class="set-row as-btn" id="payBtn"></button>
+  </div>
+  <div class="set-group">
+    <div class="set-label">Recy</div>
+    <button type="button" class="set-row as-btn" id="setAi"><div><strong>Recy inteligente</strong><span id="setAiTxt"></span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setPpl"><div><strong>Personas</strong><span>Con quién dividís gastos o te prestás plata.</span></div><span class="chev2">›</span></button>
+  </div>
+  <div class="set-group">
+    <div class="set-label">Tus datos</div>
+    <button type="button" class="set-row as-btn" id="xlsBtn"><div><strong>Exportar a Excel</strong><span>Movimientos, categorías, tarjetas, fijos y ahorros.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="exportBtn"><div><strong>Exportar backup</strong><span>Un archivo con todo, para guardarlo donde quieras.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="importBtn"><div><strong>Importar backup</strong><span>Reemplaza lo que tenés por un backup.</span></div><span class="chev2">›</span></button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <button type="button" class="set-row as-btn danger-row" id="wipeBtn" hidden><div><strong>Borrar todo lo de este dispositivo</strong><span>Solo aparece si no entraste con Google.</span></div></button>
+  </div>
+  <div class="actions"><button type="button" class="btn ghost" id="setClose">Listo</button></div>
 </div>
 
 <div class="sheet-bg" id="xlBg"></div>
@@ -1594,7 +1690,10 @@ function ruleText(rule = payRule){
 }
 function renderRange(){
   const box = $("rangeLine"); box.innerHTML = "";
-  $("payBtn").textContent = "Cobro: " + ruleText();
+  $("payBtn").innerHTML = "";
+  { const d = document.createElement("div"); const st = document.createElement("strong"); st.textContent = "Cuándo cobrás";
+    const sp = document.createElement("span"); sp.textContent = "Cobrás " + ruleText(); d.append(st, sp);
+    const ch = document.createElement("span"); ch.className = "chev2"; ch.textContent = "›"; $("payBtn").append(d, ch); }
   let txt = "";
   if (isFree()){
     const c = isCurrentPeriod(viewYear, viewMonth) ? latestCobro() : null;
@@ -3002,6 +3101,7 @@ $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   if ($("aiSheet").classList.contains("open")) closeAi();
+  else if ($("setSheet").classList.contains("open")) closeSettings();
   else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
@@ -3152,7 +3252,7 @@ function syncPay(){
 }
 document.querySelectorAll('input[name="payRule"]').forEach(r => r.onchange = syncPay);
 $("payDay").onchange = syncPay;
-$("payBtn").onclick = openPay;
+$("payBtn").onclick = () => { closeSettings(); openPay(); };
 $("payBg").onclick = closePay;
 $("payCancel").onclick = closePay;
 $("paySave").onclick = () => {
@@ -3949,7 +4049,7 @@ const LINKED_KEY = "receater.linked";          // este navegador ya está vincul
 const PRELOGIN_KEY = "receater.localAntesDeEntrar"; // copia de lo local antes de traer el Drive
 
 window.cloud = (() => {
-  let token = null, fileId = null, ready = false, timer = null, busy = false;
+  let token = null, fileId = null, ready = false, timer = null, busy = false, needsRefresh = false, refreshing = false;
   const btn = $("syncBtn");
   const ls = { get: k => { try { return localStorage.getItem(k); } catch { return null; } },
                set: (k,v) => { try { localStorage.setItem(k, v); } catch {} },
@@ -3970,6 +4070,7 @@ window.cloud = (() => {
       const u = (await (await api("https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)")).json()).user || {};
       const name = u.displayName || (u.emailAddress || "").split("@")[0];
       if (name){ ls.set(USER_KEY, name); showUser(name); }
+      if (u.emailAddress) ls.set("receater.email", u.emailAddress);
     } catch {}
   }
   function savedToken(){
@@ -3985,7 +4086,8 @@ window.cloud = (() => {
   async function login(prompt){
     await loadGis();
     return new Promise(res => {
-      const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE,
+      const hint = ls.get("receater.email") || undefined;
+      const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE, login_hint: hint, hint,
         callback: r => {
           if (r.error){ res(false); return; }
           token = r.access_token;
@@ -3998,7 +4100,7 @@ window.cloud = (() => {
   }
   async function api(url, opts = {}){
     const r = await fetch(url, { ...opts, headers: { Authorization: `Bearer ${token}`, ...(opts.headers || {}) } });
-    if (r.status === 401){ ls.del(TOKEN_KEY); token = null; ready = false; throw new Error("expired"); }
+    if (r.status === 401){ ls.del(TOKEN_KEY); token = null; ready = false; needsRefresh = true; status("Se renueva al tocar", "ok"); throw new Error("expired"); }
     if (!r.ok) throw new Error("Drive " + r.status);
     return r;
   }
@@ -4022,7 +4124,7 @@ window.cloud = (() => {
       await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
         { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       status("En tu Drive ✓", "ok");
-    } catch (e) { status(e.message === "expired" ? "Reconectar" : "Sin sincronizar", "warn"); }
+    } catch (e) { status(e.message === "expired" ? "Se renueva al tocar" : "Sin sincronizar", e.message === "expired" ? "ok" : "warn"); }
     busy = false;
   }
   async function sync(){
@@ -4047,7 +4149,7 @@ window.cloud = (() => {
         store.save(remote, true); location.reload(); return;   // trae lo de Drive si es más nuevo
       }
       if (lT > rT) await upload(); else status("En tu Drive ✓", "ok");
-    } catch (e) { status(e.message === "expired" ? "Reconectar" : "Sin sincronizar", "warn"); }
+    } catch (e) { status(e.message === "expired" ? "Se renueva al tocar" : "Sin sincronizar", e.message === "expired" ? "ok" : "warn"); }
   }
   async function connect(){
     if (!onLine()){ alert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
@@ -4062,15 +4164,26 @@ window.cloud = (() => {
     try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
     ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); ls.del(LINKED_KEY); location.reload();
   }
-  btn.onclick = () => { if (ready) logout(); else connect(); };
+  btn.onclick = () => { if (ready) logout(); else if (needsRefresh) silentRefresh(); else connect(); };
   $("cloudLogin").onclick = connect;
   $("cloudLater").onclick = () => { ls.set(BANNER_KEY, "1"); $("cloudBanner").hidden = true; status("Entrar"); };
 
+  /* El permiso de Google dura una hora. Si venció pero ya estabas vinculado, no te mostramos como deslogueado:
+     lo renovamos solo en tu próximo toque (Google pide un toque para abrir su ventanita, que se cierra sola). */
+  async function silentRefresh(){
+    if (!needsRefresh || refreshing) return;
+    refreshing = true; status("Conectando…");
+    const ok = await login("");
+    refreshing = false;
+    if (ok){ needsRefresh = false; await sync(); } else status("Tocá para reconectar", "warn");
+  }
+  document.addEventListener("click", () => { if (needsRefresh) silentRefresh(); }, true);
   function init(){
     if (!onLine()) return;   // abierto como archivo local: funciona sin nube
     showUser(ls.get(USER_KEY));
     token = savedToken();
     if (token) sync();
+    else if (ls.get(LINKED_KEY)){ needsRefresh = true; status("Se renueva al tocar", "ok"); }
     else { status("Entrar"); if (!ls.get(BANNER_KEY)) $("cloudBanner").hidden = false; }
   }
   return { init, connect, schedule(){ clearTimeout(timer); if (ready) timer = setTimeout(upload, 1200); } };
@@ -4092,7 +4205,7 @@ function openXls(){
   $("xlBg").classList.add("open"); $("xlSheet").classList.add("open");
 }
 function closeXls(){ $("xlBg").classList.remove("open"); $("xlSheet").classList.remove("open"); }
-$("xlsBtn").onclick = openXls; $("xlCancel").onclick = closeXls; $("xlBg").onclick = closeXls;
+$("xlsBtn").onclick = () => { closeSettings(); openXls(); }; $("xlCancel").onclick = closeXls; $("xlBg").onclick = closeXls;
 $("xlGo").onclick = async () => {
   const range = (document.querySelector('input[name="xlRange"]:checked') || {}).value || "month";
   $("xlGo").disabled = true; $("xlGo").textContent = "Armando…";
@@ -4177,6 +4290,18 @@ function buildXls(X, range){
   X.writeFile(wb, `receater-${tag}.xlsx`);
 }
 
+/* ---------- Ajustes ---------- */
+function openSettings(){
+  const who = (() => { try { return localStorage.getItem(USER_KEY) || ""; } catch { return ""; } })();
+  $("setWho").textContent = who || "Sin entrar con Google";
+  $("setAiTxt").textContent = aiKey() ? "Activado ✓" : "Cargá con tus palabras o con foto del ticket.";
+  $("setBg").classList.add("open"); $("setSheet").classList.add("open");
+}
+function closeSettings(){ $("setBg").classList.remove("open"); $("setSheet").classList.remove("open"); }
+$("setBtn").onclick = openSettings; $("setClose").onclick = closeSettings; $("setBg").onclick = closeSettings;
+$("setAi").onclick = () => { closeSettings(); openAi(); };
+$("setPpl").onclick = () => { closeSettings(); openPeople(); };
+
 /* ---------- Borrar los datos locales (solo sin sesión de Google) ---------- */
 (() => {
   const linked = (() => { try { return !!localStorage.getItem("receater.linked"); } catch { return false; } })();
@@ -4213,6 +4338,39 @@ $("importFile").onchange = async () => {
   location.reload();
 };
 
+function buildSheetHeads(){
+  document.querySelectorAll(".sheet").forEach(sh => {
+    if (sh.querySelector(":scope > .sheet-head")) return;
+    const h3 = sh.querySelector(":scope > h3");
+    const acts = [...sh.querySelectorAll(":scope > .actions")].pop();
+    const head = document.createElement("div"); head.className = "sheet-head";
+    const grab = document.createElement("div"); grab.className = "grab"; grab.setAttribute("aria-hidden", "true"); head.append(grab);
+    const row = document.createElement("div"); row.className = "sheet-head-row";
+    const left = document.createElement("div"), right = document.createElement("div"); left.className = "hl"; right.className = "hr";
+    if (acts){
+      const ghost = acts.querySelector(".btn.ghost"), prim = acts.querySelector(".btn.primary");
+      if (ghost && prim){ left.append(ghost); right.append(prim); } else if (prim) right.append(prim); else if (ghost) right.append(ghost);
+      [ghost, prim].forEach(b => b && b.classList.add("head-btn"));
+      if (!acts.querySelector("button")) acts.remove();
+    }
+    row.append(left, h3 || document.createElement("span"), right); head.append(row);
+    sh.prepend(head);
+    // deslizar hacia abajo para cerrar
+    let y0 = null, dy = 0;
+    head.addEventListener("touchstart", e => { if (sh.scrollTop > 2) return; y0 = e.touches[0].clientY; dy = 0; sh.style.transition = "none"; }, { passive: true });
+    head.addEventListener("touchmove", e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
+    head.addEventListener("touchend", () => {
+      if (y0 == null) return; y0 = null; sh.style.transition = ""; sh.style.transform = "";
+      if (dy > 90){ const bg = sh.previousElementSibling; if (bg && bg.classList.contains("sheet-bg")) bg.click(); }
+    });
+  });
+}
+buildSheetHeads();
+/* Que el teclado no tape el campo en el que escribís */
+document.addEventListener("focusin", e => {
+  const el = e.target; if (!el.closest || !el.closest(".sheet") || !/INPUT|TEXTAREA|SELECT/.test(el.tagName)) return;
+  setTimeout(() => { try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} }, 300);
+});
 try { const t0 = localStorage.getItem("receater.tab"); if (["list","dash","fixed","jars"].includes(t0)) setTab(t0); else render(); } catch { render(); }
 cloud.init();
 </script>
