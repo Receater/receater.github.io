@@ -948,6 +948,54 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   box-shadow:inset 0 -4px 0 rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.35),0 6px 14px rgba(0,0,0,.32)}
 .fab[data-kind="ticket"]:active,.fab[data-kind="lid"]:active{transform:translateX(-50%) scale(.97)}
 .fab[data-kind="postit"]:active{transform:translateX(-50%) rotate(-2.5deg) scale(.97)}
+
+.upd-bar{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:60;max-width:520px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:#1F1F1F;color:#fff;border-radius:14px;padding:10px 10px 10px 16px;box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:.95rem}
+.upd-bar button{border:0;border-radius:999px;background:#fff;color:#1F1F1F;font-weight:700;padding:8px 16px;min-height:40px}
+
+/* ===== Más aire en el celular: pestañas sin cortar, pizarra con lugar y renglones menos pegados ===== */
+.tabs button{flex:1 1 auto;min-width:max-content;padding:0 8px;overflow:visible;text-overflow:clip;font-size:.88rem;letter-spacing:-.005em}
+@media (max-width:560px){
+  :root{--recy-w:min(104px,27vw)}
+  .wrap{padding-left:20px;padding-right:20px;padding-bottom:calc(170px + env(safe-area-inset-bottom,0px))}
+  .brand{margin:6px 0 18px;padding:11px 10px 11px 16px}
+  .tabs{margin-bottom:18px;padding:5px}
+  .tabs button{min-height:44px}
+  .month-nav{margin:0 0 24px;padding:8px}
+  .recy-stage{margin:8px 0 40px}
+  .board .lcd{padding:16px 16px 18px}
+  .board .lcd-label{margin-bottom:2px}
+  .board .lcd-meta{font-size:.92rem;line-height:1.5;margin-left:calc(var(--recy-w) - 14px);min-height:104px}
+  .board .mk{margin-top:3px}
+  .list{gap:16px}
+  .ticket .item{padding:16px 16px 12px;gap:14px}
+  .item .sub{font-size:.86rem;line-height:1.4}
+  .item .cat{font-size:1.02rem}
+  .item .of{font-size:.84rem}
+  .day{margin-top:32px}
+  .day h2{margin-bottom:14px;font-size:.95rem}
+  .cal{margin:30px 0 22px}
+  .cal-row{padding:15px 16px;gap:14px}
+  .cal-info .s1{font-size:.78rem}
+  .cal-info .s2{font-size:.86rem}
+  .cal .fp-sub{font-size:.92rem;padding-bottom:12px}
+  #loanPend{margin:28px 0 22px;padding:22px 18px 14px}
+  #loanPend .fp-row{min-height:56px;padding:10px 0}
+  .day-sum,.cloud-banner,.ai-card{padding:16px 18px;margin-bottom:16px}
+  .card{padding:20px 18px;margin-top:18px}
+  .facts{gap:14px}
+  .fact{padding:14px}
+  .legend li{padding:12px 0}
+  .legend .help{font-size:.82rem}
+  .legend .d{font-size:.86rem}
+  .fx-hint{font-size:.88rem;line-height:1.45}
+  .mast-top,.mast-bottom{font-size:.76rem}
+  .hist-row{padding:12px 0}
+  .hist-row .t small{font-size:.84rem}
+  .jar-grid{gap:14px}
+  .jar-tile{padding:16px 12px}
+  .fx-item{padding:14px 16px 10px}
+}
 </style>
 </head>
 <body>
@@ -1488,6 +1536,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   <div class="set-group">
     <a class="set-row as-btn" href="privacidad.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Privacidad</strong><span>Qué datos usa Receater y dónde se guardan.</span></div><span class="chev2">›</span></a>
   </div>
+  <p class="fx-hint" id="setVer" style="text-align:center;margin-top:20px"></p>
   <div class="actions"><button type="button" class="btn ghost" id="setClose">Listo</button></div>
 </div>
 
@@ -1541,7 +1590,8 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   </div>
 </div>
 
-<script>/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+<script>
+const BUILD = "2026-10-05.2358";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -4907,6 +4957,7 @@ function openSettings(){
   const who = (() => { try { return localStorage.getItem(USER_KEY) || ""; } catch { return ""; } })();
   $("setWho").textContent = who || "Sin entrar con Google";
   $("setAiTxt").textContent = aiKey() ? "Activado ✓" : "Cargá con tus palabras o con foto del ticket.";
+  $("setVer").textContent = "Versión " + BUILD;
   $("setBg").classList.add("open"); $("setSheet").classList.add("open");
 }
 function closeSettings(){ $("setBg").classList.remove("open"); $("setSheet").classList.remove("open"); }
@@ -4994,6 +5045,25 @@ document.addEventListener("focusin", e => {
 });
 try { const t0 = localStorage.getItem("receater.tab"); if (["list","dash","fixed","jars"].includes(t0)) setTab(t0); else render(); } catch { render(); }
 cloud.init();
+/* ---------- ¿Hay una versión nueva? (por si el celu muestra una copia vieja de la página) ---------- */
+let updShown = false, updLast = 0;
+async function checkNewVersion(){
+  if (updShown || Date.now() - updLast < 60000) return; updLast = Date.now();
+  try {
+    const r = await fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
+    const m = (await r.text()).match(/const BUILD = "2026-10-05.2358"]+)"/);
+    if (m && m[1] !== BUILD){
+      updShown = true;
+      const bar = document.createElement("div"); bar.className = "upd-bar"; bar.setAttribute("role", "status");
+      const t = document.createElement("span"); t.textContent = "Hay una versión nueva de Receater.";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = "Actualizar";
+      b.onclick = () => { location.href = location.pathname + "?v=" + encodeURIComponent(m[1]); };
+      bar.append(t, b); document.body.append(bar);
+    }
+  } catch {}
+}
+checkNewVersion();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 </script>
 </body>
 </html>
