@@ -874,6 +874,48 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .hist-row .a{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;color:var(--usd)}
 .hist-row .a small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
 .hist-row .a.neg{color:var(--danger)}
+
+.legend .help{font-size:.78rem;color:var(--muted);line-height:1.3;margin-top:1px}
+/* Fijos pendientes: hoja de calendario de pared (siempre papel claro) */
+.cal{position:relative;margin:22px 0 14px;background:#FFFFFF;color:#1F1F1F;border:1.5px solid #CFC8B8;border-radius:10px;padding:0 0 6px;
+  box-shadow:5px 7px 0 -1px #E6E0D2,10px 13px 0 -2px #D9D2C2;--muted:#6E6A62;--line:#D9D3C6;color-scheme:light}
+.cal-rings{position:absolute;left:0;right:0;top:-12px;height:28px;pointer-events:none;z-index:2}
+.cal-rings i{position:absolute;top:0;width:12px;height:28px;border-radius:6px;background:#8E8A80;box-shadow:inset 0 3px 0 rgba(255,255,255,.4)}
+.cal-rings i:first-child{left:20%}.cal-rings i:last-child{right:20%}
+.cal-top{position:relative;background:#E0594A;color:#fff;border-radius:8px 8px 0 0;padding:16px 16px 11px;text-align:center}
+.cal-title{font-weight:700;letter-spacing:.2em;font-size:1.02rem;text-transform:uppercase}
+.cal-sub{font-size:.78rem;opacity:.92;margin-top:2px}
+.cal-all{position:absolute;right:10px;bottom:8px;background:none;border:0;color:#fff;font-weight:600;font-size:.82rem;text-decoration:underline;min-height:32px;padding:0 6px}
+.cal-row{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;border:0;border-top:1.5px dotted #D9D3C6;background:none;text-align:left;padding:12px 14px;color:#1F1F1F;font:inherit}
+.cal-top + .cal-row{border-top:0}
+.cal-day{width:60px;height:66px;border-radius:10px;background:#F4F7FF;border:2px solid #CBD6F5;display:grid;place-items:center;align-content:center;line-height:1}
+.cal-day small{font-size:.64rem;font-weight:700;color:#2F5BEA;letter-spacing:.08em}
+.cal-day b{font-family:var(--display);font-size:1.9rem;color:#1F1F1F;margin-top:3px}
+.cal-day.late{background:#FFF5F3;border-color:#E0594A}.cal-day.late small{color:#E0594A}.cal-day.late b{color:#C9374B}
+.cal-row.paid .cal-day{background:#F2F2EE;border-color:#DDD8CB;opacity:.75}
+.cal-row.paid .cal-info,.cal-row.paid .cal-right{opacity:.7}
+.cal-info strong{display:block;font-size:1rem;line-height:1.25}
+.cal-info .s1{display:block;font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6E6A62;margin-top:3px}
+.cal-info .s1.late{color:#C9374B}
+.cal-info .s2{display:block;font-size:.82rem;color:#6E6A62;margin-top:1px;line-height:1.3}
+.cal-right{display:grid;gap:6px;justify-items:end;text-align:right}
+.cal-right .amt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:.98rem}
+.cal-right .pay{background:#2F5BEA;color:#fff;border-radius:99px;padding:6px 14px;font-weight:700;font-size:.85rem;min-height:34px;display:inline-grid;place-items:center}
+.cal-right .tag{border:1.5px solid #BDB6A5;color:#6E6A62;border-radius:99px;padding:3px 10px;font-weight:600;font-size:.76rem}
+.cal .fp-sub{padding:2px 14px 10px 86px;color:#1F1F1F}
+.cal .fp-sub .a{font-family:"IBM Plex Mono",ui-monospace,monospace}
+/* Cuentas con amigos: libretita con espiral y letra de máquina de escribir */
+#loanPend{position:relative;margin:20px 0 14px;padding:20px 16px 12px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3;--muted:#6E6A62;--line:#D9D3C6;color-scheme:light}
+#loanPend::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;
+  background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px;
+  -webkit-mask:linear-gradient(#000,#000);mask:linear-gradient(#000,#000)}
+#loanPend h3{font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;color:#1F1F1F;border-bottom:1.5px dashed #BDB6A5;padding-bottom:8px;margin-bottom:4px}
+#loanPend h3 .linkbtn{color:#2F5BEA;text-transform:none;letter-spacing:0;font-family:inherit}
+#loanPend .fp-row{font-family:inherit;color:#1F1F1F;border-top:1px dashed #D9D3C6;min-height:52px}
+#loanPend .fp-row .n small{color:#6E6A62}
+#loanPend .fp-row .a{font-family:inherit;font-weight:700}
+#loanPend .fp-row .settle{background:#1F1F1F;color:#FBF8F1;border-radius:6px}
 </style>
 </head>
 <body>
@@ -935,7 +977,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   </section>
 
   <section class="day-sum" id="daySum" hidden></section>
-  <section class="fixed-pend" id="fixedPend" hidden></section>
+  <section class="cal" id="fixedPend" hidden></section>
   <section class="fixed-pend" id="loanPend" hidden></section>
   <div id="days"></div>
   </div>
@@ -1505,7 +1547,7 @@ const CATEGORIES = [
   {id:"otros",       name:"Otros",             color:"#8C8C8C"},
   {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
   {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
-  {id:"tarjeta_sd",  name:"Resto de la tarjeta", color:"#5B6B82", hidden:true},
+  {id:"tarjeta_sd",  name:"Tarjeta sin detalle", color:"#5B6B82", hidden:true, desc:"Lo que pagaste de la tarjeta y no cargaste compra por compra."},
   {id:"prestamo",    name:"Préstamos que hiciste", color:"#8C6A4F", hidden:true},
   {id:"devolucion",  name:"Devolución de préstamo", color:"#B0322A", hidden:true},
 ];
@@ -1833,12 +1875,12 @@ function entries(){
     const extra = round2((p.amount || 0) - assigned);
     const noDetail = !mine.some(x => x.currency === "ARS");   // sin compras en pesos cargadas: lo pagado en pesos es "sin detalle"
     if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: "tarjeta_sd",
-      note: noDetail ? "Compras sin cargar" : "Resto del resumen (compras sin cargar, intereses o impuestos)", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+      note: noDetail ? "Compras sin cargar" : "Compras sin cargar, intereses o impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     if (p.usd > 0){
       const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
       const extraU = round2(p.usd - assignedU);
       const noDetailU = !usdItems.length;   // sin compras en dólares cargadas
-      const catU = "tarjeta_sd", noteU = noDetailU ? "Compras en dólares sin cargar" : "Resto del resumen en dólares (compras sin cargar, intereses o impuestos)";
+      const catU = "tarjeta_sd", noteU = noDetailU ? "Compras en dólares sin cargar" : "Compras en dólares sin cargar, intereses o impuestos";
       const rr = p.usdArs ? p.usdArs / p.usd : p.rate;
       if (p.usdMode === "ars" && rr > 0){
         // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
@@ -2250,35 +2292,51 @@ function renderFixedPend(){
   const list = fixInstances(viewYear, viewMonth).filter(i => !["paid","cardpaid"].includes(i.state) || owesIn(i));
   if (!list.length){ box.hidden = true; return; }
   box.hidden = false;
-  const h = document.createElement("h3"); h.append("Fijos pendientes");
-  const all = document.createElement("button"); all.type = "button"; all.className = "linkbtn"; all.textContent = "Ver todos"; all.onclick = () => setTab("fixed");
-  h.append(all); box.append(h);
+  const today = dateOnly(toLocalInput(new Date()));
+  // Hoja de calendario de pared: anillas, franja roja con el mes y un casillero con el día de cada fijo
+  const rings = document.createElement("div"); rings.className = "cal-rings"; rings.setAttribute("aria-hidden", "true"); rings.append(document.createElement("i"), document.createElement("i"));
+  const top = document.createElement("div"); top.className = "cal-top";
+  const tt = document.createElement("div"); tt.className = "cal-title"; tt.textContent = `Fijos · ${monthName(viewYear, viewMonth)}`;
+  const ts = document.createElement("div"); ts.className = "cal-sub"; ts.textContent = "lo que todavía te falta pagar";
+  const all = document.createElement("button"); all.type = "button"; all.className = "cal-all"; all.textContent = "Ver todos"; all.onclick = () => setTab("fixed");
+  top.append(tt, ts, all); box.append(rings, top);
   list.forEach(i => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
-    const n = document.createElement("span"); n.className = "n"; n.textContent = i.f.name;
-    const card = i.f.how === "card" ? cardById(i.f.cardId) : null;
-    const sm = document.createElement("small");
-    sm.textContent = card ? (i.state === "noamount" ? `en ${card.name}, falta el monto` : `en ${card.name}` + (i.payDate ? `, va al pago del ${shortDate(i.payDate)}` : ""))
-      : (i.state === "todebit" ? "a debitar el " : i.state === "partial" ? "falta, vence el " : "vence el ") + shortDate(i.due);
-    n.append(sm);
-    const a = document.createElement("span"); a.className = "a";
-    a.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : "Sin monto";
-    if (i.f.perSession && i.unit){ const left = Math.max(0, i.sessions - Math.floor(i.paid / i.unit + 0.01)); sm.textContent = `${left} de ${i.sessions} ${i.sessions === 1 ? "sesión" : "sesiones"} por pagar`; }
-    const done = ["paid","cardpaid"].includes(i.state);
-    if (done){ b.classList.add("paid"); sm.textContent = "pagado"; a.textContent = money(i.expected || i.paid, i.currency); }
-    b.append(n, a);
-    if (!done && !card){ const pb = document.createElement("span"); pb.className = "pay-btn2"; pb.textContent = "Pagar"; b.append(pb); }
-    else b.append(document.createElement("span"));
-    b.onclick = () => done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i); box.append(b);
+    const card = i.f.how === "card" ? cardById(i.f.cardId) : null, done = ["paid","cardpaid"].includes(i.state);
+    const overdue = !done && !card && i.due < today;
+    const b = document.createElement("button"); b.type = "button"; b.className = "cal-row" + (done ? " paid" : "");
+    const day = document.createElement("div"); day.className = "cal-day" + (overdue ? " late" : "");
+    const mo = document.createElement("small"); mo.textContent = i.due.toLocaleDateString("es-AR", { month: "short" }).replace(".", "").toUpperCase();
+    const dn = document.createElement("b"); dn.textContent = i.due.getDate(); day.append(mo, dn);
+    const info = document.createElement("div"); info.className = "cal-info";
+    const nm = document.createElement("strong"); nm.textContent = i.f.name;
+    const s1 = document.createElement("span"); s1.className = "s1" + (overdue ? " late" : "");
+    const s2 = document.createElement("span"); s2.className = "s2";
+    const left = i.expected ? round2(i.expected - i.paid) : 0;
+    if (done){ s1.textContent = "Pagado"; s2.textContent = ""; }
+    else if (card){ s1.textContent = i.state === "noamount" ? "Falta el monto" : "En tarjeta"; s2.textContent = card.name + (i.payDate ? `, va al pago del ${shortDate(i.payDate)}` : ""); }
+    else if (i.state === "todebit"){ s1.textContent = overdue ? "Confirmá el débito" : "A debitar"; s2.textContent = `${overdue ? "se debitó" : "se debita"} el ${shortDate(i.due)}`; }
+    else if (i.state === "partial"){ s1.textContent = overdue ? "Vencido" : "Pago parcial"; s2.textContent = `faltan ${money(left, i.currency)}`; }
+    else { s1.textContent = overdue ? "Vencido" : "Por pagar"; s2.textContent = `vence el ${shortDate(i.due)}`; }
+    if (i.f.perSession && i.unit && !done){ const n = Math.max(0, i.sessions - Math.floor(i.paid / i.unit + 0.01)); s2.textContent = `${n} de ${i.sessions} ${i.sessions === 1 ? "sesión" : "sesiones"} por pagar`; }
+    info.append(nm, s1); if (s2.textContent) info.append(s2);
+    const right = document.createElement("div"); right.className = "cal-right";
+    const amt = document.createElement("b"); amt.className = "amt";
+    amt.textContent = done ? money(i.expected || i.paid, i.currency) : (i.expected ? money(left, i.currency) : "Sin monto");
+    right.append(amt);
+    if (!done && !card){ const pb = document.createElement("span"); pb.className = "pay"; pb.textContent = i.state === "todebit" ? "Confirmar" : "Pagar"; right.append(pb); }
+    else if (!done){ const tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "En tarjeta"; right.append(tg); }
+    b.append(day, info, right);
+    b.onclick = () => done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i);
+    box.append(b);
     if (fixShared(i.f)) i.f.shares.forEach(p => {
       const paid = fixSharePaid(i.f, i.key, p.name);
       const r = document.createElement("div"); r.className = "fp-sub";
-      const nm = document.createElement("span"); nm.textContent = paid ? `${p.name} te devolvió` : `${p.name} te debe`;
+      const nm2 = document.createElement("span"); nm2.textContent = paid ? `${p.name} te devolvió` : `${p.name} te debe`;
       const v = document.createElement("span"); v.className = "a"; v.textContent = money(p.share, i.currency);
       const t = document.createElement("button"); t.type = "button"; t.className = "pill " + (paid ? "paid" : "owe"); t.textContent = paid ? "Devolvió ✓" : "Le falta";
       t.setAttribute("aria-label", `${p.name}, ${i.f.name}: ${paid ? "ya devolvió" : "le falta"}. Tocar para cambiar`);
       t.onclick = () => { setFixSharePaid(i.f, i.key, p.name, !paid); persist(); render(); };
-      r.append(nm, v, t); box.append(r);
+      r.append(nm2, v, t); box.append(r);
     });
   });
 }
@@ -2921,7 +2979,7 @@ function renderCpk(){
   else {
     const p = pendingFor(card, dateOnly($("date").value || toLocalInput(new Date()))); pre = p.ars; preU = p.usd;
     hint.textContent = p.ars || p.usd
-      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia queda como "Resto de la tarjeta".`
+      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia queda como "Tarjeta sin detalle".`
       : "No tenés compras cargadas sin pagar en esta tarjeta. Lo que pongas cuenta como un gasto de tarjeta en esta fecha.";
   }
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
@@ -3525,7 +3583,7 @@ function openCardPay(card){
   $("cpTitle").textContent = `Pagué ${card.name}`;
   $("cpDate").value = toLocalInput(new Date());
   $("cpAmount").value = pend.ars ? String(pend.ars).replace(".",",") : "";
-  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia queda como "Resto de la tarjeta".`;
+  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia queda como "Tarjeta sin detalle".`;
   $("cpErr").textContent = "";
   $("cpBg").classList.add("open"); $("cpSheet").classList.add("open");
 }
@@ -3685,7 +3743,9 @@ function renderDash(){
         d.textContent = pct === 0 ? `Igual que ${prevName}` : `${pct>0?"▲":"▼"} ${Math.abs(pct)}% vs ${prevName}`;
         if (pct) d.classList.add(pct>0 ? "up" : "down");
       }
-      mid.append(n,d);
+      mid.append(n);
+      if (c.desc){ const hp = document.createElement("div"); hp.className = "help"; hp.textContent = c.desc; mid.append(hp); }
+      mid.append(d);
       const a = document.createElement("div"); a.className = "a"; a.textContent = money(v,cur);
       const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(v);
       a.append(pc);
@@ -3703,7 +3763,7 @@ function renderDash(){
           const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(dateOnly(x.date));
           const card = x.cardId ? cardById(x.cardId) : null;
           const tt = document.createElement("span"); tt.className = "t";
-          tt.textContent = [x.note || (x.payId ? "Resto de la tarjeta" : c.name), card && card.name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null].filter(Boolean).join(" · ");
+          tt.textContent = [x.note || (x.payId ? "Tarjeta sin detalle" : c.name), card && card.name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null].filter(Boolean).join(" · ");
           const aa = document.createElement("span"); aa.className = "a"; aa.textContent = money(x.amount, x.currency);
           b.append(dd, tt, aa); b.onclick = () => openEntry(x);
           box2.append(b);
@@ -3891,12 +3951,18 @@ function stageDash(){
   const inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS").reduce((s,e) => s + e.amount, 0);
   const cats = {}; monthExpenses(viewYear, viewMonth, "ARS").filter(x => !isSaving(x)).forEach(x => cats[x.category] = (cats[x.category] || 0) + x.amount);
   const top = Object.entries(cats).sort((a,b) => b[1] - a[1])[0];
-  const pct = top && now ? Math.round(top[1] / now * 100) : 0;
+  const allNow = monthExpenses(viewYear, viewMonth, "ARS").reduce((s2,x) => s2 + x.amount, 0);   // con ahorros, como la torta
+  const savedNow = round2(allNow - now);
+  const base = inc > 0 ? Math.max(inc, allNow) : now;
+  const topPct = top && base ? Math.round(top[1] / base * 100) : 0;
   const diff = now - before;
   renderStage("stageDash", {
     label: "Gastaste", big: fmtARS.format(round2(now)),
     bar: inc ? now / inc : null, over: inc && now > inc,
-    lines: [inc && `Es el ${Math.round(now / inc * 100)}% de lo que cobraste`, top && `Donde más: ${catById(top[0]).name} (${pct}%)`,
+    lines: [inc && `Es el ${Math.round(now / inc * 100)}% de lo que cobraste`,
+      savedNow > 0.5 ? `Aparte, ahorraste ${fmtARS.format(savedNow)}` : null,
+      top && `Donde más: ${catById(top[0]).name}, ${fmtARS.format(round2(top[1]))} (${topPct}% ${inc > 0 ? "de tu sueldo" : "de tus gastos"})`,
+      top && top[0] === "tarjeta_sd" ? "Son pagos de tarjeta que no cargaste compra por compra." : null,
       before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}` : null],
     mood: !now ? "hungry" : inc && now > inc * 0.8 ? "worried" : "happy",
     line: !now ? "Todavía no tengo nada para analizar." : top ? `${catById(top[0]).name} se lleva la mayor parte.` : "Acá va el resumen del mes."
