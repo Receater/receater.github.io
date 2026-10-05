@@ -186,7 +186,7 @@ button{cursor:pointer}
 .payday select{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 6px;font-weight:600}
 
 .title-wrap{text-align:center;min-width:0}
-.range{font-size:.85rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.range{font-size:.85rem;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:2px;min-height:34px}
 .range input{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:2px 6px;font-size:.85rem;color:var(--ink)}
 .range .reset{border:0;background:none;color:var(--accent);font-weight:600;font-size:.85rem;padding:2px}
 
@@ -3831,9 +3831,9 @@ function setBoardLines(el, lines){
   el.innerHTML = "";
   lines.forEach(t => {
     const d = document.createElement("div"); d.textContent = t;
-    d.className = "mk " + (/pasaste|Vencidos|Debés|A devolver|Fijos por pagar/i.test(t) ? "mk-red"
-      : /Te deben|te quedan|Te da para|Ahorr|Pagados|meta/i.test(t) ? "mk-green"
-      : /Gastaste|Donde más|Próximo|frasco|vs |En tarjetas|Total del mes/i.test(t) ? "mk-blue" : "mk-ink");
+    d.className = "mk " + (/pasaste|Vencidos|Debés|A devolver|Fijos por pagar|falta pagar/i.test(t) ? "mk-red"
+      : /Te deben|te quedan|Te da para|Ahorr|Pagados|Pagaste|meta/i.test(t) ? "mk-green"
+      : /Gastaste|Donde más|Próximo|frasco|vs |en tarjeta|en total/i.test(t) ? "mk-blue" : "mk-ink");
     el.append(d);
   });
 }
@@ -3910,14 +3910,17 @@ function stageFixed(){
   const left = (cur, card) => list.filter(i => i.currency === cur && (card ? i.state === "incard" : ["pending","todebit","partial"].includes(i.state)))
     .reduce((s2,i) => s2 + Math.max(0, (i.expected || 0) - i.paid), 0);
   const fa = round2(left("ARS")), fu = round2(left("USD")), ca = round2(left("ARS", 1)), cu = round2(left("USD", 1)), ta = round2(tot("ARS")), tu = round2(tot("USD"));
-  const both = (a, u) => [a && fmtARS.format(a), u && fmtUSD.format(u)].filter(Boolean).join(" y ");
+  const both = (a, u) => a && u ? `${fmtARS.format(a)} + ${fmtUSD.format(u)} en dólares` : a ? fmtARS.format(a) : u ? `${fmtUSD.format(u)} en dólares` : "";
   const late = list.filter(i => ["pending","partial"].includes(i.state) && i.due < today);
   const next = list.filter(i => !isDone(i) && i.due >= today)[0];
   renderStage("stageFixed", {
     label: "Falta pagar", big: fa || !fu ? fmtARS.format(fa) : fmtUSD.format(fu),
     bar: list.length ? done / list.length : null,
-    lines: [list.length && `${done} de ${list.length} pagados`, fa && fu ? `Y ${fmtUSD.format(fu)} en dólares` : null,
-      (ca || cu) && `En tarjetas, sin pagar ${both(ca, cu)}`, (ta || tu) && `Total del mes ${both(ta, tu)}`, late.length && `Vencidos: ${late.length}`],
+    lines: [list.length && `Pagaste ${done} de ${list.length} fijos`,
+      fa && fu ? `También falta pagar ${fmtUSD.format(fu)} en dólares` : null,
+      (ca || cu) && `Fijos en tarjeta, sin pagar todavía: ${both(ca, cu)}`,
+      (ta || tu) && `Fijos de este mes, en total: ${both(ta, tu)}`,
+      late.length && `Vencidos: ${late.length}`],
     mood: !data.fixed.length ? "hungry" : late.length ? "worried" : list.length && done === list.length ? "full" : "happy",
     line: !data.fixed.length ? "Cargá tus fijos y te los recuerdo." : late.length ? `Ojo, tenés ${late.length === 1 ? "un fijo vencido" : late.length + " fijos vencidos"}.`
       : list.length && done === list.length ? "Todos los fijos pagados. ¡Bien ahí!" : next ? `Lo próximo es ${next.f.name}.` : "Vamos al día."
