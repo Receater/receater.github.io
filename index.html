@@ -855,6 +855,25 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .jar-glass .btn.primary,.jar-glass .head-btn.primary{background:var(--jar-color);border-color:var(--jar-color);color:#fff}
 
 .fx-group{width:fit-content;margin:10px 0 0 2px;padding:4px 12px;border-radius:99px;background:var(--paper);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.10);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+
+.icon-btn:disabled{opacity:.3;cursor:default}
+.jar-delta{font-size:.78rem;font-weight:700;color:#1E7A50;margin-top:3px}
+.jar-delta.neg{color:var(--danger)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .jar-delta{color:#7FE0AE}
+  :root:not([data-theme="light"]) .jar-delta.neg{color:#FF9A8A}
+}
+.hist-month{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:16px 0 4px;padding-bottom:5px;border-bottom:2px solid var(--line)}
+#jarGrowth .hist-month:first-child{margin-top:4px}
+.hist-month strong{font-size:.95rem}
+.hist-month span{font-size:.82rem;color:var(--muted);text-align:right}
+.hist-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;border:0;border-top:1px solid var(--line);background:none;text-align:left;padding:10px 0;color:var(--ink);font:inherit;min-height:50px}
+.hist-row .d{color:var(--muted);font-size:.8rem}
+.hist-row .t strong{display:block;font-weight:600;font-size:.95rem}
+.hist-row .t small{display:block;color:var(--muted);font-size:.8rem;margin-top:1px}
+.hist-row .a{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;color:var(--usd)}
+.hist-row .a small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.hist-row .a.neg{color:var(--danger)}
 </style>
 </head>
 <body>
@@ -963,16 +982,16 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 
   <div id="viewJars" hidden>
     <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
-    <div class="jar-total" id="jarTotals"></div>
     <div id="jarList"></div>
     <section class="card" id="jarGrowthCard">
       <div class="card-head">
-        <h2>Cómo fue creciendo</h2>
+        <h2 id="jarHistTitle">Historial</h2>
         <div class="seg" role="group" aria-label="Moneda">
           <button type="button" data-jcur="ARS" aria-pressed="true">$</button>
           <button type="button" data-jcur="USD" aria-pressed="false">US$</button>
         </div>
       </div>
+      <p class="fx-hint" id="jarHistSub" style="margin:0 0 6px"></p>
       <div id="jarGrowth"></div>
     </section>
     <button type="button" class="small-btn" id="newJar" hidden>+ Nuevo frasco</button>
@@ -1410,6 +1429,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   <div class="dp-grid" id="dpGrid"></div>
   <p class="fx-hint" style="margin-top:12px">Tocá un día para ver solo lo de ese día. Los puntitos marcan los días con movimientos.</p>
   <button type="button" class="linkbtn" id="dpToday">Ir a hoy</button>
+  <button type="button" class="linkbtn" id="dpTotal" hidden>Ver todo lo ahorrado hasta hoy</button>
   <div class="actions">
     <button type="button" class="btn ghost" id="dpClose">Cerrar</button>
     <button type="button" class="btn primary" id="dpAll">Ver todo el mes</button>
@@ -1861,7 +1881,7 @@ function jarEntries(j){
   const out = [];
   data.expenses.forEach(e => {
     if (e.jarId !== j.id) return;
-    if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}`, src:e });
+    if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}`, src:e, fx:e.fx, pesos:e.amount });
     else if (e.currency === j.currency) out.push({ date:e.date.slice(0,10), amount:eff(e), label: e.note || "Ahorro", src:e });
   });
   data.jarMoves.filter(m => m.jarId === j.id).forEach(m => out.push({ date:m.date, amount:m.amount,
@@ -1869,6 +1889,56 @@ function jarEntries(j){
   return out.sort((a,b) => b.date.localeCompare(a.date));
 }
 const jarBalance = j => round2(jarEntries(j).reduce((s,x) => s + x.amount, 0));
+/* Ahorros: lo que se ve depende del alcance. Total (hasta hoy), un mes o un día. Nunca más allá de hoy. */
+let jarScope = { mode: "total" };   // { mode:"total" } | { mode:"month", y, m } | { mode:"day", y, m, d:"YYYY-MM-DD" }
+function jarScopeRange(){
+  const sc = jarScope;
+  if (sc.mode === "day") return { from: sc.d, to: sc.d };
+  if (sc.mode === "month"){ const a = payDate(sc.y, sc.m), nx = payDate(sc.y, sc.m + 1); return { from: toLocalInput(a), to: toLocalInput(new Date(nx.getFullYear(), nx.getMonth(), nx.getDate() - 1)) }; }
+  return { from: null, to: null };
+}
+const inJarScope = (date, r) => (!r.from || date >= r.from) && (!r.to || date <= r.to);
+const jarBalanceAt = (j, to) => round2(jarEntries(j).filter(x => !to || x.date <= to).reduce((s2,x) => s2 + x.amount, 0));
+const jarNetIn = (j, r) => round2(jarEntries(j).filter(x => inJarScope(x.date, r)).reduce((s2,x) => s2 + x.amount, 0));
+function savingsEntries(cur){
+  const out = [];
+  data.jars.filter(j => j.currency === cur).forEach(j => jarEntries(j).forEach(x => out.push({ ...x, jar: j })));
+  data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur)).forEach(e => out.push({
+    date: e.date.slice(0,10), amount: e.fx ? e.fx.usd : eff(e), src: e, jar: null, fx: e.fx || null, pesos: e.amount,
+    label: e.fx ? `Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}` : (e.note || "Ahorro") }));
+  return out.sort((a,b) => b.date.localeCompare(a.date));
+}
+function savingsTotals(r){
+  const t = { balA:0, balU:0, netA:0, netU:0, buyUsd:0, buyArs:0, outA:0, outU:0, n:0 };
+  [["ARS","A"],["USD","U"]].forEach(([cur, k]) => savingsEntries(cur).forEach(x => {
+    if (!r.to || x.date <= r.to) t["bal" + k] += x.amount;
+    if (inJarScope(x.date, r)){ t.n++; t["net" + k] += x.amount; if (x.amount < 0) t["out" + k] += -x.amount; if (x.fx){ t.buyUsd += x.fx.usd; t.buyArs += x.pesos; } }
+  }));
+  Object.keys(t).forEach(k => { if (k !== "n") t[k] = round2(t[k]); });
+  return t;
+}
+function jarStep(dir){
+  const [cy, cm] = periodOf(new Date()), sc = jarScope;
+  if (sc.mode === "total"){ if (dir < 0) jarScope = { mode: "month", y: cy, m: cm }; }
+  else {
+    let y = sc.y, m = sc.m + dir; if (m < 0){ m = 11; y--; } if (m > 11){ m = 0; y++; }
+    if (y > cy || (y === cy && m > cm)) return;
+    jarScope = { mode: "month", y, m };
+  }
+  render();
+}
+function jarsNavUpdate(){
+  const sc = jarScope, [cy, cm] = periodOf(new Date());
+  $("monthTitle").textContent = sc.mode === "total" ? "Total" : sc.mode === "month" ? periodTitle(sc.y, sc.m)
+    : dateOnly(sc.d).toLocaleDateString("es-AR", { day: "numeric", month: "long" });
+  const box = $("rangeLine"); box.innerHTML = "";
+  const link = (txt, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "range-btn"; b.textContent = txt; b.onclick = fn; box.append(b); };
+  if (sc.mode === "total"){ const sp = document.createElement("span"); sp.textContent = "Todo lo ahorrado hasta hoy"; box.append(sp); }
+  else if (sc.mode === "month") link("Ver el total", () => { jarScope = { mode: "total" }; render(); });
+  else link("Ver todo el mes", () => { jarScope = { mode: "month", y: sc.y, m: sc.m }; render(); });
+  $("next").disabled = sc.mode === "total" || (sc.y === cy && sc.m === cm);
+}
+
 
 /* ---------- Estado de vista ---------- */
 const now = new Date();
@@ -1940,8 +2010,9 @@ function render(){
   setScene(tab);
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
+  $("next").disabled = false;
   if (tab === "dash") { renderDash(); stageDash(); renderPaper(); return; }
-  if (tab === "jars") { renderJars(); stageJars(); return; }
+  if (tab === "jars") { jarsNavUpdate(); renderJars(); stageJars(); return; }
   if (tab === "fixed") { renderFixed(); stageFixed(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
@@ -3348,35 +3419,48 @@ document.querySelectorAll(".cur button").forEach(b => b.onclick = () => setCurre
 /* El botón flotante cambia según la pestaña: cargar, nuevo fijo o nuevo frasco */
 $("openAdd").onclick = () => tab === "fixed" ? openFixed(null) : tab === "jars" ? openJar(null, jarCur) : openSheet();
 function updateFab(){ $("openAdd").textContent = tab === "fixed" ? "+ Nuevo gasto fijo" : tab === "jars" ? "+ Nuevo frasco" : "Darle a Recy"; }
-$("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } viewDay = null; render(); };
-$("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } viewDay = null; render(); };
+$("prev").onclick = () => { if (tab === "jars"){ jarStep(-1); return; } if (--viewMonth < 0){ viewMonth = 11; viewYear--; } viewDay = null; render(); };
+$("next").onclick = () => { if (tab === "jars"){ jarStep(1); return; } if (++viewMonth > 11){ viewMonth = 0; viewYear++; } viewDay = null; render(); };
 let viewDay = null;
 /* ---------- Selector de fecha: mes, año y día ---------- */
 let dpY = 0, dpM = 0;
 const MONTH_NAMES = Array.from({ length: 12 }, (_, i) => { const n = new Date(2026, i, 1).toLocaleDateString("es-AR", { month: "long" }); return n.charAt(0).toUpperCase() + n.slice(1); });
 function renderDatePicker(){
+  const lim = tab === "jars" ? periodOf(new Date()) : null;   // en Ahorros no se puede pasar del período de hoy
+  if (lim && (dpY > lim[0] || (dpY === lim[0] && dpM > lim[1]))){ dpY = lim[0]; dpM = lim[1]; }
   const ms = $("dpMonth"); if (!ms.options.length) MONTH_NAMES.forEach((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = n; ms.append(o); });
+  [...ms.options].forEach(o => { o.disabled = !!(lim && dpY === lim[0] && Number(o.value) > lim[1]); });
   const cy = new Date().getFullYear(), yrs = [...data.expenses, ...data.incomes].map(e => Number((e.date || "").slice(0, 4))).filter(Boolean);
-  const y0 = Math.min(cy - 2, dpY, ...yrs), y1 = Math.max(cy + 1, dpY), ys = $("dpYear"); ys.innerHTML = "";
+  const y0 = Math.min(cy - 2, dpY, ...yrs), y1 = lim ? lim[0] : Math.max(cy + 1, dpY), ys = $("dpYear"); ys.innerHTML = "";
   for (let y = y0; y <= y1; y++){ const o = document.createElement("option"); o.value = y; o.textContent = y; ys.append(o); }
   ms.value = String(dpM); ys.value = String(dpY);
   const dow = $("dpDow"); if (!dow.children.length) ["L","M","M","J","V","S","D"].forEach(l => { const sp = document.createElement("span"); sp.textContent = l; dow.append(sp); });
   const start = payDate(dpY, dpM), nx = payDate(dpY, dpM + 1), end = new Date(nx.getFullYear(), nx.getMonth(), nx.getDate() - 1);
-  const has = new Set([...data.expenses, ...data.incomes].map(e => e.date.slice(0, 10)));
-  entries().filter(x => x.cardId).forEach(x => has.add(x.date.slice(0, 10)));
+  const has = new Set();
+  if (tab === "jars") ["ARS","USD"].forEach(c => savingsEntries(c).forEach(x => has.add(x.date)));
+  else { [...data.expenses, ...data.incomes].forEach(e => has.add(e.date.slice(0, 10))); entries().filter(x => x.cardId).forEach(x => has.add(x.date.slice(0, 10))); }
   const today = toLocalInput(new Date()), grid = $("dpGrid"); grid.innerHTML = "";
   for (let i = 0; i < (start.getDay() + 6) % 7; i++){ const bl = document.createElement("span"); bl.className = "dp-blank"; grid.append(bl); }
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
     const key = toLocalInput(d), b = document.createElement("button"); b.type = "button";
-    b.className = "dp-day" + (key === today ? " today" : "") + (viewDay === key && viewYear === dpY && viewMonth === dpM ? " sel" : "") + (has.has(key) ? " has" : "");
+    const isSel = tab === "jars" ? (jarScope.mode === "day" && jarScope.d === key) : (viewDay === key && viewYear === dpY && viewMonth === dpM);
+    b.className = "dp-day" + (key === today ? " today" : "") + (isSel ? " sel" : "") + (has.has(key) ? " has" : "");
+    if (tab === "jars" && key > today) b.disabled = true;
     b.textContent = d.getDate();
     if (d.getTime() === start.getTime() || d.getDate() === 1){ const sm = document.createElement("small"); sm.textContent = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); b.append(sm); }
     b.setAttribute("aria-label", d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }));
-    b.onclick = () => { viewYear = dpY; viewMonth = dpM; viewDay = key; closeDp(); if (tab !== "list") setTab("list"); else render(); };
+    b.onclick = () => {
+      if (tab === "jars"){ jarScope = { mode: "day", y: dpY, m: dpM, d: key }; closeDp(); render(); return; }
+      viewYear = dpY; viewMonth = dpM; viewDay = key; closeDp(); if (tab !== "list") setTab("list"); else render(); };
     grid.append(b);
   }
 }
-function openDatePicker(){ dpY = viewYear; dpM = viewMonth; renderDatePicker(); $("dpBg").classList.add("open"); $("dpSheet").classList.add("open"); }
+function openDatePicker(){
+  if (tab === "jars"){ const [cy, cm] = periodOf(new Date()); dpY = jarScope.mode === "total" ? cy : jarScope.y; dpM = jarScope.mode === "total" ? cm : jarScope.m; }
+  else { dpY = viewYear; dpM = viewMonth; }
+  $("dpToday").hidden = tab === "jars"; $("dpTotal").hidden = tab !== "jars";
+  renderDatePicker(); $("dpBg").classList.add("open"); $("dpSheet").classList.add("open");
+}
 function closeDp(){ $("dpBg").classList.remove("open"); $("dpSheet").classList.remove("open"); }
 $("monthBtn").onclick = openDatePicker;
 $("dpClose").onclick = closeDp; $("dpBg").onclick = closeDp;
@@ -3384,7 +3468,10 @@ $("dpMonth").onchange = () => { dpM = Number($("dpMonth").value); renderDatePick
 $("dpYear").onchange = () => { dpY = Number($("dpYear").value); renderDatePicker(); };
 $("dpPrev").onclick = () => { if (--dpM < 0){ dpM = 11; dpY--; } renderDatePicker(); };
 $("dpNext").onclick = () => { if (++dpM > 11){ dpM = 0; dpY++; } renderDatePicker(); };
-$("dpAll").onclick = () => { viewYear = dpY; viewMonth = dpM; viewDay = null; closeDp(); render(); };
+$("dpAll").onclick = () => {
+  if (tab === "jars"){ jarScope = { mode: "month", y: dpY, m: dpM }; closeDp(); render(); return; }
+  viewYear = dpY; viewMonth = dpM; viewDay = null; closeDp(); render(); };
+$("dpTotal").onclick = () => { jarScope = { mode: "total" }; closeDp(); render(); };
 $("dpToday").onclick = () => { [viewYear, viewMonth] = periodOf(new Date()); viewDay = toLocalInput(new Date()); closeDp(); if (tab !== "list") setTab("list"); else render(); };
 
 /* ---------- Modal de tarjeta ---------- */
@@ -3837,18 +3924,34 @@ function stageFixed(){
   });
 }
 function stageJars(){
-  const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
-  const loose = cur => data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur)).reduce((s,e) => s + (e.fx ? e.fx.usd : eff(e)), 0);
-  const tA = round2(tot("ARS") + loose("ARS")), tU = round2(tot("USD") + loose("USD"));
-  const goals = data.jars.filter(j => j.goal).map(j => ({ j, p: Math.min(1, Math.max(0, jarBalance(j) / j.goal)) }));
+  const sc = jarScope, r = jarScopeRange(), T = savingsTotals(r), [cy, cm] = periodOf(new Date()), todayS = toLocalInput(new Date());
+  const visible = data.jars.filter(j => sc.mode === "total" || jarEntries(j).some(x => !r.to || x.date <= r.to));
+  const goals = visible.filter(j => j.goal).map(j => ({ j, p: Math.min(1, Math.max(0, jarBalanceAt(j, r.to) / j.goal)) }));
   const best = goals.filter(g => g.p < 1).sort((a,b) => b.p - a.p)[0];
+  const bar = goals.length ? goals.reduce((s2,g) => s2 + g.p, 0) / goals.length : null;
+  const both = (a, u) => [a && fmtARS.format(a), u && fmtUSD.format(u)].filter(Boolean).join(" y ");
+  const signed = (n, cur) => (n > 0 ? "+ " : n < 0 ? "− " : "") + money(Math.abs(n), cur);
+  if (sc.mode === "total"){
+    renderStage("stageJars", {
+      label: "Ahorrado", big: T.balA || !T.balU ? fmtARS.format(T.balA) : fmtUSD.format(T.balU), bar,
+      lines: [T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
+        best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
+      mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "full",
+      line: !data.jars.length ? "Armemos tu primer frasco." : best ? `Te falta poco para ${best.j.name}.` : "Qué rico cuando ahorrás."
+    });
+    return;
+  }
+  const isNow = sc.mode === "day" ? sc.d === todayS : (sc.y === cy && sc.m === cm);
+  const saved = T.netA > 0 || T.netU > 0;
   renderStage("stageJars", {
-    label: "Ahorrado", big: tA || !tU ? fmtARS.format(tA) : fmtUSD.format(tU),
-    bar: goals.length ? goals.reduce((s,g) => s + g.p, 0) / goals.length : null,
-    lines: [tA && tU ? `Y ${fmtUSD.format(tU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
-      best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
-    mood: !data.jars.length && !tA && !tU ? "hungry" : "full",
-    line: !data.jars.length ? "Armemos tu primer frasco." : best ? `Te falta poco para ${best.j.name}.` : "Qué rico cuando ahorrás."
+    label: sc.mode === "day" ? `Ahorraste el ${shortDate(dateOnly(sc.d))}` : `Ahorraste en ${monthName(sc.y, sc.m)}`,
+    big: !T.n ? fmtARS.format(0) : (!T.netA && T.netU) ? signed(T.netU, "USD") : signed(T.netA, "ARS"), bar,
+    lines: [T.netA && T.netU ? `Y ${signed(T.netU, "USD")} en dólares` : null,
+      T.buyUsd ? `Compraste ${fmtUSD.format(round2(T.buyUsd))} a ${fmtARS.format(round2(T.buyArs / T.buyUsd))} promedio` : null,
+      (T.outA || T.outU) ? `Sacaste ${both(T.outA, T.outU)}` : null,
+      (T.balA || T.balU) ? `${isNow ? "Llevás ahorrado" : "Al final tenías"} ${both(T.balA, T.balU)}` : null],
+    mood: !T.n ? "hungry" : saved ? "full" : "happy",
+    line: !T.n ? "No cargaste ahorros en este período." : saved ? "¡Qué rico cuando ahorrás!" : "Hubo más retiros que ahorros."
   });
 }
 
@@ -3939,7 +4042,9 @@ let sceneOn = null;
 function setScene(t){ if (sceneOn === t) return; sceneOn = t; const f = SCENES[t]; $("scene").innerHTML = f ? f() : ""; }
 
 function setTab(t){
+  const prevTab = tab;
   tab = t;
+  if (t === "jars" && prevTab !== "jars") jarScope = { mode: "total" };   // al entrar a Ahorros, siempre arranca en el total
   updateFab();
   setScene(t);
   try { localStorage.setItem("receater.tab", t); } catch {}
@@ -3949,8 +4054,6 @@ function setTab(t){
   $("tabFixed").setAttribute("aria-selected", String(t==="fixed"));
   $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars"; $("viewFixed").hidden = t!=="fixed";
   $("monthNav").hidden = false;
-  $("monthNav").classList.toggle("ghost", t === "jars");
-  $("monthNav").setAttribute("aria-hidden", String(t === "jars"));
   render();
 }
 $("tabJars").onclick = () => setTab("jars");
@@ -4200,30 +4303,23 @@ function jarSVG(color, level, full){
 }
 function renderJars(){
   if (!jarCurPicked){
-    const has = cur => data.jars.some(j => j.currency === cur && jarBalance(j) > 0) || data.expenses.some(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur));
-    const want = has("ARS") ? "ARS" : has("USD") ? "USD" : jarCur;
+    // Si no elegiste moneda, se muestra la que tuvo movimientos en este período (dólares primero si hubo de las dos)
+    const r0 = jarScopeRange(), act = cur => savingsEntries(cur).some(x => inJarScope(x.date, r0));
+    const want = act("USD") ? "USD" : act("ARS") ? "ARS" : jarCur;
     if (want !== jarCur){ jarCur = want; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.jcur === jarCur))); }
   }
-  // Totales
-  const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
-  const loose = cur => data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur))
-    .reduce((s,e) => s + (e.fx ? e.fx.usd : eff(e)), 0);
-  const tA = tot("ARS") + loose("ARS"), tU = tot("USD") + loose("USD");
-  const tb = $("jarTotals"); tb.innerHTML = "";
-  [["Ahorrado en pesos", fmtARS.format(tA), ""], ["Ahorrado en dólares", fmtUSD.format(tU), "usd"]].forEach(([l,v,c]) => {
-    const f = document.createElement("div"); f.className = "fact";
-    f.innerHTML = '<div class="l"></div><div class="v"></div>'; f.querySelector(".l").textContent = l;
-    const vv = f.querySelector(".v"); vv.textContent = v; if (c) vv.classList.add(c); tb.append(f);
-  });
+  const r = jarScopeRange(), isTotal = jarScope.mode === "total";
+  const jars = data.jars.filter(j => isTotal || jarEntries(j).some(x => !r.to || x.date <= r.to));
   // Frascos
   const list = $("jarList"); list.innerHTML = "";
   if (!data.jars.length){
     list.innerHTML = '<div class="empty"><strong>Todavía no tenés frascos</strong>Creá uno para cada ahorro: dólares, plazo fijo, un viaje. Lo que cargues como Ahorro o compra de dólares se va sumando solo.</div>';
   }
+  if (data.jars.length && !jars.length) list.innerHTML = '<div class="empty"><strong>Todavía no tenías ahorros</strong>En ese período no había nada ahorrado.</div>';
   const grid = document.createElement("div"); grid.className = "jar-grid"; list.append(grid);
-  const maxBal = cur => Math.max(1, ...data.jars.filter(j => j.currency === cur).map(j => jarBalance(j)));
-  data.jars.forEach(j => {
-    const bal = jarBalance(j), money2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n), open = openJars.has(j.id);
+  const maxBal = cur => Math.max(1, ...jars.filter(j => j.currency === cur).map(j => jarBalanceAt(j, r.to)));
+  jars.forEach(j => {
+    const bal = jarBalanceAt(j, r.to), balNow = jarBalance(j), delta = isTotal ? 0 : jarNetIn(j, r), money2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n), open = openJars.has(j.id);
     const level = j.goal ? Math.min(1, Math.max(0, bal / j.goal)) : Math.min(1, Math.max(0, bal / maxBal(j.currency))) * 0.85;
     const tile = document.createElement("button"); tile.type = "button"; tile.className = "jar-tile"; tile.setAttribute("aria-expanded", String(open));
     tile.setAttribute("aria-label", `${j.name}: ${money2(bal)}${j.goal ? `, meta ${money2(j.goal)}` : ""}`);
@@ -4236,11 +4332,13 @@ function renderJars(){
     if (j.goal){ const m = document.createElement("div"); m.className = "meter jar-meter"; const sp = document.createElement("span");
       sp.style.width = Math.round(level * 100) + "%"; sp.style.background = j.color; m.append(sp); tile.append(m); }
     tile.append(sb);
+    if (delta){ const dl = document.createElement("div"); dl.className = "jar-delta" + (delta < 0 ? " neg" : "");
+      dl.textContent = (delta > 0 ? "+ " : "− ") + money2(Math.abs(delta)) + (jarScope.mode === "day" ? " ese día" : " en el mes"); tile.append(dl); }
     tile.onclick = () => { open ? openJars.delete(j.id) : openJars.add(j.id); renderJars(); };
     grid.append(tile);
     if (open){
       const el = document.createElement("div"); el.className = "jar-detail";
-      const h = document.createElement("h4"); h.textContent = j.name + (j.goal && bal < j.goal ? `: te falta ${money2(round2(j.goal - bal))}` : ""); el.append(h);
+      const h = document.createElement("h4"); h.textContent = j.name + (j.goal && balNow < j.goal ? `: te falta ${money2(round2(j.goal - balNow))}` : ""); el.append(h);
       const buys = data.expenses.filter(e => e.jarId === j.id && e.fx);
       if (buys.length){
         const usd = buys.reduce((s2,e) => s2 + e.fx.usd, 0), ars = buys.reduce((s2,e) => s2 + e.amount, 0);
@@ -4252,7 +4350,7 @@ function renderJars(){
         let casa = "blue"; try { casa = localStorage.getItem("receater.fxCasa") || "blue"; } catch {}
         const q = quotes.map[casa] || quotes.map.blue || quotes.map.oficial;
         if (q){ const p3 = document.createElement("p"); p3.className = "fx-hint"; p3.style.margin = "4px 0 0";
-          p3.textContent = `Hoy valen unos ${f0ARS(bal * q.venta)} (dólar ${(CASAS.find(c => quotes.map[c.id] === q) || {name:""}).name.toLowerCase()}).`; el.append(p3); }
+          p3.textContent = `Hoy valen unos ${f0ARS(balNow * q.venta)} (dólar ${(CASAS.find(c => quotes.map[c.id] === q) || {name:""}).name.toLowerCase()}).`; el.append(p3); }
       }
       const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
@@ -4276,34 +4374,49 @@ function renderJars(){
       grid.append(el);
     }
   });
-  const lA = loose("ARS"), lU = loose("USD");
-  if (lA || lU){
-    const p = document.createElement("p"); p.className = "fx-hint";
-    p.textContent = `Tenés ${[lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ")} ahorrados sin frasco. Editá esos movimientos para asignarles uno.`;
-    list.append(p);
+  if (isTotal){
+    const looseSum = cur => round2(savingsEntries(cur).filter(x => !x.jar).reduce((s2,x) => s2 + x.amount, 0));
+    const lA = looseSum("ARS"), lU = looseSum("USD");
+    if (lA || lU){
+      const p = document.createElement("p"); p.className = "fx-hint";
+      p.textContent = `Tenés ${[lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ")} ahorrados sin frasco. Editá esos movimientos para asignarles uno.`;
+      list.append(p);
+    }
   }
-  // Crecimiento: saldo al final de cada mes, últimos 6 meses
+  renderJarHistory(r);
+}
+/* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
+function renderJarHistory(r){
   const box = $("jarGrowth"); box.innerHTML = "";
-  const jarsC = data.jars.filter(j => j.currency === jarCur);
-  const all = jarsC.flatMap(j => jarEntries(j));
-  data.expenses.filter(e => !e.jarId && (e.fx ? jarCur === "USD" : e.category === "ahorro" && e.currency === jarCur))
-    .forEach(e => all.push({ date:e.date.slice(0,10), amount: e.fx ? e.fx.usd : eff(e) }));
-  if (!all.length){ box.innerHTML = '<p class="fx-hint" style="margin:0">Todavía no hay ahorros en esta moneda.</p>'; return; }
-  const now = new Date(), months = [];
-  for (let i = 5; i >= 0; i--){ const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push(d); }
-  const vals = months.map(d => { const end = toLocalInput(new Date(d.getFullYear(), d.getMonth()+1, 0)); return all.filter(x => x.date <= end).reduce((s,x) => s + x.amount, 0); });
-  const max = Math.max(...vals, 1), W = 320, H = 170, top = 22, bottom = 24, bw = 34, step = W/6;
-  const svg = svgEl("svg", { viewBox:`0 0 ${W} ${H}`, role:"img", "aria-label":"Ahorro acumulado por mes" });
-  svg.append(svgEl("line", { x1:0, x2:W, y1:H-bottom, y2:H-bottom, stroke:"var(--line)" }));
-  months.forEach((d,i) => {
-    const v = Math.max(0, vals[i]), h = v / max * (H-top-bottom), x = step*i + (step-bw)/2, last = i === 5;
-    svg.append(svgEl("rect", { x, y:H-bottom-h, width:bw, height:Math.max(h, v ? 2 : 0), rx:5, fill: last ? "var(--usd)" : "var(--line)" }));
-    const t = svgEl("text", { x:x+bw/2, y:H-6, "text-anchor":"middle", "font-size":11, fill:"var(--muted)" });
-    t.textContent = d.toLocaleDateString("es-AR",{month:"short"}).replace(".",""); svg.append(t);
-    if (v){ const tv = svgEl("text", { x:x+bw/2, y:H-bottom-h-6, "text-anchor":"middle", "font-size":10.5, fill: last ? "var(--ink)" : "var(--muted)", "font-weight": last ? 600 : 400 });
-      tv.textContent = shortMoney(v, jarCur); svg.append(tv); }
+  const sc = jarScope;
+  $("jarHistTitle").textContent = jarCur === "USD" ? "Historial de dólares" : "Historial de pesos";
+  $("jarHistSub").textContent = sc.mode === "total" ? "Todo lo que cargaste hasta hoy, mes por mes."
+    : sc.mode === "month" ? `Lo que cargaste en ${periodTitle(sc.y, sc.m).toLowerCase()}.` : `Lo que cargaste el ${dateOnly(sc.d).toLocaleDateString("es-AR", { day: "numeric", month: "long" })}.`;
+  const rows = savingsEntries(jarCur).filter(x => inJarScope(x.date, r)).slice(0, 400);
+  if (!rows.length){ const pe = document.createElement("p"); pe.className = "fx-hint"; pe.style.margin = "0";
+    pe.textContent = sc.mode === "total" ? "Todavía no cargaste ahorros en esta moneda." : "No cargaste nada en este período."; box.append(pe); return; }
+  const groups = new Map();
+  rows.forEach(x => { const [gy, gm] = periodOf(`${x.date}T12:00`), k = monthKey(gy, gm); if (!groups.has(k)) groups.set(k, { y: gy, m: gm, items: [] }); groups.get(k).items.push(x); });
+  const signedM = n => (n >= 0 ? "+ " : "− ") + money(Math.abs(n), jarCur);
+  groups.forEach(g => {
+    const net = round2(g.items.reduce((s2,x) => s2 + x.amount, 0)), paid = round2(g.items.filter(x => x.fx).reduce((s2,x) => s2 + x.pesos, 0));
+    const head = document.createElement("div"); head.className = "hist-month";
+    const t = document.createElement("strong"); t.textContent = periodTitle(g.y, g.m);
+    const sm = document.createElement("span"); sm.textContent = signedM(net) + (jarCur === "USD" && paid ? ` · pagaste ${fmtARS.format(paid)}` : "");
+    head.append(t, sm); box.append(head);
+    g.items.forEach(x => {
+      const row = document.createElement(x.src ? "button" : "div"); row.className = "hist-row"; if (x.src){ row.type = "button"; row.onclick = () => openSheet(x.src); }
+      const d = document.createElement("span"); d.className = "d"; d.textContent = shortDate(dateOnly(x.date));
+      const tx = document.createElement("div"); tx.className = "t";
+      const main = document.createElement("strong"), sub = document.createElement("small");
+      if (x.fx){ main.textContent = "Compra de dólares"; sub.textContent = [`a ${fmtARS.format(x.fx.rate)}`, x.jar && x.jar.name].filter(Boolean).join(" · "); }
+      else { main.textContent = x.label; sub.textContent = x.jar ? x.jar.name : ""; }
+      tx.append(main); if (sub.textContent) tx.append(sub);
+      const a = document.createElement("div"); a.className = "a" + (x.amount < 0 ? " neg" : ""); a.textContent = signedM(x.amount);
+      if (x.fx){ const sa = document.createElement("small"); sa.textContent = fmtARS.format(x.pesos); a.append(sa); }
+      row.append(d, tx, a); box.append(row);
+    });
   });
-  box.append(svg);
 }
 document.querySelectorAll("[data-jcur]").forEach(b => b.onclick = () => {
   jarCur = b.dataset.jcur; jarCurPicked = true; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderJars();
