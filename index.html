@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Kalam:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#E6E9ED; --paper:#FFFFFF; --ink:#1B2430; --muted:#66707D; --line:#D5DAE0;
@@ -578,11 +578,6 @@ button{cursor:pointer}
 
 .fx-shares{padding:0 14px 12px 22px}
 
-.day-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 12px}
-.day-nav .icon-btn{width:36px;height:36px}
-.day-mid{text-align:center;min-width:0}
-.day-title{font-weight:600;text-transform:capitalize}
-.day-mid .linkbtn{font-size:.82rem;padding:0}
 .day-sum{background:var(--paper);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:grid;gap:4px}
 .day-sum .row{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
 .day-sum .row b{font-family:"IBM Plex Mono",ui-monospace,monospace}
@@ -718,7 +713,8 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
   :root:not([data-theme="light"]){--sc-1:#2A3446;--sc-2:#222B3A;--sc-3:#3A4760;--sc-wood:#5C4330;--sc-wood2:#74553A;--sc-warm:#C9973A;--sc-red:#B0604E;--sc-green:#3F8C6B;--sc-blue:#3E6292;--sc-sky:#1B2944}
 }
 :root[data-theme="dark"]{--sc-1:#2A3446;--sc-2:#222B3A;--sc-3:#3A4760;--sc-wood:#5C4330;--sc-wood2:#74553A;--sc-warm:#C9973A;--sc-red:#B0604E;--sc-green:#3F8C6B;--sc-blue:#3E6292;--sc-sky:#1B2944}
-#scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#scene{position:fixed;top:0;left:0;right:0;bottom:auto;width:100%;height:100vh;z-index:0;pointer-events:none;overflow:hidden}
+@supports (height:100lvh){#scene{height:100lvh}}
 #scene svg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:100%;width:auto;min-width:100%}
 main.wrap{position:relative;z-index:1}
 
@@ -746,8 +742,6 @@ main.wrap{position:relative;z-index:1}
   border-radius:16px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.10)}
 .month-nav .icon-btn{border:0;background:var(--bg)}
 .day h2{display:inline-block;background:var(--paper);padding:4px 12px;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,.10);color:var(--ink)}
-.day-nav{background:color-mix(in srgb, var(--paper) 90%, transparent);border-radius:14px;padding:4px}
-.day-nav .icon-btn{border:0;background:var(--bg)}
 
 /* ===== Movimientos como tickets de papel térmico ===== */
 .ticket{
@@ -793,6 +787,50 @@ main.wrap{position:relative;z-index:1}
 .ticket{background-image:none;border-radius:4px 4px 0 0;padding:8px 0 8px;
   -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;
           mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%}
+
+/* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
+html{overflow-y:scroll;scrollbar-gutter:stable}
+/* Selector de mes con día */
+.month-btn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 8px;border-radius:10px;font:inherit;color:inherit;min-height:36px;letter-spacing:inherit}
+.month-btn .caret{font-size:.62em;color:var(--muted)}
+.month-btn:active{background:var(--bg)}
+.day-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.day-head strong{text-transform:capitalize}
+.dp-top{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:center;margin:6px 0 12px}
+.dp-sel{display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:8px}
+.dp-dow,.dp-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dp-dow{margin-bottom:6px}
+.dp-dow span{text-align:center;font-size:.78rem;color:var(--muted);font-weight:600}
+.dp-day{position:relative;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:600;padding:2px}
+.dp-day small{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:.6rem;color:var(--muted);font-weight:500;line-height:1;text-transform:uppercase}
+.dp-day.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.dp-day.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dp-day.sel small{color:inherit}
+.dp-day.has::after{content:"";position:absolute;bottom:5px;left:50%;margin-left:-2.5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.dp-day.sel.has::after{background:var(--accent-ink)}
+.dp-blank{min-height:46px}
+
+/* ===== "Darle a Recy": hoja de anotador, papel crema y máquina de escribir ===== */
+#sheet{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--bg:#F2EDE0;--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;
+  color-scheme:light;background:var(--paper);color:var(--ink);font-family:"Courier Prime","Courier New",ui-monospace,monospace}
+#sheet h3{font-family:inherit;text-transform:uppercase;letter-spacing:.1em;font-size:.95rem}
+#sheet .sheet-head{border-bottom:1.5px dashed #BDB6A5}
+#sheet .field > label:not(.switch),#sheet .lbl,#sheet .lbl-sm{text-transform:uppercase;letter-spacing:.07em;font-size:.76rem;font-weight:700;color:var(--muted)}
+#sheet .input,#sheet select.input,#sheet textarea.input{background-color:transparent;border:0;border-bottom:1.5px solid #1F1F1F;border-radius:0;padding-left:2px;padding-right:2px;font-family:inherit;color:var(--ink)}
+#sheet select.input{padding-right:30px}
+#sheet .input:focus,#sheet select.input:focus,#sheet textarea.input:focus{box-shadow:none;border-bottom:2px solid var(--accent)}
+#sheet .amount-row input{font-family:inherit;font-weight:700;border-bottom:2px solid #1F1F1F;color:var(--ink)}
+#sheet .amount-row input:focus{border-bottom-color:var(--accent)}
+#sheet .tell textarea.input{border:1.5px dashed #BDB6A5;border-radius:6px;padding:8px 10px;background:#FFFEFB}
+#sheet .tell textarea.input:focus{border-color:var(--accent)}
+#sheet .tell,#sheet .ai-invite{background:var(--bg);border-radius:6px}
+#sheet .chip,#sheet .cur,#sheet .seg,#sheet .seg button,#sheet .cur button{border-radius:6px;font-family:inherit}
+#sheet .chip,#sheet .cur,#sheet .seg{border-color:#BDB6A5}
+#sheet .btn,#sheet .small-btn,#sheet .head-btn{border-radius:6px !important;font-family:inherit}
+#sheet .btn.primary,#sheet .small-btn.primary,#sheet .head-btn.primary{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
+#sheet .head-btn.ghost{color:#1F1F1F}
+#sheet .opt-extra select,#sheet #cuotas,#sheet #paidCuotas{border-radius:6px;font-family:inherit}
+#sheet .split-foot,#sheet .fx-hint{font-family:inherit}
 </style>
 </head>
 <body>
@@ -816,7 +854,7 @@ main.wrap{position:relative;z-index:1}
   <div class="month-nav" id="monthNav">
     <button class="icon-btn" id="prev" aria-label="Mes anterior">‹</button>
     <div class="title-wrap">
-      <h1 id="monthTitle"></h1>
+      <h1 id="monthH"><button type="button" class="month-btn" id="monthBtn" aria-haspopup="dialog" aria-label="Elegir mes, año o día"><span id="monthTitle"></span><span class="caret" aria-hidden="true">▾</span></button></h1>
       <div class="range" id="rangeLine"></div>
     </div>
     <button class="icon-btn" id="next" aria-label="Mes siguiente">›</button>
@@ -853,11 +891,6 @@ main.wrap{position:relative;z-index:1}
     <p class="bubble" id="bubble" aria-live="polite"></p>
   </section>
 
-  <div class="day-nav" id="dayNav">
-    <button class="icon-btn" id="dayPrev" aria-label="Día anterior">‹</button>
-    <div class="day-mid"><div class="day-title" id="dayTitle">Todo el mes</div><button type="button" class="linkbtn" id="dayAll" hidden>Ver todo el mes</button></div>
-    <button class="icon-btn" id="dayNext" aria-label="Día siguiente">›</button>
-  </div>
   <section class="day-sum" id="daySum" hidden></section>
   <section class="fixed-pend" id="fixedPend" hidden></section>
   <section class="fixed-pend" id="loanPend" hidden></section>
@@ -1342,6 +1375,24 @@ main.wrap{position:relative;z-index:1}
   <div class="actions"><button type="button" class="btn ghost" id="setClose">Listo</button></div>
 </div>
 
+<div class="sheet-bg" id="dpBg"></div>
+<div class="sheet" id="dpSheet" role="dialog" aria-modal="true" aria-labelledby="dpTitle">
+  <h3 id="dpTitle">Elegí una fecha</h3>
+  <div class="dp-top">
+    <button type="button" class="icon-btn" id="dpPrev" aria-label="Mes anterior">‹</button>
+    <div class="dp-sel"><select class="input" id="dpMonth" aria-label="Mes"></select><select class="input" id="dpYear" aria-label="Año"></select></div>
+    <button type="button" class="icon-btn" id="dpNext" aria-label="Mes siguiente">›</button>
+  </div>
+  <div class="dp-dow" id="dpDow" aria-hidden="true"></div>
+  <div class="dp-grid" id="dpGrid"></div>
+  <p class="fx-hint" style="margin-top:12px">Tocá un día para ver solo lo de ese día. Los puntitos marcan los días con movimientos.</p>
+  <button type="button" class="linkbtn" id="dpToday">Ir a hoy</button>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="dpClose">Cerrar</button>
+    <button type="button" class="btn primary" id="dpAll">Ver todo el mes</button>
+  </div>
+</div>
+
 <div class="sheet-bg" id="xlBg"></div>
 <div class="sheet" id="xlSheet" role="dialog" aria-modal="true" aria-labelledby="xlTitle">
   <h3 id="xlTitle">Exportar a Excel</h3>
@@ -1661,6 +1712,7 @@ function fixInstances(y, m){
   return data.fixed.filter(f => fixActiveIn(f, key)).map(f => fixInstance(f, y, m)).sort((a,b) => a.due - b.due);
 }
 /* Lo que falta pagar de los fijos a mano / débito automático en un período (en pesos) */
+const isFixedEnt = x => !!(x.fixedId || (x.src && x.src.fixedId));
 function fixedPendingARS(y, m){
   // Lo que falta pagar de los fijos a mano o débito. Los que son en dólares se pasan a pesos con el dólar de hoy (o la última cotización)
   const usdRate = () => { let casa = "oficial"; try { casa = localStorage.getItem("receater.fxCasa") || "oficial"; } catch {}
@@ -1946,7 +1998,7 @@ function render(){
     const days = Math.ceil((untilD - new Date()) / 864e5);
     // El "por día" de hoy se calcula con lo que tenías al empezar el día, así no cambia mientras cargás gastos
     const todayStr = toLocalInput(new Date());
-    const spentToday = allEnts.filter(x => x.currency === "ARS" && x.date.slice(0,10) === todayStr && (!cobro || new Date(x.date) >= new Date(cobro.date)))
+    const spentToday = allEnts.filter(x => x.currency === "ARS" && x.date.slice(0,10) === todayStr && !isFixedEnt(x) && (!cobro || new Date(x.date) >= new Date(cobro.date)))
       .reduce((s2,x) => s2 + x.amount, 0);
     const perDay = days > 0 ? (freeD + spentToday) / days : 0;
     if (perDay > 0){
@@ -1981,26 +2033,31 @@ function render(){
   // Día elegido
   const pStart = payDate(viewYear, viewMonth), pEnd = new Date(payDate(viewYear, viewMonth+1) - 864e5);
   if (viewDay && !inPeriod({ date: viewDay + "T12:00" }, viewYear, viewMonth)) viewDay = null;
-  $("dayTitle").textContent = viewDay ? dateOnly(viewDay).toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" }) : "Todo el mes";
-  $("dayAll").hidden = !viewDay;
   const ds = $("daySum"); ds.hidden = !viewDay; ds.innerHTML = "";
   if (viewDay){
     $("fixedPend").hidden = true; $("loanPend").hidden = true;
+    const hd = document.createElement("div"); hd.className = "day-head";
+    const ht = document.createElement("strong"); ht.textContent = dateOnly(viewDay).toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long" });
+    const hb = document.createElement("button"); hb.type = "button"; hb.className = "linkbtn"; hb.textContent = "Ver todo el mes"; hb.onclick = () => { viewDay = null; render(); };
+    hd.append(ht, hb); ds.append(hd);
     const dayEnts = allEnts.filter(x => x.date.slice(0,10) === viewDay);
-    const spentA = dayEnts.filter(x => x.currency === "ARS").reduce((a,x) => a + x.amount, 0);
-    const spentU = dayEnts.filter(x => x.currency === "USD").reduce((a,x) => a + x.amount, 0);
+    const dayFixed = dayEnts.filter(isFixedEnt), dayFree = dayEnts.filter(x => !isFixedEnt(x));
+    const spentA = dayFree.filter(x => x.currency === "ARS").reduce((a,x) => a + x.amount, 0);
+    const spentU = dayFree.filter(x => x.currency === "USD").reduce((a,x) => a + x.amount, 0);
     const incD = data.incomes.filter(e => e.date.slice(0,10) === viewDay && e.currency === "ARS").reduce((a,e) => a + e.amount, 0);
     const row = (a, b) => { const r = document.createElement("div"); r.className = "row"; const x = document.createElement("span"); x.textContent = a; const y = document.createElement("b"); y.textContent = b; r.append(x, y); ds.append(r); };
-    row("Gastaste ese día", fmtARS.format(spentA));
+    row("Gastaste ese día (sin fijos)", fmtARS.format(spentA));
     if (spentU) row("En dólares", fmtUSD.format(spentU));
     if (incD) row("Entró", fmtARS.format(incD));
     const cards = allExpenses().filter(e => isCardExp(e) && e.date.slice(0,10) === viewDay).reduce((a,e) => a + (e.currency === "ARS" ? e.amount : 0), 0);
     if (cards) row("Con tarjeta (se paga después)", fmtARS.format(cards));
+    const fxA = dayFixed.filter(x => x.currency === "ARS").reduce((a,x) => a + x.amount, 0), fxU = dayFixed.filter(x => x.currency === "USD").reduce((a,x) => a + x.amount, 0);
+    if (fxA || fxU) row("Fijos pagados ese día", [fxA && fmtARS.format(fxA), fxU && fmtUSD.format(fxU)].filter(Boolean).join(" + "));
   }
   const shown = viewDay ? rows.filter(r => r.date.slice(0,10) === viewDay) : rows;
   const days = $("days");
   days.innerHTML = "";
-  if (viewDay && !shown.length){ const e = document.createElement("div"); e.className = "empty"; e.innerHTML = "<strong>Nada cargado ese día</strong>Usá las flechas para ver otro día."; days.append(e); return; }
+  if (viewDay && !shown.length){ const e = document.createElement("div"); e.className = "empty"; e.innerHTML = "<strong>Nada cargado ese día</strong>Tocá el mes de arriba para elegir otro día."; days.append(e); return; }
   if (!rows.length){
     const e = document.createElement("div");
     e.className = "empty";
@@ -3251,7 +3308,8 @@ $("del").onclick = async () => {
 $("cancel").onclick = closeSheet;
 $("sheetBg").onclick = closeSheet;
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
-  if ($("aiSheet").classList.contains("open")) closeAi();
+  if ($("dpSheet").classList.contains("open")) closeDp();
+  else if ($("aiSheet").classList.contains("open")) closeAi();
   else if ($("setSheet").classList.contains("open")) closeSettings();
   else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("xlSheet").classList.contains("open")) closeXls();
@@ -3270,20 +3328,41 @@ function updateFab(){ $("openAdd").textContent = tab === "fixed" ? "+ Nuevo gast
 $("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } viewDay = null; render(); };
 $("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } viewDay = null; render(); };
 let viewDay = null;
-function moveDay(step){
-  const pStart = payDate(viewYear, viewMonth), pEnd = new Date(payDate(viewYear, viewMonth+1) - 864e5);
-  let d;
-  if (!viewDay){
-    const today = dateOnly(toLocalInput(new Date()));
-    d = today >= pStart && today <= pEnd ? today : (step > 0 ? pStart : pEnd);
-  } else d = new Date(dateOnly(viewDay).getTime() + step * 864e5 + 3600e3);
-  d = dateOnly(toLocalInput(d));
-  if (d < pStart || d > pEnd){ [viewYear, viewMonth] = periodOf(`${toLocalInput(d)}T12:00`); }
-  viewDay = toLocalInput(d); render();
+/* ---------- Selector de fecha: mes, año y día ---------- */
+let dpY = 0, dpM = 0;
+const MONTH_NAMES = Array.from({ length: 12 }, (_, i) => { const n = new Date(2026, i, 1).toLocaleDateString("es-AR", { month: "long" }); return n.charAt(0).toUpperCase() + n.slice(1); });
+function renderDatePicker(){
+  const ms = $("dpMonth"); if (!ms.options.length) MONTH_NAMES.forEach((n, i) => { const o = document.createElement("option"); o.value = i; o.textContent = n; ms.append(o); });
+  const cy = new Date().getFullYear(), yrs = [...data.expenses, ...data.incomes].map(e => Number((e.date || "").slice(0, 4))).filter(Boolean);
+  const y0 = Math.min(cy - 2, dpY, ...yrs), y1 = Math.max(cy + 1, dpY), ys = $("dpYear"); ys.innerHTML = "";
+  for (let y = y0; y <= y1; y++){ const o = document.createElement("option"); o.value = y; o.textContent = y; ys.append(o); }
+  ms.value = String(dpM); ys.value = String(dpY);
+  const dow = $("dpDow"); if (!dow.children.length) ["L","M","M","J","V","S","D"].forEach(l => { const sp = document.createElement("span"); sp.textContent = l; dow.append(sp); });
+  const start = payDate(dpY, dpM), nx = payDate(dpY, dpM + 1), end = new Date(nx.getFullYear(), nx.getMonth(), nx.getDate() - 1);
+  const has = new Set([...data.expenses, ...data.incomes].map(e => e.date.slice(0, 10)));
+  entries().filter(x => x.cardId).forEach(x => has.add(x.date.slice(0, 10)));
+  const today = toLocalInput(new Date()), grid = $("dpGrid"); grid.innerHTML = "";
+  for (let i = 0; i < (start.getDay() + 6) % 7; i++){ const bl = document.createElement("span"); bl.className = "dp-blank"; grid.append(bl); }
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
+    const key = toLocalInput(d), b = document.createElement("button"); b.type = "button";
+    b.className = "dp-day" + (key === today ? " today" : "") + (viewDay === key && viewYear === dpY && viewMonth === dpM ? " sel" : "") + (has.has(key) ? " has" : "");
+    b.textContent = d.getDate();
+    if (d.getTime() === start.getTime() || d.getDate() === 1){ const sm = document.createElement("small"); sm.textContent = d.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""); b.append(sm); }
+    b.setAttribute("aria-label", d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" }));
+    b.onclick = () => { viewYear = dpY; viewMonth = dpM; viewDay = key; closeDp(); if (tab !== "list") setTab("list"); else render(); };
+    grid.append(b);
+  }
 }
-$("dayPrev").onclick = () => moveDay(-1);
-$("dayNext").onclick = () => moveDay(1);
-$("dayAll").onclick = () => { viewDay = null; render(); };
+function openDatePicker(){ dpY = viewYear; dpM = viewMonth; renderDatePicker(); $("dpBg").classList.add("open"); $("dpSheet").classList.add("open"); }
+function closeDp(){ $("dpBg").classList.remove("open"); $("dpSheet").classList.remove("open"); }
+$("monthBtn").onclick = openDatePicker;
+$("dpClose").onclick = closeDp; $("dpBg").onclick = closeDp;
+$("dpMonth").onchange = () => { dpM = Number($("dpMonth").value); renderDatePicker(); };
+$("dpYear").onchange = () => { dpY = Number($("dpYear").value); renderDatePicker(); };
+$("dpPrev").onclick = () => { if (--dpM < 0){ dpM = 11; dpY--; } renderDatePicker(); };
+$("dpNext").onclick = () => { if (++dpM > 11){ dpM = 0; dpY++; } renderDatePicker(); };
+$("dpAll").onclick = () => { viewYear = dpY; viewMonth = dpM; viewDay = null; closeDp(); render(); };
+$("dpToday").onclick = () => { [viewYear, viewMonth] = periodOf(new Date()); viewDay = toLocalInput(new Date()); closeDp(); if (tab !== "list") setTab("list"); else render(); };
 
 /* ---------- Modal de tarjeta ---------- */
 (() => {
