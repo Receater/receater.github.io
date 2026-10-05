@@ -673,6 +673,17 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 
 /* Pasos de "Activá Recy inteligente": el número centrado y visible */
 .ai-step .ai-n{display:grid;place-items:center;width:28px;height:28px;margin:0;border-radius:50%;background:var(--accent);color:#fff;font-size:.9rem;font-weight:700;line-height:1}
+
+.dlg-bg{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.5);display:grid;place-items:center;padding:24px;animation:dlgIn .15s ease}
+.dlg{background:var(--paper);color:var(--ink);border-radius:18px;padding:20px 18px 16px;width:min(380px,100%);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.dlg p{margin:0 0 18px;font-size:1.02rem;line-height:1.45}
+.dlg-acts{display:flex;gap:10px}
+.dlg-acts .btn{flex:1}
+.btn.danger-solid{background:var(--danger);color:#fff;border:0}
+@keyframes dlgIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.dlg-bg{animation:none}}
+
+#syncBtn.logout{color:var(--danger);border-color:var(--danger);background:none}
 </style>
 </head>
 <body>
@@ -1196,7 +1207,7 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
   <h3 id="setTitle">Ajustes</h3>
   <div class="set-group">
     <div class="set-label">Tu cuenta</div>
-    <div class="set-row"><div><strong id="setWho">Sin entrar</strong><span>Tus datos se guardan en tu Google Drive.</span></div><button type="button" class="small-btn" id="syncBtn" hidden></button></div>
+    <div class="set-row"><div><strong id="setWho">Sin entrar</strong><span id="setSync">Entrá con Google para guardar tus datos en tu Drive.</span></div><button type="button" class="small-btn" id="syncBtn" hidden></button></div>
   </div>
   <div class="set-group">
     <div class="set-label">Sueldo</div>
@@ -1252,7 +1263,30 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
   </div>
 </div>
 
-<script>
+<script>/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
+  return new Promise(res => {
+    const bg = document.createElement("div"); bg.className = "dlg-bg";
+    const box = document.createElement("div"); box.className = "dlg"; box.setAttribute("role", cancel ? "alertdialog" : "dialog"); box.setAttribute("aria-modal", "true");
+    const p = document.createElement("p"); p.textContent = msg; box.append(p);
+    const acts = document.createElement("div"); acts.className = "dlg-acts";
+    const done = v => { document.removeEventListener("keydown", onKey, true); bg.remove(); res(v); };
+    if (cancel){ const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = cancel; c.onclick = () => done(false); acts.append(c); }
+    const o = document.createElement("button"); o.type = "button"; o.className = "btn " + (danger ? "danger-solid" : "primary"); o.textContent = ok; o.onclick = () => done(true); acts.append(o);
+    box.append(acts); bg.append(box); document.body.append(bg);
+    const onKey = e => { if (e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); done(false); } else if (e.key === "Enter"){ e.preventDefault(); done(true); } };
+    document.addEventListener("keydown", onKey, true);
+    bg.addEventListener("click", e => { if (e.target === bg) done(false); });
+    setTimeout(() => o.focus(), 30);
+  });
+}
+function uiConfirm(msg){
+  const danger = /^¿(Borrar|Cerrar sesión|Dejás de pagar)/.test(msg);
+  const ok = /^¿Borrar/.test(msg) ? "Borrar" : /^¿Cerrar sesión/.test(msg) ? "Cerrar sesión" : /^¿Dejás de pagar/.test(msg) ? "Dejar de pagar" : "Sí";
+  return uiDialog({ msg, ok, cancel: "Cancelar", danger });
+}
+const uiAlert = msg => uiDialog({ msg, ok: "Entendido" });
+
 /* ---------- Categorías ---------- */
 const CATEGORIES = [
   {id:"super",       name:"Super",             color:"#7BAE3A"},
@@ -1936,7 +1970,7 @@ function renderPayGroup(r){
     if (!pay){ const left = document.createElement("span"); left.textContent = "Pago programado"; foot.append(left); }
     if (pay){
       const undo = document.createElement("button"); undo.type = "button"; undo.className = "linkbtn"; undo.textContent = "Deshacer pago";
-      undo.onclick = () => { if (!confirm("¿Borrar este pago? Las compras vuelven a quedar sin pagar.")) return;
+      undo.onclick = async () => { if (!await uiConfirm("¿Borrar este pago? Las compras vuelven a quedar sin pagar.")) return;
         data.cardPayments = data.cardPayments.filter(p => p !== pay); persist(); render(); };
       undo.textContent = "Borrar pago";
       const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar pago";
@@ -2379,8 +2413,8 @@ function renderLoanPend(){
       const a = document.createElement("span"); a.className = "a"; a.textContent = money(Math.abs(v), cur);
       const st = document.createElement("span"); st.className = "settle"; st.textContent = "Saldar";
       b.append(n, a, st);
-      b.onclick = () => {
-        if (!confirm(v > 0 ? `¿${x.name} te pagó ${money(v, cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, cur)} a ${x.name} y quedan a mano?`)) return;
+      b.onclick = async () => {
+        if (!await uiConfirm(v > 0 ? `¿${x.name} te pagó ${money(v, cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, cur)} a ${x.name} y quedan a mano?`)) return;
         settleWith(x); persist(); feedRecy(); render();
       };
       box.append(b);
@@ -2473,10 +2507,10 @@ $("catSave").onclick = () => {
   catFromFix = false;
   persist(); closeCat(); $("catSearch").value = ""; renderCats(); render();
 };
-$("catDel").onclick = () => {
+$("catDel").onclick = async () => {
   const c = editingCat; if (!c) return;
   const n = data.expenses.filter(e => e.category === c.id).length;
-  if (!confirm(n ? `¿Borrar "${c.name}"? Sus ${n} gastos pasan a Otros.` : `¿Borrar "${c.name}"?`)) return;
+  if (!await uiConfirm(n ? `¿Borrar "${c.name}"? Sus ${n} gastos pasan a Otros.` : `¿Borrar "${c.name}"?`)) return;
   data.expenses.forEach(e => { if (e.category === c.id) e.category = "otros"; });
   data.customCats = data.customCats.filter(x => x !== c);
   if (category === c.id) category = "otros";
@@ -3097,8 +3131,8 @@ $("sheet").addEventListener("submit", ev => {
   closeSheet(); feedRecy(); render();
   if (askPay) setTimeout(openPay, 400);
 });
-$("del").onclick = () => {
-  if (!editing || !confirm(isIncome(editing) ? "¿Borrar este ingreso?" : "¿Borrar este gasto?")) return;
+$("del").onclick = async () => {
+  if (!editing || !await uiConfirm(isIncome(editing) ? "¿Borrar este ingreso?" : "¿Borrar este gasto?")) return;
   data.expenses = data.expenses.filter(e => e !== editing);
   data.incomes = data.incomes.filter(e => e !== editing);
   persist(); closeSheet(); render();
@@ -3173,10 +3207,10 @@ $("cardSave").onclick = () => {
   if (mode === "cardpay" && $("sheet").classList.contains("open")){ cpkCard = card.id; renderCpk(); }
   render();
 };
-$("cardDel").onclick = () => {
+$("cardDel").onclick = async () => {
   const c = editingCard; if (!c) return;
   if (data.expenses.some(e => e.cardId === c.id)){ $("cardErr").textContent = "Esta tarjeta tiene compras cargadas. Cambialas de medio de pago antes de borrarla."; return; }
-  if (!confirm(`¿Borrar ${c.name}?`)) return;
+  if (!await uiConfirm(`¿Borrar ${c.name}?`)) return;
   data.cards = data.cards.filter(x => x !== c); data.cardPayments = data.cardPayments.filter(p => p.cardId !== c.id);
   persist(); closeCard(); render();
 };
@@ -3799,11 +3833,11 @@ $("fixSave").onclick = () => {
   }
   persist(); closeFixed(); render();
 };
-$("fixDel").onclick = () => {
+$("fixDel").onclick = async () => {
   const f = editingFix; if (!f) return;
   const [y, m] = periodOf(new Date()), key = monthKey(y, m), i = fixInstance(f, y, m);
   const used = data.expenses.some(e => e.fixedId === f.id) || (f.how === "card" && f.start < key);
-  if (!confirm(`¿Dejás de pagar ${f.name}? Lo que ya pagaste queda registrado.`)) return;
+  if (!await uiConfirm(`¿Dejás de pagar ${f.name}? Lo que ya pagaste queda registrado.`)) return;
   if (!used && f.start >= key && !["paid","cardpaid","partial"].includes(i.state)) data.fixed = data.fixed.filter(x => x !== f);
   else f.end = ["paid","cardpaid","partial"].includes(i.state) ? key : monthKey(y, m-1);
   persist(); closeFixed(); render();
@@ -3918,7 +3952,7 @@ function renderJars(){
         const a = document.createElement("span"); a.className = "a" + (x.amount < 0 ? " neg" : ""); a.textContent = (x.amount >= 0 ? "+ " : "− ") + money2(Math.abs(x.amount));
         li.append(d, t, a);
         if (x.move){ const del = document.createElement("button"); del.type = "button"; del.className = "x"; del.textContent = "×"; del.setAttribute("aria-label","Borrar movimiento");
-          del.onclick = () => { if (!confirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); render(); };
+          del.onclick = async () => { if (!await uiConfirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); render(); };
           li.style.gridTemplateColumns = "auto minmax(0,1fr) auto auto"; li.append(del); }
         ul.append(li);
       });
@@ -3995,10 +4029,10 @@ $("jarSave").onclick = () => {
   if (jarFromSheet){ jarSel = j.id; jarUserPicked = true; updateJarField(); }
   render();
 };
-$("jarDel").onclick = () => {
+$("jarDel").onclick = async () => {
   const j = editingJar; if (!j) return;
   const linked = data.expenses.filter(e => e.jarId === j.id).length;
-  if (!confirm(linked ? `¿Borrar ${j.name}? Sus ${linked} ahorros cargados quedan sin frasco.` : `¿Borrar ${j.name}?`)) return;
+  if (!await uiConfirm(linked ? `¿Borrar ${j.name}? Sus ${linked} ahorros cargados quedan sin frasco.` : `¿Borrar ${j.name}?`)) return;
   data.expenses.forEach(e => { if (e.jarId === j.id) e.jarId = null; });
   data.jars = data.jars.filter(x => x !== j); data.jarMoves = data.jarMoves.filter(m => m.jarId !== j.id);
   persist(); closeJar(); render();
@@ -4063,8 +4097,10 @@ window.cloud = (() => {
   const onLine = () => location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
   function status(text, cls){
-    btn.hidden = false; btn.textContent = text;
-    btn.classList.toggle("ok", cls === "ok"); btn.classList.toggle("warn", cls === "warn");
+    btn.hidden = false;
+    const st = $("setSync"); if (st) st.textContent = text === "En tu Drive ✓" ? "Tus datos se guardan en tu Drive ✓" : text === "Entrar" ? "Entrá con Google para guardar tus datos en tu Drive." : text === "Se renueva al tocar" ? "Conectada. Se renueva sola cuando tocás algo." : text;
+    btn.textContent = ready ? "Cerrar sesión" : needsRefresh ? "Reconectar" : /Conectando|Guardando/.test(text) ? text : "Entrar con Google";
+    btn.classList.toggle("logout", ready); btn.classList.toggle("primary", !ready && !needsRefresh);
   }
   function showUser(name){
     const el = $("hello");
@@ -4158,7 +4194,7 @@ window.cloud = (() => {
     } catch (e) { status(e.message === "expired" ? "Se renueva al tocar" : "Sin sincronizar", e.message === "expired" ? "ok" : "warn"); }
   }
   async function connect(){
-    if (!onLine()){ alert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
+    if (!onLine()){ uiAlert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
     status("Conectando…");
     const ok = await login("select_account", false);   // al entrar, siempre te deja elegir la cuenta
     if (!ok){ status("Entrar", "warn"); return; }
@@ -4175,8 +4211,8 @@ window.cloud = (() => {
     } catch {}
     await sync();
   }
-  function logout(){
-    if (!confirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
+  async function logout(){
+    if (!await uiConfirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
     try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
     ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); ls.del(LINKED_KEY); ls.del("receater.email"); location.reload();
   }
@@ -4322,8 +4358,8 @@ $("setPpl").onclick = () => { closeSettings(); openPeople(); };
 (() => {
   const linked = (() => { try { return !!localStorage.getItem("receater.linked"); } catch { return false; } })();
   $("wipeBtn").hidden = linked;
-  $("wipeBtn").onclick = () => {
-    if (!confirm("¿Borrar todos los gastos, ingresos, tarjetas, fijos y ahorros de este dispositivo? No se puede deshacer. Si querés guardarlos, exportá un backup antes.")) return;
+  $("wipeBtn").onclick = async () => {
+    if (!await uiConfirm("¿Borrar todos los gastos, ingresos, tarjetas, fijos y ahorros de este dispositivo? No se puede deshacer. Si querés guardarlos, exportá un backup antes.")) return;
     try { localStorage.removeItem(STORE_KEY); localStorage.removeItem("receater.tab"); } catch {}
     location.reload();
   };
@@ -4345,12 +4381,12 @@ $("importFile").onchange = async () => {
   inp.value = "";
   if (!f) return;
   let j;
-  try { j = JSON.parse(await f.text()); } catch { alert("Ese archivo no es un backup de Receater."); return; }
-  if (!j || !Array.isArray(j.expenses)){ alert("Ese archivo no es un backup de Receater."); return; }
+  try { j = JSON.parse(await f.text()); } catch { uiAlert("Ese archivo no es un backup de Receater."); return; }
+  if (!j || !Array.isArray(j.expenses)){ uiAlert("Ese archivo no es un backup de Receater."); return; }
   const n = j.expenses.length + (Array.isArray(j.incomes) ? j.incomes.length : 0);
-  if (!confirm(`Este backup tiene ${n} movimientos. Va a reemplazar todo lo que tenés ahora en la app${$("syncBtn").classList.contains("ok") ? " y en tu Drive" : ""}. ¿Seguimos?`)) return;
+  if (!await uiConfirm(`Este backup tiene ${n} movimientos. Va a reemplazar todo lo que tenés ahora en la app${$("syncBtn").classList.contains("ok") ? " y en tu Drive" : ""}. ¿Seguimos?`)) return;
   if (data.aiKey && !j.aiKey) j.aiKey = data.aiKey;
-  if (!store.save(j)){ alert("No se pudo guardar el backup en este navegador."); return; }
+  if (!store.save(j)){ uiAlert("No se pudo guardar el backup en este navegador."); return; }
   location.reload();
 };
 
