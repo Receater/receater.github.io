@@ -738,6 +738,56 @@ main.wrap{position:relative;z-index:1}
 
 /* El botón flotante siempre por encima de la lista (debajo de las ventanas) */
 .fab{z-index:8}
+
+/* ===== Encabezado, mes y días legibles sobre los fondos ===== */
+.brand{background:color-mix(in srgb, var(--paper) 90%, transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-radius:16px;padding:8px 8px 8px 14px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.month-nav{background:color-mix(in srgb, var(--paper) 90%, transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-radius:16px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.10)}
+.month-nav .icon-btn{border:0;background:var(--bg)}
+.day h2{display:inline-block;background:var(--paper);padding:4px 12px;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,.10);color:var(--ink)}
+.day-nav{background:color-mix(in srgb, var(--paper) 90%, transparent);border-radius:14px;padding:4px}
+.day-nav .icon-btn{border:0;background:var(--bg)}
+
+/* ===== Movimientos como tickets de papel térmico ===== */
+.ticket{
+  --tk:#FBF8F1;--tk-ink:#1F1F1F;--tk-mut:#6E6A62;--tk-line:#D9D3C6;
+  background:var(--tk);
+  background-image:repeating-linear-gradient(0deg, rgba(0,0,0,.018) 0 1px, transparent 1px 3px);
+  color:var(--tk-ink);border-radius:0;padding:7px 0;
+  -webkit-mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/12px 51% repeat-x,
+               conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 51% repeat-x;
+          mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/12px 51% repeat-x,
+               conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 51% repeat-x;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))}
+.ticket.inc{box-shadow:none}
+.ticket.inc .item .amt{color:#1E7A50}
+.ticket .item .cat{color:var(--tk-ink)}
+.ticket .item .sub{color:var(--tk-mut);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;letter-spacing:-.01em}
+.ticket .item .amt{color:var(--tk-ink)}
+.ticket .item .amt.muted{color:var(--tk-mut)}
+.ticket .item .amt.is-usd{color:#1E7A50}
+.ticket .item .of{color:var(--tk-mut)}
+.ticket .chev{color:var(--tk-mut)}
+/* Al desplegar: renglones de ticket */
+.ticket .split-panel{margin:0 14px;padding:8px 0 6px;border-top:1px dashed var(--tk-line);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.84rem;color:var(--tk-ink)}
+.ticket .split-row{border-bottom:1px dotted var(--tk-line);padding:4px 0}
+.ticket .split-row > span:first-child{color:var(--tk-ink)}
+.ticket .split-sum{border-top:1px dashed var(--tk-line);color:var(--tk-mut)}
+.ticket .pay-sum{border-color:var(--tk-line)}
+.ticket .pay-sum .tot{border-top:2px solid var(--tk-ink);padding-top:6px}
+.ticket .pay-h{color:var(--tk-mut)}
+.ticket .linkbtn{color:#2F5BEA}
+.ticket .pill.owe{color:#C9374B;border-color:#C9374B;background:none}
+.ticket .pill.paid{background:#1E8A5B;border-color:#1E8A5B;color:#fff}
+/* La lista de Fijos también son tickets */
+.ticket .fx-item .n{color:var(--tk-ink)}
+.ticket .fx-item .st{color:var(--tk-mut);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem}
+.ticket .fx-item .a{color:var(--tk-ink)}
+.ticket .fx-item .a.usd{color:#1E7A50}
+.ticket .fx-shares .fp-sub{color:var(--tk-ink)}
+.ticket .fx-acts .small-btn{background:#fff;border-color:var(--tk-line);color:var(--tk-ink)}
+.ticket .fx-acts .small-btn.primary{background:#2F5BEA;border-color:#2F5BEA;color:#fff}
 </style>
 </head>
 <body>
