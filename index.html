@@ -788,6 +788,11 @@ main.wrap{position:relative;z-index:1}
 .ticket .fx-shares .fp-sub{color:var(--tk-ink)}
 .ticket .fx-acts .small-btn{background:#fff;border-color:var(--tk-line);color:var(--tk-ink)}
 .ticket .fx-acts .small-btn.primary{background:#2F5BEA;border-color:#2F5BEA;color:#fff}
+
+/* Ticket: sin textura, arriba recto con esquinas apenas redondeadas, dentado solo abajo */
+.ticket{background-image:none;border-radius:4px 4px 0 0;padding:8px 0 8px;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%}
 </style>
 </head>
 <body>
