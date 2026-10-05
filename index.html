@@ -4086,10 +4086,10 @@ window.cloud = (() => {
       s.onload = res; s.onerror = () => rej(new Error("No se pudo cargar Google")); document.head.append(s);
     });
   }
-  async function login(prompt){
+  async function login(prompt, useHint){
     await loadGis();
     return new Promise(res => {
-      const hint = ls.get("receater.email") || undefined;
+      const hint = useHint ? (ls.get("receater.email") || undefined) : undefined;
       const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE, login_hint: hint, hint,
         callback: r => {
           if (r.error){ res(false); return; }
@@ -4157,15 +4157,25 @@ window.cloud = (() => {
   async function connect(){
     if (!onLine()){ alert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
     status("Conectando…");
-    const ok = await login("");
+    const ok = await login("select_account", false);   // al entrar, siempre te deja elegir la cuenta
     if (!ok){ status("Entrar", "warn"); return; }
     $("cloudBanner").hidden = true;
+    // Si entraste con otra cuenta distinta a la de antes, no mezclamos datos: arrancamos limpio con lo de esa cuenta
+    try {
+      const u = (await (await api("https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)")).json()).user || {};
+      const prev = ls.get("receater.email");
+      if (prev && u.emailAddress && u.emailAddress.toLowerCase() !== prev.toLowerCase()){
+        ls.del(LINKED_KEY); ls.del(STORE_KEY); ls.del(USER_KEY);
+        ls.set("receater.email", u.emailAddress);
+        location.reload(); return;
+      }
+    } catch {}
     await sync();
   }
   function logout(){
     if (!confirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
     try { if (token && window.google) google.accounts.oauth2.revoke(token); } catch {}
-    ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); ls.del(LINKED_KEY); location.reload();
+    ls.del(TOKEN_KEY); ls.del(STORE_KEY); ls.del(USER_KEY); ls.del(LINKED_KEY); ls.del("receater.email"); location.reload();
   }
   btn.onclick = () => { if (ready) logout(); else if (needsRefresh) silentRefresh(); else connect(); };
   $("cloudLogin").onclick = connect;
@@ -4176,7 +4186,7 @@ window.cloud = (() => {
   async function silentRefresh(){
     if (!needsRefresh || refreshing) return;
     refreshing = true; status("Conectando…");
-    const ok = await login("");
+    const ok = await login("", true);
     refreshing = false;
     if (ok){ needsRefresh = false; await sync(); } else status("Tocá para reconectar", "warn");
   }
