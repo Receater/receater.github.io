@@ -830,7 +830,7 @@ main.wrap{position:relative;z-index:1}
     <section class="recy-stage" id="stageFixed" aria-label="Fijos del período"></section>
     <section class="card fixed-sum" id="fixedSum"></section>
     <div id="fixedList"></div>
-    <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newFixed">+ Nuevo gasto fijo</button></div>
+    <button type="button" class="small-btn" id="newFixed" hidden>+ Nuevo gasto fijo</button>
   </div>
 
   <div id="viewJars" hidden>
@@ -847,7 +847,7 @@ main.wrap{position:relative;z-index:1}
       </div>
       <div id="jarGrowth"></div>
     </section>
-    <div style="text-align:center;margin-top:16px"><button type="button" class="small-btn" id="newJar">+ Nuevo frasco</button></div>
+    <button type="button" class="small-btn" id="newJar" hidden>+ Nuevo frasco</button>
   </div>
 
 
@@ -3192,7 +3192,9 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("cpSheet").classList.contains("open")) closeCardPay();
   else if ($("paySheet").classList.contains("open")) closePay(); else closeSheet(); });
 document.querySelectorAll(".cur button").forEach(b => b.onclick = () => setCurrency(b.dataset.cur));
-$("openAdd").onclick = () => openSheet();
+/* El botón flotante cambia según la pestaña: cargar, nuevo fijo o nuevo frasco */
+$("openAdd").onclick = () => tab === "fixed" ? openFixed(null) : tab === "jars" ? openJar(null, jarCur) : openSheet();
+function updateFab(){ $("openAdd").textContent = tab === "fixed" ? "+ Nuevo gasto fijo" : tab === "jars" ? "+ Nuevo frasco" : "Darle a Recy"; }
 $("prev").onclick = () => { if (--viewMonth < 0){ viewMonth = 11; viewYear--; } viewDay = null; render(); };
 $("next").onclick = () => { if (++viewMonth > 11){ viewMonth = 0; viewYear++; } viewDay = null; render(); };
 let viewDay = null;
@@ -3737,6 +3739,7 @@ function setScene(t){ if (sceneOn === t) return; sceneOn = t; const f = SCENES[t
 
 function setTab(t){
   tab = t;
+  updateFab();
   setScene(t);
   try { localStorage.setItem("receater.tab", t); } catch {}
   $("tabList").setAttribute("aria-selected", String(t==="list"));
