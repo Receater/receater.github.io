@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Kalam:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#E6E9ED; --paper:#FFFFFF; --ink:#1B2430; --muted:#66707D; --line:#D5DAE0;
@@ -684,6 +684,33 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 @media (prefers-reduced-motion:reduce){.dlg-bg{animation:none}}
 
 #syncBtn.logout{color:var(--danger);border-color:var(--danger);background:none}
+
+/* ===== Pizarra de marcador ===== */
+.board{position:relative}
+.board .lcd{
+  background:
+    radial-gradient(ellipse 45% 30% at 28% 38%, rgba(70,110,190,.07), transparent 70%),
+    radial-gradient(ellipse 35% 25% at 78% 72%, rgba(200,80,90,.05), transparent 70%),
+    radial-gradient(ellipse 30% 20% at 60% 20%, rgba(60,150,100,.05), transparent 70%),
+    linear-gradient(180deg,#FFFFFF,#F4F6F8);
+  color:#1F2A44;border:6px solid #D5DAE1;border-radius:10px;padding:12px 14px 14px;
+  box-shadow:0 0 0 1.5px #9AA3AF, inset 0 1px 0 #fff, inset 0 0 0 1px rgba(0,0,0,.04), 0 8px 18px rgba(0,0,0,.22)}
+.board::after{content:"";display:block;height:9px;margin:0 16px;border-radius:0 0 6px 6px;
+  background:
+    linear-gradient(90deg,transparent 52%,#2F5BEA 52% 61%,transparent 61% 64%,#D0485E 64% 73%,transparent 73% 76%,#2F9E6E 76% 85%,transparent 85%) top/100% 5px no-repeat,
+    linear-gradient(#C3C9D2,#9AA3AF)}
+.board .lcd-label{font-family:"Kalam","Comic Sans MS",cursive;font-weight:700;font-size:.95rem;letter-spacing:.04em;color:#2F5BEA;opacity:1;text-transform:uppercase}
+.board .lcd-big{font-family:"Kalam","Comic Sans MS",cursive;font-weight:700;color:#1F2A44;text-shadow:0 0 1px rgba(31,42,68,.35);letter-spacing:0;font-size:clamp(2rem,10vw,2.8rem);line-height:1.1}
+.board .lcd-big.neg{color:#C9374B;text-shadow:0 0 1px rgba(201,55,75,.35)}
+.board .lcd-usd{font-family:"Kalam",cursive;color:#2F9E6E}
+.board .leds{height:15px;margin-top:10px;background:none;border:2px solid #1F2A44;border-radius:8px 11px 7px 12px / 11px 7px 12px 8px;padding:2px;box-shadow:none}
+.board .leds span{border-radius:5px 8px 5px 9px;background:repeating-linear-gradient(-45deg,#2F9E6E 0 6px,#5BC08F 6px 9px);box-shadow:none}
+.board .leds.over span{background:repeating-linear-gradient(-45deg,#C9374B 0 6px,#E0707F 6px 9px)}
+.board .lcd-meta{font-family:"Kalam","Comic Sans MS",cursive;font-size:1.02rem;line-height:1.35;color:#1F2A44;opacity:1;margin-top:10px}
+.board .mk-ink{color:#1F2A44}
+.board .mk-blue{color:#2F5BEA}
+.board .mk-green{color:#2A8A5C}
+.board .mk-red{color:#C9374B}
 </style>
 </head>
 <body>
@@ -1847,7 +1874,7 @@ function render(){
     }
   }
   if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
-  $("meta").textContent = screen.join("\n");
+  setBoardLines($("meta"), screen);
   $("totalUsd").hidden = true;
 
   let mood = "happy", line = "Todo tranqui por acá.";
@@ -3524,13 +3551,24 @@ function renderCardsDash(list, cur){
 }
 
 /* ---------- Recy en cada pestaña ---------- */
+/* Cada renglón de la pizarra, escrito con un marcador de color según lo que dice */
+function setBoardLines(el, lines){
+  el.innerHTML = "";
+  lines.forEach(t => {
+    const d = document.createElement("div"); d.textContent = t;
+    d.className = "mk " + (/pasaste|Vencidos|Debés|A devolver|Fijos por pagar/i.test(t) ? "mk-red"
+      : /Te deben|te quedan|Te da para|Ahorr|Pagados|meta/i.test(t) ? "mk-green"
+      : /Gastaste|Donde más|Próximo|frasco|vs /i.test(t) ? "mk-blue" : "mk-ink");
+    el.append(d);
+  });
+}
 function renderStage(id, c){
   const el = $(id);
   el.innerHTML = '<div class="board"><div class="lcd"><div class="lcd-label"></div><div class="lcd-big"></div><div class="leds" hidden><span></span></div><div class="lcd-meta"></div></div></div><div class="recy" aria-hidden="true"></div><p class="bubble" aria-live="polite"></p>';
   el.querySelector(".lcd-label").textContent = c.label;
   const big = el.querySelector(".lcd-big"); big.textContent = c.big; big.classList.toggle("neg", !!c.neg);
   if (c.bar != null){ const l = el.querySelector(".leds"); l.hidden = false; l.classList.toggle("over", !!c.over); l.firstElementChild.style.width = Math.max(0, Math.min(100, c.bar * 100)) + "%"; }
-  el.querySelector(".lcd-meta").textContent = (c.lines || []).filter(Boolean).join("\n");
+  setBoardLines(el.querySelector(".lcd-meta"), (c.lines || []).filter(Boolean));
   el.querySelector(".recy").innerHTML = recySVG(c.mood || "happy");
   const bub = el.querySelector(".bubble"); bub.textContent = c.line || "";
   el.querySelector(".recy").onclick = () => flashStage(el);
