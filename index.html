@@ -711,9 +711,20 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 .board .mk-blue{color:#2F5BEA}
 .board .mk-green{color:#2A8A5C}
 .board .mk-red{color:#C9374B}
+
+/* ===== Fondos ilustrados por pestaña ===== */
+:root{--sc-1:#DDE2E8;--sc-2:#CFD5DD;--sc-3:#BCC4CF;--sc-wood:#E3D3BC;--sc-wood2:#D6C2A6;--sc-warm:#EFD9A8;--sc-red:#E8C4C4;--sc-green:#C9DDCF}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--sc-1:#181D24;--sc-2:#1E242D;--sc-3:#27303B;--sc-wood:#2B2620;--sc-wood2:#332C24;--sc-warm:#3A3324;--sc-red:#3A2629;--sc-green:#22302A}
+}
+:root[data-theme="dark"]{--sc-1:#181D24;--sc-2:#1E242D;--sc-3:#27303B;--sc-wood:#2B2620;--sc-wood2:#332C24;--sc-warm:#3A3324;--sc-red:#3A2629;--sc-green:#22302A}
+#scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#scene svg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:100%;width:auto;min-width:100%}
+main.wrap{position:relative;z-index:1}
 </style>
 </head>
 <body>
+<div id="scene" aria-hidden="true"></div>
 <main class="wrap">
   <header class="brand">
     <div class="brand-left">
@@ -1779,6 +1790,7 @@ let [viewYear, viewMonth] = periodOf(now);
 const $ = id => document.getElementById(id);
 
 function render(){
+  setScene(tab);
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
   if (tab === "dash") { renderDash(); stageDash(); renderPaper(); return; }
@@ -3658,8 +3670,74 @@ function stageJars(){
   });
 }
 
+/* ---------- Fondos: cada pestaña con un lugar de verdad, dibujado suave para no molestar ---------- */
+const SCENES = {
+  // Movimientos: un mostrador de negocio con la caja registradora y el ticket saliendo
+  list: () => {
+    let tiles = ""; for (let y = 0; y < 640; y += 40) for (let x = 0; x < 420; x += 40) tiles += `<rect x="${x+1}" y="${y+1}" width="38" height="38" rx="3" fill="var(--sc-1)"/>`;
+    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
+      <rect width="420" height="800" fill="var(--sc-2)"/>${tiles}
+      <rect y="640" width="420" height="22" fill="var(--sc-wood2)"/><rect y="662" width="420" height="138" fill="var(--sc-wood)"/>
+      <g transform="translate(300 560)"><rect x="0" y="30" width="96" height="52" rx="8" fill="var(--sc-3)"/><rect x="10" y="0" width="76" height="40" rx="6" fill="var(--sc-2)"/>
+        <rect x="18" y="8" width="60" height="16" rx="3" fill="var(--sc-green)"/><path d="M60 0 v-40 q0 -8 8 -8 h12 v48" fill="#fff" opacity=".8"/>
+        <g fill="var(--sc-1)"><rect x="12" y="42" width="14" height="8" rx="2"/><rect x="30" y="42" width="14" height="8" rx="2"/><rect x="48" y="42" width="14" height="8" rx="2"/><rect x="12" y="56" width="14" height="8" rx="2"/><rect x="30" y="56" width="14" height="8" rx="2"/><rect x="48" y="56" width="14" height="8" rx="2"/></g></g>
+      <g transform="translate(26 576)"><rect x="6" y="40" width="34" height="30" rx="4" fill="var(--sc-red)"/><path d="M23 40 C 8 20, 10 4, 22 0 C 30 10, 36 24, 23 40 Z" fill="var(--sc-green)"/><path d="M23 40 C 36 26, 46 18, 44 8 C 34 10, 26 24, 23 40 Z" fill="var(--sc-green)"/></g>
+      <g transform="translate(110 604)" fill="var(--sc-3)"><rect width="70" height="36" rx="6"/><rect x="8" y="-10" width="54" height="12" rx="4" fill="var(--sc-2)"/></g>
+    </svg>`;
+  },
+  // Resumen: una calle de Nueva York con edificios, tanque de agua, farol, kiosco de diarios y un taxi
+  dash: () => {
+    const bld = (x, w, h, c) => { let win = ""; for (let yy = 800 - h + 14; yy < 760; yy += 22) for (let xx = x + 8; xx < x + w - 10; xx += 16) win += `<rect x="${xx}" y="${yy}" width="8" height="11" rx="1" fill="var(--sc-1)"/>`;
+      return `<rect x="${x}" y="${800 - h}" width="${w}" height="${h}" fill="${c}"/>${win}`; };
+    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
+      <rect width="420" height="800" fill="var(--sc-1)"/>
+      ${bld(-10, 90, 420, "var(--sc-2)")}${bld(78, 70, 520, "var(--sc-3)")}${bld(146, 100, 360, "var(--sc-2)")}${bld(244, 64, 600, "var(--sc-3)")}${bld(306, 120, 440, "var(--sc-2)")}
+      <g transform="translate(330 330)" fill="var(--sc-3)"><path d="M0 30 q20 -14 40 0 v34 h-40z"/><rect x="4" y="64" width="3" height="26"/><rect x="33" y="64" width="3" height="26"/><path d="M-2 30 l22 -16 22 16z"/></g>
+      <path d="M262 200 l6 -40 6 40z" fill="var(--sc-3)"/>
+      <rect y="740" width="420" height="60" fill="var(--sc-2)"/><rect y="736" width="420" height="6" fill="var(--sc-3)"/>
+      <g transform="translate(40 640)"><rect x="0" y="20" width="70" height="80" rx="4" fill="var(--sc-red)"/><rect x="-4" y="12" width="78" height="12" rx="3" fill="var(--sc-3)"/>
+        <text x="35" y="44" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="13" fill="var(--sc-1)">NEWS</text>
+        <rect x="10" y="52" width="22" height="28" fill="var(--sc-1)"/><rect x="38" y="52" width="22" height="28" fill="var(--sc-1)"/></g>
+      <g transform="translate(372 560)" fill="var(--sc-3)"><rect x="0" y="0" width="5" height="180"/><path d="M-14 0 h33 l-6 -14 h-21z"/></g>
+      <g transform="translate(200 712)"><rect x="0" y="6" width="96" height="22" rx="8" fill="var(--sc-warm)"/><path d="M18 6 l10 -14 h40 l12 14z" fill="var(--sc-warm)"/>
+        <rect x="34" y="-14" width="24" height="7" rx="2" fill="var(--sc-3)"/><circle cx="22" cy="30" r="8" fill="var(--sc-3)"/><circle cx="74" cy="30" r="8" fill="var(--sc-3)"/></g>
+    </svg>`;
+  },
+  // Fijos: la pared con el calendario, el reloj y las facturas en el corcho
+  fixed: () => {
+    let cal = ""; for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++){ const x = 32 + c * 22, y = 120 + r * 20;
+      cal += `<rect x="${x}" y="${y}" width="18" height="16" rx="2" fill="var(--sc-1)"/>`;
+      if ((r === 0 && c === 4) || (r === 2 && c === 1) || (r === 3 && c === 5)) cal += `<circle cx="${x + 9}" cy="${y + 8}" r="10" fill="none" stroke="var(--sc-red)" stroke-width="2.5"/>`; }
+    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
+      <rect width="420" height="800" fill="var(--sc-1)"/>
+      <g opacity=".9"><rect x="20" y="70" width="178" height="170" rx="6" fill="var(--sc-2)"/><rect x="20" y="70" width="178" height="38" rx="6" fill="var(--sc-red)"/><circle cx="60" cy="70" r="5" fill="var(--sc-3)"/><circle cx="158" cy="70" r="5" fill="var(--sc-3)"/>${cal}</g>
+      <g transform="translate(330 140)"><circle r="46" fill="var(--sc-2)"/><circle r="38" fill="var(--sc-1)"/><path d="M0 0 V-26 M0 0 L18 10" stroke="var(--sc-3)" stroke-width="5" stroke-linecap="round"/></g>
+      <g transform="translate(40 540)"><rect width="340" height="200" rx="10" fill="var(--sc-wood)"/>
+        <rect x="24" y="24" width="80" height="104" rx="3" fill="var(--sc-1)" transform="rotate(-4 64 76)"/><rect x="130" y="34" width="86" height="70" rx="3" fill="var(--sc-warm)" transform="rotate(3 173 69)"/>
+        <rect x="236" y="20" width="80" height="120" rx="3" fill="var(--sc-1)" transform="rotate(5 276 80)"/><rect x="140" y="120" width="70" height="60" rx="3" fill="var(--sc-green)" transform="rotate(-3 175 150)"/>
+        <g fill="var(--sc-red)"><circle cx="64" cy="28" r="5"/><circle cx="173" cy="36" r="5"/><circle cx="276" cy="24" r="5"/><circle cx="175" cy="122" r="5"/></g></g>
+    </svg>`;
+  },
+  // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas
+  jars: () => {
+    let sh = "", seed = 7; const cols = ["var(--sc-green)","var(--sc-warm)","var(--sc-red)","var(--sc-3)"];
+    for (let i = 0; i < 6; i++){ const y = 120 + i * 120;
+      sh += `<rect x="0" y="${y}" width="420" height="12" fill="var(--sc-wood2)"/><rect x="0" y="${y + 12}" width="420" height="5" fill="var(--sc-3)" opacity=".5"/>`;
+      let x = 10 + (i % 2) * 16;
+      while (x < 400){ seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280; seed = (seed * 9301 + 49297) % 233280; const r2 = seed / 233280;
+        const k = Math.floor(r * 4), w = 26 + Math.floor(r2 * 26), h = 40 + Math.floor(r * 44);
+        if (k === 1) sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="4" fill="${cols[(x + i) % 4]}"/><rect x="${x}" y="${y - h + 8}" width="${w}" height="10" fill="var(--sc-1)" opacity=".7"/>`;
+        else sh += `<rect x="${x + 3}" y="${y - h - 8}" width="${w - 6}" height="10" rx="3" fill="${cols[(x + i + 1) % 4]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="9" fill="var(--sc-2)"/><rect x="${x + 4}" y="${y - h * .55}" width="${w - 8}" height="${h * .55 - 4}" rx="6" fill="${cols[(x + i) % 4]}" opacity=".9"/>`;
+        x += w + 8 + Math.floor(r2 * 18); } }
+    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice"><rect width="420" height="800" fill="var(--sc-wood)"/><rect x="0" y="0" width="420" height="800" fill="var(--sc-1)" opacity=".55"/>${sh}</svg>`;
+  }
+};
+let sceneOn = null;
+function setScene(t){ if (sceneOn === t) return; sceneOn = t; const f = SCENES[t]; $("scene").innerHTML = f ? f() : ""; }
+
 function setTab(t){
   tab = t;
+  setScene(t);
   try { localStorage.setItem("receater.tab", t); } catch {}
   $("tabList").setAttribute("aria-selected", String(t==="list"));
   $("tabDash").setAttribute("aria-selected", String(t==="dash"));
