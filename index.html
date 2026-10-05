@@ -2795,7 +2795,7 @@ function aiSetupLabel(){
     $("tellBox").hidden = !tellOk || !aiKey(); $("aiInvite").hidden = !tellOk || !!aiKey();
   }
   let dis = false; try { dis = !!localStorage.getItem("receater.aiInviteOff"); } catch {}
-  $("aiCard").hidden = !!aiKey() || dis;
+  $("aiCard").hidden = true;   // la invitación aparece solo al querer cargar
 }
 async function aiCall(parts){
   const key = aiKey(); if (!key) throw { code: "nokey" };
