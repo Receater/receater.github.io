@@ -699,28 +699,42 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
   background:
     linear-gradient(90deg,transparent 52%,#2F5BEA 52% 61%,transparent 61% 64%,#D0485E 64% 73%,transparent 73% 76%,#2F9E6E 76% 85%,transparent 85%) top/100% 5px no-repeat,
     linear-gradient(#C3C9D2,#9AA3AF)}
-.board .lcd-label{font-family:"Kalam","Comic Sans MS",cursive;font-weight:700;font-size:.95rem;letter-spacing:.04em;color:#2F5BEA;opacity:1;text-transform:uppercase}
-.board .lcd-big{font-family:"Kalam","Comic Sans MS",cursive;font-weight:700;color:#1F2A44;text-shadow:0 0 1px rgba(31,42,68,.35);letter-spacing:0;font-size:clamp(2rem,10vw,2.8rem);line-height:1.1}
+.board .lcd-label{font-family:var(--body);font-weight:700;font-size:.78rem;letter-spacing:.12em;color:#2F5BEA;opacity:1;text-transform:uppercase}
+.board .lcd-big{font-family:var(--display);font-weight:700;color:#1F2A44;text-shadow:none;letter-spacing:-.02em;font-size:clamp(2rem,10vw,2.7rem);line-height:1.1}
 .board .lcd-big.neg{color:#C9374B;text-shadow:0 0 1px rgba(201,55,75,.35)}
-.board .lcd-usd{font-family:"Kalam",cursive;color:#2F9E6E}
-.board .leds{height:15px;margin-top:10px;background:none;border:2px solid #1F2A44;border-radius:8px 11px 7px 12px / 11px 7px 12px 8px;padding:2px;box-shadow:none}
-.board .leds span{border-radius:5px 8px 5px 9px;background:repeating-linear-gradient(-45deg,#2F9E6E 0 6px,#5BC08F 6px 9px);box-shadow:none}
-.board .leds.over span{background:repeating-linear-gradient(-45deg,#C9374B 0 6px,#E0707F 6px 9px)}
-.board .lcd-meta{font-family:"Kalam","Comic Sans MS",cursive;font-size:1.02rem;line-height:1.35;color:#1F2A44;opacity:1;margin-top:10px}
+.board .lcd-usd{font-family:var(--display);color:#2F9E6E}
+.board .leds{height:12px;margin-top:10px;background:#E6EAF0;border:0;border-radius:99px;padding:0;box-shadow:inset 0 1px 2px rgba(0,0,0,.08)}
+.board .leds span{border-radius:99px;background:linear-gradient(90deg,#2F9E6E,#4CC08A);box-shadow:none}
+.board .leds.over span{background:linear-gradient(90deg,#C9374B,#E0707F)}
+.board .lcd-meta{font-family:var(--body);font-weight:600;font-size:.92rem;line-height:1.45;color:#1F2A44;opacity:1;margin-top:10px}
 .board .mk-ink{color:#1F2A44}
 .board .mk-blue{color:#2F5BEA}
 .board .mk-green{color:#2A8A5C}
 .board .mk-red{color:#C9374B}
 
 /* ===== Fondos ilustrados por pestaña ===== */
-:root{--sc-1:#DDE2E8;--sc-2:#CFD5DD;--sc-3:#BCC4CF;--sc-wood:#E3D3BC;--sc-wood2:#D6C2A6;--sc-warm:#EFD9A8;--sc-red:#E8C4C4;--sc-green:#C9DDCF}
+:root{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--sc-1:#181D24;--sc-2:#1E242D;--sc-3:#27303B;--sc-wood:#2B2620;--sc-wood2:#332C24;--sc-warm:#3A3324;--sc-red:#3A2629;--sc-green:#22302A}
+  :root:not([data-theme="light"]){--sc-1:#2A3446;--sc-2:#222B3A;--sc-3:#3A4760;--sc-wood:#5C4330;--sc-wood2:#74553A;--sc-warm:#C9973A;--sc-red:#B0604E;--sc-green:#3F8C6B;--sc-blue:#3E6292;--sc-sky:#1B2944}
 }
-:root[data-theme="dark"]{--sc-1:#181D24;--sc-2:#1E242D;--sc-3:#27303B;--sc-wood:#2B2620;--sc-wood2:#332C24;--sc-warm:#3A3324;--sc-red:#3A2629;--sc-green:#22302A}
+:root[data-theme="dark"]{--sc-1:#2A3446;--sc-2:#222B3A;--sc-3:#3A4760;--sc-wood:#5C4330;--sc-wood2:#74553A;--sc-warm:#C9973A;--sc-red:#B0604E;--sc-green:#3F8C6B;--sc-blue:#3E6292;--sc-sky:#1B2944}
 #scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 #scene svg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:100%;width:auto;min-width:100%}
 main.wrap{position:relative;z-index:1}
+
+/* Frascos: cada uno sobre su estante de madera */
+.jar-tile{background:linear-gradient(180deg,#E9D4B4,#DCC09A);border:3px solid #9A6B3F;border-bottom-width:10px;border-radius:12px;color:#3A2A1A;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 4px 10px rgba(0,0,0,.18)}
+.jar-tile .jar-sub{color:#6B4F33}
+.jar-tile .jar-bal.usd{color:#1E7A50}
+.jar-tile .jar-meter{background:rgba(90,60,30,.18)}
+.jar-tile[aria-expanded="true"]{box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.18)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .jar-tile{background:linear-gradient(180deg,#6B4E36,#5A402B);border-color:#3E2A1A;color:#F5E7D3}
+  :root:not([data-theme="light"]) .jar-tile .jar-sub{color:#E3CBAA}
+  :root:not([data-theme="light"]) .jar-tile .jar-bal.usd{color:#7FE0AE}
+  :root:not([data-theme="light"]) .jar-tile .jar-meter{background:rgba(0,0,0,.25)}
+}
 </style>
 </head>
 <body>
@@ -3674,64 +3688,85 @@ function stageJars(){
 
 /* ---------- Fondos: cada pestaña con un lugar de verdad, dibujado suave para no molestar ---------- */
 const SCENES = {
-  // Movimientos: un mostrador de negocio con la caja registradora y el ticket saliendo
+  // Movimientos: adentro de un almacén. Toldo rayado, estantes con productos, cartel de ABIERTO y el mostrador con la caja
   list: () => {
-    let tiles = ""; for (let y = 0; y < 640; y += 40) for (let x = 0; x < 420; x += 40) tiles += `<rect x="${x+1}" y="${y+1}" width="38" height="38" rx="3" fill="var(--sc-1)"/>`;
+    let shelves = ""; const prod = ["var(--sc-red)","var(--sc-warm)","var(--sc-green)","var(--sc-blue)"]; let sd = 3;
+    for (let r = 0; r < 4; r++){ const y = 250 + r * 92; shelves += `<rect x="18" y="${y}" width="384" height="10" rx="2" fill="var(--sc-wood2)"/>`;
+      for (let x = 26; x < 392;){ sd = (sd * 9301 + 49297) % 233280; const q = sd / 233280, w = 18 + Math.floor(q * 22), h = 34 + Math.floor(q * 40);
+        shelves += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="3" fill="${prod[Math.floor(q * 4)]}"/><rect x="${x + 3}" y="${y - h + 8}" width="${w - 6}" height="8" rx="2" fill="var(--sc-1)" opacity=".8"/>`; x += w + 6; } }
+    let awn = ""; for (let x = 0; x < 420; x += 42) awn += `<path d="M${x} 0 h42 v62 q-21 18 -42 0z" fill="${(x / 42) % 2 ? "var(--sc-1)" : "var(--sc-red)"}"/>`;
     return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-2)"/>${tiles}
-      <rect y="640" width="420" height="22" fill="var(--sc-wood2)"/><rect y="662" width="420" height="138" fill="var(--sc-wood)"/>
-      <g transform="translate(300 560)"><rect x="0" y="30" width="96" height="52" rx="8" fill="var(--sc-3)"/><rect x="10" y="0" width="76" height="40" rx="6" fill="var(--sc-2)"/>
-        <rect x="18" y="8" width="60" height="16" rx="3" fill="var(--sc-green)"/><path d="M60 0 v-40 q0 -8 8 -8 h12 v48" fill="#fff" opacity=".8"/>
-        <g fill="var(--sc-1)"><rect x="12" y="42" width="14" height="8" rx="2"/><rect x="30" y="42" width="14" height="8" rx="2"/><rect x="48" y="42" width="14" height="8" rx="2"/><rect x="12" y="56" width="14" height="8" rx="2"/><rect x="30" y="56" width="14" height="8" rx="2"/><rect x="48" y="56" width="14" height="8" rx="2"/></g></g>
-      <g transform="translate(26 576)"><rect x="6" y="40" width="34" height="30" rx="4" fill="var(--sc-red)"/><path d="M23 40 C 8 20, 10 4, 22 0 C 30 10, 36 24, 23 40 Z" fill="var(--sc-green)"/><path d="M23 40 C 36 26, 46 18, 44 8 C 34 10, 26 24, 23 40 Z" fill="var(--sc-green)"/></g>
-      <g transform="translate(110 604)" fill="var(--sc-3)"><rect width="70" height="36" rx="6"/><rect x="8" y="-10" width="54" height="12" rx="4" fill="var(--sc-2)"/></g>
+      <rect width="420" height="800" fill="var(--sc-2)"/>${awn}${shelves}
+      <g transform="translate(150 96)"><path d="M30 0 L60 -20 L90 0" stroke="var(--sc-3)" stroke-width="3" fill="none"/><rect x="0" y="0" width="120" height="40" rx="8" fill="var(--sc-green)"/>
+        <text x="60" y="27" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="18" fill="#fff" letter-spacing="2">ABIERTO</text></g>
+      <rect y="640" width="420" height="20" fill="var(--sc-wood2)"/><rect y="660" width="420" height="140" fill="var(--sc-wood)"/>
+      <g transform="translate(286 548)"><rect x="0" y="40" width="110" height="56" rx="10" fill="var(--sc-3)"/><rect x="12" y="4" width="86" height="46" rx="8" fill="var(--sc-blue)"/>
+        <rect x="22" y="14" width="66" height="18" rx="4" fill="var(--sc-green)"/><path d="M64 4 v-44 q0 -10 10 -10 h14 v54" fill="#fff"/>
+        <g fill="var(--sc-1)"><rect x="12" y="54" width="18" height="10" rx="3"/><rect x="34" y="54" width="18" height="10" rx="3"/><rect x="56" y="54" width="18" height="10" rx="3"/><rect x="78" y="54" width="18" height="10" rx="3"/><rect x="12" y="70" width="18" height="10" rx="3"/><rect x="34" y="70" width="18" height="10" rx="3"/><rect x="56" y="70" width="18" height="10" rx="3"/><rect x="78" y="70" width="18" height="10" rx="3"/></g></g>
+      <g transform="translate(24 568)"><rect x="8" y="44" width="38" height="30" rx="5" fill="var(--sc-red)"/><path d="M27 44 C 10 24, 12 6, 26 0 C 34 12, 40 26, 27 44 Z" fill="var(--sc-green)"/><path d="M27 44 C 42 28, 52 20, 50 8 C 38 12, 30 26, 27 44 Z" fill="var(--sc-green)"/></g>
+      <g transform="translate(110 590)"><path d="M0 20 h80 l-8 50 h-64z" fill="var(--sc-warm)"/><path d="M10 20 q30 -30 60 0" stroke="var(--sc-3)" stroke-width="4" fill="none"/><circle cx="24" cy="18" r="9" fill="var(--sc-red)"/><circle cx="44" cy="14" r="10" fill="var(--sc-green)"/><circle cx="60" cy="19" r="8" fill="var(--sc-warm)"/></g>
     </svg>`;
   },
-  // Resumen: una calle de Nueva York con edificios, tanque de agua, farol, kiosco de diarios y un taxi
+  // Resumen: una calle de Nueva York con cielo, nubes, ventanas prendidas, árboles, farol, kiosco de diarios y un taxi
   dash: () => {
-    const bld = (x, w, h, c) => { let win = ""; for (let yy = 800 - h + 14; yy < 760; yy += 22) for (let xx = x + 8; xx < x + w - 10; xx += 16) win += `<rect x="${xx}" y="${yy}" width="8" height="11" rx="1" fill="var(--sc-1)"/>`;
+    let sd = 11;
+    const bld = (x, w, h, c) => { let win = "";
+      for (let yy = 800 - h + 16; yy < 690; yy += 24) for (let xx = x + 9; xx < x + w - 12; xx += 17){ sd = (sd * 9301 + 49297) % 233280; const on = sd / 233280 > .62;
+        win += `<rect x="${xx}" y="${yy}" width="9" height="12" rx="1.5" fill="${on ? "var(--sc-warm)" : "var(--sc-1)"}"/>`; }
       return `<rect x="${x}" y="${800 - h}" width="${w}" height="${h}" fill="${c}"/>${win}`; };
+    const cloud = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})" fill="var(--sc-1)" opacity=".9"><circle cx="20" cy="20" r="16"/><circle cx="44" cy="14" r="20"/><circle cx="68" cy="22" r="14"/><rect x="18" y="20" width="56" height="16" rx="8"/></g>`;
+    const tree = x => `<g transform="translate(${x} 664)"><rect x="-4" y="30" width="8" height="40" fill="var(--sc-wood2)"/><circle cx="0" cy="20" r="26" fill="var(--sc-green)"/><circle cx="-14" cy="34" r="16" fill="var(--sc-green)"/><circle cx="14" cy="34" r="16" fill="var(--sc-green)"/></g>`;
     return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-1)"/>
-      ${bld(-10, 90, 420, "var(--sc-2)")}${bld(78, 70, 520, "var(--sc-3)")}${bld(146, 100, 360, "var(--sc-2)")}${bld(244, 64, 600, "var(--sc-3)")}${bld(306, 120, 440, "var(--sc-2)")}
-      <g transform="translate(330 330)" fill="var(--sc-3)"><path d="M0 30 q20 -14 40 0 v34 h-40z"/><rect x="4" y="64" width="3" height="26"/><rect x="33" y="64" width="3" height="26"/><path d="M-2 30 l22 -16 22 16z"/></g>
-      <path d="M262 200 l6 -40 6 40z" fill="var(--sc-3)"/>
-      <rect y="740" width="420" height="60" fill="var(--sc-2)"/><rect y="736" width="420" height="6" fill="var(--sc-3)"/>
-      <g transform="translate(40 640)"><rect x="0" y="20" width="70" height="80" rx="4" fill="var(--sc-red)"/><rect x="-4" y="12" width="78" height="12" rx="3" fill="var(--sc-3)"/>
-        <text x="35" y="44" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="13" fill="var(--sc-1)">NEWS</text>
-        <rect x="10" y="52" width="22" height="28" fill="var(--sc-1)"/><rect x="38" y="52" width="22" height="28" fill="var(--sc-1)"/></g>
-      <g transform="translate(372 560)" fill="var(--sc-3)"><rect x="0" y="0" width="5" height="180"/><path d="M-14 0 h33 l-6 -14 h-21z"/></g>
-      <g transform="translate(200 712)"><rect x="0" y="6" width="96" height="22" rx="8" fill="var(--sc-warm)"/><path d="M18 6 l10 -14 h40 l12 14z" fill="var(--sc-warm)"/>
-        <rect x="34" y="-14" width="24" height="7" rx="2" fill="var(--sc-3)"/><circle cx="22" cy="30" r="8" fill="var(--sc-3)"/><circle cx="74" cy="30" r="8" fill="var(--sc-3)"/></g>
+      <rect width="420" height="800" fill="var(--sc-sky)"/>${cloud(20, 70, 1)}${cloud(260, 130, .8)}${cloud(150, 220, .6)}
+      <circle cx="350" cy="80" r="28" fill="var(--sc-warm)" opacity=".85"/>
+      ${bld(-10, 92, 430, "var(--sc-blue)")}${bld(80, 72, 540, "var(--sc-3)")}${bld(150, 102, 370, "var(--sc-red)")}${bld(250, 66, 610, "var(--sc-3)")}${bld(314, 116, 450, "var(--sc-blue)")}
+      <path d="M273 190 l10 -46 10 46z" fill="var(--sc-3)"/>
+      <g transform="translate(336 316)"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>
+      <rect y="730" width="420" height="70" fill="var(--sc-3)"/><rect y="724" width="420" height="8" fill="var(--sc-2)"/>
+      <g fill="var(--sc-1)" opacity=".7"><rect x="20" y="770" width="40" height="6" rx="3"/><rect x="120" y="770" width="40" height="6" rx="3"/><rect x="220" y="770" width="40" height="6" rx="3"/><rect x="320" y="770" width="40" height="6" rx="3"/></g>
+      ${tree(140)}${tree(300)}
+      <g transform="translate(28 626)"><rect x="0" y="22" width="80" height="78" rx="5" fill="var(--sc-red)"/><rect x="-6" y="12" width="92" height="14" rx="4" fill="var(--sc-wood2)"/>
+        <text x="40" y="47" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="15" fill="#fff">NEWS</text>
+        <rect x="10" y="56" width="26" height="32" fill="var(--sc-1)"/><rect x="44" y="56" width="26" height="32" fill="var(--sc-1)"/></g>
+      <g transform="translate(386 540)" fill="var(--sc-3)"><rect x="0" y="0" width="5" height="190"/><path d="M-16 0 h37 l-7 -16 h-23z"/><circle cx="2" cy="4" r="6" fill="var(--sc-warm)"/></g>
+      <g transform="translate(196 700)"><rect x="0" y="6" width="104" height="24" rx="9" fill="var(--sc-warm)"/><path d="M20 6 l11 -16 h42 l13 16z" fill="var(--sc-warm)"/><path d="M34 4 l7 -10 h16 v10z M61 4 v-10 h10 l8 10z" fill="var(--sc-sky)"/>
+        <rect x="38" y="-18" width="26" height="8" rx="2" fill="var(--sc-3)"/><circle cx="24" cy="32" r="9" fill="var(--sc-3)"/><circle cx="80" cy="32" r="9" fill="var(--sc-3)"/></g>
     </svg>`;
   },
-  // Fijos: la pared con el calendario, el reloj y las facturas en el corcho
+  // Fijos: el rincón de las cuentas de la casa. Calendario con días marcados, reloj, corcho con las facturas (luz, gas, agua, internet, alquiler) y el escritorio
   fixed: () => {
-    let cal = ""; for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++){ const x = 32 + c * 22, y = 120 + r * 20;
-      cal += `<rect x="${x}" y="${y}" width="18" height="16" rx="2" fill="var(--sc-1)"/>`;
-      if ((r === 0 && c === 4) || (r === 2 && c === 1) || (r === 3 && c === 5)) cal += `<circle cx="${x + 9}" cy="${y + 8}" r="10" fill="none" stroke="var(--sc-red)" stroke-width="2.5"/>`; }
+    let cal = ""; for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++){ const x = 34 + c * 24, y = 124 + r * 22;
+      cal += `<rect x="${x}" y="${y}" width="20" height="18" rx="3" fill="var(--sc-2)"/>`;
+      if ((r === 0 && c === 4) || (r === 2 && c === 1) || (r === 3 && c === 5) || (r === 1 && c === 6)) cal += `<circle cx="${x + 10}" cy="${y + 9}" r="12" fill="none" stroke="var(--sc-red)" stroke-width="3"/>`; }
+    const bill = (x, y, rot, label, col) => `<g transform="translate(${x} ${y}) rotate(${rot})"><rect width="88" height="104" rx="4" fill="#fff"/><rect width="88" height="24" rx="4" fill="${col}"/>
+      <text x="44" y="17" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="12" fill="#fff">${label}</text>
+      <rect x="12" y="38" width="64" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="52" width="48" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="76" width="34" height="12" rx="3" fill="${col}" opacity=".8"/>
+      <circle cx="44" cy="2" r="5" fill="var(--sc-red)"/></g>`;
     return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-1)"/>
-      <g opacity=".9"><rect x="20" y="70" width="178" height="170" rx="6" fill="var(--sc-2)"/><rect x="20" y="70" width="178" height="38" rx="6" fill="var(--sc-red)"/><circle cx="60" cy="70" r="5" fill="var(--sc-3)"/><circle cx="158" cy="70" r="5" fill="var(--sc-3)"/>${cal}</g>
-      <g transform="translate(330 140)"><circle r="46" fill="var(--sc-2)"/><circle r="38" fill="var(--sc-1)"/><path d="M0 0 V-26 M0 0 L18 10" stroke="var(--sc-3)" stroke-width="5" stroke-linecap="round"/></g>
-      <g transform="translate(40 540)"><rect width="340" height="200" rx="10" fill="var(--sc-wood)"/>
-        <rect x="24" y="24" width="80" height="104" rx="3" fill="var(--sc-1)" transform="rotate(-4 64 76)"/><rect x="130" y="34" width="86" height="70" rx="3" fill="var(--sc-warm)" transform="rotate(3 173 69)"/>
-        <rect x="236" y="20" width="80" height="120" rx="3" fill="var(--sc-1)" transform="rotate(5 276 80)"/><rect x="140" y="120" width="70" height="60" rx="3" fill="var(--sc-green)" transform="rotate(-3 175 150)"/>
-        <g fill="var(--sc-red)"><circle cx="64" cy="28" r="5"/><circle cx="173" cy="36" r="5"/><circle cx="276" cy="24" r="5"/><circle cx="175" cy="122" r="5"/></g></g>
+      <rect width="420" height="800" fill="var(--sc-2)"/><rect width="420" height="800" fill="var(--sc-1)" opacity=".5"/>
+      <g><rect x="22" y="72" width="192" height="182" rx="8" fill="var(--sc-1)"/><rect x="22" y="72" width="192" height="40" rx="8" fill="var(--sc-red)"/>
+        <text x="118" y="98" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="15" fill="#fff">ESTE MES</text>
+        <circle cx="64" cy="72" r="5" fill="var(--sc-3)"/><circle cx="172" cy="72" r="5" fill="var(--sc-3)"/>${cal}</g>
+      <g transform="translate(330 150)"><circle r="50" fill="var(--sc-warm)"/><circle r="40" fill="var(--sc-1)"/><path d="M0 0 V-28 M0 0 L20 10" stroke="var(--sc-3)" stroke-width="5" stroke-linecap="round"/><circle r="4" fill="var(--sc-3)"/></g>
+      <g transform="translate(22 330)"><rect width="376" height="270" rx="12" fill="var(--sc-wood)"/><rect x="8" y="8" width="360" height="254" rx="8" fill="var(--sc-wood2)" opacity=".35"/>
+        ${bill(18, 22, -5, "LUZ", "#E0A93B")}${bill(128, 30, 3, "GAS", "#3B7DD8")}${bill(240, 18, 5, "AGUA", "#1FA3B3")}${bill(62, 142, 4, "INTERNET", "#7A5AC8")}${bill(196, 146, -4, "ALQUILER", "#D0485E")}</g>
+      <rect y="660" width="420" height="140" fill="var(--sc-wood)"/><rect y="654" width="420" height="10" fill="var(--sc-wood2)"/>
+      <g transform="translate(300 560)"><path d="M10 100 h40" stroke="var(--sc-3)" stroke-width="6" stroke-linecap="round"/><path d="M30 100 V40 L60 10" stroke="var(--sc-3)" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M48 0 l34 18 -14 22 -32 -16z" fill="var(--sc-warm)"/></g>
+      <g transform="translate(60 610)"><rect x="0" y="10" width="34" height="40" rx="6" fill="var(--sc-red)"/><path d="M34 20 q14 0 14 12 t-14 12" stroke="var(--sc-red)" stroke-width="5" fill="none"/></g>
     </svg>`;
   },
   // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas
   jars: () => {
-    let sh = "", seed = 7; const cols = ["var(--sc-green)","var(--sc-warm)","var(--sc-red)","var(--sc-3)"];
+    let sh = "", seed = 7; const cols = ["var(--sc-green)","var(--sc-warm)","var(--sc-red)","var(--sc-blue)"];
     for (let i = 0; i < 6; i++){ const y = 120 + i * 120;
-      sh += `<rect x="0" y="${y}" width="420" height="12" fill="var(--sc-wood2)"/><rect x="0" y="${y + 12}" width="420" height="5" fill="var(--sc-3)" opacity=".5"/>`;
+      sh += `<rect x="0" y="${y}" width="420" height="14" fill="var(--sc-wood2)"/><rect x="0" y="${y + 14}" width="420" height="6" fill="#000" opacity=".12"/>`;
       let x = 10 + (i % 2) * 16;
       while (x < 400){ seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280; seed = (seed * 9301 + 49297) % 233280; const r2 = seed / 233280;
         const k = Math.floor(r * 4), w = 26 + Math.floor(r2 * 26), h = 40 + Math.floor(r * 44);
-        if (k === 1) sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="4" fill="${cols[(x + i) % 4]}"/><rect x="${x}" y="${y - h + 8}" width="${w}" height="10" fill="var(--sc-1)" opacity=".7"/>`;
-        else sh += `<rect x="${x + 3}" y="${y - h - 8}" width="${w - 6}" height="10" rx="3" fill="${cols[(x + i + 1) % 4]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="9" fill="var(--sc-2)"/><rect x="${x + 4}" y="${y - h * .55}" width="${w - 8}" height="${h * .55 - 4}" rx="6" fill="${cols[(x + i) % 4]}" opacity=".9"/>`;
+        if (k === 1) sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="4" fill="${cols[(x + i) % 4]}"/><rect x="${x}" y="${y - h + 8}" width="${w}" height="10" fill="#fff" opacity=".6"/>`;
+        else sh += `<rect x="${x + 3}" y="${y - h - 8}" width="${w - 6}" height="10" rx="3" fill="${cols[(x + i + 1) % 4]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="9" fill="#fff" opacity=".55"/><rect x="${x + 4}" y="${y - h * .55}" width="${w - 8}" height="${h * .55 - 4}" rx="6" fill="${cols[(x + i) % 4]}"/>`;
         x += w + 8 + Math.floor(r2 * 18); } }
-    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice"><rect width="420" height="800" fill="var(--sc-wood)"/><rect x="0" y="0" width="420" height="800" fill="var(--sc-1)" opacity=".55"/>${sh}</svg>`;
+    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice"><rect width="420" height="800" fill="var(--sc-wood)"/>${sh}</svg>`;
   }
 };
 let sceneOn = null;
@@ -3984,7 +4019,7 @@ $("fmSave").onclick = () => { if (!fmInst) return closeFixMonth();
   persist(); closeFixMonth(); render();
 };
 
-let jarCur = "ARS";
+let jarCur = "ARS", jarCurPicked = false;
 const openJars = new Set();
 /* Frasco dibujado: vidrio, tapa y el líquido del color del frasco hasta el nivel */
 function jarSVG(color, level, full){
@@ -4007,6 +4042,11 @@ function jarSVG(color, level, full){
   </svg>`;
 }
 function renderJars(){
+  if (!jarCurPicked){
+    const has = cur => data.jars.some(j => j.currency === cur && jarBalance(j) > 0) || data.expenses.some(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur));
+    const want = has("ARS") ? "ARS" : has("USD") ? "USD" : jarCur;
+    if (want !== jarCur){ jarCur = want; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.jcur === jarCur))); }
+  }
   // Totales
   const tot = cur => data.jars.filter(j => j.currency === cur).reduce((s,j) => s + jarBalance(j), 0);
   const loose = cur => data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur))
@@ -4109,7 +4149,7 @@ function renderJars(){
   box.append(svg);
 }
 document.querySelectorAll("[data-jcur]").forEach(b => b.onclick = () => {
-  jarCur = b.dataset.jcur; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderJars();
+  jarCur = b.dataset.jcur; jarCurPicked = true; document.querySelectorAll("[data-jcur]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderJars();
 });
 
 /* Modal de frasco */
