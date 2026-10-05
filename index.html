@@ -810,27 +810,54 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .dp-day.sel.has::after{background:var(--accent-ink)}
 .dp-blank{min-height:46px}
 
-/* ===== "Darle a Recy": hoja de anotador, papel crema y máquina de escribir ===== */
-#sheet{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--bg:#F2EDE0;--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;
+/* ===== Hoja de anotador (Darle a Recy y gastos fijos), papel crema y máquina de escribir ===== */
+.sheet.notepad{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--bg:#F2EDE0;--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;
   color-scheme:light;background:var(--paper);color:var(--ink);font-family:"Courier Prime","Courier New",ui-monospace,monospace}
-#sheet h3{font-family:inherit;text-transform:uppercase;letter-spacing:.1em;font-size:.95rem}
-#sheet .sheet-head{border-bottom:1.5px dashed #BDB6A5}
-#sheet .field > label:not(.switch),#sheet .lbl,#sheet .lbl-sm{text-transform:uppercase;letter-spacing:.07em;font-size:.76rem;font-weight:700;color:var(--muted)}
-#sheet .input,#sheet select.input,#sheet textarea.input{background-color:transparent;border:0;border-bottom:1.5px solid #1F1F1F;border-radius:0;padding-left:2px;padding-right:2px;font-family:inherit;color:var(--ink)}
-#sheet select.input{padding-right:30px}
-#sheet .input:focus,#sheet select.input:focus,#sheet textarea.input:focus{box-shadow:none;border-bottom:2px solid var(--accent)}
-#sheet .amount-row input{font-family:inherit;font-weight:700;border-bottom:2px solid #1F1F1F;color:var(--ink)}
-#sheet .amount-row input:focus{border-bottom-color:var(--accent)}
-#sheet .tell textarea.input{border:1.5px dashed #BDB6A5;border-radius:6px;padding:8px 10px;background:#FFFEFB}
-#sheet .tell textarea.input:focus{border-color:var(--accent)}
-#sheet .tell,#sheet .ai-invite{background:var(--bg);border-radius:6px}
-#sheet .chip,#sheet .cur,#sheet .seg,#sheet .seg button,#sheet .cur button{border-radius:6px;font-family:inherit}
-#sheet .chip,#sheet .cur,#sheet .seg{border-color:#BDB6A5}
-#sheet .btn,#sheet .small-btn,#sheet .head-btn{border-radius:6px !important;font-family:inherit}
-#sheet .btn.primary,#sheet .small-btn.primary,#sheet .head-btn.primary{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
-#sheet .head-btn.ghost{color:#1F1F1F}
-#sheet .opt-extra select,#sheet #cuotas,#sheet #paidCuotas{border-radius:6px;font-family:inherit}
-#sheet .split-foot,#sheet .fx-hint{font-family:inherit}
+.sheet.notepad h3{font-family:inherit;text-transform:uppercase;letter-spacing:.1em;font-size:.95rem}
+.sheet.notepad .sheet-head{border-bottom:1.5px dashed #BDB6A5}
+.sheet.notepad .field > label:not(.switch),.sheet.notepad .lbl,.sheet.notepad .lbl-sm{text-transform:uppercase;letter-spacing:.07em;font-size:.76rem;font-weight:700;color:var(--muted)}
+.sheet.notepad .input,.sheet.notepad select.input,.sheet.notepad textarea.input{background-color:transparent;border:0;border-bottom:1.5px solid #1F1F1F;border-radius:0;padding-left:2px;padding-right:2px;font-family:inherit;color:var(--ink)}
+.sheet.notepad select.input{padding-right:30px}
+.sheet.notepad .input:focus,.sheet.notepad select.input:focus,.sheet.notepad textarea.input:focus{box-shadow:none;border-bottom:2px solid var(--accent)}
+.sheet.notepad .amount-row input{font-family:inherit;font-weight:700;border-bottom:2px solid #1F1F1F;color:var(--ink)}
+.sheet.notepad .amount-row input:focus{border-bottom-color:var(--accent)}
+.sheet.notepad .tell textarea.input{border:1.5px dashed #BDB6A5;border-radius:6px;padding:8px 10px;background:#FFFEFB}
+.sheet.notepad .tell textarea.input:focus{border-color:var(--accent)}
+.sheet.notepad .tell,.sheet.notepad .ai-invite{background:var(--bg);border-radius:6px}
+.sheet.notepad .chip,.sheet.notepad .cur,.sheet.notepad .seg,.sheet.notepad .seg button,.sheet.notepad .cur button{border-radius:6px;font-family:inherit}
+.sheet.notepad .chip,.sheet.notepad .cur,.sheet.notepad .seg{border-color:#BDB6A5}
+.sheet.notepad .btn,.sheet.notepad .small-btn,.sheet.notepad .head-btn{border-radius:6px !important;font-family:inherit}
+.sheet.notepad .btn.primary,.sheet.notepad .small-btn.primary,.sheet.notepad .head-btn.primary{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
+.sheet.notepad .head-btn.ghost{color:#1F1F1F}
+.sheet.notepad .opt-extra select,.sheet.notepad #cuotas,.sheet.notepad #paidCuotas{border-radius:6px;font-family:inherit}
+.sheet.notepad .split-foot,.sheet.notepad .fx-hint{font-family:inherit}
+
+/* ===== Nuevo frasco: frasco de vidrio con tapa del color del frasco ===== */
+#jarSheet{--jar-color:#1E8A5B;--paper:#EFF8F7;--ink:#1B2430;--muted:#5A6B76;--line:rgba(110,150,160,.5);--bg:rgba(255,255,255,.6);--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;color-scheme:light;color:var(--ink)}
+#jarSheet.jarsheet{background:transparent;padding:0;overflow:visible;border-radius:0;box-shadow:none;max-height:92vh;max-height:92dvh}
+#jarSheet.jarsheet.open{display:flex;flex-direction:column}
+.jar-lid{position:relative;flex:none;height:40px;margin:0 30px;z-index:3;border-radius:14px 14px 5px 5px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(0,0,0,.16)),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.16) 0 2px,transparent 2px 9px),
+    var(--jar-color);
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.35),0 3px 8px rgba(0,0,0,.28)}
+.jar-lid::after{content:"";position:absolute;left:12px;right:12px;top:6px;height:6px;border-radius:99px;background:rgba(255,255,255,.4)}
+.jar-neck{position:relative;flex:none;height:18px;margin:-3px 38px 0;z-index:2;border:2.5px solid rgba(116,162,172,.7);border-bottom:0;border-radius:8px 8px 0 0;
+  background:linear-gradient(90deg,rgba(255,255,255,.95),#E4F2F1 28%,#E4F2F1 72%,rgba(255,255,255,.9))}
+.jar-glass{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin-top:-2px;padding:0 18px calc(22px + env(safe-area-inset-bottom,0px));
+  border-radius:46px 46px 0 0;
+  background:
+    linear-gradient(90deg,transparent 4.5%,rgba(255,255,255,.85) 4.5% 7%,transparent 7% 8.8%,rgba(255,255,255,.5) 8.8% 9.8%,transparent 9.8%),
+    linear-gradient(90deg,rgba(255,255,255,.65),rgba(255,255,255,0) 15%,rgba(255,255,255,0) 85%,rgba(255,255,255,.55)),
+    linear-gradient(180deg,#F3FAF9,#E0F0EF);
+  box-shadow:inset 0 0 0 3px rgba(116,162,172,.65),inset 0 10px 18px -8px rgba(255,255,255,.95)}
+.jar-glass .sheet-head{background:rgba(240,249,248,.94);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1.5px solid rgba(116,162,172,.45);padding-top:14px}
+.jar-glass .grab{background:rgba(116,162,172,.6)}
+.jar-glass .input,.jar-glass select.input{background-color:rgba(255,255,255,.7);border:1px solid rgba(116,162,172,.7)}
+.jar-glass .input:focus,.jar-glass select.input:focus{border-color:var(--accent)}
+.jar-glass .seg,.jar-glass .cur{border-color:rgba(116,162,172,.7);background:rgba(255,255,255,.55)}
+.jar-glass .btn.primary,.jar-glass .head-btn.primary{background:var(--jar-color);border-color:var(--jar-color);color:#fff}
 </style>
 </head>
 <body>
@@ -961,7 +988,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 <button class="fab" id="openAdd">Darle a Recy</button>
 
 <div class="sheet-bg" id="sheetBg"></div>
-<form class="sheet" id="sheet" aria-label="Cargar gasto" novalidate>
+<form class="sheet notepad" id="sheet" aria-label="Cargar gasto" novalidate>
   <div class="tabs" id="typeTabs" role="group" aria-label="Tipo de movimiento">
     <button type="button" data-type="expense" aria-selected="true">Gasto</button>
     <button type="button" data-type="income" aria-selected="false">Ingreso</button>
@@ -1202,7 +1229,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <div class="sheet-bg" id="fixBg"></div>
-<div class="sheet" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
+<div class="sheet notepad" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
   <h3 id="fixTitle">Nuevo gasto fijo</h3>
   <div class="field"><label for="fixName">Nombre</label><input class="input" id="fixName" placeholder="Ej: Alquiler, Netflix, Taller de dibujo" autocomplete="off"></div>
   <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select>
@@ -1250,7 +1277,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <div class="sheet-bg" id="fmBg"></div>
-<div class="sheet" id="fmSheet" role="dialog" aria-modal="true" aria-labelledby="fmTitle">
+<div class="sheet notepad" id="fmSheet" role="dialog" aria-modal="true" aria-labelledby="fmTitle">
   <h3 id="fmTitle">Monto de este mes</h3>
   <div class="field"><label for="fmAmount" id="fmLbl">Monto</label><input class="input" id="fmAmount" inputmode="decimal" autocomplete="off"></div>
   <div class="fx-hint" id="fmHint"></div>
@@ -4296,6 +4323,7 @@ document.querySelectorAll("[data-jarcur]").forEach(b => b.onclick = () => setJar
 function openJar(j, cur){
   editingJar = j || null; jarFromSheet = !j && $("sheet").classList.contains("open");
   $("jarTitle").textContent = j ? "Editar frasco" : "Nuevo frasco";
+  $("jarSheet").style.setProperty("--jar-color", j ? j.color : JAR_COLORS[data.jars.length % JAR_COLORS.length]);
   $("jarName").value = j ? j.name : "";
   $("jarGoal").value = j && j.goal ? String(j.goal).replace(".",",") : "";
   $("jarStart").value = ""; $("jarStart").parentElement.hidden = !!j;
@@ -4714,6 +4742,15 @@ function buildSheetHeads(){
   });
 }
 buildSheetHeads();
+/* El frasco: tapa arriba, cuello y cuerpo de vidrio (todo el contenido va adentro del vidrio) */
+(function jarify(){
+  const js = $("jarSheet"); if (js.querySelector(":scope > .jar-glass")) return;
+  const glass = document.createElement("div"); glass.className = "jar-glass";
+  while (js.firstChild) glass.append(js.firstChild);
+  const lid = document.createElement("div"); lid.className = "jar-lid"; lid.setAttribute("aria-hidden", "true");
+  const neck = document.createElement("div"); neck.className = "jar-neck"; neck.setAttribute("aria-hidden", "true");
+  js.append(lid, neck, glass); js.classList.add("jarsheet");
+})();
 /* Que el teclado no tape el campo en el que escribís */
 document.addEventListener("focusin", e => {
   const el = e.target; if (!el.closest || !el.closest(".sheet") || !/INPUT|TEXTAREA|SELECT/.test(el.tagName)) return;
