@@ -1034,46 +1034,95 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .brand .logo span{color:#2F5BEA}
 .brand .icon-btn{background:rgba(255,255,255,.6);border:1.5px solid #C9B88F;color:#1F1F1F}
 
-/* ===== Pestañas: una caja de madera con un objeto por sección ===== */
-.main-tabs{position:relative;display:flex;align-items:flex-end;gap:6px;padding:15px 10px 9px;margin-bottom:18px;border-radius:14px;border:2px solid #A9743E;
-  background:linear-gradient(180deg,#DFBB8B,#C99B63);box-shadow:inset 0 3px 0 rgba(255,255,255,.38),inset 0 -4px 0 rgba(0,0,0,.16),0 6px 14px rgba(0,0,0,.24)}
-.main-tabs::after{content:"";position:absolute;left:2px;right:2px;bottom:2px;height:13px;border-radius:0 0 11px 11px;pointer-events:none;z-index:3;
-  background:linear-gradient(180deg,#BA8650,#A06C3A);box-shadow:inset 0 2px 0 rgba(255,255,255,.22)}
-.main-tabs button{position:relative;z-index:1;display:grid;place-items:center;height:44px;min-height:44px;min-width:max-content;margin:0;padding:0 12px;border:0;
+/* ===== Pestañas: una caja de madera oscura y lisa, con un objeto por sección (todos del mismo ancho) ===== */
+.main-tabs{position:relative;display:flex;align-items:flex-end;gap:5px;padding:15px 8px 9px;margin-bottom:18px;border-radius:12px;border:0;background:#7B5233;box-shadow:0 4px 0 #4A2F1B}
+.main-tabs::after{content:"";position:absolute;left:0;right:0;bottom:0;height:13px;border-radius:0 0 12px 12px;pointer-events:none;z-index:3;background:#5E3C22}
+.main-tabs button{position:relative;z-index:1;display:grid;place-items:center;flex:1 1 0;height:44px;min-height:44px;min-width:0;margin:0;padding:0 6px;border:0;
   overflow:visible;text-overflow:clip;white-space:nowrap;letter-spacing:0;color:#1F1F1F;transition:transform .16s ease,filter .16s ease;
-  filter:drop-shadow(0 1px 1px rgba(50,28,4,.45)) brightness(.9) saturate(.9)}
-.main-tabs button[aria-selected="true"]{z-index:2;transform:translateY(-5px);filter:drop-shadow(0 5px 5px rgba(50,28,4,.5))}
-.main-tabs button:focus-visible{outline:3px solid #2F5BEA;outline-offset:2px}
+  filter:brightness(.86) drop-shadow(0 2px 0 rgba(0,0,0,.3))}
+.main-tabs button[aria-selected="true"]{z-index:2;transform:translateY(-5px);filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.main-tabs button:focus-visible{outline:3px solid #F4C24E;outline-offset:2px}
 /* Movimientos: un ticket */
-.main-tabs #tabList{flex:1.45 1 auto;border-radius:2px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;
+.main-tabs #tabList{border-radius:2px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:clamp(.58rem,2.55vw,.78rem);letter-spacing:-.01em;text-transform:uppercase;
   background:radial-gradient(circle at 0 50%,transparent 0 7px,#F5E8C8 7.5px) left / 51% 100% no-repeat,radial-gradient(circle at 100% 50%,transparent 0 7px,#F5E8C8 7.5px) right / 51% 100% no-repeat}
-/* Resumen: un mini diario, con la letra del título del Diario de Recy */
-.main-tabs #tabDash{flex:1.1 1 auto;border-radius:1px;background:#FFFFFF;color:#111;border-top:3px double #111;border-bottom:1.5px solid #111;
-  font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-weight:900;font-size:.95rem}
+/* Resumen: un mini diario, con la letra del título del Diario de Recy, una raya bajo el título y renglones de texto */
+.main-tabs #tabDash{border-radius:1px;padding-bottom:13px;color:#111;border-top:3px double #111;font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-weight:900;font-size:.95rem;
+  background:linear-gradient(#111,#111) 0 calc(100% - 17px) / 100% 1px no-repeat,
+    linear-gradient(#8F8F8F,#8F8F8F) 7px calc(100% - 6px) / calc(50% - 11px) 2px no-repeat,
+    linear-gradient(#8F8F8F,#8F8F8F) calc(100% - 7px) calc(100% - 6px) / calc(50% - 11px) 2px no-repeat,
+    linear-gradient(#B8B8B8,#B8B8B8) 7px calc(100% - 11px) / calc(32% - 7px) 2px no-repeat,
+    linear-gradient(#B8B8B8,#B8B8B8) calc(100% - 7px) calc(100% - 11px) / calc(42% - 7px) 2px no-repeat,
+    linear-gradient(#C4C4C4,#C4C4C4) 50% calc(100% - 4px) / 1px 14px no-repeat,#FFFFFF}
 /* Fijos: un post-it con chinche y esquina doblada */
-.main-tabs #tabFixed{flex:.8 1 auto;padding-top:7px;border-radius:1px;color:#2A2412;font-weight:800;font-size:.9rem;transform:rotate(-2deg);
+.main-tabs #tabFixed{padding-top:7px;border-radius:1px;color:#2A2412;font-weight:800;font-size:.9rem;transform:rotate(-2deg);
   background:linear-gradient(#F6D860,#F6D860) top left / 100% calc(100% - 12px) no-repeat,linear-gradient(#F6D860,#F6D860) bottom left / calc(100% - 12px) 12px no-repeat,linear-gradient(to bottom right,#CDAE3A 50%,transparent 50%) bottom right / 12px 12px no-repeat}
 .main-tabs #tabFixed[aria-selected="true"]{transform:rotate(-2deg) translateY(-5px) scale(1.03)}
-.main-tabs #tabFixed::before{content:"";position:absolute;left:50%;top:4px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#fff 0 1.5px,transparent 2.5px),#D0485E;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.main-tabs #tabFixed::before{content:"";position:absolute;left:50%;top:4px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:#D0485E;box-shadow:inset -1.5px -1.5px 0 rgba(0,0,0,.18)}
 /* Ahorros: un frasquito de vidrio con tapa verde fina */
-.main-tabs #tabJars{flex:1 1 auto;border:2px solid rgba(116,162,172,.9);border-radius:12px 12px 8px 8px;color:#1B2430;font-weight:800;font-size:.9rem;
-  background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,0) 16%,rgba(255,255,255,0) 84%,rgba(255,255,255,.55)),linear-gradient(0deg,rgba(30,138,91,.28) 0 30%,rgba(30,138,91,0) 30%),linear-gradient(180deg,#F3FAF9,#D6EBEA)}
+.main-tabs #tabJars{border:2px solid #6FA3AE;border-radius:12px 12px 8px 8px;color:#1B2430;font-weight:800;font-size:.9rem;
+  background:linear-gradient(#FFFFFF,#FFFFFF) 7px 8px / 4px 50% no-repeat,linear-gradient(0deg,rgba(30,138,91,.3) 0 30%,rgba(30,138,91,0) 30%),#E3F1F0}
 .main-tabs #tabJars::before{content:"";position:absolute;left:14px;right:14px;top:-7px;height:8px;border-radius:4px 4px 1px 1px;
-  background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 50%,rgba(0,0,0,.14)),repeating-linear-gradient(90deg,rgba(0,0,0,.16) 0 2px,transparent 2px 7px),#1E8A5B;
-  box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.16) 0 2px,transparent 2px 7px),#1E8A5B;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
 
-/* ===== Selector de mes: una tira de ticket perforada ===== */
-.month-nav{--ink:#1F1F1F;--muted:#6E6A62;--accent:#2F5BEA;color:#1F1F1F;color-scheme:light;position:relative;display:flex;align-items:stretch;gap:0;padding:0;min-height:78px;border-radius:4px;
-  background:radial-gradient(circle at 0 50%,transparent 0 9px,#F5E8C8 9.5px) left / 51% 100% no-repeat,radial-gradient(circle at 100% 50%,transparent 0 9px,#F5E8C8 9.5px) right / 51% 100% no-repeat;
-  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.2)) drop-shadow(0 0 .8px rgba(70,45,0,.6))}
-.month-nav .icon-btn{flex:none;width:58px;height:auto;border:0;border-radius:0;background:none;font-size:1.7rem;color:#1F1F1F}
-.month-nav #prev{margin-left:6px;border-right:2px dashed #C2AE7F}
-.month-nav #next{margin-right:6px;border-left:2px dashed #C2AE7F}
-.month-nav .title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}
-.month-nav .month-btn{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:1.1rem;color:#1F1F1F}
-.month-nav .range{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;color:#6E6A62}
-.month-nav .range-btn{font-family:inherit;color:#6E6A62}
+/* ===== Selector de mes: una hoja de calendario con anillas ===== */
+.month-nav{--ink:#1F1F1F;--muted:#6E6A62;--accent:#2F5BEA;color:#1F1F1F;color-scheme:light;position:relative;display:grid;grid-template-columns:54px minmax(0,1fr) 54px;grid-template-rows:46px auto;align-items:stretch;gap:0;
+  margin-top:16px;padding:0 0 4px;min-height:0;border-radius:10px;border:1.5px solid #CFC8B8;background:linear-gradient(#E0594A,#E0594A) top left / 100% 46px no-repeat,#FFFFFF;
+  box-shadow:4px 5px 0 -1px #E6E0D2,8px 10px 0 -2px #D9D2C2;-webkit-backdrop-filter:none;backdrop-filter:none;filter:none}
+.month-nav::before,.month-nav::after{content:"";position:absolute;top:-11px;width:12px;height:26px;border-radius:6px;background:#8E8A80;z-index:2;pointer-events:none}
+.month-nav::before{left:22%}.month-nav::after{right:22%}
+.month-nav .title-wrap{display:contents}
+.month-nav #prev{grid-column:1;grid-row:1}.month-nav #next{grid-column:3;grid-row:1}
+.month-nav #monthH{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;margin:0}
+.month-nav .icon-btn{width:auto;height:46px;margin:0;border:0;border-radius:0;background:none;color:#fff;font-size:1.7rem}
+.month-nav .month-btn{min-height:44px;color:#fff;font-family:var(--display);font-weight:700;font-size:1rem;letter-spacing:.14em;text-transform:uppercase}
+.month-nav .month-btn .caret{color:rgba(255,255,255,.85)}
+.month-nav .range{grid-column:1 / -1;grid-row:2;min-height:34px;margin:0;font-family:inherit;font-size:.86rem;color:#6E6A62}
+.month-nav .range-btn{color:#6E6A62}
+
+/* ===== Fijos pendientes: una tablilla con broche (nada que ver con el calendario del mes) ===== */
+.clip{position:relative;margin:30px 0 20px;padding:28px 12px 14px;border-radius:10px;background:#7B5233;box-shadow:0 4px 0 #4A2F1B;color-scheme:light;--muted:#6E6A62;--line:#D9D3C6}
+.clip-clamp{position:absolute;left:50%;top:-12px;width:88px;height:32px;margin-left:-44px;border-radius:8px;background:#B9BCC0;box-shadow:inset 0 -5px 0 #8E9298;z-index:2}
+.clip-clamp::after{content:"";position:absolute;left:50%;top:9px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#4A2F1B}
+.clip-paper{background:#FFFFFF;color:#1F1F1F;border-radius:4px;padding:0 0 6px}
+.clip .cal-top{position:relative;background:none;color:#1F1F1F;border-radius:0;padding:20px 16px 12px;text-align:left;border-bottom:1.5px dashed #BDB6A5}
+.clip .cal-title{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.98rem;letter-spacing:.12em;text-transform:uppercase}
+.clip .cal-sub{opacity:1;color:#6E6A62;font-size:.82rem}
+.clip .cal-all{top:14px;bottom:auto;right:10px;color:#2F5BEA}
+.clip .cal-top + .cal-row{border-top:0}
+.clip .fp-sub{padding:2px 14px 10px 86px;color:#1F1F1F}
+.clip .fp-sub .a{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* ===== Historial de ahorros: una libreta con espiral, igual que "cuentas con amigos" ===== */
+#jarGrowthCard{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border:0;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--usd:#1E7A50;--danger:#C9374B;--accent:#2F5BEA;color-scheme:light}
+#jarGrowthCard::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
+#jarGrowthCard .card-head{border-bottom:1.5px dashed #BDB6A5;padding-bottom:10px;margin-bottom:6px;align-items:center}
+#jarGrowthCard .card-head h2{font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;margin:0}
+#jarGrowthCard .seg{border:1.5px solid #BDB6A5;border-radius:6px;background:none}
+#jarGrowthCard .seg button{border-radius:4px;font-family:inherit;font-weight:700}
+#jarGrowthCard .seg button[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1}
+#jarGrowthCard .fx-hint,#jarGrowthCard .hist-month,#jarGrowthCard .hist-row{font-family:inherit}
+#jarGrowthCard .hist-month{border-bottom:1.5px dashed #BDB6A5}
+#jarGrowthCard .hist-row{border-top:1px dashed #D9D3C6}
+#jarGrowthCard .hist-row .t strong{font-family:inherit;font-weight:700}
+
+/* ===== Scrolls nativos: finitos y del color de la app, y nunca scroll de costado ===== */
+html{scrollbar-width:thin;scrollbar-color:#8A5A36 transparent}
+html::-webkit-scrollbar{width:10px}
+html::-webkit-scrollbar-track{background:transparent}
+html::-webkit-scrollbar-thumb{background:#8A5A36;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+.sheet,.jar-glass{overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#C9B88F transparent}
+.sheet::-webkit-scrollbar,.jar-glass::-webkit-scrollbar{width:6px}
+.sheet::-webkit-scrollbar-track,.jar-glass::-webkit-scrollbar-track{background:transparent}
+.sheet::-webkit-scrollbar-thumb,.jar-glass::-webkit-scrollbar-thumb{background:#C9B88F;border-radius:6px}
+
+/* ===== Ajustes con la hoja de anotador ===== */
+.sheet.notepad .set-row{border:1.5px dashed #BDB6A5;border-radius:6px;background:#FFFEFB;min-height:60px;min-width:0}
+.sheet.notepad .set-row > div{min-width:0}
+.sheet.notepad .set-row strong{font-size:.98rem;overflow-wrap:anywhere}
+.sheet.notepad .set-row span{font-size:.86rem;overflow-wrap:anywhere}
+.sheet.notepad .set-label{font-family:inherit;font-weight:700;letter-spacing:.1em}
+.sheet.notepad .danger-row strong{color:var(--danger)}
 </style>
 </head>
 <body>
@@ -1135,7 +1184,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
   </section>
 
   <section class="day-sum" id="daySum" hidden></section>
-  <section class="cal" id="fixedPend" hidden></section>
+  <section class="clip" id="fixedPend" hidden></section>
   <section class="fixed-pend" id="loanPend" hidden></section>
   <div id="days"></div>
   </div>
@@ -1681,7 +1730,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <script>
-const BUILD = "2026-10-06.0309";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-06.0454";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2466,12 +2515,13 @@ function renderFixedPend(){
   box.hidden = false;
   const today = dateOnly(toLocalInput(new Date()));
   // Hoja de calendario de pared: anillas, franja roja con el mes y un casillero con el día de cada fijo
-  const rings = document.createElement("div"); rings.className = "cal-rings"; rings.setAttribute("aria-hidden", "true"); rings.append(document.createElement("i"), document.createElement("i"));
   const top = document.createElement("div"); top.className = "cal-top";
   const tt = document.createElement("div"); tt.className = "cal-title"; tt.textContent = `Fijos · ${monthName(viewYear, viewMonth)}`;
   const ts = document.createElement("div"); ts.className = "cal-sub"; ts.textContent = "lo que todavía te falta pagar";
   const all = document.createElement("button"); all.type = "button"; all.className = "cal-all"; all.textContent = "Ver todos"; all.onclick = () => setTab("fixed");
-  top.append(tt, ts, all); box.append(rings, top);
+  top.append(tt, ts, all);
+  const clamp = document.createElement("div"); clamp.className = "clip-clamp"; clamp.setAttribute("aria-hidden", "true");
+  const paper = document.createElement("div"); paper.className = "clip-paper"; paper.append(top); box.append(clamp, paper);
   list.forEach(i => {
     const card = i.f.how === "card" ? cardById(i.f.cardId) : null, done = ["paid","cardpaid"].includes(i.state);
     const overdue = !done && !card && i.due < today;
@@ -2499,7 +2549,7 @@ function renderFixedPend(){
     else if (!done){ const tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "En tarjeta"; right.append(tg); }
     b.append(day, info, right);
     b.onclick = () => done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i);
-    box.append(b);
+    paper.append(b);
     if (fixShared(i.f)) i.f.shares.forEach(p => {
       const paid = fixSharePaid(i.f, i.key, p.name);
       const r = document.createElement("div"); r.className = "fp-sub";
@@ -2508,7 +2558,7 @@ function renderFixedPend(){
       const t = document.createElement("button"); t.type = "button"; t.className = "pill " + (paid ? "paid" : "owe"); t.textContent = paid ? "Devolvió ✓" : "Le falta";
       t.setAttribute("aria-label", `${p.name}, ${i.f.name}: ${paid ? "ya devolvió" : "le falta"}. Tocar para cambiar`);
       t.onclick = () => { setFixSharePaid(i.f, i.key, p.name, !paid); persist(); render(); };
-      r.append(nm2, v, t); box.append(r);
+      r.append(nm2, v, t); paper.append(r);
     });
   });
 }
@@ -5242,6 +5292,7 @@ function buildSheetHeads(){
     });
   });
 }
+document.querySelectorAll(".sheet").forEach(sh => { if (sh.id !== "jarSheet") sh.classList.add("notepad"); });
 buildSheetHeads();
 /* El frasco: tapa arriba, cuello y cuerpo de vidrio (todo el contenido va adentro del vidrio) */
 (function jarify(){
