@@ -1142,6 +1142,15 @@ html::-webkit-scrollbar-thumb{background:#8A5A36;border-radius:6px;border:2px so
 @keyframes connHop{0%{transform:translateY(0)}40%{transform:translateY(-9px)}100%{transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){.conn-recy svg,.conn-recy::before{animation:none!important}}
 body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0px))}
+
+/* ===== Fondos más suaves para que no compitan con la interfaz ===== */
+#scene svg{opacity:var(--scene-op,.6);filter:saturate(.85)}
+/* Resumen: la ciudad siempre de día, también en modo oscuro */
+#scene[data-scene="dash"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) #scene[data-scene="dash"] svg{opacity:.72}
+}
+:root[data-theme="dark"] #scene[data-scene="dash"] svg{opacity:.72}
 </style>
 </head>
 <body>
@@ -1755,7 +1764,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-06.1723";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-06.1735";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -4502,7 +4511,7 @@ function layoutScene(){
   const W = wide ? Math.max(480, Math.round(800 * vw / vh / 40) * 40) : 0;     // ancho del dibujo según la forma de la pantalla
   const colU = wide ? Math.round(520 * 800 / vh) : 0;                         // ancho de la app en unidades del dibujo
   const key = `${sceneOn}|${W}|${colU}`;
-  sc.style.setProperty("--pw", "100%"); sc.style.background = "";
+  sc.style.setProperty("--pw", "100%"); sc.style.background = ""; sc.dataset.scene = sceneOn || "";
   if (key !== sceneKey){ sceneKey = key; const f = SCENES[sceneOn]; sc.innerHTML = f ? f(W, colU) : ""; }
 }
 let sceneResizeT = null;
