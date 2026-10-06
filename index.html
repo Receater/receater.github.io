@@ -1013,6 +1013,14 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .items-line strong{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.05rem}
 .items-warn{font-size:.9rem;color:var(--danger);margin-top:8px;line-height:1.4}
 .items-warn .linkbtn{font-weight:700;color:var(--accent);padding:0}
+
+/* Spinner de lectura */
+.tell-busy{display:flex;align-items:center;gap:14px;margin:0 0 10px;padding:14px 16px;border-radius:6px;background:#fff;border:1.5px dashed #BDB6A5}
+.tell-busy strong{display:block;font-size:1.02rem}
+.tell-busy span:not(.spin){display:block;font-size:.88rem;color:var(--muted);margin-top:2px}
+.spin{flex:none;width:36px;height:36px;border-radius:50%;border:4px solid rgba(47,91,234,.18);border-top-color:#2F5BEA;animation:readspin .8s linear infinite}
+@keyframes readspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 </style>
 </head>
 <body>
@@ -1155,6 +1163,10 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
     <button type="button" class="small-btn primary" id="aiInviteBtn">Activar</button>
   </div>
   <div class="tell" id="tellBox">
+    <div class="tell-busy" id="tellBusy" hidden role="status" aria-live="polite">
+      <span class="spin" aria-hidden="true"></span>
+      <div><strong id="tellBusyTxt">Recy está leyendo…</strong><span id="tellBusySub">Un segundito.</span></div>
+    </div>
     <textarea class="input" id="tellInput" rows="2" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
     <div class="tell-row" style="margin-top:8px">
       <button type="button" class="small-btn" id="tellPhoto" aria-label="Sacar foto del ticket">📷 Foto del ticket</button>
@@ -1616,7 +1628,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <script>
-const BUILD = "2026-10-06.0025";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-06.0042";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -3402,13 +3414,19 @@ function aiErrorMsg(e){
   return { nokey: "", region: "Gemini no está disponible desde tu ubicación. Usé el modo simple.", badkey: "La clave de Gemini no funciona. Revisala en Recy inteligente.", quota: "Se terminó el cupo gratis de Gemini por ahora. Usé el modo simple.",
     net: "No pude conectarme con Gemini. Usé el modo simple.", parse: "Gemini respondió algo raro. Usé el modo simple.", model: "Gemini no respondió. Usé el modo simple.", other: "Gemini no respondió. Usé el modo simple." }[e && e.code] || "Algo falló con Gemini. Usé el modo simple.";
 }
+/* Mientras Recy lee: un cartel con spinner bien visible (acá, más adelante, puede ir una animación de Recy estudiando el ticket) */
+function setTellBusy(on, title, sub){
+  $("tellBusy").hidden = !on;
+  if (on){ $("tellBusyTxt").textContent = title || "Recy está leyendo…"; $("tellBusySub").textContent = sub || "Un segundito."; $("tellMsg").textContent = ""; }
+  $("tellGo").disabled = on; $("tellPhoto").disabled = on;
+}
 async function tellSmart(){
   const raw = $("tellInput").value.trim(); if (!raw) return;
   if (!aiKey()){ tellApply(); return; }
-  $("tellGo").disabled = true; $("tellMsg").textContent = "Recy está leyendo…";
+  setTellBusy(true, "Recy está leyendo…", "Entendiendo lo que contaste.");
   try { aiApply(await aiFromText(raw)); }
   catch (e){ tellApply(); const m = aiErrorMsg(e); if (m) $("tellMsg").textContent = m + " " + $("tellMsg").textContent; }
-  $("tellGo").disabled = false;
+  setTellBusy(false);
 }
 $("tellGo").onclick = tellSmart;
 $("tellInput").addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); tellSmart(); } });
@@ -3429,10 +3447,10 @@ function shrinkImage(file){
 $("tellPhoto").onclick = () => { if (!aiKey()){ openAi(); $("aiErr").textContent = "Para leer fotos de tickets, primero activá Recy inteligente."; return; } $("tellFile").click(); };
 $("tellFile").onchange = async () => {
   const f = $("tellFile").files && $("tellFile").files[0]; $("tellFile").value = ""; if (!f) return;
-  $("tellPhoto").disabled = true; $("tellGo").disabled = true; $("tellMsg").textContent = "Recy está leyendo el ticket…";
+  setTellBusy(true, "Recy está leyendo el ticket…", "Mirando cada producto.");
   try { const b64 = await shrinkImage(f); aiApply(await aiFromImage(b64, "image/jpeg")); if (itemsDraft.length){ try { $("itemsField").scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} } }
   catch (e){ $("tellMsg").textContent = aiErrorMsg(e).replace(" Usé el modo simple.", "") || "No pude leer la foto."; }
-  $("tellPhoto").disabled = false; $("tellGo").disabled = false;
+  setTellBusy(false);
 };
 /* Modal de la clave */
 function openAi(){
@@ -4195,114 +4213,174 @@ function stageJars(){
   });
 }
 
-/* ---------- Fondos: cada pestaña con un lugar de verdad, dibujado suave para no molestar ---------- */
-const SCENES = {
-  // Movimientos: adentro de un almacén. Toldo rayado, estantes con productos, cartel de ABIERTO y el mostrador con la caja
-  list: () => {
-    let shelves = ""; const prod = ["var(--sc-red)","var(--sc-warm)","var(--sc-green)","var(--sc-blue)"]; let sd = 3;
-    for (let r = 0; r < 4; r++){ const y = 250 + r * 92; shelves += `<rect x="18" y="${y}" width="384" height="10" rx="2" fill="var(--sc-wood2)"/>`;
-      for (let x = 26; x < 392;){ sd = (sd * 9301 + 49297) % 233280; const q = sd / 233280, w = 18 + Math.floor(q * 22), h = 34 + Math.floor(q * 40);
-        shelves += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="3" fill="${prod[Math.floor(q * 4)]}"/><rect x="${x + 3}" y="${y - h + 8}" width="${w - 6}" height="8" rx="2" fill="var(--sc-1)" opacity=".8"/>`; x += w + 6; } }
-    let awn = ""; for (let x = 0; x < 420; x += 42) awn += `<path d="M${x} 0 h42 v62 q-21 18 -42 0z" fill="${(x / 42) % 2 ? "var(--sc-1)" : "var(--sc-red)"}"/>`;
-    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-2)"/>${awn}${shelves}
-      <g transform="translate(150 96)"><path d="M30 0 L60 -20 L90 0" stroke="var(--sc-3)" stroke-width="3" fill="none"/><rect x="0" y="0" width="120" height="40" rx="8" fill="var(--sc-green)"/>
-        <text x="60" y="27" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="18" fill="#fff" letter-spacing="2">ABIERTO</text></g>
-      <rect y="640" width="420" height="20" fill="var(--sc-wood2)"/><rect y="660" width="420" height="140" fill="var(--sc-wood)"/>
-      <g transform="translate(286 548)"><rect x="0" y="40" width="110" height="56" rx="10" fill="var(--sc-3)"/><rect x="12" y="4" width="86" height="46" rx="8" fill="var(--sc-blue)"/>
-        <rect x="22" y="14" width="66" height="18" rx="4" fill="var(--sc-green)"/><path d="M64 4 v-44 q0 -10 10 -10 h14 v54" fill="#fff"/>
-        <g fill="var(--sc-1)"><rect x="12" y="54" width="18" height="10" rx="3"/><rect x="34" y="54" width="18" height="10" rx="3"/><rect x="56" y="54" width="18" height="10" rx="3"/><rect x="78" y="54" width="18" height="10" rx="3"/><rect x="12" y="70" width="18" height="10" rx="3"/><rect x="34" y="70" width="18" height="10" rx="3"/><rect x="56" y="70" width="18" height="10" rx="3"/><rect x="78" y="70" width="18" height="10" rx="3"/></g></g>
-      <g transform="translate(24 568)"><rect x="8" y="44" width="38" height="30" rx="5" fill="var(--sc-red)"/><path d="M27 44 C 10 24, 12 6, 26 0 C 34 12, 40 26, 27 44 Z" fill="var(--sc-green)"/><path d="M27 44 C 42 28, 52 20, 50 8 C 38 12, 30 26, 27 44 Z" fill="var(--sc-green)"/></g>
-      <g transform="translate(110 590)"><path d="M0 20 h80 l-8 50 h-64z" fill="var(--sc-warm)"/><path d="M10 20 q30 -30 60 0" stroke="var(--sc-3)" stroke-width="4" fill="none"/><circle cx="24" cy="18" r="9" fill="var(--sc-red)"/><circle cx="44" cy="14" r="10" fill="var(--sc-green)"/><circle cx="60" cy="19" r="8" fill="var(--sc-warm)"/></g>
-    </svg>`;
+/* ---------- Fondos: cada pestaña con un lugar de verdad ----------
+   Sin palabras, solo dibujos (así la app se puede traducir sin tocarlos).
+   Celular: dibujo vertical. Pantallas anchas: el dibujo se arma a lo ancho (W unidades por 800 de alto) y lo vistoso queda
+   a los costados, porque el centro lo tapa la app (colU = ancho de la app medido en unidades del dibujo). */
+const sceneRng = seed => () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const sceneBits = {
+  // Íconos blancos para las facturas del corcho (luz, gas, agua, internet, alquiler)
+  billIcon(kind, cx, cy){
+    const g = inner => `<g transform="translate(${cx} ${cy})" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${inner}</g>`;
+    if (kind === "bulb") return g('<path d="M-5 3 a7 7 0 1 1 10 0 q-3 3 -3 6 h-4 q0 -3 -3 -6z"/><path d="M-3 12 h6"/>');
+    if (kind === "flame") return g('<path d="M0 -9 q9 8 5 14 a6 6 0 0 1 -10 0 q-2 -4 2 -8 q0 3 3 3 q-1 -5 0 -9z"/>');
+    if (kind === "drop") return g('<path d="M0 -9 q8 9 7 14 a7 7 0 0 1 -14 0 q-1 -5 7 -14z"/>');
+    if (kind === "wifi") return g('<path d="M-9 -2 a13 13 0 0 1 18 0 M-5 2 a8 8 0 0 1 10 0"/><circle cx="0" cy="7" r="1.2" fill="#fff"/>');
+    return g('<path d="M-9 1 L0 -8 L9 1 M-6 -1 V9 H6 V-1"/>');
   },
-  // Resumen: una calle de Nueva York con cielo, nubes, ventanas prendidas, árboles, farol, kiosco de diarios y un taxi
-  dash: () => {
-    let sd = 11;
-    const bld = (x, w, h, c) => { let win = "";
-      for (let yy = 800 - h + 16; yy < 690; yy += 24) for (let xx = x + 9; xx < x + w - 12; xx += 17){ sd = (sd * 9301 + 49297) % 233280; const on = sd / 233280 > .62;
-        win += `<rect x="${xx}" y="${yy}" width="9" height="12" rx="1.5" fill="${on ? "var(--sc-warm)" : "var(--sc-1)"}"/>`; }
-      return `<rect x="${x}" y="${800 - h}" width="${w}" height="${h}" fill="${c}"/>${win}`; };
-    const cloud = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})" fill="var(--sc-1)" opacity=".9"><circle cx="20" cy="20" r="16"/><circle cx="44" cy="14" r="20"/><circle cx="68" cy="22" r="14"/><rect x="18" y="20" width="56" height="16" rx="8"/></g>`;
-    const tree = x => `<g transform="translate(${x} 664)"><rect x="-4" y="30" width="8" height="40" fill="var(--sc-wood2)"/><circle cx="0" cy="20" r="26" fill="var(--sc-green)"/><circle cx="-14" cy="34" r="16" fill="var(--sc-green)"/><circle cx="14" cy="34" r="16" fill="var(--sc-green)"/></g>`;
-    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-sky)"/>${cloud(20, 70, 1)}${cloud(260, 130, .8)}${cloud(150, 220, .6)}
-      <circle cx="350" cy="80" r="28" fill="var(--sc-warm)" opacity=".85"/>
-      ${bld(-10, 92, 430, "var(--sc-blue)")}${bld(80, 72, 540, "var(--sc-3)")}${bld(150, 102, 370, "var(--sc-red)")}${bld(250, 66, 610, "var(--sc-3)")}${bld(314, 116, 450, "var(--sc-blue)")}
-      <path d="M273 190 l10 -46 10 46z" fill="var(--sc-3)"/>
-      <g transform="translate(336 316)"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>
-      <rect y="730" width="420" height="70" fill="var(--sc-3)"/><rect y="724" width="420" height="8" fill="var(--sc-2)"/>
-      <g fill="var(--sc-1)" opacity=".7"><rect x="20" y="770" width="40" height="6" rx="3"/><rect x="120" y="770" width="40" height="6" rx="3"/><rect x="220" y="770" width="40" height="6" rx="3"/><rect x="320" y="770" width="40" height="6" rx="3"/></g>
-      ${tree(140)}${tree(300)}
-      <g transform="translate(28 626)"><rect x="0" y="22" width="80" height="78" rx="5" fill="var(--sc-red)"/><rect x="-6" y="12" width="92" height="14" rx="4" fill="var(--sc-wood2)"/>
-        <text x="40" y="47" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="15" fill="#fff">NEWS</text>
-        <rect x="10" y="56" width="26" height="32" fill="var(--sc-1)"/><rect x="44" y="56" width="26" height="32" fill="var(--sc-1)"/></g>
-      <g transform="translate(386 540)" fill="var(--sc-3)"><rect x="0" y="0" width="5" height="190"/><path d="M-16 0 h37 l-7 -16 h-23z"/><circle cx="2" cy="4" r="6" fill="var(--sc-warm)"/></g>
-      <g transform="translate(196 700)"><rect x="0" y="6" width="104" height="24" rx="9" fill="var(--sc-warm)"/><path d="M20 6 l11 -16 h42 l13 16z" fill="var(--sc-warm)"/><path d="M34 4 l7 -10 h16 v10z M61 4 v-10 h10 l8 10z" fill="var(--sc-sky)"/>
-        <rect x="38" y="-18" width="26" height="8" rx="2" fill="var(--sc-3)"/><circle cx="24" cy="32" r="9" fill="var(--sc-3)"/><circle cx="80" cy="32" r="9" fill="var(--sc-3)"/></g>
-    </svg>`;
-  },
-  // Fijos: el rincón de las cuentas de la casa. Calendario con días marcados, reloj, corcho con las facturas (luz, gas, agua, internet, alquiler) y el escritorio
-  fixed: () => {
-    let cal = ""; for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++){ const x = 34 + c * 24, y = 124 + r * 22;
-      cal += `<rect x="${x}" y="${y}" width="20" height="18" rx="3" fill="var(--sc-2)"/>`;
-      if ((r === 0 && c === 4) || (r === 2 && c === 1) || (r === 3 && c === 5) || (r === 1 && c === 6)) cal += `<circle cx="${x + 10}" cy="${y + 9}" r="12" fill="none" stroke="var(--sc-red)" stroke-width="3"/>`; }
-    const bill = (x, y, rot, label, col) => `<g transform="translate(${x} ${y}) rotate(${rot})"><rect width="88" height="104" rx="4" fill="#fff"/><rect width="88" height="24" rx="4" fill="${col}"/>
-      <text x="44" y="17" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="12" fill="#fff">${label}</text>
-      <rect x="12" y="38" width="64" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="52" width="48" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="76" width="34" height="12" rx="3" fill="${col}" opacity=".8"/>
+  bill(x, y, rot, kind, col){
+    return `<g transform="translate(${x} ${y}) rotate(${rot})"><rect width="88" height="104" rx="4" fill="#fff"/><rect width="88" height="26" rx="4" fill="${col}"/>${this.billIcon(kind, 44, 13)}
+      <rect x="12" y="40" width="64" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="54" width="48" height="6" rx="3" fill="#D5DAE0"/><rect x="12" y="78" width="34" height="12" rx="3" fill="${col}" opacity=".8"/>
       <circle cx="44" cy="2" r="5" fill="var(--sc-red)"/></g>`;
-    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="420" height="800" fill="var(--sc-2)"/><rect width="420" height="800" fill="var(--sc-1)" opacity=".5"/>
-      <g><rect x="22" y="72" width="192" height="182" rx="8" fill="var(--sc-1)"/><rect x="22" y="72" width="192" height="40" rx="8" fill="var(--sc-red)"/>
-        <text x="118" y="98" text-anchor="middle" font-family="Instrument Sans,Arial,sans-serif" font-weight="700" font-size="15" fill="#fff">ESTE MES</text>
-        <circle cx="64" cy="72" r="5" fill="var(--sc-3)"/><circle cx="172" cy="72" r="5" fill="var(--sc-3)"/>${cal}</g>
-      <g transform="translate(330 150)"><circle r="50" fill="var(--sc-warm)"/><circle r="40" fill="var(--sc-1)"/><path d="M0 0 V-28 M0 0 L20 10" stroke="var(--sc-3)" stroke-width="5" stroke-linecap="round"/><circle r="4" fill="var(--sc-3)"/></g>
-      <g transform="translate(22 330)"><rect width="376" height="270" rx="12" fill="var(--sc-wood)"/><rect x="8" y="8" width="360" height="254" rx="8" fill="var(--sc-wood2)" opacity=".35"/>
-        ${bill(18, 22, -5, "LUZ", "#E0A93B")}${bill(128, 30, 3, "GAS", "#3B7DD8")}${bill(240, 18, 5, "AGUA", "#1FA3B3")}${bill(62, 142, 4, "INTERNET", "#7A5AC8")}${bill(196, 146, -4, "ALQUILER", "#D0485E")}</g>
-      <rect y="660" width="420" height="140" fill="var(--sc-wood)"/><rect y="654" width="420" height="10" fill="var(--sc-wood2)"/>
-      <g transform="translate(300 560)"><path d="M10 100 h40" stroke="var(--sc-3)" stroke-width="6" stroke-linecap="round"/><path d="M30 100 V40 L60 10" stroke="var(--sc-3)" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M48 0 l34 18 -14 22 -32 -16z" fill="var(--sc-warm)"/></g>
-      <g transform="translate(60 610)"><rect x="0" y="10" width="34" height="40" rx="6" fill="var(--sc-red)"/><path d="M34 20 q14 0 14 12 t-14 12" stroke="var(--sc-red)" stroke-width="5" fill="none"/></g>
+  },
+  cork(x, y, sc = 1){   // 376 x 270
+    return `<g transform="translate(${x} ${y}) scale(${sc})"><rect width="376" height="270" rx="12" fill="var(--sc-wood)"/><rect x="8" y="8" width="360" height="254" rx="8" fill="var(--sc-wood2)" opacity=".35"/>
+      ${this.bill(18, 22, -5, "bulb", "#E0A93B")}${this.bill(128, 30, 3, "flame", "#3B7DD8")}${this.bill(240, 18, 5, "drop", "#1FA3B3")}${this.bill(62, 142, 4, "wifi", "#7A5AC8")}${this.bill(196, 146, -4, "home", "#D0485E")}</g>`;
+  },
+  calendar(x, y, sc = 1){   // 192 x 182, sin texto
+    let cal = ""; for (let r = 0; r < 5; r++) for (let c = 0; c < 7; c++){ const cx = 12 + c * 24, cy = 52 + r * 22;
+      cal += `<rect x="${cx}" y="${cy}" width="20" height="18" rx="3" fill="var(--sc-2)"/>`;
+      if ((r === 0 && c === 4) || (r === 2 && c === 1) || (r === 3 && c === 5) || (r === 1 && c === 6)) cal += `<circle cx="${cx + 10}" cy="${cy + 9}" r="12" fill="none" stroke="var(--sc-red)" stroke-width="3"/>`; }
+    return `<g transform="translate(${x} ${y}) scale(${sc})"><rect width="192" height="182" rx="8" fill="var(--sc-1)"/><rect width="192" height="40" rx="8" fill="var(--sc-red)"/><circle cx="42" cy="0" r="5" fill="var(--sc-3)"/><circle cx="150" cy="0" r="5" fill="var(--sc-3)"/>${cal}</g>`;
+  },
+  clock(x, y, sc = 1){ return `<g transform="translate(${x} ${y}) scale(${sc})"><circle r="50" fill="var(--sc-warm)"/><circle r="40" fill="var(--sc-1)"/><path d="M0 0 V-28 M0 0 L20 10" stroke="var(--sc-3)" stroke-width="5" stroke-linecap="round"/><circle r="4" fill="var(--sc-3)"/></g>`; },
+  lamp(x, y){ return `<g transform="translate(${x} ${y})"><path d="M10 100 h40" stroke="var(--sc-3)" stroke-width="6" stroke-linecap="round"/><path d="M30 100 V40 L60 10" stroke="var(--sc-3)" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M48 0 l34 18 -14 22 -32 -16z" fill="var(--sc-warm)"/></g>`; },
+  mug(x, y){ return `<g transform="translate(${x} ${y})"><rect x="0" y="10" width="34" height="40" rx="6" fill="var(--sc-red)"/><path d="M34 20 q14 0 14 12 t-14 12" stroke="var(--sc-red)" stroke-width="5" fill="none"/></g>`; },
+  plant(x, y){ return `<g transform="translate(${x} ${y})"><rect x="8" y="44" width="38" height="30" rx="5" fill="var(--sc-red)"/><path d="M27 44 C 10 24, 12 6, 26 0 C 34 12, 40 26, 27 44 Z" fill="var(--sc-green)"/><path d="M27 44 C 42 28, 52 20, 50 8 C 38 12, 30 26, 27 44 Z" fill="var(--sc-green)"/></g>`; },
+  basket(x, y){ return `<g transform="translate(${x} ${y})"><path d="M0 20 h80 l-8 50 h-64z" fill="var(--sc-warm)"/><path d="M10 20 q30 -30 60 0" stroke="var(--sc-3)" stroke-width="4" fill="none"/><circle cx="24" cy="18" r="9" fill="var(--sc-red)"/><circle cx="44" cy="14" r="10" fill="var(--sc-green)"/><circle cx="60" cy="19" r="8" fill="var(--sc-warm)"/></g>`; },
+  register(x, y){ return `<g transform="translate(${x} ${y})"><rect x="0" y="40" width="110" height="56" rx="10" fill="var(--sc-3)"/><rect x="12" y="4" width="86" height="46" rx="8" fill="var(--sc-blue)"/>
+    <rect x="22" y="14" width="66" height="18" rx="4" fill="var(--sc-green)"/><path d="M64 4 v-44 q0 -10 10 -10 h14 v54" fill="#fff"/>
+    <g fill="var(--sc-1)">${[0,1].map(r => [0,1,2,3].map(c => `<rect x="${12 + c * 22}" y="${54 + r * 16}" width="18" height="10" rx="3"/>`).join("")).join("")}</g></g>`; },
+  crates(x, y){ return `<g transform="translate(${x} ${y})"><rect x="0" y="30" width="70" height="46" rx="4" fill="var(--sc-wood2)"/><rect x="8" y="38" width="54" height="8" rx="2" fill="var(--sc-wood)"/><rect x="8" y="54" width="54" height="8" rx="2" fill="var(--sc-wood)"/><rect x="14" y="0" width="56" height="34" rx="4" fill="var(--sc-wood)"/><rect x="22" y="8" width="40" height="7" rx="2" fill="var(--sc-wood2)" opacity=".6"/></g>`; },
+  cloud(x, y, k){ return `<g transform="translate(${x} ${y}) scale(${k})" fill="var(--sc-1)" opacity=".9"><circle cx="20" cy="20" r="16"/><circle cx="44" cy="14" r="20"/><circle cx="68" cy="22" r="14"/><rect x="18" y="20" width="56" height="16" rx="8"/></g>`; },
+  tree(x){ return `<g transform="translate(${x} 664)"><rect x="-4" y="30" width="8" height="40" fill="var(--sc-wood2)"/><circle cx="0" cy="20" r="26" fill="var(--sc-green)"/><circle cx="-14" cy="34" r="16" fill="var(--sc-green)"/><circle cx="14" cy="34" r="16" fill="var(--sc-green)"/></g>`; },
+  // Kiosco de diarios, solo con dibujos: toldo, estante y un diario doblado
+  kiosk(x, y){ return `<g transform="translate(${x} ${y})"><rect x="0" y="22" width="80" height="78" rx="5" fill="var(--sc-red)"/><rect x="-6" y="12" width="92" height="14" rx="4" fill="var(--sc-wood2)"/>
+    <g transform="translate(14 32)"><rect width="52" height="18" rx="2" fill="var(--sc-1)"/><rect x="6" y="5" width="22" height="3" fill="var(--sc-3)"/><rect x="6" y="11" width="40" height="2.5" fill="var(--sc-3)"/></g>
+    <rect x="10" y="58" width="26" height="32" fill="var(--sc-1)"/><rect x="44" y="58" width="26" height="32" fill="var(--sc-1)"/></g>`; },
+  lampPost(x, y){ return `<g transform="translate(${x} ${y})" fill="var(--sc-3)"><rect x="0" y="0" width="5" height="190"/><path d="M-16 0 h37 l-7 -16 h-23z"/><circle cx="2" cy="4" r="6" fill="var(--sc-warm)"/></g>`; },
+  car(x, y, col){ return `<g transform="translate(${x} ${y})"><rect x="0" y="6" width="104" height="24" rx="9" fill="${col}"/><path d="M20 6 l11 -16 h42 l13 16z" fill="${col}"/><path d="M34 4 l7 -10 h16 v10z M61 4 v-10 h10 l8 10z" fill="var(--sc-sky)"/>
+    <rect x="38" y="-18" width="26" height="8" rx="2" fill="var(--sc-3)"/><circle cx="24" cy="32" r="9" fill="var(--sc-3)"/><circle cx="80" cy="32" r="9" fill="var(--sc-3)"/></g>`; },
+  pendant(x){ return `<g><path d="M${x} 62 V106" stroke="var(--sc-3)" stroke-width="3"/><path d="M${x - 20} 132 L${x - 9} 106 H${x + 9} L${x + 20} 132 Z" fill="var(--sc-warm)"/><ellipse cx="${x}" cy="134" rx="20" ry="4" fill="var(--sc-warm)" opacity=".5"/></g>`; }
+};
+const SCENES = {
+  // Movimientos: adentro de un almacén. Toldo rayado, estantes con productos, lámparas colgantes y el mostrador con la caja
+  list: (W, colU) => {
+    const B = sceneBits, wide = W > 0, WW = wide ? W : 420, R = sceneRng(5);
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(100, s / 2), rz = WW - Math.max(100, s / 2);
+    let shelves = ""; const prod = ["var(--sc-red)","var(--sc-warm)","var(--sc-green)","var(--sc-blue)"];
+    for (let r = 0; r < 4; r++){ const y = 250 + r * 92; shelves += `<rect x="18" y="${y}" width="${WW - 36}" height="10" rx="2" fill="var(--sc-wood2)"/>`;
+      for (let x = 26; x < WW - 28;){ const q = R(), w = 18 + Math.floor(q * 22), h = 34 + Math.floor(q * 40);
+        shelves += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="3" fill="${prod[Math.floor(q * 4)]}"/><rect x="${x + 3}" y="${y - h + 8}" width="${w - 6}" height="8" rx="2" fill="var(--sc-1)" opacity=".8"/>`; x += w + 6; } }
+    let awn = ""; for (let x = 0; x < WW; x += 42) awn += `<path d="M${x} 0 h42 v62 q-21 18 -42 0z" fill="${(x / 42) % 2 ? "var(--sc-1)" : "var(--sc-red)"}"/>`;
+    let lamps = ""; if (wide){ for (let x = 150; x < WW - 40; x += 260 + Math.floor(R() * 90)) lamps += B.pendant(x); } else lamps = B.pendant(110) + B.pendant(310);
+    const left = wide ? B.plant(lz - 70, 568) + B.basket(lz + 6, 590) : B.plant(24, 568) + B.basket(110, 590);
+    const right = wide ? B.register(rz - 55, 548) + B.crates(rz - 190, 570) : B.register(286, 548);
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
+      <rect width="${WW}" height="800" fill="var(--sc-2)"/>${awn}${shelves}${lamps}
+      <rect y="640" width="${WW}" height="20" fill="var(--sc-wood2)"/><rect y="660" width="${WW}" height="140" fill="var(--sc-wood)"/>${right}${left}
     </svg>`;
   },
-  // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas
-  jars: () => {
+  // Resumen: una calle de Nueva York con cielo, nubes, ventanas prendidas, árboles, faroles, kiosco de diarios y taxis
+  dash: (W, colU) => {
+    const B = sceneBits, wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(100, s / 2), rz = WW - Math.max(100, s / 2);
+    if (!wide){
+      let sd = 11;
+      const bld = (x, w, h, c) => { let win = "";
+        for (let yy = 800 - h + 16; yy < 690; yy += 24) for (let xx = x + 9; xx < x + w - 12; xx += 17){ sd = (sd * 9301 + 49297) % 233280; const on = sd / 233280 > .62;
+          win += `<rect x="${xx}" y="${yy}" width="9" height="12" rx="1.5" fill="${on ? "var(--sc-warm)" : "var(--sc-1)"}"/>`; }
+        return `<rect x="${x}" y="${800 - h}" width="${w}" height="${h}" fill="${c}"/>${win}`; };
+      return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
+        <rect width="420" height="800" fill="var(--sc-sky)"/>${B.cloud(20, 70, 1)}${B.cloud(260, 130, .8)}${B.cloud(150, 220, .6)}
+        <circle cx="350" cy="80" r="28" fill="var(--sc-warm)" opacity=".85"/>
+        ${bld(-10, 92, 430, "var(--sc-blue)")}${bld(80, 72, 540, "var(--sc-3)")}${bld(150, 102, 370, "var(--sc-red)")}${bld(250, 66, 610, "var(--sc-3)")}${bld(314, 116, 450, "var(--sc-blue)")}
+        <path d="M273 190 l10 -46 10 46z" fill="var(--sc-3)"/>
+        <g transform="translate(336 316)"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>
+        <rect y="730" width="420" height="70" fill="var(--sc-3)"/><rect y="724" width="420" height="8" fill="var(--sc-2)"/>
+        <g fill="var(--sc-1)" opacity=".7"><rect x="20" y="770" width="40" height="6" rx="3"/><rect x="120" y="770" width="40" height="6" rx="3"/><rect x="220" y="770" width="40" height="6" rx="3"/><rect x="320" y="770" width="40" height="6" rx="3"/></g>
+        ${B.tree(140)}${B.tree(300)}${B.kiosk(28, 626)}${B.lampPost(386, 540)}${B.car(196, 700, "var(--sc-warm)")}
+      </svg>`;
+    }
+    // Ancho: un horizonte de edificios, con ventanas en patrón para no llenar la página de nodos
+    const litRng = sceneRng(29); let lit = ""; for (let c = 0; c < 5; c++) for (let r = 0; r < 4; r++) if (litRng() > .6) lit += `<rect x="${c * 17}" y="${r * 24 + 6}" width="9" height="12" rx="1.5" fill="var(--sc-warm)"/>`;
+    const cols = ["var(--sc-blue)","var(--sc-3)","var(--sc-red)","var(--sc-3)","var(--sc-blue)","var(--sc-2)"];
+    let blds = "", x = -20, i = 0;
+    while (x < WW + 20){
+      const bw = 70 + Math.floor(R() * 70), bh = 250 + Math.floor(R() * 330), top = 800 - bh, col = cols[Math.floor(R() * cols.length)];
+      blds += `<rect x="${x}" y="${top}" width="${bw}" height="${bh}" fill="${col}"/><rect x="${x + 9}" y="${top + 16}" width="${bw - 20}" height="${Math.max(0, 690 - top - 16)}" fill="url(#wDim)"/><rect x="${x + 9}" y="${top + 16}" width="${bw - 20}" height="${Math.max(0, 690 - top - 16)}" fill="url(#wLit)"/>`;
+      if (i % 5 === 2) blds += `<path d="M${x + bw / 2 - 10} ${top} l10 -50 l10 50z" fill="var(--sc-3)"/>`;
+      if (i % 5 === 4) blds += `<g transform="translate(${x + bw * .25} ${top - 66})"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>`;
+      x += bw - 4; i++;
+    }
+    let clouds = ""; const nc = Math.max(3, Math.round(WW / 230)); for (let c = 0; c < nc; c++) clouds += B.cloud(Math.round(c * WW / nc + R() * 90), 40 + Math.round(R() * 200), (.6 + R() * .5).toFixed(2));
+    let trees = "", posts = ""; for (let tx = 90; tx < WW - 40; tx += 200 + Math.floor(R() * 120)) trees += B.tree(tx); for (let px = 220; px < WW - 40; px += 320 + Math.floor(R() * 80)) posts += B.lampPost(px, 540);
+    let marks = ""; for (let mx = 20; mx < WW; mx += 100) marks += `<rect x="${mx}" y="770" width="40" height="6" rx="3"/>`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
+      <defs><pattern id="wDim" width="17" height="24" patternUnits="userSpaceOnUse"><rect x="0" y="6" width="9" height="12" rx="1.5" fill="var(--sc-1)"/></pattern>
+        <pattern id="wLit" width="85" height="96" patternUnits="userSpaceOnUse">${lit}</pattern></defs>
+      <rect width="${WW}" height="800" fill="var(--sc-sky)"/>${clouds}<circle cx="${Math.round(WW * .86)}" cy="86" r="30" fill="var(--sc-warm)" opacity=".85"/>${blds}
+      <rect y="730" width="${WW}" height="70" fill="var(--sc-3)"/><rect y="724" width="${WW}" height="8" fill="var(--sc-2)"/><g fill="var(--sc-1)" opacity=".7">${marks}</g>
+      ${trees}${posts}${B.kiosk(lz - 40, 626)}${B.car(rz - 52, 700, "var(--sc-warm)")}${B.car(Math.round(lz + 190), 706, "var(--sc-blue)")}
+    </svg>`;
+  },
+  // Fijos: el rincón de las cuentas de la casa. Calendario con días marcados, reloj, corcho con las facturas (íconos) y el escritorio
+  fixed: (W, colU) => {
+    const B = sceneBits, wide = W > 0, WW = wide ? W : 420;
+    if (!wide){
+      return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
+        <rect width="420" height="800" fill="var(--sc-2)"/><rect width="420" height="800" fill="var(--sc-1)" opacity=".5"/>
+        ${B.calendar(22, 72)}${B.clock(330, 150)}${B.cork(22, 330)}
+        <rect y="660" width="420" height="140" fill="var(--sc-wood)"/><rect y="654" width="420" height="10" fill="var(--sc-wood2)"/>${B.lamp(300, 560)}${B.mug(60, 610)}
+      </svg>`;
+    }
+    const s = Math.max(0, (WW - colU) / 2), lz = Math.max(110, s / 2), rz = WW - Math.max(110, s / 2), zs = Math.min(1, Math.max(.5, (s - 30) / 400));
+    const frame = (x, y, w, h, art) => `<g transform="translate(${x} ${y})"><rect width="${w}" height="${h}" rx="4" fill="var(--sc-wood2)"/><rect x="7" y="7" width="${w - 14}" height="${h - 14}" fill="var(--sc-1)"/>${art(w, h)}</g>`;
+    const art1 = (w, h) => `<circle cx="${w * .62}" cy="${h * .36}" r="${w * .13}" fill="var(--sc-warm)"/><path d="M7 ${h - 7} L${w * .38} ${h * .5} L${w * .6} ${h * .72} L${w * .8} ${h * .58} L${w - 7} ${h * .76} V${h - 7}Z" fill="var(--sc-green)"/>`;
+    const art2 = (w, h) => `<rect x="${w * .22}" y="${h * .2}" width="${w * .56}" height="${h * .6}" rx="6" fill="var(--sc-blue)"/><circle cx="${w * .5}" cy="${h * .5}" r="${w * .14}" fill="var(--sc-red)"/>`;
+    let books = ""; const R = sceneRng(17), bc = ["var(--sc-red)","var(--sc-blue)","var(--sc-green)","var(--sc-warm)","var(--sc-3)"]; let bx = 0;
+    for (let b = 0; b < 12; b++){ const bw = 12 + Math.floor(R() * 10), bh = 44 + Math.floor(R() * 26); books += `<rect x="${bx}" y="${70 - bh}" width="${bw}" height="${bh}" rx="2" fill="${bc[b % 5]}"/>`; bx += bw + 2; }
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
+      <rect width="${WW}" height="800" fill="var(--sc-2)"/><rect width="${WW}" height="800" fill="var(--sc-1)" opacity=".5"/>
+      ${B.calendar(lz - 96 * zs, 72, zs)}
+      ${frame(lz - 110 * zs, 72 + 200 * zs, 90 * zs, 110 * zs, art1)}${frame(lz + 14 * zs, 72 + 214 * zs, 96 * zs, 96 * zs, art2)}
+      <g transform="translate(${lz - 90 * zs} ${520}) scale(${zs})"><rect x="-10" y="70" width="${bx + 20}" height="10" rx="3" fill="var(--sc-wood2)"/>${books}</g>
+      ${B.clock(rz, 120, zs)}${B.cork(rz - 188 * zs, 210, zs)}
+      <rect y="660" width="${WW}" height="140" fill="var(--sc-wood)"/><rect y="654" width="${WW}" height="10" fill="var(--sc-wood2)"/>
+      ${B.lamp(rz - 30, 560)}${B.mug(lz + 40, 610)}${B.plant(lz - 90, 586)}
+    </svg>`;
+  },
+  // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas, de lado a lado
+  jars: (W, colU) => {
+    const WW = W > 0 ? W : 420;
     let sh = "", seed = 7; const cols = ["var(--sc-green)","var(--sc-warm)","var(--sc-red)","var(--sc-blue)"];
     for (let i = 0; i < 6; i++){ const y = 120 + i * 120;
-      sh += `<rect x="0" y="${y}" width="420" height="14" fill="var(--sc-wood2)"/><rect x="0" y="${y + 14}" width="420" height="6" fill="#000" opacity=".12"/>`;
+      sh += `<rect x="0" y="${y}" width="${WW}" height="14" fill="var(--sc-wood2)"/><rect x="0" y="${y + 14}" width="${WW}" height="6" fill="#000" opacity=".12"/>`;
       let x = 10 + (i % 2) * 16;
-      while (x < 400){ seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280; seed = (seed * 9301 + 49297) % 233280; const r2 = seed / 233280;
+      while (x < WW - 20){ seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280; seed = (seed * 9301 + 49297) % 233280; const r2 = seed / 233280;
         const k = Math.floor(r * 4), w = 26 + Math.floor(r2 * 26), h = 40 + Math.floor(r * 44);
         if (k === 1) sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="4" fill="${cols[(x + i) % 4]}"/><rect x="${x}" y="${y - h + 8}" width="${w}" height="10" fill="#fff" opacity=".6"/>`;
         else sh += `<rect x="${x + 3}" y="${y - h - 8}" width="${w - 6}" height="10" rx="3" fill="${cols[(x + i + 1) % 4]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="9" fill="#fff" opacity=".55"/><rect x="${x + 4}" y="${y - h * .55}" width="${w - 8}" height="${h * .55 - 4}" rx="6" fill="${cols[(x + i) % 4]}"/>`;
         x += w + 8 + Math.floor(r2 * 18); } }
-    return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice"><rect width="420" height="800" fill="var(--sc-wood)"/>${sh}</svg>`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="var(--sc-wood)"/>${sh}</svg>`;
   }
 };
-let sceneOn = null;
-/* En pantallas anchas el dibujo no se estira: queda del ancho de la app, y a los costados la pared, la calle o el piso siguen solos.
-   Cada escena dice, en unidades del dibujo (alto 800), dónde cambia de color para poder prolongarla. */
-const SCENE_FILL = {
-  list:  [[0,"color-mix(in srgb, var(--sc-1) 92%, var(--sc-2))"],[640,"color-mix(in srgb, var(--sc-1) 92%, var(--sc-2))"],[640,"var(--sc-wood2)"],[660,"var(--sc-wood2)"],[660,"var(--sc-wood)"]],
-  dash:  [[0,"var(--sc-sky)"],[724,"var(--sc-sky)"],[724,"var(--sc-2)"],[732,"var(--sc-2)"],[732,"var(--sc-3)"]],
-  fixed: [[0,"color-mix(in srgb, var(--sc-1) 50%, var(--sc-2))"],[654,"color-mix(in srgb, var(--sc-1) 50%, var(--sc-2))"],[654,"var(--sc-wood2)"],[664,"var(--sc-wood2)"],[664,"var(--sc-wood)"]]
-};
-function sceneSideCss(t, top, k){
-  if (t === "jars"){   // estantes de madera que siguen hacia los costados
-    return `linear-gradient(to bottom, var(--sc-wood2) 0 ${14*k}px, rgba(0,0,0,.12) ${14*k}px ${20*k}px, transparent ${20*k}px ${120*k}px) 0 ${Math.round(top + 120*k)}px / 100% ${120*k}px repeat-y, var(--sc-wood)`;
-  }
-  const st = SCENE_FILL[t]; if (!st) return "";
-  return `linear-gradient(to bottom, ${st.map(([y, c]) => `${c} ${Math.round(top + y * k)}px`).join(", ")})`;
-}
+let sceneOn = null, sceneKey = "";
+/* Celular: el dibujo vertical. Pantalla ancha: el dibujo se arma del ancho de la pantalla (sin zoom) y lo vistoso queda a los costados. */
 function layoutScene(){
   const sc = $("scene"); if (!sc) return;
   const vw = window.innerWidth || document.documentElement.clientWidth || 420, vh = sc.clientHeight || window.innerHeight || 800;
-  const pw = vw > 560 ? 520 : vw;                       // ancho de la app
-  const k = Math.max(pw / 420, vh / 800), top = vh - 800 * k;   // escala del dibujo (cubre el panel) y dónde arranca arriba
-  sc.style.setProperty("--pw", pw + "px");
-  sc.style.background = pw >= vw ? "" : sceneSideCss(sceneOn, top, k);
+  const wide = vw > 560;
+  const W = wide ? Math.max(480, Math.round(800 * vw / vh / 40) * 40) : 0;     // ancho del dibujo según la forma de la pantalla
+  const colU = wide ? Math.round(520 * 800 / vh) : 0;                         // ancho de la app en unidades del dibujo
+  const key = `${sceneOn}|${W}|${colU}`;
+  sc.style.setProperty("--pw", "100%"); sc.style.background = "";
+  if (key !== sceneKey){ sceneKey = key; const f = SCENES[sceneOn]; sc.innerHTML = f ? f(W, colU) : ""; }
 }
-window.addEventListener("resize", layoutScene);
-function setScene(t){ if (sceneOn === t) return; sceneOn = t; const f = SCENES[t]; $("scene").innerHTML = f ? f() : ""; layoutScene(); }
+let sceneResizeT = null;
+window.addEventListener("resize", () => { clearTimeout(sceneResizeT); sceneResizeT = setTimeout(layoutScene, 120); });
+function setScene(t){ if (sceneOn === t) return; sceneOn = t; layoutScene(); }
+
 
 function setTab(t){
   const prevTab = tab;
