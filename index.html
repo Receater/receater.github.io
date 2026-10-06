@@ -1021,6 +1021,59 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .spin{flex:none;width:36px;height:36px;border-radius:50%;border:4px solid rgba(47,91,234,.18);border-top-color:#2F5BEA;animation:readspin .8s linear infinite}
 @keyframes readspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+
+/* ===== Estados vacíos: con soporte para que se lean sobre cualquier fondo ===== */
+.empty{background:var(--paper);color:var(--muted);border-radius:16px;padding:26px 22px;margin:8px 0;box-shadow:0 6px 18px rgba(0,0,0,.16);line-height:1.5}
+.empty strong{font-size:1.25rem;margin-bottom:6px}
+.paper .empty{box-shadow:none}
+
+/* ===== Encabezado: una etiqueta de papel con borde punteado ===== */
+.brand{--ink:#1F1F1F;--muted:#6E6A62;--accent:#2F5BEA;color:#1F1F1F;color-scheme:light;background:#F5E8C8;border-radius:6px;padding:12px 12px 12px 20px;
+  outline:1.5px dashed #C2AE7F;outline-offset:-7px;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.18)) drop-shadow(0 0 .8px rgba(70,45,0,.55))}
+.brand .logo span{color:#2F5BEA}
+.brand .icon-btn{background:rgba(255,255,255,.6);border:1.5px solid #C9B88F;color:#1F1F1F}
+
+/* ===== Pestañas: una caja de madera con un objeto por sección ===== */
+.main-tabs{position:relative;display:flex;align-items:flex-end;gap:6px;padding:15px 10px 9px;margin-bottom:18px;border-radius:14px;border:2px solid #A9743E;
+  background:linear-gradient(180deg,#DFBB8B,#C99B63);box-shadow:inset 0 3px 0 rgba(255,255,255,.38),inset 0 -4px 0 rgba(0,0,0,.16),0 6px 14px rgba(0,0,0,.24)}
+.main-tabs::after{content:"";position:absolute;left:2px;right:2px;bottom:2px;height:13px;border-radius:0 0 11px 11px;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,#BA8650,#A06C3A);box-shadow:inset 0 2px 0 rgba(255,255,255,.22)}
+.main-tabs button{position:relative;z-index:1;display:grid;place-items:center;height:44px;min-height:44px;min-width:max-content;margin:0;padding:0 12px;border:0;
+  overflow:visible;text-overflow:clip;white-space:nowrap;letter-spacing:0;color:#1F1F1F;transition:transform .16s ease,filter .16s ease;
+  filter:drop-shadow(0 1px 1px rgba(50,28,4,.45)) brightness(.9) saturate(.9)}
+.main-tabs button[aria-selected="true"]{z-index:2;transform:translateY(-5px);filter:drop-shadow(0 5px 5px rgba(50,28,4,.5))}
+.main-tabs button:focus-visible{outline:3px solid #2F5BEA;outline-offset:2px}
+/* Movimientos: un ticket */
+.main-tabs #tabList{flex:1.45 1 auto;border-radius:2px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;
+  background:radial-gradient(circle at 0 50%,transparent 0 7px,#F5E8C8 7.5px) left / 51% 100% no-repeat,radial-gradient(circle at 100% 50%,transparent 0 7px,#F5E8C8 7.5px) right / 51% 100% no-repeat}
+/* Resumen: un mini diario, con la letra del título del Diario de Recy */
+.main-tabs #tabDash{flex:1.1 1 auto;border-radius:1px;background:#FFFFFF;color:#111;border-top:3px double #111;border-bottom:1.5px solid #111;
+  font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-weight:900;font-size:.95rem}
+/* Fijos: un post-it con chinche y esquina doblada */
+.main-tabs #tabFixed{flex:.8 1 auto;padding-top:7px;border-radius:1px;color:#2A2412;font-weight:800;font-size:.9rem;transform:rotate(-2deg);
+  background:linear-gradient(#F6D860,#F6D860) top left / 100% calc(100% - 12px) no-repeat,linear-gradient(#F6D860,#F6D860) bottom left / calc(100% - 12px) 12px no-repeat,linear-gradient(to bottom right,#CDAE3A 50%,transparent 50%) bottom right / 12px 12px no-repeat}
+.main-tabs #tabFixed[aria-selected="true"]{transform:rotate(-2deg) translateY(-5px) scale(1.03)}
+.main-tabs #tabFixed::before{content:"";position:absolute;left:50%;top:4px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0 1.5px,transparent 2.5px),#D0485E;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+/* Ahorros: un frasquito de vidrio con tapa verde fina */
+.main-tabs #tabJars{flex:1 1 auto;border:2px solid rgba(116,162,172,.9);border-radius:12px 12px 8px 8px;color:#1B2430;font-weight:800;font-size:.9rem;
+  background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,0) 16%,rgba(255,255,255,0) 84%,rgba(255,255,255,.55)),linear-gradient(0deg,rgba(30,138,91,.28) 0 30%,rgba(30,138,91,0) 30%),linear-gradient(180deg,#F3FAF9,#D6EBEA)}
+.main-tabs #tabJars::before{content:"";position:absolute;left:14px;right:14px;top:-7px;height:8px;border-radius:4px 4px 1px 1px;
+  background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 50%,rgba(0,0,0,.14)),repeating-linear-gradient(90deg,rgba(0,0,0,.16) 0 2px,transparent 2px 7px),#1E8A5B;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+
+/* ===== Selector de mes: una tira de ticket perforada ===== */
+.month-nav{--ink:#1F1F1F;--muted:#6E6A62;--accent:#2F5BEA;color:#1F1F1F;color-scheme:light;position:relative;display:flex;align-items:stretch;gap:0;padding:0;min-height:78px;border-radius:4px;
+  background:radial-gradient(circle at 0 50%,transparent 0 9px,#F5E8C8 9.5px) left / 51% 100% no-repeat,radial-gradient(circle at 100% 50%,transparent 0 9px,#F5E8C8 9.5px) right / 51% 100% no-repeat;
+  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.2)) drop-shadow(0 0 .8px rgba(70,45,0,.6))}
+.month-nav .icon-btn{flex:none;width:58px;height:auto;border:0;border-radius:0;background:none;font-size:1.7rem;color:#1F1F1F}
+.month-nav #prev{margin-left:6px;border-right:2px dashed #C2AE7F}
+.month-nav #next{margin-right:6px;border-left:2px dashed #C2AE7F}
+.month-nav .title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}
+.month-nav .month-btn{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:1.1rem;color:#1F1F1F}
+.month-nav .range{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;color:#6E6A62}
+.month-nav .range-btn{font-family:inherit;color:#6E6A62}
 </style>
 </head>
 <body>
@@ -1035,7 +1088,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
     </button>
   </header>
-  <div class="tabs" role="tablist">
+  <div class="tabs main-tabs" role="tablist">
     <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
     <button role="tab" id="tabDash" aria-selected="false">Resumen</button>
     <button role="tab" id="tabFixed" aria-selected="false">Fijos</button>
@@ -1628,7 +1681,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <script>
-const BUILD = "2026-10-06.0042";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-06.0309";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
