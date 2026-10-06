@@ -1591,7 +1591,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 </div>
 
 <script>
-const BUILD = "2026-10-05.2358";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-06.0000";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5051,7 +5051,7 @@ async function checkNewVersion(){
   if (updShown || Date.now() - updLast < 60000) return; updLast = Date.now();
   try {
     const r = await fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
-    const m = (await r.text()).match(/const BUILD = "2026-10-05.2358"]+)"/);
+    const m = (await r.text()).match(/const BUILD = "([^"]+)"/);
     if (m && m[1] !== BUILD){
       updShown = true;
       const bar = document.createElement("div"); bar.className = "upd-bar"; bar.setAttribute("role", "status");
