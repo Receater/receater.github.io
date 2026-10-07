@@ -178,9 +178,20 @@ button{cursor:pointer}
 .usd-box .field:first-child{margin-top:0}
 .cur-tag{align-self:center;font-weight:700;color:var(--usd);font-size:1.1rem;padding:0 4px}
 .fx-hint{font-size:.85rem;color:var(--muted);margin-top:8px}
-.fx-pie{margin:0 0 14px;color:var(--ink,#1E1B16)}
-.fx-pie .sec-h{font-family:var(--body);font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 10px;padding:5px 0;border-top:1px solid currentColor;border-bottom:2px solid currentColor}
-.fx-pie .legend .d{overflow-wrap:anywhere}
+.fx-pie{margin:30px 0 22px}
+.fx-pie .fxp-body{padding:14px 16px 6px;--ink:#1F1F1F;--paper:#FFFFFF;--muted:#6E6A62;--line:#E3DED2;--danger:#C9374B;--usd:#1E7A50}
+.fx-pie .donut-wrap svg{width:min(220px,62vw)}
+.fx-pie .donut-center{max-width:52%}
+.fx-pie .donut-center .v{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:clamp(1.3rem,6vw,1.7rem)}
+.fx-pie .donut-center .l{font-size:.78rem;color:#6E6A62}
+.fxp-total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1.5px dashed #BDB6A5;border-bottom:1.5px dashed #BDB6A5;padding:8px 2px;margin:0 0 6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.92rem}
+.fxp-total strong{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600}
+.fx-pie .legend .n{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700}
+.fx-pie .legend .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.92rem}
+.fx-pie .legend .p{font-family:var(--body)}
+.fx-pie .legend li + li{border-top:1.5px dotted #D9D3C6}
+.fx-pie .legend li.cat-list{border-top:0}
+.fxp-note{margin:8px 0 4px}
 
 .brand{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:2px 0 10px}
 .logo{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
@@ -1767,7 +1778,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-07.0120";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-07.0150";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -4576,9 +4587,10 @@ function fixStatus(i){
   }
 }
 /* Torta de los fijos: cuánto del sueldo ocupan y en qué categorías */
+const fixPieOpen = new Set();
 function fixPie(){
-  const S = fixSummary(viewYear, viewMonth), sec = document.createElement("div"); sec.className = "card fx-pie";
-  if (!S.total){ return sec; }
+  const S = fixSummary(viewYear, viewMonth);
+  if (!S.total) return document.createDocumentFragment();
   // Sueldo de este período; si todavía no lo cargaste, el último sueldo en pesos
   let inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS" && e.category === "sueldo").reduce((s,e) => s + e.amount, 0), est = null;
   if (!inc){
@@ -4586,7 +4598,17 @@ function fixPie(){
     if (est) inc = est.amount;
   }
   const base = inc > 0 ? Math.max(inc, S.total) : S.total;
-  const h = document.createElement("h3"); h.className = "sec-h"; h.textContent = inc > 0 ? "Cuánto de tu sueldo se llevan los fijos" : "En qué se te van los fijos"; sec.append(h);
+  // Tablilla con broche, igual que los fijos pendientes
+  const sec = document.createElement("section"); sec.className = "clip fx-pie";
+  const clamp = document.createElement("div"); clamp.className = "clip-clamp"; clamp.setAttribute("aria-hidden", "true");
+  const paper = document.createElement("div"); paper.className = "clip-paper";
+  const top = document.createElement("div"); top.className = "cal-top";
+  const tt = document.createElement("div"); tt.className = "cal-title"; tt.textContent = inc > 0 ? "Fijos vs. sueldo" : "Tus fijos";
+  const ts = document.createElement("div"); ts.className = "cal-sub"; ts.textContent = inc > 0 ? "cuánto se llevan y en qué" : "en qué se te van";
+  top.append(tt, ts); paper.append(top);
+  const body = document.createElement("div"); body.className = "fxp-body"; paper.append(body);
+  sec.append(clamp, paper);
+
   const wrap = document.createElement("div"); wrap.className = "donut-wrap";
   const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":"Reparto de los fijos por categoría"});
   const r = 78, C = 2*Math.PI*r;
@@ -4600,36 +4622,61 @@ function fixPie(){
   });
   const center = document.createElement("div"); center.className = "donut-center";
   center.innerHTML = '<div class="v"></div><div class="l"></div>';
-  center.querySelector(".v").textContent = inc > 0 ? Math.round(S.total / inc * 100) + "%" : fmtARS.format(S.total);
-  center.querySelector(".l").textContent = inc > 0 ? `del sueldo (${fmtARS.format(S.total)} de ${fmtARS.format(inc)})` : "en fijos";
-  wrap.append(svg, center); sec.append(wrap);
+  center.querySelector(".v").textContent = inc > 0 ? Math.round(S.total / inc * 100) + "%" : f0ARS(S.total);
+  center.querySelector(".l").textContent = inc > 0 ? "de tu sueldo" : "en fijos";
+  wrap.append(svg, center); body.append(wrap);
+  if (inc > 0){
+    const tl = document.createElement("div"); tl.className = "fxp-total";
+    const a = document.createElement("span"); a.textContent = "Fijos del mes";
+    const b = document.createElement("strong"); b.textContent = `${fmtARS.format(S.total)} de ${fmtARS.format(inc)}`;
+    tl.append(a, b); body.append(tl);
+  }
   const pct = v => { const p = v / base * 100; return (p > 0 && p < 1 ? "<1" : Math.round(p)) + "%" + (inc > 0 ? " del sueldo" : ""); };
+  const today = dateOnly(toLocalInput(new Date()));
+  const stTxt = i => i.state === "paid" ? "Pagado" : i.state === "cardpaid" ? "Pagado con tarjeta" : i.state === "incard" ? "En tarjeta"
+    : i.state === "todebit" ? "A debitar" : i.state === "partial" ? "Parcial" : i.due < today ? "Vencido" : "Por pagar";
   const ul = document.createElement("ul"); ul.className = "legend";
   sorted.forEach(([id,v]) => {
-    const c = catById(id), li = document.createElement("li");
+    const c = catById(id), li = document.createElement("li"), open = fixPieOpen.has(id);
+    li.className = "cat-row" + (open ? " is-open" : ""); li.tabIndex = 0; li.setAttribute("role", "button"); li.setAttribute("aria-expanded", String(open));
     const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
     const mid = document.createElement("div"), n = document.createElement("div"); n.className = "n"; n.textContent = c.name;
-    const d = document.createElement("div"); d.className = "d"; d.textContent = S.names[id].join(", ");
+    const cnt = S.names[id].length;
+    const d = document.createElement("div"); d.className = "d"; d.textContent = `${cnt} ${cnt === 1 ? "fijo" : "fijos"}`;
     mid.append(n, d);
     const a = document.createElement("div"); a.className = "a"; a.textContent = fmtARS.format(round2(v));
     const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pct(v); a.append(pc);
-    li.append(dot, mid, a); ul.append(li);
+    const ch = document.createElement("span"); ch.className = "chev"; ch.textContent = "›";
+    li.append(dot, mid, a, ch); ul.append(li);
+    const toggle = () => { open ? fixPieOpen.delete(id) : fixPieOpen.add(id); renderFixed(); };
+    li.onclick = toggle; li.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggle(); } };
+    if (open){
+      const box = document.createElement("li"); box.className = "cat-list";
+      S.list.filter(i => i.f.category === id && (i.expected || i.paid)).forEach(i => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "cat-entry";
+        const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(i.due);
+        const t = document.createElement("span"); t.className = "t"; t.textContent = `${i.f.name} · ${stTxt(i)}`;
+        const aa = document.createElement("span"); aa.className = "a"; aa.textContent = money(Math.max(i.expected || 0, i.paid), i.currency);
+        b.append(dd, t, aa); b.onclick = () => openFixed(i.f); box.append(b);
+      });
+      ul.append(box);
+    }
   });
   if (inc > S.total){
     const li = document.createElement("li"), dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "var(--line)";
-    const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda libre del sueldo";
+    const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda libre";
     const a = document.createElement("div"); a.className = "a"; a.textContent = fmtARS.format(round2(inc - S.total));
     const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pct(inc - S.total); a.append(pc);
     li.append(dot, n, a); ul.append(li);
-  } else if (inc > 0 && S.total > inc){
-    const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = `Ojo: los fijos superan tu sueldo por ${fmtARS.format(round2(S.total - inc))}.`; sec.append(p);
   }
-  sec.append(ul);
+  body.append(ul);
   const notes = [];
+  if (inc > 0 && S.total > inc) notes.push(`Ojo: los fijos superan tu sueldo por ${fmtARS.format(round2(S.total - inc))}.`);
+  notes.push("Tocá una categoría para ver sus fijos.");
   if (est) notes.push(`Todavía no cargaste el sueldo de este período, así que usé el último (${shortDate(dateOnly(est.date))}).`);
   if (S.usdTotal > 0 && S.rate) notes.push(`Los ${fmtUSD.format(S.usdTotal)} en dólares están pasados a pesos al dólar de hoy.`);
   if (S.noAmount.length) notes.push(`No cuentan los que no tienen monto este mes: ${S.noAmount.map(i => i.f.name).join(", ")}.`);
-  if (notes.length){ const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = notes.join(" "); sec.append(p); }
+  const p = document.createElement("p"); p.className = "fx-hint fxp-note"; p.textContent = notes.join(" "); body.append(p);
   return sec;
 }
 function renderFixed(){
