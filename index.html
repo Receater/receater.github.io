@@ -178,6 +178,9 @@ button{cursor:pointer}
 .usd-box .field:first-child{margin-top:0}
 .cur-tag{align-self:center;font-weight:700;color:var(--usd);font-size:1.1rem;padding:0 4px}
 .fx-hint{font-size:.85rem;color:var(--muted);margin-top:8px}
+.fx-pie{margin:0 0 14px;color:var(--ink,#1E1B16)}
+.fx-pie .sec-h{font-family:var(--body);font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 10px;padding:5px 0;border-top:1px solid currentColor;border-bottom:2px solid currentColor}
+.fx-pie .legend .d{overflow-wrap:anywhere}
 
 .brand{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:2px 0 10px}
 .logo{font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
@@ -1764,7 +1767,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-06.1735";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-07.0120";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2053,12 +2056,37 @@ function fixInstances(y, m){
 }
 /* Lo que falta pagar de los fijos a mano / débito automático en un período (en pesos) */
 const isFixedEnt = x => !!(x.fixedId || (x.src && x.src.fixedId));
+/* Cotización del dólar para pasar los fijos en dólares a pesos (la de hoy o la última guardada) */
+function fixUsdRate(){
+  let casa = "oficial"; try { casa = localStorage.getItem("receater.fxCasa") || "oficial"; } catch {}
+  const q = typeof quotes !== "undefined" && quotes && (quotes.map[casa] || quotes.map.oficial); return q ? q.venta : (data.lastRate || 0);
+}
+const fixToARS = (n, cur) => cur === "USD" ? n * fixUsdRate() : n;
 function fixedPendingARS(y, m){
   // Lo que falta pagar de los fijos a mano o débito. Los que son en dólares se pasan a pesos con el dólar de hoy (o la última cotización)
-  const usdRate = () => { let casa = "oficial"; try { casa = localStorage.getItem("receater.fxCasa") || "oficial"; } catch {}
-    const q = typeof quotes !== "undefined" && quotes && (quotes.map[casa] || quotes.map.oficial); return q ? q.venta : (data.lastRate || 0); };
   return round2(fixInstances(y, m).filter(i => i.f.how !== "card" && i.state !== "paid")
-    .reduce((s,i) => { const left = Math.max(0, (i.expected || 0) - i.paid); return s + (i.currency === "USD" ? left * usdRate() : left); }, 0));
+    .reduce((s,i) => s + fixToARS(Math.max(0, (i.expected || 0) - i.paid), i.currency), 0));
+}
+/* Resumen de los fijos de un período, todo en pesos (los dólares pasados al dólar de hoy).
+   total = pagado + aPagar + enTarjeta, para que los números siempre cierren. */
+function fixSummary(y, m){
+  const list = fixInstances(y, m), S = { list, total:0, paid:0, toPay:0, inCard:0, usdTotal:0, noAmount:[], byCat:{}, names:{}, rate: fixUsdRate() };
+  list.forEach(i => {
+    const exp = i.expected || 0;
+    if (!exp && !i.paid){ S.noAmount.push(i); return; }
+    const tot = Math.max(exp, i.paid), paid = Math.min(i.paid, tot);
+    let paidV = paid, toPayV = 0, cardV = 0;
+    if (i.state === "cardpaid") paidV = tot;
+    else if (i.state === "incard") { paidV = 0; cardV = tot; }
+    else if (i.state === "paid") { paidV = tot; }
+    else toPayV = Math.max(0, tot - paid);
+    const k = fixToARS(1, i.currency);
+    S.total += tot * k; S.paid += paidV * k; S.toPay += toPayV * k; S.inCard += cardV * k;
+    if (i.currency === "USD") S.usdTotal += tot;
+    const c = i.f.category; S.byCat[c] = (S.byCat[c] || 0) + tot * k; (S.names[c] = S.names[c] || []).push(i.f.name);
+  });
+  ["total","paid","toPay","inCard"].forEach(k => S[k] = round2(S[k]));
+  return S;
 }
 function dayIn(Y, M, day){ const f = new Date(Y, M, 1); return new Date(f.getFullYear(), f.getMonth(), Math.min(day, daysIn(f.getFullYear(), f.getMonth()))); }
 function nextDayAfter(date, day){ let c = dayIn(date.getFullYear(), date.getMonth(), day); if (c <= date) c = dayIn(date.getFullYear(), date.getMonth()+1, day); return c; }
@@ -4295,23 +4323,20 @@ function stageDash(){
   });
 }
 function stageFixed(){
-  const list = fixInstances(viewYear, viewMonth), today = dateOnly(toLocalInput(new Date()));
+  const S = fixSummary(viewYear, viewMonth), list = S.list, today = dateOnly(toLocalInput(new Date()));
   const isDone = i => i.state === "paid" || i.state === "cardpaid";
   const done = list.filter(isDone).length;
-  const tot = cur => list.filter(i => i.currency === cur).reduce((s2,i) => s2 + (i.expected || i.paid || 0), 0);
-  const left = (cur, card) => list.filter(i => i.currency === cur && (card ? i.state === "incard" : ["pending","todebit","partial"].includes(i.state)))
-    .reduce((s2,i) => s2 + Math.max(0, (i.expected || 0) - i.paid), 0);
-  const fa = round2(left("ARS")), fu = round2(left("USD")), ca = round2(left("ARS", 1)), cu = round2(left("USD", 1)), ta = round2(tot("ARS")), tu = round2(tot("USD"));
-  const both = (a, u) => a && u ? `${fmtARS.format(a)} + ${fmtUSD.format(u)} en dólares` : a ? fmtARS.format(a) : u ? `${fmtUSD.format(u)} en dólares` : "";
   const late = list.filter(i => ["pending","partial"].includes(i.state) && i.due < today);
   const next = list.filter(i => !isDone(i) && i.due >= today)[0];
+  const A = n => fmtARS.format(n);
   renderStage("stageFixed", {
-    label: "Falta pagar", big: fa || !fu ? fmtARS.format(fa) : fmtUSD.format(fu),
-    bar: list.length ? done / list.length : null,
-    lines: [list.length && `Pagaste ${done} de ${list.length} fijos`,
-      fa && fu ? `También falta pagar ${fmtUSD.format(fu)} en dólares` : null,
-      (ca || cu) && `Fijos en tarjeta, sin pagar todavía: ${both(ca, cu)}`,
-      (ta || tu) && `Fijos de este mes, en total: ${both(ta, tu)}`,
+    label: `Fijos ${periodShort(viewYear, viewMonth)}, en total`, big: A(S.total),
+    bar: S.total ? S.paid / S.total : null,
+    lines: [list.length && `Pagaste ${done} de ${list.length} fijos${S.paid ? ` (${A(S.paid)})` : ""}`,
+      S.toPay > 0 && `Falta pagar a mano o débito: ${A(S.toPay)}`,
+      S.inCard > 0 && `Van en tarjeta: ${A(S.inCard)}`,
+      S.usdTotal > 0 && (S.rate ? `Incluye ${fmtUSD.format(S.usdTotal)} en dólares, al dólar de hoy` : `Los ${fmtUSD.format(S.usdTotal)} en dólares no están sumados (sin cotización)`),
+      S.noAmount.length && `Sin monto este mes: ${S.noAmount.map(i => i.f.name).join(", ")}`,
       late.length && `Vencidos: ${late.length}`],
     mood: !data.fixed.length ? "hungry" : late.length ? "worried" : list.length && done === list.length ? "full" : "happy",
     line: !data.fixed.length ? "Cargá tus fijos y te los recuerdo." : late.length ? `Ojo, tenés ${late.length === 1 ? "un fijo vencido" : late.length + " fijos vencidos"}.`
@@ -4550,6 +4575,63 @@ function fixStatus(i){
     default: return { st: `Vence el ${shortDate(i.due)}`, stamp: i.due < today ? ["VENCIDO","warn"] : null };
   }
 }
+/* Torta de los fijos: cuánto del sueldo ocupan y en qué categorías */
+function fixPie(){
+  const S = fixSummary(viewYear, viewMonth), sec = document.createElement("div"); sec.className = "card fx-pie";
+  if (!S.total){ return sec; }
+  // Sueldo de este período; si todavía no lo cargaste, el último sueldo en pesos
+  let inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS" && e.category === "sueldo").reduce((s,e) => s + e.amount, 0), est = null;
+  if (!inc){
+    est = data.incomes.filter(e => e.category === "sueldo" && e.currency === "ARS").sort((a,b) => b.date.localeCompare(a.date))[0];
+    if (est) inc = est.amount;
+  }
+  const base = inc > 0 ? Math.max(inc, S.total) : S.total;
+  const h = document.createElement("h3"); h.className = "sec-h"; h.textContent = inc > 0 ? "Cuánto de tu sueldo se llevan los fijos" : "En qué se te van los fijos"; sec.append(h);
+  const wrap = document.createElement("div"); wrap.className = "donut-wrap";
+  const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":"Reparto de los fijos por categoría"});
+  const r = 78, C = 2*Math.PI*r;
+  svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
+  const sorted = Object.entries(S.byCat).sort((a,b) => b[1]-a[1]); let off = 0;
+  sorted.forEach(([id,v]) => {
+    const len = v/base*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
+    svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:catById(id).color,"stroke-width":26,
+      "stroke-dasharray":`${Math.max(len-gap,0.01)} ${C}`,"stroke-dashoffset":-off,transform:"rotate(-90 100 100)"}));
+    off += len;
+  });
+  const center = document.createElement("div"); center.className = "donut-center";
+  center.innerHTML = '<div class="v"></div><div class="l"></div>';
+  center.querySelector(".v").textContent = inc > 0 ? Math.round(S.total / inc * 100) + "%" : fmtARS.format(S.total);
+  center.querySelector(".l").textContent = inc > 0 ? `del sueldo (${fmtARS.format(S.total)} de ${fmtARS.format(inc)})` : "en fijos";
+  wrap.append(svg, center); sec.append(wrap);
+  const pct = v => { const p = v / base * 100; return (p > 0 && p < 1 ? "<1" : Math.round(p)) + "%" + (inc > 0 ? " del sueldo" : ""); };
+  const ul = document.createElement("ul"); ul.className = "legend";
+  sorted.forEach(([id,v]) => {
+    const c = catById(id), li = document.createElement("li");
+    const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+    const mid = document.createElement("div"), n = document.createElement("div"); n.className = "n"; n.textContent = c.name;
+    const d = document.createElement("div"); d.className = "d"; d.textContent = S.names[id].join(", ");
+    mid.append(n, d);
+    const a = document.createElement("div"); a.className = "a"; a.textContent = fmtARS.format(round2(v));
+    const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pct(v); a.append(pc);
+    li.append(dot, mid, a); ul.append(li);
+  });
+  if (inc > S.total){
+    const li = document.createElement("li"), dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "var(--line)";
+    const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda libre del sueldo";
+    const a = document.createElement("div"); a.className = "a"; a.textContent = fmtARS.format(round2(inc - S.total));
+    const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pct(inc - S.total); a.append(pc);
+    li.append(dot, n, a); ul.append(li);
+  } else if (inc > 0 && S.total > inc){
+    const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = `Ojo: los fijos superan tu sueldo por ${fmtARS.format(round2(S.total - inc))}.`; sec.append(p);
+  }
+  sec.append(ul);
+  const notes = [];
+  if (est) notes.push(`Todavía no cargaste el sueldo de este período, así que usé el último (${shortDate(dateOnly(est.date))}).`);
+  if (S.usdTotal > 0 && S.rate) notes.push(`Los ${fmtUSD.format(S.usdTotal)} en dólares están pasados a pesos al dólar de hoy.`);
+  if (S.noAmount.length) notes.push(`No cuentan los que no tienen monto este mes: ${S.noAmount.map(i => i.f.name).join(", ")}.`);
+  if (notes.length){ const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = notes.join(" "); sec.append(p); }
+  return sec;
+}
 function renderFixed(){
   const list = fixInstances(viewYear, viewMonth).slice(), box = $("fixedList");
   box.innerHTML = "";
@@ -4558,6 +4640,7 @@ function renderFixed(){
     return;
   }
   if (!list.length){ box.innerHTML = '<p class="fx-hint">No hay fijos en este mes.</p>'; return; }
+  box.append(fixPie());
   // Arriba lo que falta pagar y abajo lo que ya pagaste (cada grupo por fecha de vencimiento)
   const isDone = i => i.state === "paid" || i.state === "cardpaid";
   list.sort((a, b) => (isDone(a) - isDone(b)) || (a.due - b.due));
