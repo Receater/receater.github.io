@@ -601,6 +601,18 @@ button{cursor:pointer}
 #pplBg{z-index:16}
 #pplSheet{z-index:17}
 .chip.mgr{border-style:dashed;color:var(--muted)}
+.pb-sum{text-align:center;padding:10px 0 14px}
+.pb-sum span{display:block;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.pb-sum strong{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.7rem;margin-top:4px}
+.pb-list{list-style:none;margin:0 0 12px;padding:0;border-top:1.5px dashed #BDB6A5}
+.pb-list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1.5px dotted #D9D3C6;font-size:.9rem}
+.pb-list .t{overflow-wrap:anywhere}
+.pb-list .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;white-space:nowrap}
+.pb-list .a.pos{color:#1E7A50}.pb-list .a.neg{color:#C9374B}
+.pb-list .x{border:0;background:none;font-size:1.2rem;color:var(--muted);min-width:32px;min-height:32px}
+.pb-all{width:100%}
+.pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
+.pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .fp-row .settle{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 
 /* ================= Revisión de diseño para celular ================= */
@@ -1720,6 +1732,24 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 
+<div class="sheet-bg" id="pbBg"></div>
+<div class="sheet" id="pbSheet" role="dialog" aria-modal="true" aria-labelledby="pbTitle">
+  <h3 id="pbTitle">Cuenta</h3>
+  <div class="pb-sum" id="pbSum"></div>
+  <ul class="pb-list" id="pbList"></ul>
+  <button type="button" class="btn ghost pb-all" id="pbAll">Me pagó todo</button>
+  <div class="field" style="margin-top:16px"><span class="lbl">O anotá una parte</span>
+    <div class="seg pb-dir" role="group"><button type="button" data-pbdir="in">Me dio</button><button type="button" data-pbdir="out">Le di</button></div></div>
+  <div class="field"><label for="pbAmount">Cuánto</label><input class="input" id="pbAmount" inputmode="decimal" placeholder="0" autocomplete="off"></div>
+  <div class="field"><label for="pbNote">Nota (opcional)</label><input class="input" id="pbNote" placeholder="Ej: me devolvió una parte" autocomplete="off"></div>
+  <p class="fx-hint" id="pbHint"></p>
+  <div class="err" id="pbErr"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="pbCancel">Cerrar</button>
+    <button type="button" class="btn primary" id="pbSave">Anotar</button>
+  </div>
+</div>
+
 <div class="sheet-bg" id="pplBg"></div>
 <div class="sheet" id="pplSheet" role="dialog" aria-modal="true" aria-labelledby="pplTitle">
   <h3 id="pplTitle">Personas</h3>
@@ -1811,7 +1841,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-08.1310";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-08.1400";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -1883,8 +1913,8 @@ const kindById = id => INCOME_KINDS.find(k => k.id === id) || INCOME_KINDS.at(-1
 const isIncome = e => e.type === "income";
 const round2 = n => Math.round(n*100)/100;
 const isSaving = e => !isIncome(e) && e.category === "ahorro";
-const repaid = e => e.split ? e.split.people.filter(p => p.paid).reduce((s,p) => s + p.share, 0) : 0;
-const owed   = e => e.split ? e.split.people.filter(p => !p.paid).reduce((s,p) => s + p.share, 0) : 0;
+const repaid = e => e.split ? e.split.people.reduce((s,p) => s + (p.paid ? p.share : Math.min(p.share, p.paidAmt || 0)), 0) : 0;
+const owed   = e => e.split ? e.split.people.filter(p => !p.paid).reduce((s,p) => s + Math.max(0, p.share - (p.paidAmt || 0)), 0) : 0;
 const myShare = e => e.split ? round2(e.amount - e.split.people.reduce((s,p) => s + p.share, 0)) : e.amount;
 /* Lo que realmente pusiste: el total menos lo que ya te devolvieron */
 const eff = e => isIncome(e) ? e.amount : round2(e.amount - repaid(e));
@@ -2968,11 +2998,21 @@ function rememberPerson(name){
   if (!data.people.some(n => n.toLowerCase() === k)) data.people.push(name);
 }
 /* Cuentas con cada persona: lo que te deben menos lo que les debés */
+/* Lo que falta devolver de un préstamo que te hicieron (puede ir devolviéndose de a partes) */
+function loanLeft(inc){
+  if (inc.loanClosed) return 0;
+  const r = data.expenses.filter(e => e.repaysId === inc.id).reduce((s,e) => s + e.amount, 0);
+  return round2(Math.max(0, inc.amount - r));
+}
+/* Plata que se movió con una persona sin ser gasto ni ingreso: data.settles = [{ id, name, currency, amount, dir:"in"|"out", date, note, closed }]
+   "in" = te dio plata (te debe menos), "out" = le diste plata (le debés menos) */
 function balances(){
-  const b = {}, add = (name, cur, v, ref) => { const k = name.trim().toLowerCase(); (b[k] ||= { name: name.trim(), ARS: 0, USD: 0, refs: [] }); b[k][cur] += v; ref && b[k].refs.push(ref); };
+  const b = {}, add = (name, cur, v, ref) => { const k = name.trim().toLowerCase(); (b[k] ||= { name: name.trim(), ARS: 0, USD: 0, refs: [] }); b[k][cur] += v; if (ref){ ref.cur = cur; ref.v = v; b[k].refs.push(ref); } };
+  data.incomes.forEach(i => { if (i.category === "prestamo" && i.loanFrom){ const l = loanLeft(i); if (l > 0.004) add(i.loanFrom, i.currency, -l, { t: "loan", i }); } });
+  (data.settles || []).forEach(x => { if (!x.closed) add(x.name, x.currency, x.dir === "in" ? -x.amount : x.amount, { t: "settle", s: x }); });
   data.expenses.forEach(e => {
-    if (e.split) e.split.people.forEach(p => { if (!p.paid) add(p.name, e.currency, p.share, { t: "split", e, p }); });
-    if (e.paidBy && !e.paidBy.settled) add(e.paidBy.name, e.currency, -e.amount, { t: "paidBy", e });
+    if (e.split) e.split.people.forEach(p => { if (!p.paid){ const l = round2(p.share - (p.paidAmt || 0)); if (l > 0.004) add(p.name, e.currency, l, { t: "split", e, p }); } });
+    if (e.paidBy && !e.paidBy.settled){ const l = round2(e.amount - (e.paidBy.paidAmt || 0)); if (l > 0.004) add(e.paidBy.name, e.currency, -l, { t: "paidBy", e }); }
   });
   const [cy, cm] = periodOf(new Date()), curKey = monthKey(cy, cm);
   data.fixed.filter(fixShared).forEach(f => {
@@ -2983,17 +3023,54 @@ function balances(){
   });
   return Object.values(b).filter(x => Math.abs(x.ARS) > 0.5 || Math.abs(x.USD) > 0.005);
 }
-function settleWith(x){
-  x.refs.forEach(r => { if (r.t === "split") r.p.paid = true; else if (r.t === "paidBy") r.e.paidBy.settled = true; else if (r.t === "fix") setFixSharePaid(r.f, r.k, r.p.name, true); });
+function loanRepay(inc, amt, note){
+  data.expenses.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), source: "manual", amount: round2(amt), currency: inc.currency,
+    category: "devolucion", date: `${toLocalInput(new Date())}T${toTime(new Date())}`, note: note || `Le devolví a ${inc.loanFrom}`,
+    repaysId: inc.id, method: "transfer", cardId: null, installments: 1, items: [], split: null, loan: false });
 }
-const isRepaid = inc => data.expenses.some(e => e.repaysId === inc.id);
+function settleWith(x, cur){
+  x.refs.filter(r => !cur || r.cur === cur).forEach(r => {
+    if (r.t === "split"){ r.p.paid = true; delete r.p.paidAmt; }
+    else if (r.t === "paidBy"){ r.e.paidBy.settled = true; delete r.e.paidBy.paidAmt; }
+    else if (r.t === "fix") setFixSharePaid(r.f, r.k, r.p.name, true);
+    else if (r.t === "loan"){ const l = loanLeft(r.i); if (l > 0.004) loanRepay(r.i, l, `Saldado con ${r.i.loanFrom}`); }
+    else if (r.t === "settle") r.s.closed = true;
+  });
+}
+/* Plata que se movió con una persona: se descuenta de lo más viejo que haya en cuenta.
+   dir "in" = te dio (baja lo que te debe), "out" = le diste (baja lo que le debés). Devuelve lo que no se pudo aplicar. */
+function applyPersonPay(x, cur, dir, amt, note){
+  let left = round2(amt); const sign = dir === "in" ? 1 : -1;
+  const when = r => r.t === "split" || r.t === "paidBy" ? r.e.date : r.t === "fix" ? r.k : r.t === "loan" ? (r.i.dueDate || r.i.date) : r.s.date;
+  x.refs.filter(r => r.cur === cur && Math.sign(r.v) === sign).sort((a,b) => when(a).localeCompare(when(b))).forEach(r => {
+    if (left < 0.005) return;
+    const open = round2(Math.abs(r.v)), take = round2(Math.min(left, open)), all = take >= open - 0.005;
+    if (r.t === "split"){ if (all){ r.p.paid = true; delete r.p.paidAmt; } else r.p.paidAmt = round2((r.p.paidAmt || 0) + take); }
+    else if (r.t === "paidBy"){ if (all){ r.e.paidBy.settled = true; delete r.e.paidBy.paidAmt; } else r.e.paidBy.paidAmt = round2((r.e.paidBy.paidAmt || 0) + take); }
+    else if (r.t === "fix"){ if (!all) return; setFixSharePaid(r.f, r.k, r.p.name, true); }
+    else if (r.t === "loan") loanRepay(r.i, take, note);
+    else if (r.t === "settle"){ if (all) r.s.closed = true; else r.s.amount = round2(r.s.amount - take); }
+    left = round2(left - take);
+  });
+  return left;
+}
+/* Préstamos que vencen en el período, pero solo por lo que realmente le debés a esa persona
+   (si te debe plata por otro lado, se descuenta) */
 function toRepay(y, m){
-  const end = payDate(y, m+1), cur = isCurrentPeriod(y, m);
-  return data.incomes.filter(i => i.category === "prestamo" && i.dueDate && !isRepaid(i))
-    .filter(i => { const d = dateOnly(i.dueDate); return cur ? d < end : inPeriod({ date: i.dueDate + "T12:00" }, y, m); })
-    .sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  const end = payDate(y, m+1), cur = isCurrentPeriod(y, m), owe = {};
+  balances().forEach(x => ["ARS","USD"].forEach(c => { owe[x.name.toLowerCase() + "|" + c] = Math.max(0, -x[c]); }));
+  const out = [];
+  data.incomes.filter(i => i.category === "prestamo" && i.loanFrom && i.dueDate && loanLeft(i) > 0.004)
+    .sort((a,b) => a.dueDate.localeCompare(b.dueDate)).forEach(i => {
+      const k = i.loanFrom.trim().toLowerCase() + "|" + i.currency, amt = round2(Math.min(loanLeft(i), owe[k] || 0));
+      owe[k] = Math.max(0, (owe[k] || 0) - amt);
+      if (amt < 0.005) return;
+      const d = dateOnly(i.dueDate);
+      if (cur ? d < end : inPeriod({ date: i.dueDate + "T12:00" }, y, m)) out.push({ inc: i, amt });
+    });
+  return out;
 }
-const toRepayARS = (y, m) => toRepay(y, m).filter(i => i.currency === "ARS").reduce((s,i) => s + i.amount, 0);
+const toRepayARS = (y, m) => toRepay(y, m).filter(r => r.inc.currency === "ARS").reduce((s,r) => s + r.amt, 0);
 function suggestInto(boxId, inputId){
   const box = $(boxId); box.innerHTML = "";
   knownPeople().slice(0, 10).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = n;
@@ -3018,6 +3095,98 @@ function renderPeople(){
 $("pplAdd").onclick = () => { const n = $("pplNew").value.trim(); if (!n) return; rememberPerson(n); $("pplNew").value = ""; renderPeople(); };
 $("pplNew").addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); $("pplAdd").onclick(); } });
 $("pplClose").onclick = closePeople; $("pplBg").onclick = closePeople;
+
+/* Cuenta con una persona: ver qué hay y anotar plata que se movió (pagos parciales, préstamos) */
+let pb = null;
+const pbBal = () => { const x = balances().find(b => b.name.toLowerCase() === pb.name.toLowerCase()); return { x, v: x ? round2(x[pb.cur]) : 0 }; };
+function openPersonBal(name, cur){
+  pb = { name, cur, dir: null };
+  const { v } = pbBal(); pb.dir = v >= 0 ? "in" : "out";
+  $("pbAmount").value = ""; $("pbNote").value = ""; $("pbErr").textContent = "";
+  renderPersonBal();
+  $("pbBg").classList.add("open"); $("pbSheet").classList.add("open");
+}
+function closePersonBal(){ $("pbBg").classList.remove("open"); $("pbSheet").classList.remove("open"); pb = null; }
+function renderPersonBal(){
+  const { x, v } = pbBal(), cur = pb.cur;
+  $("pbTitle").textContent = pb.name;
+  $("pbSum").innerHTML = "";
+  const big = document.createElement("strong"); big.textContent = Math.abs(v) < 0.005 ? "Están a mano" : money(Math.abs(v), cur);
+  const sub = document.createElement("span"); sub.textContent = v > 0.004 ? `${pb.name} te debe` : v < -0.004 ? `Le debés a ${pb.name}` : "";
+  $("pbSum").append(sub, big);
+  const ul = $("pbList"); ul.innerHTML = "";
+  (x ? x.refs.filter(r => r.cur === cur) : []).forEach(r => {
+    const li = document.createElement("li"), t = document.createElement("span"), a = document.createElement("span"); t.className = "t"; a.className = "a";
+    if (r.t === "split") t.textContent = `${r.e.note || catById(r.e.category).name} · ${shortDate(dateOnly(r.e.date))}` + (r.p.paidAmt ? ` · ya te dio ${money(r.p.paidAmt, cur)} de ${money(r.p.share, cur)}` : "");
+    else if (r.t === "paidBy") t.textContent = `Pagó ${r.e.note || catById(r.e.category).name} · ${shortDate(dateOnly(r.e.date))}`;
+    else if (r.t === "fix") t.textContent = `${r.f.name} · ${r.k}`;
+    else if (r.t === "loan") t.textContent = `Te prestó ${money(r.i.amount, cur)} · ${shortDate(dateOnly(r.i.date))}` + (r.i.dueDate ? `, devolver el ${shortDate(dateOnly(r.i.dueDate))}` : "");
+    else t.textContent = (r.s.dir === "in" ? "Te dio" : "Le diste") + ` · ${shortDate(dateOnly(r.s.date))}` + (r.s.note ? ` · ${r.s.note}` : "");
+    a.textContent = (r.v > 0 ? "+" : "−") + " " + money(Math.abs(r.v), cur);
+    a.classList.add(r.v > 0 ? "pos" : "neg");
+    li.append(t, a);
+    if (r.t === "settle"){
+      const del = document.createElement("button"); del.type = "button"; del.className = "x"; del.textContent = "×"; del.setAttribute("aria-label", "Borrar este movimiento");
+      del.onclick = async () => { if (!await uiConfirm("¿Borrar este movimiento?")) return; data.settles = (data.settles || []).filter(s2 => s2 !== r.s); persist(); render(); renderPersonBal(); };
+      li.append(del);
+    }
+    ul.append(li);
+  });
+  document.querySelectorAll("[data-pbdir]").forEach(b => {
+    b.setAttribute("aria-pressed", String(b.dataset.pbdir === pb.dir));
+    b.textContent = b.dataset.pbdir === "in" ? `${pb.name} me dio` : `Le di a ${pb.name}`;
+  });
+  $("pbAll").hidden = Math.abs(v) < 0.005;
+  $("pbAll").textContent = v > 0 ? `${pb.name} me pagó todo` : `Le pagué todo`;
+  pbHint();
+}
+function pbHint(){
+  const { v } = pbBal(), amt = parseAmount($("pbAmount").value) || 0, cur = pb.cur, h = $("pbHint");
+  if (!amt){ h.textContent = pb.dir === "in" ? "Si te devolvió una parte o te prestó plata, ponelo acá." : "Si le devolviste una parte o le prestaste plata, ponelo acá."; return; }
+  const after = round2(pb.dir === "in" ? v - amt : v + amt);
+  const owedBefore = pb.dir === "in" ? Math.max(0, v) : Math.max(0, -v), extra = round2(amt - owedBefore);
+  let t = Math.abs(after) < 0.005 ? "Quedan a mano." : after > 0 ? `Después de esto, ${pb.name} te debe ${money(after, cur)}.` : `Después de esto, le debés ${money(-after, cur)} a ${pb.name}.`;
+  if (extra > 0.004) t += pb.dir === "in" ? ` Los ${money(extra, cur)} de más los anoto como un préstamo que te hizo (entra como ingreso).` : ` Los ${money(extra, cur)} de más los anoto como un préstamo que le hiciste (sale como gasto).`;
+  h.textContent = t;
+}
+document.querySelectorAll("[data-pbdir]").forEach(b => b.onclick = () => { pb.dir = b.dataset.pbdir; renderPersonBal(); });
+$("pbAmount").addEventListener("input", () => pb && pbHint());
+function pbRecord(amt){
+  const { x, v } = pbBal(), cur = pb.cur, now = `${toLocalInput(new Date())}T${toTime(new Date())}`, note = $("pbNote").value.trim();
+  const owedBefore = round2(pb.dir === "in" ? Math.max(0, v) : Math.max(0, -v));
+  const toSettle = round2(Math.min(amt, owedBefore)), extra = round2(amt - toSettle);
+  const id = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  if (toSettle > 0.004 && x){
+    if (Math.abs(toSettle - owedBefore) < 0.005) settleWith(x, cur);   // cubre todo: quedan a mano
+    else {
+      const rest = applyPersonPay(x, cur, pb.dir, toSettle, note);
+      if (rest > 0.004) (data.settles ||= []).push({ id: id(), name: pb.name, currency: cur, amount: rest, dir: pb.dir, date: now, note });
+    }
+  }
+  if (extra > 0.004){
+    if (pb.dir === "in"){
+      const [cy, cm] = periodOf(new Date());
+      data.incomes.push({ id: id(), type: "income", amount: extra, currency: cur, category: "prestamo", date: now,
+        note: note || `De ${pb.name}`, loanFrom: pb.name, dueDate: toLocalInput(payDate(cy, cm+1)) });
+    } else {
+      data.expenses.push({ id: id(), source: "manual", amount: extra, currency: cur, category: "prestamo", date: now, note: note || `Le presté a ${pb.name}`,
+        split: { people: [{ name: pb.name, share: extra, paid: false }] }, loan: true, method: "transfer", cardId: null, installments: 1, items: [] });
+    }
+  }
+  rememberPerson(pb.name);
+  persist(); feedRecy(); render();
+}
+$("pbSave").onclick = () => {
+  const amt = round2(parseAmount($("pbAmount").value) || 0);
+  if (!(amt > 0)){ $("pbErr").textContent = "Poné cuánta plata fue."; $("pbAmount").focus(); return; }
+  pbRecord(amt); closePersonBal();
+};
+$("pbAll").onclick = async () => {
+  const { x, v } = pbBal();
+  if (!x || !await uiConfirm(v > 0 ? `¿${pb.name} te pagó ${money(v, pb.cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, pb.cur)} a ${pb.name} y quedan a mano?`)) return;
+  settleWith(x, pb.cur); persist(); feedRecy(); render(); closePersonBal();
+};
+$("pbCancel").onclick = closePersonBal; $("pbBg").onclick = closePersonBal;
 let repaySel = null;
 function updateBorrowField(){
   const show = mode === "income" && incomeKind === "prestamo";
@@ -3047,7 +3216,7 @@ $("lendOn").onchange = () => {
 function openSheetForRepay(inc){
   openSheet(null);
   repaySel = inc.id;
-  $("amount").value = String(inc.amount).replace(".",",");
+  $("amount").value = String(loanLeft(inc) || inc.amount).replace(".",",");
   setCurrency(inc.currency);
   category = "devolucion"; method = "transfer"; cardId = null;
   $("note").value = `Le devolví a ${inc.loanFrom}`;
@@ -3056,9 +3225,8 @@ function openSheetForRepay(inc){
 }
 function renderLoanPend(){
   const box = $("loanPend"); box.innerHTML = "";
-  const owe = toRepay(viewYear, viewMonth);
   const bal = balances();
-  if (!owe.length && !bal.length){ box.hidden = true; return; }
+  if (!bal.length){ box.hidden = true; return; }
   box.hidden = false;
   const h = document.createElement("h3"); h.append("Cuentas con amigos");
   const pm = document.createElement("button"); pm.type = "button"; pm.className = "linkbtn"; pm.textContent = "Personas"; pm.onclick = openPeople; h.append(pm); box.append(h);
@@ -3069,8 +3237,6 @@ function renderLoanPend(){
     const a = document.createElement("span"); a.className = "a"; a.textContent = amt;
     b.append(n, a); b.onclick = fn; box.append(b);
   };
-  owe.forEach(i => row(`Devolverle a ${i.loanFrom}`, dateOnly(i.dueDate) < dateOnly(toLocalInput(new Date())) ? `vencía el ${shortDate(dateOnly(i.dueDate))}` : `el ${shortDate(dateOnly(i.dueDate))}`,
-    money(i.amount, i.currency), () => openSheetForRepay(i)));
   bal.forEach(x => {
     const parts = [];
     if (Math.abs(x.ARS) > 0.5) parts.push([x.ARS, "ARS"]);
@@ -3079,14 +3245,13 @@ function renderLoanPend(){
       const txt = v > 0 ? `${x.name} te debe` : `Le debés a ${x.name}`;
       const b = document.createElement("button"); b.type = "button"; b.className = "fp-row";
       const n = document.createElement("span"); n.className = "n"; n.textContent = txt;
-      const sm = document.createElement("small"); sm.textContent = `${x.refs.length} ${x.refs.length === 1 ? "cosa" : "cosas"} en cuenta`; n.append(sm);
+      const refs = x.refs.filter(r => r.cur === cur && r.t !== "settle"), due = refs.filter(r => r.t === "loan" && r.i.dueDate).map(r => r.i.dueDate).sort()[0];
+      const sm = document.createElement("small");
+      sm.textContent = v < 0 && due ? `devolver el ${shortDate(dateOnly(due))}` : `${refs.length} ${refs.length === 1 ? "cosa" : "cosas"} en cuenta`; n.append(sm);
       const a = document.createElement("span"); a.className = "a"; a.textContent = money(Math.abs(v), cur);
-      const st = document.createElement("span"); st.className = "settle"; st.textContent = "Saldar";
+      const st = document.createElement("span"); st.className = "settle"; st.textContent = "Anotar";
       b.append(n, a, st);
-      b.onclick = async () => {
-        if (!await uiConfirm(v > 0 ? `¿${x.name} te pagó ${money(v, cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, cur)} a ${x.name} y quedan a mano?`)) return;
-        settleWith(x); persist(); feedRecy(); render();
-      };
+      b.onclick = () => openPersonBal(x.name, cur);
       box.append(b);
     });
   });
@@ -3879,6 +4044,7 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("aiSheet").classList.contains("open")) closeAi();
   else if ($("setSheet").classList.contains("open")) closeSettings();
   else if ($("pplSheet").classList.contains("open")) closePeople();
+  else if ($("pbSheet").classList.contains("open")) closePersonBal();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
