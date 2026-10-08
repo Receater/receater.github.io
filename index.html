@@ -278,7 +278,7 @@ button{cursor:pointer}
 .hello{font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand-actions{display:flex;gap:6px;min-width:0;justify-content:flex-end}
 .brand-actions .pay-btn{max-width:none}
-#payBtn{max-width:48vw}
+#payBtn:not(.set-row){max-width:48vw}
 #syncBtn.ok{color:var(--usd)}
 #syncBtn.warn{color:var(--danger)}
 .cloud-banner{background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--line)}
@@ -648,7 +648,7 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 .sheet-head{position:sticky;top:0;z-index:2;background:var(--paper);margin:0 -18px 6px;padding:6px 14px 10px;border-bottom:1px solid var(--line);touch-action:none}
 .grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:4px auto 8px}
 .sheet-head-row{display:grid;grid-template-columns:minmax(80px,auto) minmax(0,1fr) minmax(80px,auto);align-items:center;gap:8px}
-.sheet-head-row h3{margin:0;text-align:center;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-head-row h3{margin:0;text-align:center;font-size:1.02rem;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere}
 .sheet-head-row .hl{justify-self:start}.sheet-head-row .hr{justify-self:end}
 .head-btn{flex:none;min-height:36px !important;padding:6px 14px !important;font-size:.92rem !important;border-radius:999px !important}
 .head-btn.ghost{border:0 !important;padding-left:4px !important;color:var(--accent)}
@@ -685,14 +685,21 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 /* Pasos de "Activá Recy inteligente": el número centrado y visible */
 .ai-step .ai-n{display:grid;place-items:center;width:28px;height:28px;margin:0;border-radius:50%;background:var(--accent);color:#fff;font-size:.9rem;font-weight:700;line-height:1}
 
-.dlg-bg{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.5);display:grid;place-items:center;padding:24px;animation:dlgIn .15s ease}
-.dlg{background:var(--paper);color:var(--ink);border-radius:18px;padding:20px 18px 16px;width:min(380px,100%);box-shadow:0 20px 50px rgba(0,0,0,.35)}
-.dlg p{margin:0 0 18px;font-size:1.02rem;line-height:1.45}
+.dlg-bg{position:fixed;inset:0;z-index:50;background:rgba(20,16,10,.5);display:grid;place-items:center;padding:24px;animation:dlgIn .15s ease}
+.dlg{position:relative;background:#FBF8F1;color:#1F1F1F;color-scheme:light;border-radius:4px;padding:26px 18px 16px;width:min(380px,100%);box-shadow:0 18px 40px rgba(0,0,0,.35);
+  font-family:"Courier Prime","Courier New",ui-monospace,monospace;outline:1.5px dashed #BDB6A5;outline-offset:-8px;animation:dlgPop .18s ease}
+.dlg::before{content:"";position:absolute;left:50%;top:-9px;width:74px;height:20px;margin-left:-37px;transform:rotate(-2deg);
+  background:rgba(246,216,96,.85);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+@keyframes dlgPop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.dlg p{margin:0 0 18px;font-size:1.02rem;line-height:1.45;padding:0 4px;overflow-wrap:anywhere}
 .dlg-acts{display:flex;gap:10px}
-.dlg-acts .btn{flex:1}
+.dlg-acts .btn{flex:1;border-radius:6px !important;font-family:inherit;font-weight:700;min-height:46px}
+.dlg-acts .btn.primary{background:#1F1F1F;color:#FBF8F1;border:1.5px solid #1F1F1F}
+.dlg-acts .btn.ghost{background:transparent;color:#1F1F1F;border:1.5px solid #BDB6A5}
+.dlg-acts .btn.danger-solid{background:#C9374B;color:#fff;border:1.5px solid #C9374B}
 .btn.danger-solid{background:var(--danger);color:#fff;border:0}
 @keyframes dlgIn{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.dlg-bg{animation:none}}
+@media (prefers-reduced-motion:reduce){.dlg-bg,.dlg{animation:none}}
 
 #syncBtn.logout{color:var(--danger);border-color:var(--danger);background:none}
 
@@ -829,7 +836,7 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 /* ===== Hoja de anotador (Darle a Recy y gastos fijos), papel crema y máquina de escribir ===== */
 .sheet.notepad{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--bg:#F2EDE0;--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;
   color-scheme:light;background:var(--paper);color:var(--ink);font-family:"Courier Prime","Courier New",ui-monospace,monospace}
-.sheet.notepad h3{font-family:inherit;text-transform:uppercase;letter-spacing:.1em;font-size:.95rem}
+.sheet.notepad h3{font-family:inherit;text-transform:uppercase;letter-spacing:.08em;font-size:.88rem}
 .sheet.notepad .sheet-head{border-bottom:1.5px dashed #BDB6A5}
 .sheet.notepad .field > label:not(.switch),.sheet.notepad .lbl,.sheet.notepad .lbl-sm{text-transform:uppercase;letter-spacing:.07em;font-size:.76rem;font-weight:700;color:var(--muted)}
 .sheet.notepad .input,.sheet.notepad select.input,.sheet.notepad textarea.input{background-color:transparent;border:0;border-bottom:1.5px solid #1F1F1F;border-radius:0;padding-left:2px;padding-right:2px;font-family:inherit;color:var(--ink)}
@@ -1804,7 +1811,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-08.1300";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-08.1310";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
