@@ -582,6 +582,13 @@ button{cursor:pointer}
 .ai-invite .small-btn{flex:0 0 auto}
 
 .fx-acts{display:flex;gap:8px;padding:0 14px 12px 36px;flex-wrap:wrap}
+.sess-acts{align-items:center}
+.sess-step{display:inline-flex;align-items:center;gap:4px;border:1.5px solid #BDB6A5;border-radius:8px;padding:2px}
+.sess-step .small-btn{min-width:40px;min-height:38px;font-size:1.1rem;font-weight:700;border:0 !important;background:transparent !important;box-shadow:none !important}
+.sess-n{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.9rem;min-width:88px;text-align:center}
+.clip .sess-acts{padding:2px 14px 14px 86px;background:rgba(47,91,234,.04)}
+.cal-row.is-open{background:rgba(47,91,234,.04)}
+.fx-of{display:block;font-family:var(--body);font-weight:400;font-size:.74rem;color:var(--tk-mut,#6E6A62);white-space:nowrap}
 .fp-row .pay-btn2{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 .fp-row{grid-template-columns:minmax(0,1fr) auto auto}
 
@@ -1797,7 +1804,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-08.0045";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-08.1250";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2599,6 +2606,20 @@ function renderPayGroup(r){
   return wrap;
 }
 
+/* Menú de un fijo por sesión (igual en Movimientos y en Fijos): ajustar sesiones del mes, pagar y editar */
+function fixSessActs(i){
+  const box = document.createElement("div"); box.className = "fx-acts sess-acts";
+  const paid = ["paid","cardpaid"].includes(i.state);
+  const adj = d => { i.f.sessAdj = i.f.sessAdj || {}; i.f.sessAdj[i.key] = (i.f.sessAdj[i.key] || 0) + d; persist(); render(); };
+  const btn = (txt, cls, fn, lbl) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn " + cls; x.textContent = txt; x.onclick = fn; if (lbl) x.setAttribute("aria-label", lbl); return x; };
+  const step = document.createElement("div"); step.className = "sess-step";
+  const n = document.createElement("span"); n.className = "sess-n"; n.textContent = `${i.sessions} ${i.sessions === 1 ? "sesión" : "sesiones"}`;
+  step.append(btn("−", "", () => { if (i.sessions > 0) adj(-1); }, "Una sesión menos"), n, btn("+", "", () => adj(1), "Una sesión más"));
+  box.append(step);
+  if (!paid) box.append(btn("Pagar", "primary", () => openSheetForFixed(i)));
+  box.append(btn("Editar", "", () => openFixed(i.f)));
+  return box;
+}
 function renderFixedPend(){
   const box = $("fixedPend"); box.innerHTML = "";
   const owesIn = i => fixShared(i.f) && i.f.shares.some(p => !fixSharePaid(i.f, i.key, p.name));
@@ -2640,8 +2661,14 @@ function renderFixedPend(){
     if (!done && !card){ const pb = document.createElement("span"); pb.className = "pay"; pb.textContent = i.state === "todebit" ? "Confirmar" : "Pagar"; right.append(pb); }
     else if (!done){ const tg = document.createElement("span"); tg.className = "tag"; tg.textContent = "En tarjeta"; right.append(tg); }
     b.append(day, info, right);
-    b.onclick = () => done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i);
+    const sessMenu = i.f.perSession && !card, mk = "fp:" + i.f.id + "|" + i.key, mOpen = sessMenu && expanded.has(mk);
+    if (sessMenu){ b.setAttribute("aria-expanded", String(mOpen)); b.classList.toggle("is-open", mOpen); }
+    b.onclick = ev => {
+      if (sessMenu && !(ev.target.closest && ev.target.closest(".pay"))){ mOpen ? expanded.delete(mk) : expanded.add(mk); render(); return; }
+      done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i);
+    };
     paper.append(b);
+    if (mOpen) paper.append(fixSessActs(i));
     if (fixShared(i.f)) i.f.shares.forEach(p => {
       const paid = fixSharePaid(i.f, i.key, p.name);
       const r = document.createElement("div"); r.className = "fp-sub";
@@ -4727,7 +4754,8 @@ function renderFixed(){
     st.textContent = info.st + (i.f.how === "auto" && i.state !== "paid" ? "" : "");
     mid.append(n, st);
     const a = document.createElement("div"); a.className = "a" + (i.currency === "USD" ? " usd" : "");
-    a.textContent = i.expected ? money(i.expected, i.currency) : "—";
+    a.textContent = i.expected ? money(i.state === "partial" ? Math.max(0, round2(i.expected - i.paid)) : i.expected, i.currency) : "—";
+    if (i.state === "partial" && i.expected){ const of = document.createElement("span"); of.className = "fx-of"; of.textContent = `faltan, de ${money(i.expected, i.currency)}`; a.append(of); }
     if (info.stamp) a.append(stampEl(...info.stamp));
     b.append(dot, mid, a);
     const key = "fx:" + i.f.id + "|" + i.key, open = expanded.has(key);
@@ -4737,16 +4765,14 @@ function renderFixed(){
     if (open){
       const acts = document.createElement("div"); acts.className = "fx-acts";
       const btn = (txt, cls, fn) => { const x = document.createElement("button"); x.type = "button"; x.className = "small-btn " + cls; x.textContent = txt; x.onclick = fn; acts.append(x); };
-      const paid = ["paid","cardpaid"].includes(i.state);
-      if (i.f.perSession){
-        const adj = d => { i.f.sessAdj = i.f.sessAdj || {}; i.f.sessAdj[i.key] = (i.f.sessAdj[i.key] || 0) + d; persist(); render(); };
-        btn("− 1 sesión", "", () => { if (i.sessions > 0) adj(-1); });
-        btn("+ 1 sesión", "", () => adj(1));
+      if (i.f.perSession && i.f.how !== "card") t.append(fixSessActs(i));
+      else {
+        const paid = ["paid","cardpaid"].includes(i.state);
+        if (i.f.how === "card") btn("Monto de este mes", "", () => openFixMonth(i));
+        else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
+        btn("Editar", "", () => openFixed(i.f));
+        t.append(acts);
       }
-      if (i.f.how === "card") btn("Monto de este mes", "", () => openFixMonth(i));
-      else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
-      btn("Editar", "", () => openFixed(i.f));
-      t.append(acts);
       if (fixShared(i.f)){
         const sh = document.createElement("div"); sh.className = "fx-shares";
         i.f.shares.forEach(p => {
