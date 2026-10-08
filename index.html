@@ -841,6 +841,25 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 .sheet.notepad .opt-extra select,.sheet.notepad #cuotas,.sheet.notepad #paidCuotas{border-radius:6px;font-family:inherit}
 .sheet.notepad .split-foot,.sheet.notepad .fx-hint{font-family:inherit}
 
+/* ===== Nuevo fijo: notita amarilla con chinche, como el botón ===== */
+#fixSheet.postitsheet{--paper:#FCE98C;--bg:rgba(255,255,255,.45);--line:#D9C25A;--muted:#6B5D2A;--ink:#2A2412;
+  background:transparent;padding:0;overflow:visible;border-radius:0;box-shadow:none;max-height:92vh;max-height:92dvh}
+#fixSheet.postitsheet.open{display:flex;flex-direction:column;animation:postitIn .32s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes postitIn{from{transform:translateY(40%) rotate(-3deg);opacity:.4}to{transform:none;opacity:1}}
+.postit-pin{position:relative;flex:none;height:0;z-index:4}
+.postit-pin::before{content:"";position:absolute;left:50%;top:-6px;width:24px;height:24px;margin-left:-12px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff 0 3px,transparent 4px),#D0485E;box-shadow:0 3px 5px rgba(0,0,0,.35)}
+.postit-paper{position:relative;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  margin:0 8px;padding:8px 18px calc(22px + env(safe-area-inset-bottom,0px));border-radius:3px 3px 0 0;
+  background:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35)) top / 100% 14px no-repeat,var(--paper);
+  box-shadow:0 -6px 18px rgba(0,0,0,.22)}
+.postit-paper .sheet-head{background:var(--paper);border-bottom:1.5px dashed #C8AE45;padding-top:16px}
+.postit-paper .grab{background:rgba(107,93,42,.45)}
+#fixSheet .input,#fixSheet select.input,#fixSheet textarea.input{border-bottom-color:#2A2412}
+#fixSheet .chip,#fixSheet .cur,#fixSheet .seg{border-color:#C8AE45;background:rgba(255,255,255,.35)}
+#fixSheet .btn.primary,#fixSheet .head-btn.primary,#fixSheet .small-btn.primary{background:#2A2412;border-color:#2A2412;color:#FCE98C}
+#fixSheet .head-btn.ghost{color:#2A2412}
+
 /* ===== Nuevo frasco: frasco de vidrio con tapa del color del frasco ===== */
 #jarSheet{--jar-color:#1E8A5B;--paper:#EFF8F7;--ink:#1B2430;--muted:#5A6B76;--line:rgba(110,150,160,.5);--bg:rgba(255,255,255,.6);--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;color-scheme:light;color:var(--ink)}
 #jarSheet.jarsheet{background:transparent;padding:0;overflow:visible;border-radius:0;box-shadow:none;max-height:92vh;max-height:92dvh}
@@ -1125,10 +1144,10 @@ html{scrollbar-width:thin;scrollbar-color:#8A5A36 transparent}
 html::-webkit-scrollbar{width:10px}
 html::-webkit-scrollbar-track{background:transparent}
 html::-webkit-scrollbar-thumb{background:#8A5A36;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
-.sheet,.jar-glass{overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#C9B88F transparent}
-.sheet::-webkit-scrollbar,.jar-glass::-webkit-scrollbar{width:6px}
+.sheet,.jar-glass,.postit-paper{overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#C9B88F transparent}
+.sheet::-webkit-scrollbar,.jar-glass::-webkit-scrollbar,.postit-paper::-webkit-scrollbar{width:6px}
 .sheet::-webkit-scrollbar-track,.jar-glass::-webkit-scrollbar-track{background:transparent}
-.sheet::-webkit-scrollbar-thumb,.jar-glass::-webkit-scrollbar-thumb{background:#C9B88F;border-radius:6px}
+.sheet::-webkit-scrollbar-thumb,.jar-glass::-webkit-scrollbar-thumb,.postit-paper::-webkit-scrollbar-thumb{background:#C9B88F;border-radius:6px}
 
 /* ===== Ajustes con la hoja de anotador ===== */
 .sheet.notepad .set-row{border:1.5px dashed #BDB6A5;border-radius:6px;background:#FFFEFB;min-height:60px;min-width:0}
@@ -1778,7 +1797,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-07.0150";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-08.0045";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5473,12 +5492,21 @@ function buildSheetHeads(){
     sh.prepend(head);
     // deslizar hacia abajo para cerrar
     let y0 = null, dy = 0;
-    head.addEventListener("touchstart", e => { if (sh.scrollTop > 2) return; y0 = e.touches[0].clientY; dy = 0; sh.style.transition = "none"; }, { passive: true });
-    head.addEventListener("touchmove", e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
-    head.addEventListener("touchend", () => {
+    // La barra de arriba siempre arrastra, aunque la hoja esté scrolleada o el teclado abierto
+    head.addEventListener("touchstart", e => {
+      if (e.target.closest("button,input,select,textarea,a")) return;
+      y0 = e.touches[0].clientY; dy = 0; sh.style.transition = "none";
+    }, { passive: true });
+    head.addEventListener("touchmove", e => {
+      if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0);
+      if (dy > 6 && document.activeElement && sh.contains(document.activeElement)) document.activeElement.blur();
+      sh.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    const end = () => {
       if (y0 == null) return; y0 = null; sh.style.transition = ""; sh.style.transform = "";
-      if (dy > 90){ const bg = sh.previousElementSibling; if (bg && bg.classList.contains("sheet-bg")) bg.click(); }
-    });
+      if (dy > 80){ const bg = sh.previousElementSibling; if (bg && bg.classList.contains("sheet-bg")) bg.click(); }
+    };
+    head.addEventListener("touchend", end); head.addEventListener("touchcancel", end);
   });
 }
 document.querySelectorAll(".sheet").forEach(sh => { if (sh.id !== "jarSheet") sh.classList.add("notepad"); });
@@ -5491,6 +5519,14 @@ buildSheetHeads();
   const lid = document.createElement("div"); lid.className = "jar-lid"; lid.setAttribute("aria-hidden", "true");
   const neck = document.createElement("div"); neck.className = "jar-neck"; neck.setAttribute("aria-hidden", "true");
   js.append(lid, neck, glass); js.classList.add("jarsheet");
+})();
+/* El fijo: notita amarilla con chinche (todo el contenido va en el papel) */
+(function postitify(){
+  const fs = $("fixSheet"); if (fs.querySelector(":scope > .postit-paper")) return;
+  const paper = document.createElement("div"); paper.className = "postit-paper";
+  while (fs.firstChild) paper.append(fs.firstChild);
+  const pin = document.createElement("div"); pin.className = "postit-pin"; pin.setAttribute("aria-hidden", "true");
+  fs.append(pin, paper); fs.classList.add("postitsheet");
 })();
 /* Que el teclado no tape el campo en el que escribís */
 document.addEventListener("focusin", e => {
