@@ -613,6 +613,7 @@ button{cursor:pointer}
 .pb-all{width:100%}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
+.due-usd{color:#8A5A00 !important}
 .fp-row .settle{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 
 /* ================= Revisión de diseño para celular ================= */
@@ -1841,7 +1842,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-08.1400";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-10.2200";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2096,7 +2097,7 @@ function virtualFixed(){
       if (fixActiveIn(f, key)){
         const amt = fixAmountFor(f, key);
         if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
-          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[], split: fixSplit(f, key) });
+          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(fixDue(f, y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[], split: fixSplit(f, key) });
       }
       m++; if (m > 11){ m = 0; y++; }
     }
@@ -2112,9 +2113,9 @@ function fixInstance(f, y, m){
   const base = { f, key, due, expected, currency: f.currency, unit, sessions };
   if (f.how === "card"){
     if (!expected) return { ...base, state:"noamount", paid:0 };
-    const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(payDate(y, m))}T00:00`, amount:expected, currency:f.currency };
+    const v = { method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(due)}T00:00`, amount:expected, currency:f.currency };
     const card = cardById(f.cardId); if (!card) return { ...base, state:"pending", paid:0 };
-    const pays = paysFrom(f.cardId, payDate(y, m), f.currency);
+    const pays = paysFor(card, due, f.currency);
     if (pays[0]) return { ...base, state:"cardpaid", paid:expected, payDate: dateOnly(pays[0].date) };
     const sch = cardSchedule(v)[0];
     return { ...base, state:"incard", paid:0, payDate: sch };
@@ -2182,11 +2183,25 @@ const paysFrom = (cardId, pd, cur) => data.cardPayments.filter(p => p.cardId ===
    Cuando pagás una tarjeta, ese pago se queda con la cuota que toque de cada compra hecha antes:
    la 1ª cuota va al primer pago después de la compra, la 2ª al segundo, etc.
    Lo que todavía no pagaste se proyecta según cómo pagás la tarjeta (o queda pendiente si es abierta). */
+/* Día de cierre de la tarjeta: el que cargaste, o si pagás un día fijo de vencimiento, unos 10 días antes */
+function cardCloseDay(card){
+  if (card.closeDay) return card.closeDay;
+  if (card.rule === "due" && card.day){ const d = card.day - 10; return d > 0 ? d : d + 30; }
+  return null;
+}
+/* Cierre del resumen en el que entra una compra hecha el día pd */
+function stmtClose(card, pd){
+  const cd = cardCloseDay(card); if (!cd) return null;
+  let c = dayIn(pd.getFullYear(), pd.getMonth(), cd); if (pd > c) c = dayIn(pd.getFullYear(), pd.getMonth()+1, cd);
+  return c;
+}
+/* Pagos que pueden cubrir una compra: los que hiciste después del cierre de su resumen */
+const paysFor = (card, pd, cur) => { const c = stmtClose(card, pd); return paysFrom(card.id, c ? new Date(c.getTime() + 864e5) : pd, cur); };
 function cardSchedule(e){
   const card = cardById(e.cardId), n = Math.max(1, e.installments || 1), pd = dateOnly(e.date), out = [];
   const k = Math.min(n - 1, Math.max(0, e.paidInstallments || 0));   // cuotas que ya pagaste antes de cargarla
   for (let i = 0; i < k; i++) out.push(false);
-  const pays = paysFrom(card.id, pd, e.currency);
+  const pays = paysFor(card, pd, e.currency);
   for (let i = 0; out.length < n && pays[i]; i++) out.push(dateOnly(pays[i].date));
   const u = out.length - k;
   if (out.length >= n) return out;
@@ -2197,7 +2212,8 @@ function cardSchedule(e){
   const minDate = !u && k ? today : null;
   for (let j = 0, got = 0, left = n - out.length; got < left && j < left + 36; j++){
     let c;
-    if (card.closeDay){ c = dayIn(base.getFullYear(), base.getMonth(), card.closeDay); if (base > c) c = dayIn(base.getFullYear(), base.getMonth()+1, card.closeDay); c = dayIn(c.getFullYear(), c.getMonth()+j, card.closeDay); }
+    const cd = cardCloseDay(card);
+    if (cd){ c = dayIn(base.getFullYear(), base.getMonth(), cd); if (base > c) c = dayIn(base.getFullYear(), base.getMonth()+1, cd); c = dayIn(c.getFullYear(), c.getMonth()+j, cd); }
     else c = dayIn(base.getFullYear(), base.getMonth()+j, base.getDate());
     const d = card.rule === "salary" ? nextSalaryAfter(c) : nextDayAfter(c, card.day || 10);
     if (minDate && d && d < minDate) continue;
@@ -2600,6 +2616,9 @@ function renderPayGroup(r){
   const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = ars ? fmtARS.format(ars) : fmtUSD.format(usd);
   if (ars && usd){ const of = document.createElement("span"); of.className = "of"; of.textContent = "+ " + fmtUSD.format(usd); amt.append(of); }
   if (payHere) amt.append(stampEl("PAGADO", "ok"));
+  else if (usd > 0 && fixUsdRate() > 0 && dateOnly(day) >= dateOnly(toLocalInput(new Date()))){
+    const of = document.createElement("span"); of.className = "of"; of.textContent = `≈ ${f0ARS(ars + usd * fixUsdRate())} al dólar de hoy`; amt.append(of);
+  }
   b.append(dot, mid, amt);
   b.onclick = () => { open ? expanded.delete("pay:" + r.key) : expanded.add("pay:" + r.key); render(); };
   wrap.append(b);
@@ -4414,6 +4433,14 @@ function renderDash(){
   renderCardsDash(list, cur);
 }
 
+/* "US$ 20 ≈ $ 29.000 al dólar de hoy": para los dólares que todavía no pagaste de la tarjeta */
+function usdEstimate(xs){
+  const usd = round2(xs.filter(x => x.currency === "USD").reduce((s,x) => s + x.amount, 0)), rate = fixUsdRate();
+  if (!(usd > 0)) return "";
+  if (!(rate > 0)) return `Ojo: además van ${fmtUSD.format(usd)}, que en pesos dependen del dólar del día que pagues.`;
+  const ars = round2(xs.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0));
+  return `Los ${fmtUSD.format(usd)} serían unos ${f0ARS(usd * rate)} al dólar de hoy (${f0ARS(rate)}); puede cambiar. Total aprox: ${f0ARS(ars + usd * rate)}.`;
+}
 function renderCardsDash(list, cur){
   const box = $("cardsBox"); box.innerHTML = "";
   if (!data.cards.length){ box.innerHTML = '<p class="fx-hint" style="margin:0">Agregá tus tarjetas para ver en qué gastás con cada una y cuándo las pagás.</p>'; return; }
@@ -4449,6 +4476,8 @@ function renderCardsDash(list, cur){
           ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
         const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
         const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
+        const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
+        if (est){ const e2 = document.createElement("small"); e2.className = "due-br due-usd"; e2.textContent = est; w.append(e2); }
         if (i === 0) next.append(w); else el.append(w);
       });
     }
