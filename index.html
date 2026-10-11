@@ -1842,7 +1842,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-10.2200";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-11.0030";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2680,7 +2680,10 @@ function renderFixedPend(){
   const box = $("fixedPend"); box.innerHTML = "";
   const owesIn = i => fixShared(i.f) && i.f.shares.some(p => !fixSharePaid(i.f, i.key, p.name));
   // Si estás ajustando las sesiones de uno (menú abierto), queda a la vista aunque quede pagado o en 0
-  const list = fixInstances(viewYear, viewMonth).filter(i => !["paid","cardpaid"].includes(i.state) || owesIn(i) || expanded.has("fp:" + i.f.id + "|" + i.key));
+  // Los fijos con tarjeta no se pagan uno por uno: van en el pago de la tarjeta (que ya aparece en la lista), así que acá no se muestran
+  // salvo que les falte el monto o alguien te deba su parte
+  const inCard = i => i.f.how === "card" && ["incard","cardpaid"].includes(i.state);
+  const list = fixInstances(viewYear, viewMonth).filter(i => owesIn(i) || expanded.has("fp:" + i.f.id + "|" + i.key) || (!["paid","cardpaid"].includes(i.state) && !inCard(i)));
   if (!list.length){ box.hidden = true; return; }
   box.hidden = false;
   const today = dateOnly(toLocalInput(new Date()));
