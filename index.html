@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-12.2355";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-13.0010";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2363,7 +2363,41 @@ function entries(){
         date:`${d}T00:00`, cardId: cid, stmtKey: k, src: { stmt: true } });
     });
   });
+  // Resúmenes que todavía no llegaron: se suman los impuestos y comisiones estimados según los últimos resúmenes de esa tarjeta
+  const today0 = dateOnly(toLocalInput(new Date()));
+  data.cards.forEach(card => {
+    if (card.rule === "open") return;
+    const est = chargeModel(card); if (!est) return;
+    const byD = {};
+    out.forEach(x => { if (x.cardId !== card.id || x.payId || x.stmtKey) return; const d = x.date.slice(0,10); if (dateOnly(d) >= today0) (byD[d] ||= []).push(x); });
+    Object.entries(byD).forEach(([d, xs]) => {
+      if (data.cardPayments.some(p => p.cardId === card.id && p.date === d) || (data.cardStmt || {})[card.id + "|" + d]) return;
+      // ese resumen ya lo subiste (tiene sus compras, no solo cuotas que siguen de otro): ahí están los impuestos reales
+      if (xs.some(x => x.src && x.src.source === "statement" && (!x.cuota || x.cuota === Math.min(x.of || 1, (x.src.paidInstallments || 0) + 1)))) return;
+      const rate = fixUsdRate() || 0, base = xs.reduce((s2, x) => s2 + (x.currency === "USD" ? x.amount * rate : x.amount), 0);
+      const amt = round2(est.fixed + est.pct * base);
+      if (amt > 0.5) out.push({ id:`estc:${card.id}|${d}`, amount: amt, currency: "ARS", category: "intereses", note: "Impuestos y comisiones (estimado)",
+        date:`${d}T00:00`, cardId: card.id, estc: true, src: { estc: true, n: est.n } });
+    });
+  });
   return out;
+}
+/* Lo que cobra el banco en cada resumen, aprendido de los resúmenes que subiste:
+   lo que es porcentaje (IVA, percepciones: tienen "%") se estima sobre lo que gastás; lo demás (mantenimiento, comisiones, sellos) se toma como fijo */
+function chargeModel(card){
+  const groups = {}, rate = fixUsdRate() || data.lastRate || 0;
+  data.expenses.forEach(e => {
+    if (e.source !== "statement" || e.cardId !== card.id) return;
+    const c = stmtCloseOf(e); if (!c) return;
+    const k = toLocalInput(c), g = groups[k] ||= { pct: 0, fixed: 0, base: 0 };
+    const v = e.currency === "USD" ? e.amount * rate : e.amount, per = (e.installments || 1) > 1 ? v / e.installments : v;
+    if (e.category === "intereses") (/%/.test(e.raw || e.note || "") ? g.pct += v : g.fixed += v);
+    else g.base += per;
+  });
+  const gs = Object.entries(groups).filter(([, g]) => g.base > 0).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 3).map(([, g]) => g);
+  if (!gs.length) return null;
+  const base = gs.reduce((s2, g) => s2 + g.base, 0);
+  return { pct: gs.reduce((s2, g) => s2 + g.pct, 0) / base, fixed: gs.reduce((s2, g) => s2 + g.fixed, 0) / gs.length, n: gs.length };
 }
 function pendingFor(card, upTo){
   // Lo que todavía no pagaste de esta tarjeta: la próxima cuota de cada compra hecha hasta hoy
@@ -2709,7 +2743,7 @@ function renderPayGroup(r){
   const cat = document.createElement("div"); cat.className = "cat"; cat.textContent = card.name;
   const sub = document.createElement("div"); sub.className = "sub";
   const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
-  const buys = r.xs.filter(x => !x.payId && !x.stmtKey).length;
+  const buys = r.xs.filter(x => !x.payId && !x.stmtKey && !x.estc).length;
   const payHere = data.cardPayments.find(p => p.cardId === cid && p.date === day);
   const payTxt = payHere ? [payHere.amount && fmtARS.format(payHere.amount), payHere.usd && fmtUSD.format(payHere.usd)].filter(Boolean).join(" + ") : "";
   sub.append(chev, document.createTextNode(payHere ? `Pagaste ${payTxt}` : buys ? `Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}` : "Pago de tarjeta"));
@@ -2730,7 +2764,7 @@ function renderPayGroup(r){
     r.xs.forEach(x => {
       const row = document.createElement("div"); row.className = "split-row";
       const n = document.createElement("span");
-      n.textContent = (x.payId || x.stmtKey ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
+      n.textContent = (x.payId || x.stmtKey || x.estc ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
       const v = document.createElement("span"); v.className = "s"; v.textContent = money(x.amount, x.currency);
       const t = document.createElement("span"); t.className = "pill me";
       row.append(n, v, t); panel.append(row);
@@ -4911,6 +4945,7 @@ const dashOpen = new Set();
 /* Abrir el detalle de algo que aparece en el resumen: el gasto, el pago de tarjeta o el fijo */
 function openEntry(x){
   if (x.payId){ const pay = data.cardPayments.find(p => p.id === x.payId); if (pay) openPayEdit(pay); return; }
+  if (x.estc){ uiAlert(`Es una estimación de lo que te cobra el banco aparte de tus compras (IVA, percepciones, mantenimiento, comisiones), según ${x.src.n === 1 ? "tu último resumen" : `tus últimos ${x.src.n} resúmenes`}. Cuando subas el resumen real, se reemplaza por lo que diga el banco.`); return; }
   if (x.stmtKey){ openSheet(); method = "card"; cardId = x.cardId; renderMethods(); return; }   // falta anotar: abrir para cargar una compra con esa tarjeta
   const src = x.src || x;
   if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }   // (también los fijos estimados)
@@ -5189,9 +5224,9 @@ function renderCardsDash(list, cur){
         const ln = document.createElement("span"); ln.className = "due";
         const strong = document.createElement("strong"); strong.textContent = both(ds);
         ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
-        const real = x => !x.payId && !x.stmtKey && !x.src.virtual;
+        const real = x => !x.payId && !x.stmtKey && !x.estc && !x.src.virtual;
         const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
-          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Sin anotar o intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
+          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Impuestos y comisiones (estimado)", ds.filter(x => x.estc)], ["Sin anotar o intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
         const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
         const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
         const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
