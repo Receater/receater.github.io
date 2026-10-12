@@ -614,6 +614,29 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.card-btns{display:flex;gap:10px;align-items:center;margin-left:auto}
+.st-wide{width:100%;margin-top:12px}
+.st-busy{margin:14px 0}
+.st-prog{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0 10px}
+.st-q{border:1.5px dashed #BDB6A5;border-radius:6px;padding:14px;text-align:center;background:#FFFEFB}
+.st-q strong{display:block;font-size:1.1rem;overflow-wrap:anywhere}
+.st-q small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px;overflow-wrap:anywhere}
+.st-q-a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:700;font-size:1.4rem;margin-top:8px}
+.st-chips{margin:14px 0 4px}
+.st-chips .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.st-nav{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.st-nav .linkbtn{margin-left:auto}
+.st-sum p{margin:4px 0 8px;font-weight:700}
+.st-gh{font-size:.76rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding-bottom:4px;border-bottom:1.5px dashed #BDB6A5}
+.st-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0;border-bottom:1.5px dotted #D9D3C6}
+.st-row input[type=checkbox]{width:20px;height:20px;margin-top:2px}
+.st-row.off .n,.st-row.off .a{opacity:.5}
+.st-row .n{font-weight:700;overflow-wrap:anywhere}
+.st-row small{display:block;color:var(--muted);font-size:.8rem}
+.st-row .a{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;white-space:nowrap}
+.st-sel{margin-top:6px;font-size:.9rem;padding-top:4px;padding-bottom:4px}
+.st-paid{display:flex;gap:8px;align-items:center;margin:16px 0 4px;font-weight:700}
+.st-paid input{width:20px;height:20px}
 .card-donut{margin-top:10px}
 .card-donut .donut-wrap svg{width:min(190px,55vw)}
 .card-donut .donut-center .v{font-size:1.15rem}
@@ -1820,6 +1843,16 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 
+<div class="sheet-bg" id="stBg"></div>
+<div class="sheet" id="stSheet" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <h3 id="stTitle">Resumen de la tarjeta</h3>
+  <div id="stBody"></div>
+  <input type="file" id="stFile" accept="application/pdf,image/*" multiple hidden>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="stCancel">Cancelar</button>
+  </div>
+</div>
+
 <div class="sheet-bg" id="xlBg"></div>
 <div class="sheet" id="xlSheet" role="dialog" aria-modal="true" aria-labelledby="xlTitle">
   <h3 id="xlTitle">Exportar a Excel</h3>
@@ -1852,7 +1885,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-12.1900";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-12.2000";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2219,7 +2252,8 @@ function cardSchedule(e){
   const today = dateOnly(toLocalInput(new Date()));
   const base = u ? new Date(dateOnly(pays[u-1].date).getTime() + 864e5) : pd;
   // Si ya pagaste cuotas por fuera, las que faltan arrancan en el próximo pago desde hoy
-  const minDate = !u && k ? today : null;
+  // (si la cargaste desde un resumen, la que sigue es la de ese resumen: después de su cierre)
+  const minDate = !u && k ? (e.cuotaFrom ? new Date(dateOnly(e.cuotaFrom).getTime() + 864e5) : today) : null;
   for (let j = 0, got = 0, left = n - out.length; got < left && j < left + 36; j++){
     let c;
     const cd = cardCloseDay(card);
@@ -3891,6 +3925,192 @@ $("tellFile").onchange = async () => {
   catch (e){ $("tellMsg").textContent = aiErrorMsg(e).replace(" Usé el modo simple.", "") || "No pude leer la foto."; }
   setTellBusy(false);
 };
+/* ---------- Subir el resumen de una tarjeta: Recy lo lee, pregunta lo que no entiende y carga los gastos ---------- */
+let st = null;   // { card, data, rows, step, phase }
+const ST_DONTKNOW = "tarjeta_sd";
+function openStmtUpload(card){
+  st = { card, phase: "pick" };
+  $("stTitle").textContent = `Resumen de ${card.name}`;
+  renderStmt();
+  $("stBg").classList.add("open"); $("stSheet").classList.add("open");
+}
+function closeStmt(){ $("stBg").classList.remove("open"); $("stSheet").classList.remove("open"); st = null; }
+$("stCancel").onclick = closeStmt; $("stBg").onclick = closeStmt;
+const fileB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
+$("stFile").onchange = async () => {
+  const fs = [...($("stFile").files || [])]; $("stFile").value = ""; if (!fs.length || !st) return;
+  st.phase = "busy"; renderStmt();
+  try {
+    const parts = [];
+    for (const f of fs){
+      if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) parts.push({ inline_data: { mime_type: "application/pdf", data: await fileB64(f) } });
+      else parts.push({ inline_data: { mime_type: "image/jpeg", data: await shrinkImage(f) } });
+    }
+    const r = await aiCall([{ text: stmtPrompt(st.card) }, ...parts]);
+    stmtLoad(r);
+  } catch (e){
+    st.phase = "pick"; st.err = (aiErrorMsg(e) || "No pude leer el resumen.").replace(" Usé el modo simple.", "") + " Probá de nuevo o con fotos más claras.";
+    renderStmt();
+  }
+};
+function stmtPrompt(card){
+  return `Sos Recy, el asistente de una app de gastos personales en Argentina. Este archivo es el resumen de la tarjeta de crédito "${card.name}".
+Leé TODOS los movimientos del período: compras, cuotas, débitos automáticos, suscripciones, impuestos, intereses y comisiones.
+NO incluyas el saldo anterior ni los pagos que hizo el usuario (por ejemplo "SU PAGO EN PESOS", "PAGO EN DOLARES").
+${aiContext()}
+Respondé SOLO con un objeto JSON, sin texto extra, con esta forma:
+{"cierre":"YYYY-MM-DD" o null,"vencimiento":"YYYY-MM-DD" o null,"total_ars":número o null,"total_usd":número o null,
+"movimientos":[{"fecha":"YYYY-MM-DD","detalle":"el texto tal como figura","comercio":"nombre del comercio limpio y fácil de leer","monto":número positivo (lo que se cobra en ESTE resumen; si es una cuota, el valor de la cuota),"moneda":"ARS"|"USD","cuota":número o null,"cuotas":número o null,"tipo":"compra"|"impuesto"|"devolucion","categoria":id de categoría o null,"seguro":true|false}]}
+Reglas:
+- "fecha" es la fecha de la compra que figura en el resumen. Si una cuota dice "C.03/06" o "03/06", cuota=3 y cuotas=6.
+- "seguro" es true SOLO si por el nombre del comercio es obvio a qué categoría va (ej: Coto o Carrefour → super, Netflix o Spotify → suscripciones, YPF o Shell o SUBE → transporte, Farmacity → salud).
+  Si es ambiguo (MERPAGO*algo, códigos raros, nombres de personas, transferencias, comercios que venden de todo), "seguro": false y en "categoria" tu mejor idea o null.
+- Impuestos, sellos, IVA, percepciones, intereses, comisiones y cargos del banco: tipo "impuesto".
+- Devoluciones, bonificaciones y montos negativos: tipo "devolucion" (con el monto en positivo).
+- total_ars y total_usd son el "saldo actual" o "total a pagar" del resumen, en pesos y en dólares.`;
+}
+/* Busca si una línea del resumen ya está cargada (misma tarjeta, moneda, monto de la cuota y fecha parecida) */
+function stmtMatch(card, m){
+  const d = dateOnly(m.fecha), cuotas = m.cuotas > 1 ? m.cuotas : 1;
+  return allExpenses().find(e => isCardExp(e) && e.cardId === card.id && e.currency === m.moneda && Math.max(1, e.installments || 1) === cuotas
+    && Math.abs(eff(e) / Math.max(1, e.installments || 1) - m.monto) <= Math.max(1, m.monto * 0.01) && Math.abs(dateOnly(e.date) - d) <= 4 * 864e5);
+}
+function stmtLoad(r){
+  const card = st.card, cats = allCats();
+  const rows = (Array.isArray(r.movimientos) ? r.movimientos : []).filter(m => m && Number(m.monto) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(m.fecha || "")).map((m, i) => {
+    m.monto = round2(Number(m.monto)); m.moneda = m.moneda === "USD" ? "USD" : "ARS";
+    m.cuota = Number(m.cuota) || null; m.cuotas = Number(m.cuotas) || null;
+    const tipo = ["impuesto","devolucion"].includes(m.tipo) ? m.tipo : "compra";
+    const dup = tipo === "compra" ? stmtMatch(card, m) : null;
+    const catOk = m.categoria && cats.some(c => c.id === m.categoria && !c.hidden);
+    return { i, m, tipo, dup, on: tipo !== "devolucion" && !dup,
+      cat: tipo === "impuesto" ? "intereses" : catOk ? m.categoria : null, unsure: tipo === "compra" && !dup && (!m.seguro || !catOk) };
+  });
+  st.r = r; st.rows = rows; st.ask = rows.filter(x => x.unsure); st.step = 0;
+  st.paid = !!(r.vencimiento && dateOnly(r.vencimiento) <= dateOnly(toLocalInput(new Date())));
+  st.phase = rows.length ? (st.ask.length ? "ask" : "review") : "pick";
+  if (!rows.length) st.err = "No encontré movimientos en ese archivo. ¿Es el resumen de la tarjeta?";
+  renderStmt();
+}
+function stmtLine(x){
+  const m = x.m;
+  return [m.comercio || m.detalle, m.cuotas > 1 ? `cuota ${m.cuota || "?"}/${m.cuotas}` : null].filter(Boolean).join(" · ");
+}
+function renderStmt(){
+  const b = $("stBody"); b.innerHTML = ""; const card = st.card;
+  const P = (cls, txt) => { const e = document.createElement("p"); e.className = cls; e.textContent = txt; return e; };
+  if (st.phase === "pick"){
+    b.append(P("fx-hint", "Subí el PDF del resumen (o fotos de cada hoja). Recy lee cada compra, se fija cuáles ya cargaste y te pregunta las que no sabe de qué son."));
+    if (!aiKey()){
+      b.append(P("fx-hint", "Para esto Recy necesita estar activado (es gratis, se hace una sola vez)."));
+      const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy inteligente"; a.onclick = () => { closeStmt(); openAi(); }; b.append(a);
+      return;
+    }
+    if (st.err){ const e = P("err", st.err); b.append(e); st.err = null; }
+    const go = document.createElement("button"); go.type = "button"; go.className = "btn primary st-wide"; go.textContent = "Elegir el resumen";
+    go.onclick = () => $("stFile").click(); b.append(go);
+    return;
+  }
+  if (st.phase === "busy"){
+    const w = document.createElement("div"); w.className = "tell-busy st-busy"; w.setAttribute("role", "status");
+    w.innerHTML = '<span class="spin" aria-hidden="true"></span><div><strong>Recy está leyendo el resumen…</strong><span>Puede tardar un poquito si es largo.</span></div>';
+    b.append(w); return;
+  }
+  if (st.phase === "ask"){
+    const x = st.ask[st.step], m = x.m;
+    const top = document.createElement("div"); top.className = "st-prog"; top.textContent = `¿Sabés de qué es esto? · ${st.step + 1} de ${st.ask.length}`; b.append(top);
+    const c = document.createElement("div"); c.className = "st-q";
+    const nm = document.createElement("strong"); nm.textContent = m.comercio || m.detalle;
+    const raw = document.createElement("small"); raw.textContent = m.detalle && m.detalle !== m.comercio ? `En el resumen dice: ${m.detalle}` : "";
+    const am = document.createElement("div"); am.className = "st-q-a"; am.textContent = money(m.monto, m.moneda);
+    const dt = document.createElement("small"); dt.textContent = shortDate(dateOnly(m.fecha)) + (m.cuotas > 1 ? ` · cuota ${m.cuota || "?"} de ${m.cuotas}` : "");
+    c.append(nm, raw, am, dt); b.append(c);
+    if (x.cat){ const h = P("fx-hint", `Recy cree que es ${catById(x.cat).name}.`); b.append(h); }
+    const chips = document.createElement("div"); chips.className = "chips st-chips";
+    const pick = id => { x.cat = id; x.unsure = false; if (st.step < st.ask.length - 1) st.step++; else st.phase = "review"; renderStmt(); };
+    allCats().filter(cc => !cc.hidden && cc.id !== "ahorro").forEach(cc => {
+      const ch = document.createElement("button"); ch.type = "button"; ch.className = "chip"; ch.setAttribute("aria-pressed", String(x.cat === cc.id));
+      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = cc.color; ch.append(dot, cc.name); ch.onclick = () => pick(cc.id); chips.append(ch);
+    });
+    b.append(chips);
+    const nav = document.createElement("div"); nav.className = "st-nav";
+    const back = document.createElement("button"); back.type = "button"; back.className = "small-btn"; back.textContent = "‹ Atrás"; back.disabled = st.step === 0; back.onclick = () => { st.step--; renderStmt(); };
+    const dk = document.createElement("button"); dk.type = "button"; dk.className = "small-btn"; dk.textContent = "No sé qué es"; dk.onclick = () => pick(ST_DONTKNOW);
+    const skip = document.createElement("button"); skip.type = "button"; skip.className = "linkbtn"; skip.textContent = "Ver todo"; skip.onclick = () => { st.ask.forEach(y => { if (!y.cat) y.cat = ST_DONTKNOW; }); st.phase = "review"; renderStmt(); };
+    nav.append(back, dk, skip); b.append(nav);
+    return;
+  }
+  // Revisión final
+  const r = st.r, rows = st.rows;
+  const sumOn = cur => round2(rows.filter(x => x.on && x.m.moneda === cur).reduce((a, x) => a + x.m.monto, 0));
+  const head = document.createElement("div"); head.className = "st-sum";
+  const tot = [r.total_ars > 0 && fmtARS.format(r.total_ars), r.total_usd > 0 && fmtUSD.format(r.total_usd)].filter(Boolean).join(" + ");
+  head.append(P("", [r.vencimiento ? `Vence el ${shortDate(dateOnly(r.vencimiento))}` : null, tot ? `Total: ${tot}` : null].filter(Boolean).join(" · ") || "Resumen leído"));
+  b.append(head);
+  const groups = [["Para cargar", rows.filter(x => !x.dup && x.tipo !== "devolucion")], ["Ya los tenías cargados", rows.filter(x => x.dup)], ["Devoluciones (no se cargan)", rows.filter(x => x.tipo === "devolucion")]];
+  const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }];
+  groups.forEach(([title, xs]) => {
+    if (!xs.length) return;
+    const h = document.createElement("div"); h.className = "st-gh"; h.textContent = `${title} (${xs.length})`; b.append(h);
+    xs.forEach(x => {
+      const row = document.createElement("div"); row.className = "st-row" + (x.on ? "" : " off");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = x.on; cb.disabled = x.tipo === "devolucion"; cb.setAttribute("aria-label", `Cargar ${stmtLine(x)}`);
+      cb.onchange = () => { x.on = cb.checked; renderStmt(); };
+      const mid = document.createElement("div"); mid.className = "st-mid";
+      const n = document.createElement("div"); n.className = "n"; n.textContent = stmtLine(x);
+      const d = document.createElement("small"); d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? " · ya está cargado" : "");
+      mid.append(n, d);
+      if (x.tipo !== "devolucion" && !x.dup){
+        const sel = document.createElement("select"); sel.className = "input st-sel"; sel.setAttribute("aria-label", `Categoría de ${stmtLine(x)}`);
+        catsSel.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; sel.append(o); });
+        sel.value = x.cat || ST_DONTKNOW; x.cat = sel.value; sel.onchange = () => { x.cat = sel.value; };
+        mid.append(sel);
+      }
+      const a = document.createElement("div"); a.className = "a"; a.textContent = money(x.m.monto, x.m.moneda);
+      row.append(cb, mid, a); b.append(row);
+    });
+  });
+  const n = rows.filter(x => x.on).length;
+  const pay = document.createElement("label"); pay.className = "st-paid";
+  const pcb = document.createElement("input"); pcb.type = "checkbox"; pcb.checked = st.paid; pcb.onchange = () => { st.paid = pcb.checked; };
+  pay.append(pcb, r.vencimiento ? ` Ya lo pagué (el ${shortDate(dateOnly(r.vencimiento))})` : " Ya lo pagué");
+  if (r.total_ars > 0 || r.total_usd > 0) b.append(pay);
+  b.append(P("fx-hint", `Vas a cargar ${n} ${n === 1 ? "gasto" : "gastos"}: ${[sumOn("ARS") && fmtARS.format(sumOn("ARS")), sumOn("USD") && fmtUSD.format(sumOn("USD"))].filter(Boolean).join(" + ") || "$ 0"}. Lo que el total tenga de más (cosas que no se leyeron) queda como "sin detalle".`));
+  const save = document.createElement("button"); save.type = "button"; save.className = "btn primary st-wide"; save.textContent = n ? `Cargar ${n} ${n === 1 ? "gasto" : "gastos"}` : "Listo"; save.onclick = stmtSave;
+  b.append(save);
+}
+function stmtSave(){
+  const card = st.card, r = st.r, mk = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), added = [];
+  const okD = v => v && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const cierre = okD(r.cierre) ? r.cierre : okD(r.vencimiento) ? toLocalInput(new Date(dateOnly(r.vencimiento).getTime() - 10 * 864e5)) : null;
+  st.rows.filter(x => x.on && x.tipo !== "devolucion").forEach(x => {
+    const m = x.m, n = m.cuotas > 1 ? m.cuotas : 1, k = n > 1 ? Math.min(n - 1, Math.max(0, (m.cuota || 1) - 1)) : 0;
+    const e = { id: mk(), source: "statement", amount: round2(m.monto * n), currency: m.moneda, category: x.cat || ST_DONTKNOW, date: `${m.fecha}T12:00`,
+      note: m.comercio || m.detalle || "", method: "card", cardId: card.id, installments: n, paidInstallments: k, items: [], split: null, loan: false };
+    if (k > 0 && cierre) e.cuotaFrom = cierre;
+    data.expenses.push(e); added.push(e);
+  });
+  // Si la tarjeta no tenía día de cierre, lo tomo del resumen
+  if (!card.closeDay && r.cierre && /^\d{4}-\d{2}-\d{2}$/.test(r.cierre)) card.closeDay = dateOnly(r.cierre).getDate();
+  const venc = r.vencimiento && /^\d{4}-\d{2}-\d{2}$/.test(r.vencimiento) ? r.vencimiento : null;
+  if (st.paid && venc && (r.total_ars > 0 || r.total_usd > 0) && !data.cardPayments.some(p => p.cardId === card.id && p.date === venc)){
+    const pay = { id: mk(), cardId: card.id, date: venc, amount: round2(r.total_ars || 0) }, rate = fixUsdRate();
+    if (r.total_usd > 0 && rate > 0){ pay.usd = round2(r.total_usd); pay.usdMode = "ars"; pay.rate = round2(rate); pay.usdArs = round2(r.total_usd * rate); }
+    data.cardPayments.push(pay);
+  } else if (!st.paid && (r.total_ars > 0 || r.total_usd > 0)){
+    // No lo pagaste todavía: guardo el total para ver cuánto falta anotar, en la fecha en que te llega según la app
+    const ents = entries().filter(x => x.src && added.includes(x.src)), cnt = {};
+    ents.forEach(x => { const d = x.date.slice(0,10); cnt[d] = (cnt[d] || 0) + 1; });
+    const d = Object.entries(cnt).sort((a,b) => b[1] - a[1])[0];
+    const key = card.id + "|" + (d ? d[0] : venc);
+    if (d || venc){ data.cardStmt = data.cardStmt || {}; data.cardStmt[key] = { ars: round2(r.total_ars || 0), usd: round2(r.total_usd || 0) }; }
+  }
+  persist(); feedRecy();
+  const dk = added.filter(e => e.category === ST_DONTKNOW).length;
+  closeStmt(); render();
+  uiAlert(added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "sin detalle"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.");
+}
+
 /* Modal de la clave */
 function openAi(){
   $("aiKey").value = ""; $("aiErr").textContent = ""; $("aiDel").hidden = !aiKey(); $("aiOkTxt").hidden = !aiKey();
@@ -4089,6 +4309,7 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("setSheet").classList.contains("open")) closeSettings();
   else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("pbSheet").classList.contains("open")) closePersonBal();
+  else if ($("stSheet").classList.contains("open")) closeStmt();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
   else if ($("fmSheet").classList.contains("open")) closeFixMonth();
@@ -4464,10 +4685,13 @@ const cardOpen = new Set();
 const SD_COLOR = "#B9B2A3";
 function cardDonut(card, xs, total, cur){
   const box = document.createElement("div"); box.className = "card-donut";
-  const byC = {}; xs.forEach(x => byC[x.category] = (byC[x.category] || 0) + x.amount);
-  const sorted = Object.entries(byC).sort((a,b) => (a[0] === "tarjeta_sd") - (b[0] === "tarjeta_sd") || b[1] - a[1]);
-  const color = id => id === "tarjeta_sd" ? SD_COLOR : catById(id).color;
-  const name = id => id === "tarjeta_sd" ? (xs.some(x => x.category === id && x.stmtKey) ? "Falta anotar" : "Sin detalle") : catById(id).name;
+  // "Falta anotar" (lo que dice el resumen y no cargaste) va aparte de "No sé qué es" (cargado sin categoría)
+  const gk = x => x.stmtKey || x.payId ? "__stmt" : x.category;
+  const byC = {}; xs.forEach(x => byC[gk(x)] = (byC[gk(x)] || 0) + x.amount);
+  const rank = id => id === "__stmt" ? 2 : id === "tarjeta_sd" ? 1 : 0;
+  const sorted = Object.entries(byC).sort((a,b) => rank(a[0]) - rank(b[0]) || b[1] - a[1]);
+  const color = id => id === "__stmt" ? SD_COLOR : id === "tarjeta_sd" ? "#7E776A" : catById(id).color;
+  const name = id => id === "__stmt" ? "Falta anotar" : id === "tarjeta_sd" ? "No sé qué es / sin detalle" : catById(id).name;
   const wrap = document.createElement("div"); wrap.className = "donut-wrap";
   const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":`En qué se te va ${card.name}: ` + sorted.map(([id,v]) => `${name(id)} ${Math.round(v/total*100)}%`).join(", ")});
   const r = 78, C = 2*Math.PI*r; let off = 0;
@@ -4486,13 +4710,13 @@ function cardDonut(card, xs, total, cur){
   const ul = document.createElement("ul"); ul.className = "legend";
   sorted.forEach(([id,v]) => {
     const key = card.id + "|" + id, open = cardOpen.has(key), li = document.createElement("li");
-    li.className = "cat-row" + (open ? " is-open" : "") + (id === "tarjeta_sd" ? " sd" : "");
+    li.className = "cat-row" + (open ? " is-open" : "") + (rank(id) ? " sd" : "");
     li.tabIndex = 0; li.setAttribute("role", "button"); li.setAttribute("aria-expanded", String(open));
     const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = color(id);
     const mid = document.createElement("div"), n = document.createElement("div"); n.className = "n"; n.textContent = name(id); mid.append(n);
-    const cnt = xs.filter(x => x.category === id).length;
+    const cnt = xs.filter(x => gk(x) === id).length;
     const d = document.createElement("div"); d.className = "d";
-    d.textContent = id === "tarjeta_sd" ? (xs.some(x => x.stmtKey) ? "Lo que dice el resumen y todavía no cargaste" : "Pagaste más de lo que cargaste") : `${cnt} ${cnt === 1 ? "gasto" : "gastos"}`;
+    d.textContent = id === "__stmt" ? (xs.some(x => x.payId) ? "Pagaste más de lo que cargaste (compras sin anotar, intereses o impuestos)" : "Lo que dice el resumen y todavía no cargaste") : `${cnt} ${cnt === 1 ? "gasto" : "gastos"}` + (id === "tarjeta_sd" ? " · tocá uno para ponerle categoría" : "");
     mid.append(d);
     const a = document.createElement("div"); a.className = "a"; a.textContent = money(round2(v), cur);
     const pc = document.createElement("span"); pc.className = "p"; pc.textContent = Math.round(v/total*100) + "%"; a.append(pc);
@@ -4502,7 +4726,7 @@ function cardDonut(card, xs, total, cur){
     li.onclick = toggle; li.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggle(); } };
     if (open){
       const box2 = document.createElement("li"); box2.className = "cat-list";
-      xs.filter(x => x.category === id).sort((a,b) => b.date.localeCompare(a.date) || b.amount - a.amount).forEach(x => {
+      xs.filter(x => gk(x) === id).sort((a,b) => b.date.localeCompare(a.date) || b.amount - a.amount).forEach(x => {
         const b = document.createElement("button"); b.type = "button"; b.className = "cat-entry";
         const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(dateOnly(x.src && x.src.date && !x.src.stmt ? x.src.date : x.date));
         const tt = document.createElement("span"); tt.className = "t";
@@ -4588,7 +4812,7 @@ function renderCardsDash(list, cur){
         ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
         const real = x => !x.payId && !x.stmtKey && !x.src.virtual;
         const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
-          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
+          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Sin anotar o intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
         const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
         const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
         const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
@@ -4598,7 +4822,9 @@ function renderCardsDash(list, cur){
       });
     }
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
-    next.append(ed); el.append(next);
+    const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up"; up.textContent = "📄 Subir resumen"; up.onclick = () => openStmtUpload(card);
+    const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(up, ed);
+    next.append(eb); el.append(next);
     if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
     box.append(el);
   });
