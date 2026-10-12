@@ -615,6 +615,8 @@ button{cursor:pointer}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
 .card-btns{display:flex;gap:10px;align-items:center;margin-left:auto}
+.st-hint{flex-basis:100%;text-align:right;font-size:.76rem;color:var(--muted)}
+.st-which{font-weight:700;color:var(--ink) !important}
 .st-wide{width:100%;margin-top:12px}
 .st-busy{margin:14px 0}
 .st-prog{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0 10px}
@@ -1885,7 +1887,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-12.2100";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-12.2230";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -3821,17 +3823,28 @@ function aiSetupLabel(){
   let dis = false; try { dis = !!localStorage.getItem("receater.aiInviteOff"); } catch {}
   $("aiCard").hidden = true;   // la invitación aparece solo al querer cargar
 }
-async function aiCall(parts){
+async function aiCall(parts, opt = {}){
   const key = aiKey(); if (!key) throw { code: "nokey" };
   let lastErr = null;
-  for (const model of AI_MODELS){
+  for (const model of (opt.models || AI_MODELS)){
     let r;
+    const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const tm = ctl ? setTimeout(() => ctl.abort(), opt.timeout || 60000) : null;
+    const gen = { temperature: 0.1, responseMimeType: "application/json" };
+    if (opt.fast && /2\.5/.test(model)) gen.thinkingConfig = { thinkingBudget: 0 };   // sin "pensar": mucho más rápido para leer listas
+    if (opt.maxTokens) gen.maxOutputTokens = opt.maxTokens;
     try {
       r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.1, responseMimeType: "application/json" } })
+        method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl ? ctl.signal : undefined,
+        body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: gen })
       });
-    } catch { throw { code: "net" }; }
+    } catch (e){
+      clearTimeout(tm);
+      if (!navigator.onLine) throw { code: "net" };
+      lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" };   // se cortó o tardó demasiado: probamos con otro modelo
+      continue;
+    }
+    clearTimeout(tm);
     if (!r.ok){
       const body = await r.text().catch(() => "");
       if (r.status === 401 || r.status === 403 || /API_KEY_INVALID|API key not valid/i.test(body)) throw { code: "badkey" };
@@ -3903,7 +3916,7 @@ function aiApply(r){
 }
 function aiErrorMsg(e){
   return { nokey: "", region: "Gemini no está disponible desde tu ubicación. Usé el modo simple.", badkey: "La clave de Gemini no funciona. Revisala en Recy inteligente.", quota: "Se terminó el cupo gratis de Gemini por ahora. Usé el modo simple.",
-    net: "No pude conectarme con Gemini. Usé el modo simple.", parse: "Gemini respondió algo raro. Usé el modo simple.", model: "Gemini no respondió. Usé el modo simple.", other: "Gemini no respondió. Usé el modo simple." }[e && e.code] || "Algo falló con Gemini. Usé el modo simple.";
+    net: "No pude conectarme con Gemini. Usé el modo simple.", timeout: "Gemini tardó demasiado en responder. Usé el modo simple.", parse: "Gemini respondió algo raro. Usé el modo simple.", model: "Gemini no respondió. Usé el modo simple.", other: "Gemini no respondió. Usé el modo simple." }[e && e.code] || "Algo falló con Gemini. Usé el modo simple.";
 }
 /* Mientras Recy lee: un cartel con spinner bien visible (acá, más adelante, puede ir una animación de Recy estudiando el ticket) */
 function setTellBusy(on, title, sub){
@@ -3954,20 +3967,114 @@ function openStmtUpload(card){
 }
 function closeStmt(){ $("stBg").classList.remove("open"); $("stSheet").classList.remove("open"); st = null; }
 $("stCancel").onclick = closeStmt; $("stBg").onclick = closeStmt;
+let pdfjsP = null;
+function loadPdfJs(){
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return pdfjsP ||= new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    sc.onload = () => { const L = window.pdfjsLib; if (!L){ pdfjsP = null; rej(new Error("pdfjs")); return; }
+      L.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; res(L); };
+    sc.onerror = () => { pdfjsP = null; rej(new Error("pdfjs")); };
+    document.head.append(sc);
+  });
+}
+/* Texto del PDF renglón por renglón (para resúmenes que son texto, que son casi todos) */
+async function pdfText(file){
+  const L = await loadPdfJs(), doc = await L.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise, out = [];
+  for (let n = 1; n <= Math.min(doc.numPages, 12); n++){
+    const page = await doc.getPage(n), tc = await page.getTextContent(), rows = [];
+    tc.items.forEach(it => { if (!it.str || !it.str.trim()) return; const x = it.transform[4], y = it.transform[5];
+      let r = rows.find(r2 => Math.abs(r2.y - y) < 2.5); if (!r){ r = { y, xs: [] }; rows.push(r); } r.xs.push({ x, w: it.width || 0, t: it.str }); });
+    rows.sort((a,b) => b.y - a.y).forEach(r => {
+      r.xs.sort((a,b) => a.x - b.x); let line = "", end = null;
+      r.xs.forEach(c => { if (end != null) line += c.x - end > 12 ? "   " : c.x - end > 1 ? " " : ""; line += c.t; end = c.x + c.w; });
+      out.push(line.trim());
+    });
+    out.push(`--- fin de la página ${n} ---`);
+  }
+  let t = out.join("\n");
+  // Lo que viene después del total suele ser texto legal: lo corto para que sea más rápido
+  const i = t.search(/TOTAL A PAGAR|SALDO ACTUAL|Saldo actual|Total a pagar/);
+  if (i > 0){ const j = t.indexOf("\n", i); t = t.slice(0, (j > 0 ? j : i) + 1) + "\n" + t.slice(j > 0 ? j : i).split("\n").slice(1, 25).join("\n"); }
+  return t.slice(0, 40000);
+}
+/* Categorías obvias por el nombre del comercio (para cuando se lee sin IA) */
+const CAT_WORDS = [
+  ["super", /\b(COTO|CARREFOUR|JUMBO|DISCO|VEA|CHANGOMAS|LA ANONIMA|MAKRO|DIARCO|SUPERMERC\w*|DIA ARGENTINA|AUTOSERVICIO)\b/],
+  ["comida", /\b(STARBUCKS|BURGER ?KING|BURGERKING|MCDONALD\w*|MOSTAZA|PEDIDOS ?YA|RAPPI|HAVANNA\w*|GRIDO|FREDDO|CAFE\w*|PIZZ\w*|SUSHI|PARRILLA|EMPANAD\w*|HELAD\w*|RESTO\w*)\b/],
+  ["transporte", /\b(UBER|CABIFY|DIDI|YPF|SHELL|AXION|PUMA ENERGY|SUBE|PEAJE|AUSA|AUTOPISTA\w*|ESTACIONAM\w*|TRENES)\b/],
+  ["salud", /\b(FARMACITY|FARMACIA\w*|OSDE|SWISS MEDICAL|GALENO|MEDICUS|HOSPITAL|CLINICA|LABORATORIO|ODONTO\w*)\b/],
+  ["suscripciones", /\b(NETFLIX|SPOTIFY|CRUNCHY\w*|DISNEY\w*|HBO|PRIME VIDEO|YOUTUBE|ICLOUD|PARAMOUNT)\b/],
+  ["trabajo", /\b(ADOBE|FIGMA|CANVA|NOTION|GITHUB|OPENAI|CHATGPT|CLAUDE|ANTHROPIC|AUTODESK|MAXON|SIDEFX)\b/],
+  ["salidas", /\b(SHOWCASE|CINEMARK|HOYTS|CINEPOLIS|TEATRO|TICKETEK|ALLACCESS|PASSLINE)\b/],
+  ["ropa", /\b(ZARA|NIKE|ADIDAS|DEXTER|GRIMOLDI|TOPPER|MOOV|STOCKCENTER)\b/],
+  ["casa", /\b(EDENOR|EDESUR|METROGAS|AYSA|TELECENTRO|MOVISTAR|CLARO|FIBERTEL|EXPENSAS|SODIMAC|EASY)\b/],
+];
+function guessCat(ref){
+  const t = " " + String(ref || "").toUpperCase().replace(/[*\/.]/g, " ") + " ";
+  const hit = CAT_WORDS.find(([id, re]) => re.test(t) && allCats().some(c => c.id === id && !c.hidden));
+  return hit ? hit[0] : null;
+}
+/* Lectura sin IA de resúmenes en tabla (Galicia y parecidos): se usa si Gemini falla o no está activado */
+function parseStmtText(t){
+  const MES = { ene:1, feb:2, mar:3, abr:4, may:5, jun:6, jul:7, ago:8, sep:9, set:9, oct:10, nov:11, dic:12 };
+  const num = v => { const n = Number(String(v).replace(/\./g, "").replace(",", ".")); return isFinite(n) ? n : null; };
+  const money = /^-?[\d.]+,\d{2}$/;
+  const iso = (d, m, y) => `${y.length === 2 ? "20" + y : y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const hd = [...t.matchAll(/(\d{1,2})-(Ene|Feb|Mar|Abr|May|Jun|Jul|Ago|Sep|Set|Oct|Nov|Dic)-(\d{2,4})/gi)].slice(0, 6).map(m => iso(m[1], MES[m[2].toLowerCase()], m[3]));
+  const tot = t.match(/TOTAL A PAGAR\s+(-?[\d.]+,\d{2})(?:\s+(-?[\d.]+,\d{2}))?/i) || t.match(/SALDO ACTUAL[^\d-]*(-?[\d.]+,\d{2})(?:\s+(-?[\d.]+,\d{2}))?/i);
+  const pretty = r => r.replace(/^(K|\*)\s+/, "").replace(/^(MERPAGO|PAYU\*AR|WL|EBN|UALA|DLO|PEDIDOSYA|MP)\s*\*\s*/i, "").replace(/\s+USD$/i, "").trim()
+    .toLowerCase().replace(/(^|[\s*\/.-])([a-záéíóúñ])/g, (a, b, c) => b + c.toUpperCase());
+  const movs = [];
+  t.split("\n").forEach(line => {
+    const cols = line.split(/\s{2,}/).map(c => c.trim()).filter(Boolean);
+    const dm = cols[0] && cols[0].match(/^(\d{2})-(\d{2})-(\d{2,4})$/); if (!dm || cols.length < 3) return;
+    const ref = cols[1]; if (/SU PAGO|PAGO EN|SALDO ANTERIOR/i.test(ref)) return;
+    const ms = cols.slice(2).filter(c => money.test(c)); if (!ms.length) return;
+    const usd = /USD/i.test(ref) || cols.includes("USD");
+    let amt = num(ms[ms.length - 1]); if (amt == null || !amt) return;
+    const cq = cols.slice(2).find(c => /^\d{1,2}\/\d{1,2}$/.test(c)), [cu, cs] = cq ? cq.split("/").map(Number) : [null, null];
+    const tipo = amt < 0 ? "devolucion" : /IIBB|IVA|PERCEP|DB\.?RG|IMP\.?|SELLO|INTERES|COMISION|CARGO|RENOVACION|MANTENIMIENTO/i.test(ref) ? "impuesto" : "compra";
+    movs.push({ fecha: iso(dm[1], dm[2], dm[3]), detalle: ref.replace(/^(K|\*)\s+/, ""), comercio: tipo === "impuesto" ? ref.replace(/\(.*$/, "").trim() : pretty(ref),
+      monto: Math.abs(amt), moneda: usd ? "USD" : "ARS", cuota: cs > 1 ? cu : null, cuotas: cs > 1 ? cs : null, tipo, categoria: tipo === "compra" ? guessCat(ref) : null, seguro: false });
+    const last = movs[movs.length - 1]; if (last.categoria) last.seguro = true;
+  });
+  return { cierre: hd.length >= 4 ? hd[2] : null, vencimiento: hd.length >= 4 ? hd[3] : null,
+    total_ars: tot ? num(tot[1]) : null, total_usd: tot && tot[2] ? num(tot[2]) : null, movimientos: movs, sinIA: true };
+}
 const fileB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(f); });
 $("stFile").onchange = async () => {
   const fs = [...($("stFile").files || [])]; $("stFile").value = ""; if (!fs.length || !st) return;
-  st.phase = "busy"; renderStmt();
+  st.phase = "busy"; st.busy = "Abriendo el archivo…"; renderStmt();
   try {
-    const parts = [];
+    const parts = []; let texts = "";
     for (const f of fs){
-      if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)) parts.push({ inline_data: { mime_type: "application/pdf", data: await fileB64(f) } });
-      else parts.push({ inline_data: { mime_type: "image/jpeg", data: await shrinkImage(f) } });
+      if (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name)){
+        let t = ""; try { t = await pdfText(f); } catch {}
+        if (t.replace(/\s+/g, "").length > 300) texts += `\n\n===== ${f.name} =====\n${t}`;   // PDF con texto: mando solo el texto (rápido)
+        else parts.push({ inline_data: { mime_type: "application/pdf", data: await fileB64(f) } });   // PDF escaneado: va el archivo
+      } else parts.push({ inline_data: { mime_type: "image/jpeg", data: await shrinkImage(f) } });
     }
-    const r = await aiCall([{ text: stmtPrompt(st.card) }, ...parts]);
+    if (!st) return;
+    // Sin Recy inteligente: si el PDF tiene texto, lo leo igual (sin sugerir categorías)
+    const local = texts && !parts.length ? parseStmtText(texts) : null;
+    if (!aiKey()){
+      if (local && local.movimientos.length){ stmtLoad(local); return; }
+      st.phase = "pick"; st.err = "Para leer fotos o PDFs escaneados, Recy necesita estar activado."; renderStmt(); return;
+    }
+    st.busy = "Recy está leyendo cada compra…"; renderStmt();
+    const head = stmtPrompt(st.card) + (texts ? `\n\nTEXTO DEL RESUMEN (sacado del PDF, cada renglón es una línea del resumen):\n${texts}` : "");
+    let r;
+    try {
+      r = await aiCall([{ text: head }, ...parts], { timeout: parts.length ? 150000 : 90000, fast: true, maxTokens: 16000,
+        models: ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"] });
+      if (!r || !Array.isArray(r.movimientos) || !r.movimientos.length) throw { code: "parse" };
+    } catch (e){ if (local && local.movimientos.length){ local.aiErr = e; r = local; } else throw e; }
+    if (!st) return;
     stmtLoad(r);
   } catch (e){
-    st.phase = "pick"; st.err = (aiErrorMsg(e) || "No pude leer el resumen.").replace(" Usé el modo simple.", "") + " Probá de nuevo o con fotos más claras.";
+    if (!st) return;
+    st.phase = "pick"; st.err = (aiErrorMsg(e) || "No pude leer el resumen.").replace(" Usé el modo simple.", "") + (e && (e.code === "net" || e.code === "timeout") ? " Revisá la conexión y probá de nuevo." : " Probá de nuevo.");
     renderStmt();
   }
 };
@@ -3980,7 +4087,9 @@ Respondé SOLO con un objeto JSON, sin texto extra, con esta forma:
 {"cierre":"YYYY-MM-DD" o null,"vencimiento":"YYYY-MM-DD" o null,"total_ars":número o null,"total_usd":número o null,
 "movimientos":[{"fecha":"YYYY-MM-DD","detalle":"el texto tal como figura","comercio":"nombre del comercio limpio y fácil de leer","monto":número positivo (lo que se cobra en ESTE resumen; si es una cuota, el valor de la cuota),"moneda":"ARS"|"USD","cuota":número o null,"cuotas":número o null,"tipo":"compra"|"impuesto"|"devolucion","categoria":id de categoría o null,"seguro":true|false}]}
 Reglas:
-- "fecha" es la fecha de la compra que figura en el resumen. Si una cuota dice "C.03/06" o "03/06", cuota=3 y cuotas=6.
+- "fecha" es la fecha de la compra que figura en el resumen (las fechas suelen venir como DD-MM-AA: 03-09-26 es 2026-09-03). Si una cuota dice "C.03/06" o "03/06", cuota=3 y cuotas=6.
+- Si arriba hay una fila de varias fechas sin títulos (por ejemplo "20-Ago-26 01-Sep-26 24-Sep-26 05-Oct-26 22-Oct-26 02-Nov-26"), son: cierre anterior, vencimiento anterior, CIERRE ACTUAL, VENCIMIENTO ACTUAL, próximo cierre y próximo vencimiento.
+- Las líneas de "Total Consumos", "SALDO ANTERIOR", "SU PAGO", "Plan V", cuotas a vencer y textos legales NO son movimientos.
 - "seguro" es true SOLO si por el nombre del comercio es obvio a qué categoría va (ej: Coto o Carrefour → super, Netflix o Spotify → suscripciones, YPF o Shell o SUBE → transporte, Farmacity → salud).
   Si es ambiguo (MERPAGO*algo, códigos raros, nombres de personas, transferencias, comercios que venden de todo), "seguro": false y en "categoria" tu mejor idea o null.
 - Impuestos, sellos, IVA, percepciones, intereses, comisiones y cargos del banco: tipo "impuesto".
@@ -4005,6 +4114,17 @@ function fixedFor(card, m){
   const t = " " + merchKey(m.detalle) + " " + merchKey(m.comercio) + " ";
   return data.fixed.find(f => f.how === "card" && f.cardId === card.id && merchKey(f.name).length >= 3 && t.includes(" " + merchKey(f.name)));
 }
+/* El resumen que se paga en el período que estás mirando: cuándo cierra y cuándo vence */
+function billOf(card, y, m){
+  const cd = cardCloseDay(card); if (!cd || card.rule === "open") return null;
+  for (let j = -2; j <= 1; j++){
+    const close = dayIn(y, m + j, cd);
+    const due = card.rule === "salary" ? nextSalaryAfter(close) : nextDayAfter(close, card.day || 10);
+    if (due && inPeriod({ date: `${toLocalInput(due)}T12:00` }, y, m)) return { close, due };
+  }
+  return null;
+}
+const monthOf = d => d.toLocaleDateString("es-AR", { month: "long" });
 /* Busca si una línea del resumen ya está cargada (misma tarjeta, moneda, monto de la cuota y fecha parecida) */
 function stmtMatch(card, m){
   const d = dateOnly(m.fecha), cuotas = m.cuotas > 1 ? m.cuotas : 1;
@@ -4039,10 +4159,13 @@ function renderStmt(){
   const P = (cls, txt) => { const e = document.createElement("p"); e.className = cls; e.textContent = txt; return e; };
   if (st.phase === "pick"){
     b.append(P("fx-hint", "Subí el PDF del resumen (o fotos de cada hoja). Recy lee cada compra, se fija cuáles ya cargaste y te pregunta las que no sabe de qué son."));
+    const bill = billOf(card, viewYear, viewMonth);
+    if (bill) b.append(P("fx-hint st-which", bill.close <= dateOnly(toLocalInput(new Date()))
+      ? `Para ${monthName(viewYear, viewMonth)} es el resumen que el banco llama "${monthOf(bill.close)}" (cerró el ${shortDate(bill.close)}, vence el ${shortDate(bill.due)}). Si subís otro, lo pongo en el mes en que vence.`
+      : `El resumen que se paga en ${monthName(viewYear, viewMonth)} todavía no cerró (cierra el ${shortDate(bill.close)}). Podés subir uno anterior: lo pongo en el mes en que vence.`));
     if (!aiKey()){
-      b.append(P("fx-hint", "Para esto Recy necesita estar activado (es gratis, se hace una sola vez)."));
-      const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy inteligente"; a.onclick = () => { closeStmt(); openAi(); }; b.append(a);
-      return;
+      const n2 = P("fx-hint", "Sin Recy inteligente puedo leer el PDF del banco, pero no adivino las categorías (te las pregunto todas). Activándolo (gratis) también lee fotos y sugiere categorías. ");
+      const a = document.createElement("button"); a.type = "button"; a.className = "linkbtn"; a.textContent = "Activar Recy"; a.onclick = () => { closeStmt(); openAi(); }; n2.append(a); b.append(n2);
     }
     if (st.err){ const e = P("err", st.err); b.append(e); st.err = null; }
     const go = document.createElement("button"); go.type = "button"; go.className = "btn primary st-wide"; go.textContent = "Elegir el resumen";
@@ -4051,7 +4174,8 @@ function renderStmt(){
   }
   if (st.phase === "busy"){
     const w = document.createElement("div"); w.className = "tell-busy st-busy"; w.setAttribute("role", "status");
-    w.innerHTML = '<span class="spin" aria-hidden="true"></span><div><strong>Recy está leyendo el resumen…</strong><span>Puede tardar un poquito si es largo.</span></div>';
+    w.innerHTML = '<span class="spin" aria-hidden="true"></span><div><strong></strong><span>Puede tardar hasta un minuto si es largo. No cierres la app.</span></div>';
+    w.querySelector("strong").textContent = st.busy || "Recy está leyendo el resumen…";
     b.append(w); return;
   }
   if (st.phase === "ask"){
@@ -4085,6 +4209,7 @@ function renderStmt(){
   const tot = [r.total_ars > 0 && fmtARS.format(r.total_ars), r.total_usd > 0 && fmtUSD.format(r.total_usd)].filter(Boolean).join(" + ");
   head.append(P("", [r.vencimiento ? `Vence el ${shortDate(dateOnly(r.vencimiento))}` : null, tot ? `Total: ${tot}` : null].filter(Boolean).join(" · ") || "Resumen leído"));
   b.append(head);
+  if (r.sinIA) b.append(P("fx-hint", r.aiErr ? `Gemini no respondió (${(aiErrorMsg(r.aiErr) || "").replace(" Usé el modo simple.", "").replace(/\.$/, "").toLowerCase()}), así que lo leí yo sin IA. Revisá las categorías.` : "Lo leí sin IA: revisá las categorías."));
   const groups = [["Para cargar", rows.filter(x => !x.dup && x.tipo !== "devolucion")], ["Ya los tenías cargados", rows.filter(x => x.dup)], ["Devoluciones (no se cargan)", rows.filter(x => x.tipo === "devolucion")]];
   const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }];
   groups.forEach(([title, xs]) => {
@@ -4146,8 +4271,10 @@ function stmtSave(){
   }
   persist(); feedRecy();
   const dk = added.filter(e => e.category === ST_DONTKNOW).length;
+  let moved = "";
+  if (venc){ const [vy, vm] = periodOf(`${venc}T12:00`); if (vy !== viewYear || vm !== viewMonth){ viewYear = vy; viewMonth = vm; moved = ` Como vence el ${shortDate(dateOnly(venc))}, lo vas a ver en ${monthName(vy, vm)} (ya te llevé ahí).`; } }
   closeStmt(); render();
-  uiAlert(added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "sin detalle"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.");
+  uiAlert((added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "no sé qué es"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.") + moved);
 }
 
 /* Modal de la clave */
@@ -4861,9 +4988,16 @@ function renderCardsDash(list, cur){
       });
     }
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
-    const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up"; up.textContent = "📄 Subir resumen"; up.onclick = () => openStmtUpload(card);
+    const bill = billOf(card, viewYear, viewMonth), closed = bill && bill.close <= today;
+    const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up";
+    up.textContent = bill && closed ? `📄 Subir resumen de ${monthOf(bill.close)}` : "📄 Subir un resumen"; up.onclick = () => openStmtUpload(card);
     const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(up, ed);
-    next.append(eb); el.append(next);
+    next.append(eb);
+    if (bill){ const h = document.createElement("small"); h.className = "st-hint";
+      h.textContent = closed ? `El que el banco llama "${monthOf(bill.close)}": cerró el ${shortDate(bill.close)} y vence el ${shortDate(bill.due)}.`
+        : `El resumen de ${monthOf(bill.close)} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`;
+      next.append(h); }
+    el.append(next);
     if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
     box.append(el);
   });
