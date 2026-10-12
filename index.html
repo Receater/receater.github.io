@@ -1885,7 +1885,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-12.2000";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-12.2100";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2284,21 +2284,38 @@ function entries(){
     sched.forEach((d,i) => { if (d) out.push({ id:`${e.id}:${i}`, amount: i === n-1 ? round2(eff(e) - per*(n-1)) : per, currency:e.currency,
       category:e.category, note:e.note, date:`${toLocalInput(d)}T00:00`, cardId:e.cardId, cuota:i+1, of:n, src:e }); });
   });
+  // Fijos con tarjeta que todavía no existían en la app cuando llegó ese resumen: si lo pagado alcanza, se asume que estaban ahí
+  // (hasta que subas ese resumen y se vea qué había de verdad)
+  const fixFirst = {};
+  out.forEach(x => { if (x.src && x.src.virtual){ const d0 = x.date.slice(0,10); if (!fixFirst[x.src.fixedId] || d0 < fixFirst[x.src.fixedId]) fixFirst[x.src.fixedId] = d0; } });
+  const backfill = (cid, d, cur, extra, mine, conv) => {
+    if (extra <= 0 || mine.some(x => x.src && x.src.source === "statement")) return extra;
+    data.fixed.filter(f => f.how === "card" && f.cardId === cid && f.currency === cur && (!f.end || f.end >= d.slice(0,7)) && (!fixFirst[f.id] || d < fixFirst[f.id]))
+      .map(f => ({ f, amt: round2(fixAmountFor(f, f.start) || f.amount || 0) })).filter(o => o.amt > 0).sort((a,b) => b.amt - a.amt)
+      .forEach(({ f, amt }) => {
+        if (amt > extra + 0.005) return;
+        extra = round2(extra - amt);
+        out.push({ id:`est:${cid}|${d}:${f.id}`, amount: conv ? round2(amt * conv) : amt, currency: conv ? "ARS" : cur, category: f.category,
+          note: `${f.name} (fijo, estimado)` + (conv ? `, ${fmtUSD.format(amt)} a ${fmtARS.format(round2(conv))}` : ""), date:`${d}T00:00`, cardId: cid, est: true,
+          src: { virtual: true, fixedId: f.id, est: true } });
+      });
+    return extra;
+  };
   // Tarjetas abiertas: lo que pagaste de más que las compras va a intereses
   data.cardPayments.forEach(p => {
     const d = p.date;
     const mine = out.filter(x => x.cardId === p.cardId && !x.payId && !x.stmtKey && x.date.slice(0,10) === d);
     const assigned = mine.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
-    const extra = round2((p.amount || 0) - assigned);
+    const extra = backfill(p.cardId, d, "ARS", round2((p.amount || 0) - assigned), mine);
     const noDetail = !mine.some(x => x.currency === "ARS");   // sin compras en pesos cargadas: lo pagado en pesos es "sin detalle"
     if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: "tarjeta_sd",
       note: noDetail ? "Compras sin cargar" : "Compras sin cargar, intereses o impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     if (p.usd > 0){
       const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
-      const extraU = round2(p.usd - assignedU);
+      const rr = p.usdArs ? p.usdArs / p.usd : p.rate;
+      const extraU = backfill(p.cardId, d, "USD", round2(p.usd - assignedU), mine, p.usdMode === "ars" && rr > 0 ? rr : 0);
       const noDetailU = !usdItems.length;   // sin compras en dólares cargadas
       const catU = "tarjeta_sd", noteU = noDetailU ? "Compras en dólares sin cargar" : "Compras en dólares sin cargar, intereses o impuestos";
-      const rr = p.usdArs ? p.usdArs / p.usd : p.rate;
       if (p.usdMode === "ars" && rr > 0){
         // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
         usdItems.forEach(x => { x.note = [x.note, `${fmtUSD.format(x.amount)} a ${fmtARS.format(round2(rr))}`].filter(Boolean).join(", "); x.amount = round2(x.amount * rr); x.currency = "ARS"; });
@@ -2312,8 +2329,9 @@ function entries(){
     const [cid, d] = k.split("|"); if (!cardById(cid) || data.cardPayments.some(p => p.cardId === cid && p.date === d)) return;
     [["ARS", st.ars, 0.5], ["USD", st.usd, 0.005]].forEach(([c, tot, eps]) => {
       if (!(tot > 0)) return;
-      const have = out.filter(x => x.cardId === cid && !x.stmtKey && x.date.slice(0,10) === d && x.currency === c).reduce((s2,x) => s2 + x.amount, 0);
-      const extra = round2(tot - have);
+      const mineS = out.filter(x => x.cardId === cid && !x.stmtKey && x.date.slice(0,10) === d);
+      const have = mineS.filter(x => x.currency === c).reduce((s2,x) => s2 + x.amount, 0);
+      const extra = backfill(cid, d, c, round2(tot - have), mineS);
       if (extra > eps) out.push({ id:`stmt:${k}:${c}`, amount: extra, currency: c, category: "tarjeta_sd", note: "Falta anotar (según el resumen)",
         date:`${d}T00:00`, cardId: cid, stmtKey: k, src: { stmt: true } });
     });
@@ -3969,6 +3987,24 @@ Reglas:
 - Devoluciones, bonificaciones y montos negativos: tipo "devolucion" (con el monto en positivo).
 - total_ars y total_usd son el "saldo actual" o "total a pagar" del resumen, en pesos y en dólares.`;
 }
+/* Lo que aprendió Recy: data.merchantCats = { "COMERCIO NORMALIZADO": categoría } */
+const merchKey = t => String(t || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .replace(/\bC\.?\s*\d{1,2}\s*\/\s*\d{1,2}\b/g, " ").replace(/\d+/g, " ").replace(/[^A-Z]+/g, " ").replace(/\s+/g, " ").trim();
+function learnedCat(m){
+  const mc = data.merchantCats || {};
+  for (const t of [m.detalle, m.comercio]){ const k = merchKey(t); if (k && mc[k] && allCats().some(c => c.id === mc[k])) return mc[k]; }
+  return null;
+}
+function learnCat(raw, name, cat){
+  if (!cat || cat === "tarjeta_sd") return;
+  data.merchantCats = data.merchantCats || {};
+  [raw, name].forEach(t => { const k = merchKey(t); if (k && k.length >= 3) data.merchantCats[k] = cat; });
+}
+/* Si el comercio se parece al nombre de un fijo de esa tarjeta, es ese fijo */
+function fixedFor(card, m){
+  const t = " " + merchKey(m.detalle) + " " + merchKey(m.comercio) + " ";
+  return data.fixed.find(f => f.how === "card" && f.cardId === card.id && merchKey(f.name).length >= 3 && t.includes(" " + merchKey(f.name)));
+}
 /* Busca si una línea del resumen ya está cargada (misma tarjeta, moneda, monto de la cuota y fecha parecida) */
 function stmtMatch(card, m){
   const d = dateOnly(m.fecha), cuotas = m.cuotas > 1 ? m.cuotas : 1;
@@ -3983,8 +4019,10 @@ function stmtLoad(r){
     const tipo = ["impuesto","devolucion"].includes(m.tipo) ? m.tipo : "compra";
     const dup = tipo === "compra" ? stmtMatch(card, m) : null;
     const catOk = m.categoria && cats.some(c => c.id === m.categoria && !c.hidden);
-    return { i, m, tipo, dup, on: tipo !== "devolucion" && !dup,
-      cat: tipo === "impuesto" ? "intereses" : catOk ? m.categoria : null, unsure: tipo === "compra" && !dup && (!m.seguro || !catOk) };
+    const known = tipo === "compra" ? learnedCat(m) : null, fx = tipo === "compra" && !known ? fixedFor(card, m) : null;
+    const cat = tipo === "impuesto" ? "intereses" : known || (fx && fx.category) || (catOk ? m.categoria : null);
+    return { i, m, tipo, dup, on: tipo !== "devolucion" && !dup, cat, learned: !!(known || fx),
+      unsure: tipo === "compra" && !dup && !known && !fx && (!m.seguro || !catOk) };
   });
   st.r = r; st.rows = rows; st.ask = rows.filter(x => x.unsure); st.step = 0;
   st.paid = !!(r.vencimiento && dateOnly(r.vencimiento) <= dateOnly(toLocalInput(new Date())));
@@ -4058,7 +4096,7 @@ function renderStmt(){
       cb.onchange = () => { x.on = cb.checked; renderStmt(); };
       const mid = document.createElement("div"); mid.className = "st-mid";
       const n = document.createElement("div"); n.className = "n"; n.textContent = stmtLine(x);
-      const d = document.createElement("small"); d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? " · ya está cargado" : "");
+      const d = document.createElement("small"); d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? " · ya está cargado" : x.learned ? " · como la otra vez" : "");
       mid.append(n, d);
       if (x.tipo !== "devolucion" && !x.dup){
         const sel = document.createElement("select"); sel.className = "input st-sel"; sel.setAttribute("aria-label", `Categoría de ${stmtLine(x)}`);
@@ -4086,7 +4124,8 @@ function stmtSave(){
   st.rows.filter(x => x.on && x.tipo !== "devolucion").forEach(x => {
     const m = x.m, n = m.cuotas > 1 ? m.cuotas : 1, k = n > 1 ? Math.min(n - 1, Math.max(0, (m.cuota || 1) - 1)) : 0;
     const e = { id: mk(), source: "statement", amount: round2(m.monto * n), currency: m.moneda, category: x.cat || ST_DONTKNOW, date: `${m.fecha}T12:00`,
-      note: m.comercio || m.detalle || "", method: "card", cardId: card.id, installments: n, paidInstallments: k, items: [], split: null, loan: false };
+      note: m.comercio || m.detalle || "", method: "card", cardId: card.id, installments: n, paidInstallments: k, items: [], split: null, loan: false, raw: m.detalle || "" };
+    if (x.tipo === "compra") learnCat(m.detalle, m.comercio, e.category);
     if (k > 0 && cierre) e.cuotaFrom = cierre;
     data.expenses.push(e); added.push(e);
   });
@@ -4286,7 +4325,7 @@ $("sheet").addEventListener("submit", ev => {
   }
   const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
   if (mode === "expense") fields.items = cleanItems(fields.category);
-  if (editing){ Object.assign(editing, fields); delete editing.fx; }
+  if (editing){ Object.assign(editing, fields); delete editing.fx; if (editing.source === "statement") learnCat(editing.raw, editing.note, editing.category); }
   else if (mode === "income") data.incomes.push({ id, type:"income", ...fields });
   else data.expenses.push({ id, source: fields.items && fields.items.length ? "ticket" : "manual", ...fields });
   const askPay = !editing && mode === "income" && incomeKind === "sueldo" && !data.payRule;
@@ -4534,7 +4573,7 @@ function openEntry(x){
   if (x.payId){ const pay = data.cardPayments.find(p => p.id === x.payId); if (pay) openPayEdit(pay); return; }
   if (x.stmtKey){ openSheet(); method = "card"; cardId = x.cardId; renderMethods(); return; }   // falta anotar: abrir para cargar una compra con esa tarjeta
   const src = x.src || x;
-  if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }
+  if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }   // (también los fijos estimados)
   if (data.expenses.includes(src) || data.incomes.includes(src)) openSheet(src);
 }
 function renderDash(){
