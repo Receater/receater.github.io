@@ -614,6 +614,16 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.card-donut{margin-top:10px}
+.card-donut .donut-wrap svg{width:min(190px,55vw)}
+.card-donut .donut-center .v{font-size:1.15rem}
+.card-donut .donut-center .l{font-size:.74rem;max-width:110px;overflow-wrap:anywhere}
+.card-donut .legend li.sd .n{font-style:italic}
+.stmt{margin-top:4px}
+.stmt-btn{padding:2px 0;font-size:.82rem;text-align:left}
+.stmt small{display:block;margin:6px 0 4px}
+.stmt-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stmt-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
 .fp-row .settle{border:0;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:5px 12px;font-weight:600;font-size:.82rem;margin-left:8px}
 
 /* ================= Revisión de diseño para celular ================= */
@@ -1842,7 +1852,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-11.0030";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-12.1900";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2243,7 +2253,7 @@ function entries(){
   // Tarjetas abiertas: lo que pagaste de más que las compras va a intereses
   data.cardPayments.forEach(p => {
     const d = p.date;
-    const mine = out.filter(x => x.cardId === p.cardId && !x.payId && x.date.slice(0,10) === d);
+    const mine = out.filter(x => x.cardId === p.cardId && !x.payId && !x.stmtKey && x.date.slice(0,10) === d);
     const assigned = mine.filter(x => x.currency === "ARS").reduce((s,x) => s + x.amount, 0);
     const extra = round2((p.amount || 0) - assigned);
     const noDetail = !mine.some(x => x.currency === "ARS");   // sin compras en pesos cargadas: lo pagado en pesos es "sin detalle"
@@ -2261,6 +2271,18 @@ function entries(){
         if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:round2(extraU * rr), currency:"ARS", category:catU, note:noteU, date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
       } else if (extraU > 0.005) out.push({ id:`intu:${p.id}`, amount:extraU, currency:"USD", category:catU, note:noteU, date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     }
+  });
+  // Resumen de tarjeta que todavía no pagaste: si dice más de lo que cargaste, la diferencia queda como "falta anotar"
+  // data.cardStmt = { "cardId|YYYY-MM-DD": { ars, usd } }
+  Object.entries(data.cardStmt || {}).forEach(([k, st]) => {
+    const [cid, d] = k.split("|"); if (!cardById(cid) || data.cardPayments.some(p => p.cardId === cid && p.date === d)) return;
+    [["ARS", st.ars, 0.5], ["USD", st.usd, 0.005]].forEach(([c, tot, eps]) => {
+      if (!(tot > 0)) return;
+      const have = out.filter(x => x.cardId === cid && !x.stmtKey && x.date.slice(0,10) === d && x.currency === c).reduce((s2,x) => s2 + x.amount, 0);
+      const extra = round2(tot - have);
+      if (extra > eps) out.push({ id:`stmt:${k}:${c}`, amount: extra, currency: c, category: "tarjeta_sd", note: "Falta anotar (según el resumen)",
+        date:`${d}T00:00`, cardId: cid, stmtKey: k, src: { stmt: true } });
+    });
   });
   return out;
 }
@@ -2608,7 +2630,7 @@ function renderPayGroup(r){
   const cat = document.createElement("div"); cat.className = "cat"; cat.textContent = card.name;
   const sub = document.createElement("div"); sub.className = "sub";
   const chev = document.createElement("span"); chev.className = "chev"; chev.textContent = "›";
-  const buys = r.xs.filter(x => !x.payId).length;
+  const buys = r.xs.filter(x => !x.payId && !x.stmtKey).length;
   const payHere = data.cardPayments.find(p => p.cardId === cid && p.date === day);
   const payTxt = payHere ? [payHere.amount && fmtARS.format(payHere.amount), payHere.usd && fmtUSD.format(payHere.usd)].filter(Boolean).join(" + ") : "";
   sub.append(chev, document.createTextNode(payHere ? `Pagaste ${payTxt}` : buys ? `Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}` : "Pago de tarjeta"));
@@ -2625,11 +2647,11 @@ function renderPayGroup(r){
   if (open){
     const panel = document.createElement("div"); panel.className = "split-panel";
     const pay = data.cardPayments.find(p => p.cardId === cid && p.date === day);
-    if (r.xs.some(x => !x.payId)){ const h = document.createElement("div"); h.className = "pay-h"; h.textContent = "Compras que incluye"; panel.append(h); }
+    if (r.xs.some(x => !x.payId && !x.stmtKey)){ const h = document.createElement("div"); h.className = "pay-h"; h.textContent = "Compras que incluye"; panel.append(h); }
     r.xs.forEach(x => {
       const row = document.createElement("div"); row.className = "split-row";
       const n = document.createElement("span");
-      n.textContent = (x.payId ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
+      n.textContent = (x.payId || x.stmtKey ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
       const v = document.createElement("span"); v.className = "s"; v.textContent = money(x.amount, x.currency);
       const t = document.createElement("span"); t.className = "pill me";
       row.append(n, v, t); panel.append(row);
@@ -4289,6 +4311,7 @@ const dashOpen = new Set();
 /* Abrir el detalle de algo que aparece en el resumen: el gasto, el pago de tarjeta o el fijo */
 function openEntry(x){
   if (x.payId){ const pay = data.cardPayments.find(p => p.id === x.payId); if (pay) openPayEdit(pay); return; }
+  if (x.stmtKey){ openSheet(); method = "card"; cardId = x.cardId; renderMethods(); return; }   // falta anotar: abrir para cargar una compra con esa tarjeta
   const src = x.src || x;
   if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }
   if (data.expenses.includes(src) || data.incomes.includes(src)) openSheet(src);
@@ -4436,6 +4459,94 @@ function renderDash(){
   renderCardsDash(list, cur);
 }
 
+/* En qué se te va cada tarjeta: torta + categorías que se abren, como "En qué se te va el sueldo" */
+const cardOpen = new Set();
+const SD_COLOR = "#B9B2A3";
+function cardDonut(card, xs, total, cur){
+  const box = document.createElement("div"); box.className = "card-donut";
+  const byC = {}; xs.forEach(x => byC[x.category] = (byC[x.category] || 0) + x.amount);
+  const sorted = Object.entries(byC).sort((a,b) => (a[0] === "tarjeta_sd") - (b[0] === "tarjeta_sd") || b[1] - a[1]);
+  const color = id => id === "tarjeta_sd" ? SD_COLOR : catById(id).color;
+  const name = id => id === "tarjeta_sd" ? (xs.some(x => x.category === id && x.stmtKey) ? "Falta anotar" : "Sin detalle") : catById(id).name;
+  const wrap = document.createElement("div"); wrap.className = "donut-wrap";
+  const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":`En qué se te va ${card.name}: ` + sorted.map(([id,v]) => `${name(id)} ${Math.round(v/total*100)}%`).join(", ")});
+  const r = 78, C = 2*Math.PI*r; let off = 0;
+  svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
+  sorted.forEach(([id,v]) => {
+    const len = v/total*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
+    svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:color(id),"stroke-width":26,
+      "stroke-dasharray":`${Math.max(len-gap,0.01)} ${C}`,"stroke-dashoffset":-off,transform:"rotate(-90 100 100)"}));
+    off += len;
+  });
+  const center = document.createElement("div"); center.className = "donut-center";
+  center.innerHTML = '<div class="v"></div><div class="l"></div>';
+  center.querySelector(".v").textContent = new Intl.NumberFormat("es-AR",{style:"currency",currency:cur,maximumFractionDigits:0}).format(total);
+  center.querySelector(".l").textContent = `con ${card.name}`;
+  wrap.append(svg, center); box.append(wrap);
+  const ul = document.createElement("ul"); ul.className = "legend";
+  sorted.forEach(([id,v]) => {
+    const key = card.id + "|" + id, open = cardOpen.has(key), li = document.createElement("li");
+    li.className = "cat-row" + (open ? " is-open" : "") + (id === "tarjeta_sd" ? " sd" : "");
+    li.tabIndex = 0; li.setAttribute("role", "button"); li.setAttribute("aria-expanded", String(open));
+    const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = color(id);
+    const mid = document.createElement("div"), n = document.createElement("div"); n.className = "n"; n.textContent = name(id); mid.append(n);
+    const cnt = xs.filter(x => x.category === id).length;
+    const d = document.createElement("div"); d.className = "d";
+    d.textContent = id === "tarjeta_sd" ? (xs.some(x => x.stmtKey) ? "Lo que dice el resumen y todavía no cargaste" : "Pagaste más de lo que cargaste") : `${cnt} ${cnt === 1 ? "gasto" : "gastos"}`;
+    mid.append(d);
+    const a = document.createElement("div"); a.className = "a"; a.textContent = money(round2(v), cur);
+    const pc = document.createElement("span"); pc.className = "p"; pc.textContent = Math.round(v/total*100) + "%"; a.append(pc);
+    const ch = document.createElement("span"); ch.className = "chev"; ch.textContent = "›";
+    li.append(dot, mid, a, ch); ul.append(li);
+    const toggle = () => { open ? cardOpen.delete(key) : cardOpen.add(key); renderDash(); };
+    li.onclick = toggle; li.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggle(); } };
+    if (open){
+      const box2 = document.createElement("li"); box2.className = "cat-list";
+      xs.filter(x => x.category === id).sort((a,b) => b.date.localeCompare(a.date) || b.amount - a.amount).forEach(x => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "cat-entry";
+        const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(dateOnly(x.src && x.src.date && !x.src.stmt ? x.src.date : x.date));
+        const tt = document.createElement("span"); tt.className = "t";
+        tt.textContent = x.stmtKey ? "Cargá las compras que faltan" : [x.note || catById(x.category).name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null, x.src && x.src.virtual ? "fijo" : null].filter(Boolean).join(" · ");
+        const aa = document.createElement("span"); aa.className = "a"; aa.textContent = money(x.amount, x.currency);
+        b.append(dd, tt, aa); b.onclick = () => openEntry(x); box2.append(b);
+      });
+      ul.append(box2);
+    }
+  });
+  box.append(ul);
+  return box;
+}
+/* Total del resumen (lo que dice el banco), para saber cuánto falta anotar */
+let stmtEdit = null;
+function stmtControl(card, d, ds){
+  const k = card.id + "|" + d, st = (data.cardStmt || {})[k], wrap = document.createElement("div"); wrap.className = "stmt";
+  if (stmtEdit === k){
+    const mk = (ph, val, lbl) => { const i = document.createElement("input"); i.className = "input"; i.inputMode = "decimal"; i.placeholder = ph; i.setAttribute("aria-label", lbl);
+      i.value = val ? String(val).replace(".", ",") : ""; return i; };
+    const ia = mk("Total en pesos", st && st.ars, "Total del resumen en pesos"), iu = mk("En dólares (si hay)", st && st.usd, "Total del resumen en dólares");
+    const row = document.createElement("div"); row.className = "stmt-row"; row.append(ia, iu);
+    const save = document.createElement("button"); save.type = "button"; save.className = "small-btn primary"; save.textContent = "Guardar";
+    const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "small-btn"; cancel.textContent = st ? "Sacar" : "Cancelar";
+    save.onclick = () => { const a = parseAmount(ia.value) || 0, u = parseAmount(iu.value) || 0;
+      data.cardStmt = data.cardStmt || {}; if (a > 0 || u > 0) data.cardStmt[k] = { ars: round2(a), usd: round2(u) }; else delete data.cardStmt[k];
+      stmtEdit = null; persist(); render(); };
+    cancel.onclick = () => { if (st){ delete data.cardStmt[k]; persist(); } stmtEdit = null; render(); };
+    const acts = document.createElement("div"); acts.className = "stmt-acts"; acts.append(cancel, save);
+    const h = document.createElement("small"); h.textContent = `¿Cuánto dice el resumen de ${card.name} que vence el ${shortDate(dateOnly(d))}?`;
+    wrap.append(h, row, acts); setTimeout(() => ia.focus(), 50);
+    return wrap;
+  }
+  const b = document.createElement("button"); b.type = "button"; b.className = "linkbtn stmt-btn";
+  if (st){
+    const have = c => round2(ds.filter(x => !x.stmtKey && x.currency === c).reduce((s2,x) => s2 + x.amount, 0));
+    const miss = round2(Math.max(0, (st.ars || 0) - have("ARS"))), missU = round2(Math.max(0, (st.usd || 0) - have("USD")));
+    const tot = [st.ars && fmtARS.format(st.ars), st.usd && fmtUSD.format(st.usd)].filter(Boolean).join(" + ");
+    b.textContent = `Resumen: ${tot}` + (miss > 0.5 || missU > 0.005 ? ` · faltan anotar ${[miss > 0.5 && fmtARS.format(miss), missU > 0.005 && fmtUSD.format(missU)].filter(Boolean).join(" + ")}` : " · ya cargaste todo ✓");
+  } else b.textContent = "¿Ya tenés el resumen? Poné el total";
+  b.onclick = () => { stmtEdit = k; render(); };
+  wrap.append(b);
+  return wrap;
+}
 /* "US$ 20 ≈ $ 29.000 al dólar de hoy": para los dólares que todavía no pagaste de la tarjeta */
 function usdEstimate(xs){
   const usd = round2(xs.filter(x => x.currency === "USD").reduce((s,x) => s + x.amount, 0)), rate = fixUsdRate();
@@ -4475,29 +4586,20 @@ function renderCardsDash(list, cur){
         const ln = document.createElement("span"); ln.className = "due";
         const strong = document.createElement("strong"); strong.textContent = both(ds);
         ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
-        const parts = [["Cuotas", ds.filter(x => !x.payId && !x.src.virtual && x.of > 1)], ["Compras", ds.filter(x => !x.payId && !x.src.virtual && !(x.of > 1))],
-          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
+        const real = x => !x.payId && !x.stmtKey && !x.src.virtual;
+        const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
+          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
         const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
         const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
         const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
         if (est){ const e2 = document.createElement("small"); e2.className = "due-br due-usd"; e2.textContent = est; w.append(e2); }
+        if (!paid) w.append(stmtControl(card, d, ds));
         if (i === 0) next.append(w); else el.append(w);
       });
     }
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
     next.append(ed); el.append(next);
-    if (total > 0){
-      const byC = {}; xs.forEach(x => byC[x.category] = (byC[x.category]||0) + x.amount);
-      const sorted = Object.entries(byC).sort((a,b) => b[1]-a[1]);
-      const st = document.createElement("div"); st.className = "stack"; st.setAttribute("role","img");
-      st.setAttribute("aria-label", "Reparto: " + sorted.map(([id,v]) => `${catById(id).name} ${Math.round(v/total*100)}%`).join(", "));
-      sorted.forEach(([id,v]) => { const sp = document.createElement("span"); sp.style.width = (v/total*100) + "%"; sp.style.background = catById(id).color; st.append(sp); });
-      const ul = document.createElement("ul"); ul.className = "mini";
-      sorted.forEach(([id,v]) => { const li = document.createElement("li"); const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = catById(id).color;
-        const n = document.createElement("span"); n.textContent = catById(id).name; const a = document.createElement("span"); a.className = "a"; a.textContent = money(v, cur);
-        li.append(dot, n, a); ul.append(li); });
-      el.append(st, ul);
-    } else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
+    if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
     box.append(el);
   });
 }
@@ -5626,7 +5728,7 @@ function buildXls(X, range){
   const tj = [["Fecha","Tarjeta","Pagado en pesos","Pagado en dólares","Cotización","Dólares en pesos","Total en pesos","Compras incluidas"]];
   data.cardPayments.filter(p => inRange(p.date + "T12:00")).sort((a,b) => a.date.localeCompare(b.date)).forEach(p => {
     const card = cardById(p.cardId), usdArs = p.usd ? (p.usdArs || (p.rate ? p.usd * p.rate : 0)) : 0;
-    const n = entries().filter(x => x.cardId === p.cardId && !x.payId && x.date.slice(0,10) === p.date).length;
+    const n = entries().filter(x => x.cardId === p.cardId && !x.payId && !x.stmtKey && x.date.slice(0,10) === p.date).length;
     tj.push([p.date, card ? card.name : "", r2(p.amount || 0), r2(p.usd || 0), p.usd ? r2(usdArs / p.usd) : "", r2(usdArs), r2((p.amount || 0) + usdArs), n]);
   });
   addSheet("Tarjetas", tj, [11,18,16,16,12,16,16,16]);
