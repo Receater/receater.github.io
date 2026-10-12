@@ -615,6 +615,14 @@ button{cursor:pointer}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
 .card-btns{display:flex;gap:10px;align-items:center;margin-left:auto}
+.st-rev{flex-basis:100%;text-align:right;font-size:.84rem;padding:2px 0}
+.st-cmp{text-align:left;margin-bottom:10px}
+.st-cmp small:first-child{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:.72rem;margin:0 0 4px}
+.st-yn .btn{flex:1}
+.st-mrow{grid-template-columns:32px minmax(0,1fr) auto}
+.st-mrow .x{border:0;background:none;font-size:1.3rem;color:var(--muted);min-height:36px}
+.chip-new{border-style:dashed !important;font-weight:700}
+#catBg.on-top{z-index:14}#catSheet.on-top{z-index:15}
 .st-hint{flex-basis:100%;text-align:right;font-size:.76rem;color:var(--muted)}
 .st-which{font-weight:700;color:var(--ink) !important}
 .st-wide{width:100%;margin-top:12px}
@@ -1887,7 +1895,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-12.2230";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-12.2345";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2241,7 +2249,12 @@ function stmtClose(card, pd){
   return c;
 }
 /* Pagos que pueden cubrir una compra: los que hiciste después del cierre de su resumen */
-const paysFor = (card, pd, cur) => { const c = stmtClose(card, pd); return paysFrom(card.id, c ? new Date(c.getTime() + 864e5) : pd, cur); };
+const paysFor = (card, pd, cur) => {
+  const c = stmtClose(card, pd), ps = paysFrom(card.id, c ? new Date(c.getTime() + 864e5) : pd, cur);
+  // Un pago de varios meses después no es el de ese resumen: esa compra queda como no pagada en su mes (no se suma a otro resumen)
+  if (c && ps[0] && dateOnly(ps[0].date) - c > 30 * 864e5) return [];
+  return ps;
+};
 function cardSchedule(e){
   const card = cardById(e.cardId), n = Math.max(1, e.installments || 1), pd = dateOnly(e.date), out = [];
   const k = Math.min(n - 1, Math.max(0, e.paidInstallments || 0));   // cuotas que ya pagaste antes de cargarla
@@ -3425,7 +3438,9 @@ function openCat(c, name){
   $("catBg").classList.add("open"); $("catSheet").classList.add("open");
   setTimeout(() => $("catName").focus(), 120);
 }
-function closeCat(){ $("catBg").classList.remove("open"); $("catSheet").classList.remove("open"); catFromFix = false; }
+let catAfter = null;   // si se abre desde otra hoja (ej.: el resumen), a quién avisarle la categoría nueva
+function closeCat(){ $("catBg").classList.remove("open","on-top"); $("catSheet").classList.remove("open","on-top"); catFromFix = false; catAfter = null; }
+function newCatThen(fn, name){ openCat(null, name || ""); catAfter = fn; $("catBg").classList.add("on-top"); $("catSheet").classList.add("on-top"); }
 $("catCancel").onclick = closeCat; $("catBg").onclick = closeCat;
 $("catSave").onclick = () => {
   const name = $("catName").value.trim();
@@ -3434,6 +3449,7 @@ $("catSave").onclick = () => {
   if (editingCat){ editingCat.name = name; editingCat.color = catColor; }
   else {
     const c = { id: "c_" + (crypto.randomUUID ? crypto.randomUUID().slice(0,8) : Date.now()), name, color: catColor }; data.customCats.push(c);
+    if (catAfter){ const f = catAfter; catAfter = null; persist(); closeCat(); f(c.id); return; }
     if (catFromFix) fillFixCats(c.id); else category = c.id;
   }
   if (catFromFix && editingCat) fillFixCats($("fixCat").value);
@@ -4111,8 +4127,10 @@ function learnCat(raw, name, cat){
 }
 /* Si el comercio se parece al nombre de un fijo de esa tarjeta, es ese fijo */
 function fixedFor(card, m){
-  const t = " " + merchKey(m.detalle) + " " + merchKey(m.comercio) + " ";
-  return data.fixed.find(f => f.how === "card" && f.cardId === card.id && merchKey(f.name).length >= 3 && t.includes(" " + merchKey(f.name)));
+  const ws = (merchKey(m.detalle) + " " + merchKey(m.comercio)).split(" ").filter(w => w.length >= 4);
+  // "CRUNCHYRO" (cortado en el resumen) también es "Crunchyroll"
+  return data.fixed.find(f => f.how === "card" && f.cardId === card.id && merchKey(f.name).split(" ").filter(w => w.length >= 4)
+    .some(fw => ws.some(w => w === fw || (w.length >= 5 && fw.startsWith(w)) || (fw.length >= 5 && w.startsWith(fw)))));
 }
 /* El resumen que se paga en el período que estás mirando: cuándo cierra y cuándo vence */
 function billOf(card, y, m){
@@ -4125,28 +4143,140 @@ function billOf(card, y, m){
   return null;
 }
 const monthOf = d => d.toLocaleDateString("es-AR", { month: "long" });
-/* Busca si una línea del resumen ya está cargada (misma tarjeta, moneda, monto de la cuota y fecha parecida) */
-function stmtMatch(card, m){
-  const d = dateOnly(m.fecha), cuotas = m.cuotas > 1 ? m.cuotas : 1;
-  return allExpenses().find(e => isCardExp(e) && e.cardId === card.id && e.currency === m.moneda && Math.max(1, e.installments || 1) === cuotas
-    && Math.abs(eff(e) / Math.max(1, e.installments || 1) - m.monto) <= Math.max(1, m.monto * 0.01) && Math.abs(dateOnly(e.date) - d) <= 4 * 864e5);
+/* Gastos que vinieron de un resumen y se pagan en el período que mirás */
+function stmtExpensesIn(card, y, m){
+  const set = new Set();
+  entries().forEach(x => { if (x.cardId === card.id && x.src && x.src.source === "statement" && inPeriod(x, y, m)) set.add(x.src); });
+  return [...set];
 }
+function openStmtManage(card){
+  st = { card, phase: "manage" };
+  $("stTitle").textContent = `Lo que vino del resumen · ${card.name}`;
+  renderStmt();
+  $("stBg").classList.add("open"); $("stSheet").classList.add("open");
+}
+function renderStmtManage(b, P){
+  const card = st.card, list = stmtExpensesIn(card, viewYear, viewMonth).sort((a,b2) => a.date.localeCompare(b2.date));
+  if (!list.length){ b.append(P("fx-hint", "No hay nada de un resumen en este mes.")); return; }
+  const tools = document.createElement("div"); tools.className = "st-nav";
+  const fd = document.createElement("button"); fd.type = "button"; fd.className = "small-btn primary"; fd.textContent = "Buscar repetidos";
+  fd.onclick = () => {
+    const pool = data.expenses.filter(e => e.source !== "statement" && !isIncome(e) && !e.fx), pairs = [];
+    list.forEach(e => { const m = { fecha: dateOnly(e.date) && e.date.slice(0,10), monto: round2(e.amount / Math.max(1, e.installments || 1)), moneda: e.currency,
+      comercio: e.note, detalle: e.raw, cuotas: (e.installments || 1) > 1 ? e.installments : null };
+      let best = null; pool.forEach(o => { const sc = dupScore(card, m, o); if (sc >= 4 && (!best || sc > best[0])) best = [sc, o]; });
+      if (best) pairs.push({ s: e, o: best[1] }); });
+    const used = new Set(); st.pairs = pairs.filter(p => used.has(p.o) ? false : (used.add(p.o), true)); st.step = 0;
+    if (!st.pairs.length){ uiAlert("No encontré repetidos entre lo del resumen y lo que cargaste a mano."); return; }
+    st.phase = "mdup"; renderStmt();
+  };
+  const del = document.createElement("button"); del.type = "button"; del.className = "small-btn danger"; del.textContent = "Borrar todo lo del resumen";
+  del.onclick = async () => {
+    if (!await uiConfirm(`¿Borrar los ${list.length} gastos que vinieron del resumen? Lo que cargaste vos no se toca.`)) return;
+    const dates = new Set(entries().filter(x => x.src && list.includes(x.src)).map(x => x.date.slice(0,10)));
+    data.expenses = data.expenses.filter(e => !list.includes(e));
+    const pays = data.cardPayments.filter(p => p.cardId === card.id && dates.has(p.date));
+    if (pays.length && await uiConfirm(`¿También borro el pago de la tarjeta del ${pays.map(p => shortDate(dateOnly(p.date))).join(", ")}? Si lo cargaste vos a propósito, dejalo.`))
+      data.cardPayments = data.cardPayments.filter(p => !pays.includes(p));
+    persist(); feedRecy(); render(); closeStmt();
+  };
+  tools.append(fd, del); b.append(tools);
+  b.append(P("fx-hint", "Cambiá la categoría acá mismo, o tocá × para borrar uno."));
+  const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }, { id: "__new", name: "+ Nueva categoría…" }];
+  list.forEach(e => {
+    const row = document.createElement("div"); row.className = "st-row st-mrow";
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", `Borrar ${e.note}`);
+    x.onclick = async () => { if (!await uiConfirm(`¿Borrar ${e.note || "este gasto"}?`)) return; data.expenses = data.expenses.filter(z => z !== e); persist(); render(); renderStmt(); };
+    const mid = document.createElement("div"); mid.className = "st-mid";
+    const n = document.createElement("div"); n.className = "n"; n.textContent = e.note + ((e.installments || 1) > 1 ? ` · ${e.installments} cuotas` : "");
+    const d = document.createElement("small"); d.textContent = shortDate(dateOnly(e.date)); mid.append(n, d);
+    const sel = document.createElement("select"); sel.className = "input st-sel"; sel.setAttribute("aria-label", `Categoría de ${e.note}`);
+    catsSel.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; sel.append(o); });
+    sel.value = e.category;
+    const setCat = id => { e.category = id; learnCat(e.raw, e.note, id); persist(); render(); renderStmt(); };
+    sel.onchange = () => { if (sel.value === "__new"){ sel.value = e.category; newCatThen(setCat); return; } setCat(sel.value); };
+    mid.append(sel);
+    const a = document.createElement("div"); a.className = "a"; a.textContent = money((e.installments || 1) > 1 ? e.amount / e.installments : e.amount, e.currency);
+    row.append(x, mid, a); b.append(row);
+  });
+}
+function renderStmtMdup(b, P){
+  const pr = st.pairs[st.step];
+  const top = document.createElement("div"); top.className = "st-prog"; top.textContent = `¿Es el mismo gasto? · ${st.step + 1} de ${st.pairs.length}`; b.append(top);
+  const box = (lbl, e) => { const c = document.createElement("div"); c.className = "st-q st-cmp";
+    const l = document.createElement("small"); l.textContent = lbl; const t = document.createElement("strong"); t.textContent = e.note || catById(e.category).name;
+    const s2 = document.createElement("small"); s2.textContent = expDesc(e); c.append(l, t, s2); return c; };
+  b.append(box("Vino del resumen", pr.s), box("Lo cargaste vos", pr.o));
+  const next = () => { if (st.step < st.pairs.length - 1) st.step++; else st.phase = "manage"; renderStmt(); };
+  const nav = document.createElement("div"); nav.className = "st-nav st-yn";
+  const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "No, son distintos"; no.onclick = next;
+  const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn primary"; yes.textContent = "Sí, borrar el repetido";
+  yes.onclick = () => {
+    const o = pr.o, s2 = pr.s;
+    // Me quedo con el tuyo (puede tener personas, productos, etc.), pero con la tarjeta y las cuotas del resumen
+    if (!(o.method === "card" && o.cardId === s2.cardId)){ o.method = "card"; o.cardId = s2.cardId; }
+    if ((s2.installments || 1) > 1 && (o.installments || 1) === 1 && Math.abs(o.amount - s2.amount) < Math.max(1, s2.amount * 0.05)){ o.installments = s2.installments; o.paidInstallments = s2.paidInstallments || 0; if (s2.cuotaFrom) o.cuotaFrom = s2.cuotaFrom; }
+    if (o.category === ST_DONTKNOW && s2.category !== ST_DONTKNOW) o.category = s2.category;
+    data.expenses = data.expenses.filter(z => z !== s2); persist(); render(); next();
+  };
+  nav.append(no, yes); b.append(nav);
+}
+/* Busca si una línea del resumen ya está cargada (misma tarjeta, moneda, monto de la cuota y fecha parecida) */
+/* Qué tan parecido es un gasto que ya cargaste a una línea del resumen (0 = nada que ver).
+   Mira el monto (total, cuota o total/cuotas), la fecha, el nombre, la tarjeta y la cantidad de cuotas. */
+function dupScore(card, m, e){
+  if (isIncome(e) || e.fx || e.currency !== m.moneda) return 0;
+  const n = Math.max(1, e.installments || 1), vals = [e.amount, eff(e), e.amount / n, m.cuotas > 1 ? e.amount / m.cuotas : 0].filter(v => v > 0);
+  const diff = Math.min(...vals.map(v => Math.abs(v - m.monto) / Math.max(1, m.monto)));
+  if (diff > 0.05) return 0;
+  const dd = Math.abs(dateOnly(e.date) - dateOnly(m.fecha)) / 864e5;
+  const toks = t => new Set(merchKey(t).split(" ").filter(w => w.length >= 4 && !/^(MERPAGO|PAYU|SUCURSAL|COMPRA|PAGO)$/.test(w)));
+  const a = toks(e.note), b2 = new Set([...toks(m.comercio), ...toks(m.detalle)]), name = [...a].some(w => b2.has(w) || [...b2].some(v => v.includes(w) || w.includes(v)));
+  if (dd > (name ? 20 : 10)) return 0;
+  let sc = diff <= 0.01 ? 3 : 1;
+  sc += dd <= 2 ? 3 : dd <= 5 ? 2 : 1;
+  if (name) sc += 2;
+  if (isCardExp(e) && e.cardId === card.id) sc += 2;
+  if (m.cuotas > 1 && n === m.cuotas) sc += 2;
+  return sc;
+}
+/* Arma las parejas línea ↔ gasto (cada gasto se usa una sola vez). Seguro: puntaje alto; dudoso: se pregunta. */
+function stmtDupes(card, rows, pool){
+  const pairs = [];
+  rows.filter(x => x.tipo === "compra").forEach(x => pool.forEach(e => { const sc = dupScore(card, x.m, e); if (sc >= 4) pairs.push([sc, x, e]); }));
+  pairs.sort((a,b) => b[0] - a[0]);
+  const usedE = new Set();
+  // Seguro solo si además está en esta misma tarjeta; si está en otra tarjeta o con otro medio, se pregunta
+  pairs.forEach(([sc, x, e]) => { if (x.dup || x.maybe || usedE.has(e)) return; usedE.add(e);
+    if (sc >= 8 && (e.virtual || (isCardExp(e) && e.cardId === card.id))) x.dup = e; else x.maybe = e; });
+}
+const expDesc = e => [e.note || catById(e.category).name, money(e.amount, e.currency) + ((e.installments || 1) > 1 ? ` en ${e.installments} cuotas` : ""),
+  isCardExp(e) ? `con ${cardById(e.cardId).name}` : { cash: "en efectivo", debit: "con débito", transfer: "por transferencia" }[e.method] || "", shortDate(dateOnly(e.date))].filter(Boolean).join(" · ");
 function stmtLoad(r){
   const card = st.card, cats = allCats();
   const rows = (Array.isArray(r.movimientos) ? r.movimientos : []).filter(m => m && Number(m.monto) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(m.fecha || "")).map((m, i) => {
     m.monto = round2(Number(m.monto)); m.moneda = m.moneda === "USD" ? "USD" : "ARS";
     m.cuota = Number(m.cuota) || null; m.cuotas = Number(m.cuotas) || null;
     const tipo = ["impuesto","devolucion"].includes(m.tipo) ? m.tipo : "compra";
-    const dup = tipo === "compra" ? stmtMatch(card, m) : null;
     const catOk = m.categoria && cats.some(c => c.id === m.categoria && !c.hidden);
-    const known = tipo === "compra" ? learnedCat(m) : null, fx = tipo === "compra" && !known ? fixedFor(card, m) : null;
+    const known = tipo === "compra" ? learnedCat(m) : null, fx = tipo === "compra" ? fixedFor(card, m) : null;
     const cat = tipo === "impuesto" ? "intereses" : known || (fx && fx.category) || (catOk ? m.categoria : null);
-    return { i, m, tipo, dup, on: tipo !== "devolucion" && !dup, cat, learned: !!(known || fx),
-      unsure: tipo === "compra" && !dup && !known && !fx && (!m.seguro || !catOk) };
+    // Si es un fijo de esta tarjeta que ya estaba activo ese mes, ya está contado
+    const [py, pm] = periodOf(`${m.fecha}T12:00`), fixDup = fx && fixActiveIn(fx, monthKey(py, pm)) ? fx : null;
+    return { i, m, tipo, fixDup, dup: null, maybe: null, cat, learned: !!(known || fx), catOk };
   });
-  st.r = r; st.rows = rows; st.ask = rows.filter(x => x.unsure); st.step = 0;
+  // Lo que ya cargaste a mano (cualquier tarjeta o medio de pago, por si lo anotaste con otro)
+  const pool = [...data.expenses.filter(e => !isIncome(e) && !e.fx), ...virtualFixed().filter(v => v.cardId === card.id)];
+  stmtDupes(card, rows.filter(x => !x.fixDup), pool);
+  rows.forEach(x => { if (x.dup && x.dup.virtual) x.dup = { fixed: fixById(x.dup.fixedId) }; });
+  rows.forEach(x => {
+    if (x.fixDup) x.dup = { fixed: x.fixDup };
+    x.on = x.tipo !== "devolucion" && !x.dup;
+    x.unsure = x.tipo === "compra" && !x.dup && !x.maybe && !x.learned && (!x.m.seguro || !x.catOk);
+  });
+  st.r = r; st.rows = rows; st.same = rows.filter(x => x.maybe); st.ask = rows.filter(x => x.unsure); st.step = 0;
   st.paid = !!(r.vencimiento && dateOnly(r.vencimiento) <= dateOnly(toLocalInput(new Date())));
-  st.phase = rows.length ? (st.ask.length ? "ask" : "review") : "pick";
+  st.phase = !rows.length ? "pick" : st.same.length ? "same" : st.ask.length ? "ask" : "review";
   if (!rows.length) st.err = "No encontré movimientos en ese archivo. ¿Es el resumen de la tarjeta?";
   renderStmt();
 }
@@ -4157,12 +4287,15 @@ function stmtLine(x){
 function renderStmt(){
   const b = $("stBody"); b.innerHTML = ""; const card = st.card;
   const P = (cls, txt) => { const e = document.createElement("p"); e.className = cls; e.textContent = txt; return e; };
+  if (st.phase === "manage"){ renderStmtManage(b, P); return; }
+  if (st.phase === "mdup"){ renderStmtMdup(b, P); return; }
   if (st.phase === "pick"){
     b.append(P("fx-hint", "Subí el PDF del resumen (o fotos de cada hoja). Recy lee cada compra, se fija cuáles ya cargaste y te pregunta las que no sabe de qué son."));
-    const bill = billOf(card, viewYear, viewMonth);
-    if (bill) b.append(P("fx-hint st-which", bill.close <= dateOnly(toLocalInput(new Date()))
-      ? `Para ${monthName(viewYear, viewMonth)} es el resumen que el banco llama "${monthOf(bill.close)}" (cerró el ${shortDate(bill.close)}, vence el ${shortDate(bill.due)}). Si subís otro, lo pongo en el mes en que vence.`
-      : `El resumen que se paga en ${monthName(viewYear, viewMonth)} todavía no cerró (cierra el ${shortDate(bill.close)}). Podés subir uno anterior: lo pongo en el mes en que vence.`));
+    const bill = card.rule === "open" ? null : billOf(card, viewYear, viewMonth);
+    const prevM = bill ? monthOf(bill.close) : monthName(viewYear, viewMonth - 1);
+    b.append(P("fx-hint st-which", bill && bill.close > dateOnly(toLocalInput(new Date()))
+      ? `El resumen que se paga en ${monthName(viewYear, viewMonth)} todavía no cerró (cierra el ${shortDate(bill.close)}). Podés subir uno anterior: lo pongo en el mes en que vence.`
+      : `Para ${monthName(viewYear, viewMonth)} es el resumen que vence en ${monthName(viewYear, viewMonth)} (el banco suele llamarlo "${prevM}"). Si subís otro, lo pongo en el mes en que vence. Lo que ya tenías cargado no se repite: si no estoy seguro, te pregunto.`));
     if (!aiKey()){
       const n2 = P("fx-hint", "Sin Recy inteligente puedo leer el PDF del banco, pero no adivino las categorías (te las pregunto todas). Activándolo (gratis) también lee fotos y sugiere categorías. ");
       const a = document.createElement("button"); a.type = "button"; a.className = "linkbtn"; a.textContent = "Activar Recy"; a.onclick = () => { closeStmt(); openAi(); }; n2.append(a); b.append(n2);
@@ -4177,6 +4310,24 @@ function renderStmt(){
     w.innerHTML = '<span class="spin" aria-hidden="true"></span><div><strong></strong><span>Puede tardar hasta un minuto si es largo. No cierres la app.</span></div>';
     w.querySelector("strong").textContent = st.busy || "Recy está leyendo el resumen…";
     b.append(w); return;
+  }
+  if (st.phase === "same"){
+    const x = st.same[st.step], m = x.m, e = x.maybe;
+    const top = document.createElement("div"); top.className = "st-prog"; top.textContent = `¿Ya lo tenías cargado? · ${st.step + 1} de ${st.same.length}`; b.append(top);
+    b.append(P("fx-hint", "Encontré algo parecido que ya habías anotado. Si es el mismo gasto, no lo cargo de nuevo."));
+    const box = (lbl, title, sub) => { const c = document.createElement("div"); c.className = "st-q st-cmp";
+      const l = document.createElement("small"); l.textContent = lbl; const t = document.createElement("strong"); t.textContent = title; const s2 = document.createElement("small"); s2.textContent = sub; c.append(l, t, s2); return c; };
+    b.append(box("En el resumen", `${stmtLine(x)} · ${money(m.monto, m.moneda)}`, `${shortDate(dateOnly(m.fecha))}${m.detalle && m.detalle !== m.comercio ? " · " + m.detalle : ""}`));
+    b.append(box("Ya tenías", e.note || catById(e.category).name, expDesc(e)));
+    const next = () => { if (st.step < st.same.length - 1) st.step++; else { st.step = 0; st.ask = st.rows.filter(y => y.unsure); st.phase = st.ask.length ? "ask" : "review"; } renderStmt(); };
+    const nav = document.createElement("div"); nav.className = "st-nav st-yn";
+    const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn primary"; yes.textContent = "Sí, es el mismo";
+    yes.onclick = () => { x.dup = e.virtual ? { fixed: fixById(e.fixedId) } : e; x.maybe = null; x.on = false; x.unsure = false; x.confirmed = true; next(); };
+    const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "No, son distintos";
+    no.onclick = () => { x.maybe = null; x.on = true; x.unsure = !x.learned && (!x.m.seguro || !x.catOk); next(); };
+    nav.append(no, yes); b.append(nav);
+    if (st.step > 0){ const back = document.createElement("button"); back.type = "button"; back.className = "linkbtn"; back.textContent = "‹ Atrás"; back.onclick = () => { st.step--; const y = st.same[st.step]; if (!y.maybe){ y.maybe = y.dup || null; if (y.dup && !y.dup.fixed) y.dup = null; } renderStmt(); }; b.append(back); }
+    return;
   }
   if (st.phase === "ask"){
     const x = st.ask[st.step], m = x.m;
@@ -4194,6 +4345,8 @@ function renderStmt(){
       const ch = document.createElement("button"); ch.type = "button"; ch.className = "chip"; ch.setAttribute("aria-pressed", String(x.cat === cc.id));
       const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = cc.color; ch.append(dot, cc.name); ch.onclick = () => pick(cc.id); chips.append(ch);
     });
+    const nc = document.createElement("button"); nc.type = "button"; nc.className = "chip chip-new"; nc.textContent = "+ Nueva categoría";
+    nc.onclick = () => newCatThen(id => pick(id)); chips.append(nc);
     b.append(chips);
     const nav = document.createElement("div"); nav.className = "st-nav";
     const back = document.createElement("button"); back.type = "button"; back.className = "small-btn"; back.textContent = "‹ Atrás"; back.disabled = st.step === 0; back.onclick = () => { st.step--; renderStmt(); };
@@ -4210,23 +4363,25 @@ function renderStmt(){
   head.append(P("", [r.vencimiento ? `Vence el ${shortDate(dateOnly(r.vencimiento))}` : null, tot ? `Total: ${tot}` : null].filter(Boolean).join(" · ") || "Resumen leído"));
   b.append(head);
   if (r.sinIA) b.append(P("fx-hint", r.aiErr ? `Gemini no respondió (${(aiErrorMsg(r.aiErr) || "").replace(" Usé el modo simple.", "").replace(/\.$/, "").toLowerCase()}), así que lo leí yo sin IA. Revisá las categorías.` : "Lo leí sin IA: revisá las categorías."));
-  const groups = [["Para cargar", rows.filter(x => !x.dup && x.tipo !== "devolucion")], ["Ya los tenías cargados", rows.filter(x => x.dup)], ["Devoluciones (no se cargan)", rows.filter(x => x.tipo === "devolucion")]];
-  const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }];
+  const groups = [["Para cargar", rows.filter(x => !x.dup && x.tipo !== "devolucion")], ["Ya los tenías cargados (no se repiten)", rows.filter(x => x.dup)], ["Devoluciones (no se cargan)", rows.filter(x => x.tipo === "devolucion")]];
+  const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }, { id: "__new", name: "+ Nueva categoría…" }];
   groups.forEach(([title, xs]) => {
     if (!xs.length) return;
     const h = document.createElement("div"); h.className = "st-gh"; h.textContent = `${title} (${xs.length})`; b.append(h);
     xs.forEach(x => {
       const row = document.createElement("div"); row.className = "st-row" + (x.on ? "" : " off");
       const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = x.on; cb.disabled = x.tipo === "devolucion"; cb.setAttribute("aria-label", `Cargar ${stmtLine(x)}`);
-      cb.onchange = () => { x.on = cb.checked; renderStmt(); };
+      cb.onchange = () => { x.on = cb.checked; if (x.dup && x.on && !x.dup.fixed && !x.cat) x.cat = ST_DONTKNOW; renderStmt(); };
       const mid = document.createElement("div"); mid.className = "st-mid";
       const n = document.createElement("div"); n.className = "n"; n.textContent = stmtLine(x);
-      const d = document.createElement("small"); d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? " · ya está cargado" : x.learned ? " · como la otra vez" : "");
+      const d = document.createElement("small");
+      d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? (x.dup.fixed ? ` · es tu fijo ${x.dup.fixed.name}` : ` · ya lo tenías: ${expDesc(x.dup)}`) : x.learned ? " · como la otra vez" : "");
       mid.append(n, d);
-      if (x.tipo !== "devolucion" && !x.dup){
+      if (x.tipo !== "devolucion" && (!x.dup || x.on)){
         const sel = document.createElement("select"); sel.className = "input st-sel"; sel.setAttribute("aria-label", `Categoría de ${stmtLine(x)}`);
         catsSel.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; sel.append(o); });
-        sel.value = x.cat || ST_DONTKNOW; x.cat = sel.value; sel.onchange = () => { x.cat = sel.value; };
+        sel.value = x.cat || ST_DONTKNOW; x.cat = sel.value;
+        sel.onchange = () => { if (sel.value === "__new"){ sel.value = x.cat; newCatThen(id => { x.cat = id; renderStmt(); }); return; } x.cat = sel.value; };
         mid.append(sel);
       }
       const a = document.createElement("div"); a.className = "a"; a.textContent = money(x.m.monto, x.m.moneda);
@@ -4243,13 +4398,17 @@ function renderStmt(){
   b.append(save);
 }
 function stmtSave(){
-  const card = st.card, r = st.r, mk = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), added = [];
+  const card = st.card, r = st.r, mk = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), added = [], batch = mk();
+  // Los que confirmaste que ya tenías: si estaban con otro medio de pago, pasan a esta tarjeta
+  let movedN = 0; const dupN = st.rows.filter(x => x.dup && !x.on).length;
+  st.rows.filter(x => x.dup && !x.dup.fixed && !x.on).forEach(x => { const e = x.dup;
+    if (!(e.method === "card" && e.cardId === card.id)){ e.method = "card"; e.cardId = card.id; e.installments = Math.max(1, e.installments || 1); movedN++; } });
   const okD = v => v && /^\d{4}-\d{2}-\d{2}$/.test(v);
   const cierre = okD(r.cierre) ? r.cierre : okD(r.vencimiento) ? toLocalInput(new Date(dateOnly(r.vencimiento).getTime() - 10 * 864e5)) : null;
   st.rows.filter(x => x.on && x.tipo !== "devolucion").forEach(x => {
     const m = x.m, n = m.cuotas > 1 ? m.cuotas : 1, k = n > 1 ? Math.min(n - 1, Math.max(0, (m.cuota || 1) - 1)) : 0;
     const e = { id: mk(), source: "statement", amount: round2(m.monto * n), currency: m.moneda, category: x.cat || ST_DONTKNOW, date: `${m.fecha}T12:00`,
-      note: m.comercio || m.detalle || "", method: "card", cardId: card.id, installments: n, paidInstallments: k, items: [], split: null, loan: false, raw: m.detalle || "" };
+      note: m.comercio || m.detalle || "", method: "card", cardId: card.id, installments: n, paidInstallments: k, items: [], split: null, loan: false, raw: m.detalle || "", stmtBatch: batch };
     if (x.tipo === "compra") learnCat(m.detalle, m.comercio, e.category);
     if (k > 0 && cierre) e.cuotaFrom = cierre;
     data.expenses.push(e); added.push(e);
@@ -4258,7 +4417,7 @@ function stmtSave(){
   if (!card.closeDay && r.cierre && /^\d{4}-\d{2}-\d{2}$/.test(r.cierre)) card.closeDay = dateOnly(r.cierre).getDate();
   const venc = r.vencimiento && /^\d{4}-\d{2}-\d{2}$/.test(r.vencimiento) ? r.vencimiento : null;
   if (st.paid && venc && (r.total_ars > 0 || r.total_usd > 0) && !data.cardPayments.some(p => p.cardId === card.id && p.date === venc)){
-    const pay = { id: mk(), cardId: card.id, date: venc, amount: round2(r.total_ars || 0) }, rate = fixUsdRate();
+    const pay = { id: mk(), cardId: card.id, date: venc, amount: round2(r.total_ars || 0), fromStmt: batch }, rate = fixUsdRate();
     if (r.total_usd > 0 && rate > 0){ pay.usd = round2(r.total_usd); pay.usdMode = "ars"; pay.rate = round2(rate); pay.usdArs = round2(r.total_usd * rate); }
     data.cardPayments.push(pay);
   } else if (!st.paid && (r.total_ars > 0 || r.total_usd > 0)){
@@ -4274,7 +4433,7 @@ function stmtSave(){
   let moved = "";
   if (venc){ const [vy, vm] = periodOf(`${venc}T12:00`); if (vy !== viewYear || vm !== viewMonth){ viewYear = vy; viewMonth = vm; moved = ` Como vence el ${shortDate(dateOnly(venc))}, lo vas a ver en ${monthName(vy, vm)} (ya te llevé ahí).`; } }
   closeStmt(); render();
-  uiAlert((added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "no sé qué es"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.") + moved);
+  uiAlert((added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dupN ? ` ${dupN} ya los tenías y no los repetí${movedN ? ` (${movedN} los pasé a ${card.name})` : ""}.` : "") + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "no sé qué es"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.") + moved);
 }
 
 /* Modal de la clave */
@@ -4988,15 +5147,20 @@ function renderCardsDash(list, cur){
       });
     }
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "linkbtn"; ed.textContent = "Editar"; ed.onclick = () => openCard(card, false);
-    const bill = billOf(card, viewYear, viewMonth), closed = bill && bill.close <= today;
+    // El resumen que se paga en este mes es, para casi todos los bancos, el "del mes anterior" (el mes en que cerró)
+    const bill = card.rule === "open" ? null : billOf(card, viewYear, viewMonth), closed = !bill || bill.close <= today;
+    const prevM = bill ? monthOf(bill.close) : monthName(viewYear, viewMonth - 1);
     const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up";
-    up.textContent = bill && closed ? `📄 Subir resumen de ${monthOf(bill.close)}` : "📄 Subir un resumen"; up.onclick = () => openStmtUpload(card);
+    up.textContent = card.rule === "open" ? "📄 Subir resumen" : closed ? `📄 Subir resumen de ${prevM}` : "📄 Subir un resumen"; up.onclick = () => openStmtUpload(card);
     const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(up, ed);
     next.append(eb);
-    if (bill){ const h = document.createElement("small"); h.className = "st-hint";
-      h.textContent = closed ? `El que el banco llama "${monthOf(bill.close)}": cerró el ${shortDate(bill.close)} y vence el ${shortDate(bill.due)}.`
-        : `El resumen de ${monthOf(bill.close)} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`;
+    if (card.rule !== "open"){ const h = document.createElement("small"); h.className = "st-hint";
+      h.textContent = bill ? (closed ? `El que vence en ${monthName(viewYear, viewMonth)} (el ${shortDate(bill.due)}); el banco suele llamarlo "${prevM}".` : `El de ${prevM} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`)
+        : `El que vence en ${monthName(viewYear, viewMonth)}; el banco suele llamarlo "${prevM}".`;
       next.append(h); }
+    const mine2 = stmtExpensesIn(card, viewYear, viewMonth);
+    if (mine2.length){ const rv = document.createElement("button"); rv.type = "button"; rv.className = "linkbtn st-rev";
+      rv.textContent = `Revisar lo que vino del resumen (${mine2.length})`; rv.onclick = () => openStmtManage(card); next.append(rv); }
     el.append(next);
     if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
     box.append(el);
