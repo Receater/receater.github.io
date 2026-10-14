@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1220";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1240";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2324,7 +2324,7 @@ function entries(){
   out.forEach(x => { if (x.src && x.src.virtual){ const d0 = x.date.slice(0,10); if (!fixFirst[x.src.fixedId] || d0 < fixFirst[x.src.fixedId]) fixFirst[x.src.fixedId] = d0; } });
   const backfill = (cid, d, cur, extra, mine, conv) => {
     if (extra <= 0 || mine.some(x => x.src && x.src.source === "statement")) return extra;
-    data.fixed.filter(f => f.how === "card" && f.cardId === cid && f.currency === cur && (!f.end || f.end >= d.slice(0,7)) && (!fixFirst[f.id] || d < fixFirst[f.id]))
+    data.fixed.filter(f => f.how === "card" && f.wasBefore !== false && f.cardId === cid && f.currency === cur && (!f.end || f.end >= d.slice(0,7)) && (!fixFirst[f.id] || d < fixFirst[f.id]))
       .map(f => ({ f, amt: round2(fixAmountFor(f, f.start) || f.amount || 0) })).filter(o => o.amt > 0).sort((a,b) => b.amt - a.amt)
       .forEach(({ f, amt }) => {
         if (amt > extra + 0.005) return;
@@ -5864,7 +5864,7 @@ function openFixed(f){
 }
 function closeFixed(){ $("fixBg").classList.remove("open"); $("fixSheet").classList.remove("open"); }
 $("fixCancel").onclick = closeFixed; $("fixBg").onclick = closeFixed;
-$("fixSave").onclick = () => {
+$("fixSave").onclick = async () => {
   const name = $("fixName").value.trim();
   if (!name){ $("fixErr").textContent = "Ponele un nombre."; $("fixName").focus(); return; }
   const how = (document.querySelector('input[name="fixHow"]:checked') || {}).value || "manual";
@@ -5887,6 +5887,12 @@ $("fixSave").onclick = () => {
       perSession, weekday: perSession ? Number($("fixWeekday").value) : null, sessAdj:{},
       history: amount ? [{ from:key, amount }] : [], monthAmounts:{}, shares: shares, sharePaid:{} };
     data.fixed.push(f);
+    if (how === "card"){
+      // ¿Lo venías pagando? Si sí, se estima también en los pagos de tarjeta de antes; si es nuevo, arranca desde este mes
+      persist(); closeFixed(); render();
+      f.wasBefore = await uiDialog({ msg: `¿${name} ya lo venías pagando con la tarjeta antes de este mes?`, ok: "Sí, ya lo pagaba", cancel: "No, es nuevo" });
+      persist(); render(); return;
+    }
   }
   persist(); closeFixed(); render();
 };
