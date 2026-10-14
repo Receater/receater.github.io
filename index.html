@@ -614,6 +614,7 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.jar-plan{margin:6px 0 2px;font-weight:700;font-size:.92rem}
 .ask-log{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
 .ask-msg{max-width:88%;padding:9px 12px;border-radius:10px;line-height:1.4;font-size:.95rem;white-space:pre-wrap}
 .ask-msg.me{align-self:flex-end;background:#1F1F1F;color:#FBF8F1}
@@ -1768,6 +1769,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <button type="button" data-jarcur="USD" aria-pressed="false">Dólares</button>
     </div></div>
   <div class="field"><label for="jarGoal">Meta (opcional)</label><input class="input" id="jarGoal" inputmode="decimal" placeholder="Ej: 1.500" autocomplete="off"></div>
+  <div class="field" id="jarWhenF"><label for="jarWhen">¿Para cuándo? (opcional)</label><input class="input" id="jarWhen" type="month" aria-label="Mes en que querés llegar a la meta">
+    <div class="fx-hint">Si ponés una fecha, te digo cuánto poner por mes para llegar.</div></div>
   <div class="field"><label for="jarStart">¿Ya tenés algo ahorrado acá? (opcional)</label><input class="input" id="jarStart" inputmode="decimal" placeholder="0" autocomplete="off">
     <div class="fx-hint">Se suma como saldo inicial, sin tocar tus gastos del mes.</div></div>
   <div class="err" id="jarErr"></div>
@@ -1972,7 +1975,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1440";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1450";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2509,6 +2512,24 @@ if (!Array.isArray(data.jarMoves)) data.jarMoves = [];
 if (!data.lastJar || typeof data.lastJar !== "object") data.lastJar = {};
 const JAR_COLORS = ["#1E8A5B","#2F5BEA","#C9A227","#7A5AC8","#E08A2C","#1FA3B3","#D0485E"];
 const jarById = id => data.jars.find(j => j.id === id);
+/* Meta del frasco: cuánto poner por mes para llegar a tiempo, o cuándo llegás a tu ritmo */
+function jarPlan(j){
+  if (!j.goal) return "";
+  const bal = jarBalance(j), left = round2(j.goal - bal), m2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n);
+  if (left <= 0) return "¡Ya llegaste a la meta!";
+  const now = new Date();
+  if (j.goalBy){
+    const [gy, gm] = j.goalBy.split("-").map(Number), months = (gy - now.getFullYear()) * 12 + (gm - 1 - now.getMonth()) + 1;
+    const when = new Date(gy, gm - 1, 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+    if (months <= 0) return `La fecha (${when}) ya pasó y te faltan ${m2(left)}. Podés cambiarla en Editar.`;
+    return `Para llegar en ${when} tenés que poner unos ${m2(Math.ceil(left / months * 100) / 100)} por mes (${months} ${months === 1 ? "mes" : "meses"}).`;
+  }
+  // A tu ritmo: lo que entró en los últimos 90 días
+  const since = toLocalInput(new Date(now.getTime() - 90 * 864e5)), inn = jarEntries(j).filter(x => x.date >= since && x.amount > 0).reduce((s2,x) => s2 + x.amount, 0);
+  if (inn <= 0) return `Te faltan ${m2(left)}. Poné una fecha en Editar y te digo cuánto ahorrar por mes.`;
+  const perM = inn / 3, mos = Math.ceil(left / perM), d = new Date(now.getFullYear(), now.getMonth() + mos, 1);
+  return `A tu ritmo (unos ${m2(round2(perM))} por mes) llegás en ${mos} ${mos === 1 ? "mes" : "meses"}, por ${d.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}.`;
+}
 function jarEntries(j){
   const out = [];
   data.expenses.forEach(e => {
@@ -6299,6 +6320,7 @@ function renderJars(){
     if (open){
       const el = document.createElement("div"); el.className = "jar-detail";
       const h = document.createElement("h4"); h.textContent = j.name + (j.goal && balNow < j.goal ? `: te falta ${money2(round2(j.goal - balNow))}` : ""); el.append(h);
+      const plan = jarPlan(j); if (plan){ const pp = document.createElement("p"); pp.className = "jar-plan"; pp.textContent = plan; el.append(pp); }
       const buys = data.expenses.filter(e => e.jarId === j.id && e.fx);
       if (buys.length){
         const usd = buys.reduce((s2,e) => s2 + e.fx.usd, 0), ars = buys.reduce((s2,e) => s2 + e.amount, 0);
@@ -6310,7 +6332,10 @@ function renderJars(){
         let casa = "blue"; try { casa = localStorage.getItem("receater.fxCasa") || "blue"; } catch {}
         const q = quotes.map[casa] || quotes.map.blue || quotes.map.oficial;
         if (q){ const p3 = document.createElement("p"); p3.className = "fx-hint"; p3.style.margin = "4px 0 0";
-          p3.textContent = `Hoy valen unos ${f0ARS(balNow * q.venta)} (dólar ${(CASAS.find(c => quotes.map[c.id] === q) || {name:""}).name.toLowerCase()}).`; el.append(p3); }
+          let gl = "";
+          if (buys.length){ const usd = buys.reduce((s2,e) => s2 + e.fx.usd, 0), ars = buys.reduce((s2,e) => s2 + e.amount, 0), dif = round2(usd * q.venta - ars);
+            if (Math.abs(dif) >= 1) gl = ` Los que compraste valen ${f0ARS(Math.abs(dif))} ${dif > 0 ? "más" : "menos"} que lo que pagaste (${dif > 0 ? "ganaste" : "perdiste"} por la cotización).`; }
+          p3.textContent = `Hoy valen unos ${f0ARS(balNow * q.venta)} (dólar ${(CASAS.find(c => quotes.map[c.id] === q) || {name:""}).name.toLowerCase()} a ${f0ARS(q.venta)}).${gl}`; el.append(p3); }
       }
       const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
@@ -6392,6 +6417,7 @@ function openJar(j, cur){
   $("jarTitle").textContent = j ? "Editar frasco" : "Nuevo frasco";
   $("jarName").value = j ? j.name : "";
   $("jarGoal").value = j && j.goal ? String(j.goal).replace(".",",") : "";
+  $("jarWhen").value = j && j.goalBy ? j.goalBy : "";
   $("jarStart").value = ""; $("jarStart").parentElement.hidden = !!j;
   setJarCur(j ? j.currency : (cur || "ARS"));
   document.querySelectorAll("[data-jarcur]").forEach(b => b.disabled = !!j);
@@ -6407,9 +6433,10 @@ $("jarSave").onclick = () => {
   if (!name){ $("jarErr").textContent = "Ponele un nombre al frasco."; $("jarName").focus(); return; }
   const goal = parseAmount($("jarGoal").value);
   let j = editingJar;
-  if (j){ j.name = name; j.goal = goal > 0 ? round2(goal) : null; }
+  const goalBy = goal > 0 && /^\d{4}-\d{2}$/.test($("jarWhen").value) ? $("jarWhen").value : null;
+  if (j){ j.name = name; j.goal = goal > 0 ? round2(goal) : null; j.goalBy = goalBy; }
   else {
-    j = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, currency: jarDraftCur, goal: goal > 0 ? round2(goal) : null,
+    j = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, currency: jarDraftCur, goal: goal > 0 ? round2(goal) : null, goalBy,
       color: JAR_COLORS[data.jars.length % JAR_COLORS.length] };
     data.jars.push(j);
     const start = parseAmount($("jarStart").value);
