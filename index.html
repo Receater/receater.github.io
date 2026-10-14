@@ -614,7 +614,7 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
-.card-btns{display:flex;gap:10px;align-items:center;margin-left:auto}
+.card-btns{display:flex;gap:8px 10px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .st-rev{flex-basis:100%;text-align:right;font-size:.84rem;padding:2px 0}
 .st-warn{flex-basis:100%;margin-top:8px;border:1.5px solid #E0A13A;background:#FFF6E3;color:#7A4B00;border-radius:6px;padding:9px 10px;text-align:left;font-weight:700;font-size:.86rem}
 .st-pays{flex-direction:column;align-items:stretch}.st-pays .btn{width:100%}
@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1240";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1250";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -3620,6 +3620,13 @@ function openPayEdit(pay){
   $("typeTabs").hidden = true;
   $("sheetTitle").textContent = "Editar pago de " + cardById(pay.cardId).name;
 }
+/* Atajo desde Resumen → Tarjetas: anotar el pago de esa tarjeta */
+function openCardPayFor(card){
+  openSheet(null); editingPay = null; cpkCard = card.id;
+  ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = "");
+  setMode("cardpay");
+  $("sheetTitle").textContent = "Pagué " + card.name;
+}
 function cpkValues(){
   const ars = parseAmount($("cpkAmount").value) || 0, usd = parseAmount($("cpkUsd").value) || 0;
   const r = parseAmount($("cpkRate").value) || 0, p = parseAmount($("cpkUsdArs").value) || 0;
@@ -5266,7 +5273,8 @@ function renderCardsDash(list, cur){
     const prevM = bill ? monthOf(bill.close) : monthName(viewYear, viewMonth - 1);
     const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up";
     up.textContent = card.rule === "open" ? "📄 Subir resumen" : closed ? `📄 Subir resumen de ${prevM}` : "📄 Subir un resumen"; up.onclick = () => openStmtUpload(card);
-    const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(up, ed);
+    const pp = document.createElement("button"); pp.type = "button"; pp.className = "small-btn"; pp.textContent = "Pagué la tarjeta"; pp.onclick = () => openCardPayFor(card);
+    const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(...(card.rule === "open" ? [up, ed] : [pp, up, ed]));
     next.append(eb);
     if (card.rule !== "open"){ const h = document.createElement("small"); h.className = "st-hint";
       h.textContent = bill ? (closed ? `El que vence el ${shortDate(bill.due)}; el banco suele llamarlo "${prevM}".` : `El de ${prevM} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`)
