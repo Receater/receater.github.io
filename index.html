@@ -614,6 +614,13 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.search-bar{display:flex;align-items:center;gap:8px;margin:14px 0 6px;background:#FBF8F1;border:1.5px dashed #BDB6A5;border-radius:8px;padding:2px 6px 2px 12px}
+.search-bar .input{border:0;background:transparent;box-shadow:none;padding-left:0;font-family:"Courier Prime","Courier New",ui-monospace,monospace;color:#1F1F1F;min-width:0;flex:1}
+.search-bar .input:focus{box-shadow:none;outline:none}
+.search-bar .x{border:0;background:none;font-size:1.3rem;color:#6E6A62;min-width:36px;min-height:36px}
+.search-sum{background:#FBF8F1;color:#1F1F1F;border-radius:8px;padding:12px 14px;margin:6px 0 10px;display:grid;gap:3px;font-family:"Courier Prime","Courier New",ui-monospace,monospace}
+.search-sum span{font-weight:700}.search-sum small{color:#6E6A62}
+.search-month{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px}
 .card-btns{display:flex;gap:8px 10px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .st-rev{flex-basis:100%;text-align:right;font-size:.84rem;padding:2px 0}
 .st-warn{flex-basis:100%;margin-top:8px;border:1.5px solid #E0A13A;background:#FFF6E3;color:#7A4B00;border-radius:6px;padding:9px 10px;text-align:left;font-weight:700;font-size:.86rem}
@@ -1316,6 +1323,11 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <p class="bubble" id="bubble" aria-live="polite"></p>
   </section>
 
+  <div class="search-bar" role="search">
+    <span aria-hidden="true">🔍</span>
+    <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
+    <button type="button" class="x" id="searchX" aria-label="Borrar la búsqueda" hidden>×</button>
+  </div>
   <section class="day-sum" id="daySum" hidden></section>
   <section class="clip" id="fixedPend" hidden></section>
   <section class="fixed-pend" id="loanPend" hidden></section>
@@ -1897,7 +1909,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1310";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1400";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2708,6 +2720,7 @@ function render(){
   const shown = viewDay ? rows.filter(r => r.date.slice(0,10) === viewDay) : rows;
   const days = $("days");
   days.innerHTML = "";
+  if (searchQ){ $("fixedPend").hidden = true; $("loanPend").hidden = true; ds.hidden = true; renderSearch(days); return; }
   if (viewDay && !shown.length){ const e = document.createElement("div"); e.className = "empty"; e.innerHTML = "<strong>Nada cargado ese día</strong>Tocá el mes de arriba para elegir otro día."; days.append(e); return; }
   if (!rows.length){
     const e = document.createElement("div");
@@ -2887,6 +2900,47 @@ function renderFixedPend(){
   });
 }
 
+/* ---------- Buscador: en todos los meses, por nota, categoría, persona, tarjeta, productos o monto ---------- */
+let searchQ = "";
+const normS = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function searchHay(e){
+  const parts = [e.note, isIncome(e) ? kindById(e.category).name : catById(e.category).name, e.raw, e.loanFrom,
+    e.cardId && cardById(e.cardId) ? cardById(e.cardId).name : "", e.paidBy && e.paidBy.name,
+    ...(e.split ? e.split.people.map(p => p.name) : []), ...((e.items || []).map(i => i.name)), e.fx ? "dolares compra de dolares" : ""];
+  return normS(parts.filter(Boolean).join(" "));
+}
+function searchMatches(q){
+  const words = normS(q).split(/\s+/).filter(Boolean), num = parseAmount(q);
+  return [...data.expenses, ...data.incomes].filter(e => {
+    if (num > 0 && /^[\d.,\s$]+$/.test(q)) return Math.abs(e.amount - num) < 0.5 || (e.installments > 1 && Math.abs(e.amount / e.installments - num) < 0.5);
+    const h = searchHay(e); return words.every(w => h.includes(w));
+  }).sort((a,b) => b.date.localeCompare(a.date));
+}
+function renderSearch(days){
+  const res = searchMatches(searchQ), exps = res.filter(e => !isIncome(e)), incs = res.filter(isIncome);
+  const sum = (xs, c) => round2(xs.filter(e => e.currency === c).reduce((s2, e) => s2 + eff(e), 0));
+  const head = document.createElement("div"); head.className = "search-sum";
+  const t = document.createElement("strong");
+  t.textContent = res.length ? `${res.length} ${res.length === 1 ? "resultado" : "resultados"} para "${searchQ}"` : `Nada para "${searchQ}"`;
+  head.append(t);
+  if (exps.length){ const l = document.createElement("span");
+    l.textContent = "Gastos: " + [sum(exps,"ARS") && fmtARS.format(sum(exps,"ARS")), sum(exps,"USD") && fmtUSD.format(sum(exps,"USD"))].filter(Boolean).join(" + ") + ` (${exps.length})`; head.append(l); }
+  if (incs.length){ const l = document.createElement("span");
+    l.textContent = "Ingresos: " + [sum(incs,"ARS") && fmtARS.format(sum(incs,"ARS")), sum(incs,"USD") && fmtUSD.format(sum(incs,"USD"))].filter(Boolean).join(" + ") + ` (${incs.length})`; head.append(l); }
+  if (res.length){ const l = document.createElement("small"); l.textContent = "En todos los meses. Las compras en cuotas cuentan por su total."; head.append(l); }
+  days.append(head);
+  let lastM = "";
+  res.slice(0, 300).forEach(e => {
+    const [y, m] = periodOf(e.date), mk = monthKey(y, m);
+    if (mk !== lastM){ lastM = mk; const h = document.createElement("h2"); h.className = "search-month"; h.textContent = periodTitle(y, m); days.append(h); }
+    const tk = document.createElement("div"); tk.className = "ticket" + (isIncome(e) ? " inc" : "");
+    const it = renderItem(e); const sub = it.querySelector(".sub");
+    if (sub) sub.prepend(document.createTextNode(shortDate(dateOnly(e.date)) + "  "));
+    tk.append(it); days.append(tk);
+  });
+}
+$("searchQ").addEventListener("input", () => { searchQ = $("searchQ").value.trim(); $("searchX").hidden = !searchQ; render(); });
+$("searchX").onclick = () => { $("searchQ").value = ""; searchQ = ""; $("searchX").hidden = true; render(); };
 function renderItem(e){
   const inc = isIncome(e), shared = !inc && e.split && e.split.people.length;
   const c = inc ? kindById(e.category) : catById(e.category);
