@@ -1883,6 +1883,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div class="set-group">
     <div class="set-label">Recy</div>
     <button type="button" class="set-row as-btn" id="setAi"><div><strong>Recy inteligente</strong><span id="setAiTxt"></span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setNotif"><div><strong>Avisos en el celular</strong><span id="setNotifTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setPpl"><div><strong>Personas</strong><span>Con quién dividís gastos o te prestás plata.</span></div><span class="chev2">›</span></button>
   </div>
   <div class="set-group">
@@ -2004,7 +2005,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1530";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1600";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5014,6 +5015,79 @@ function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classLi
 
 function persist(){
   if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
+  scheduleAlertsSoon();
+}
+/* ---------- Avisos en el celular (sin servidor) ----------
+   Cada vez que abrís la app o cambiás algo, se arma la lista de avisos de las próximas 3 semanas y se guarda para el service worker (sw.js).
+   Él los muestra cuando toca: al abrir la app y, en Android con la app instalada, también en segundo plano (el sistema lo despierta cada tanto).
+   Sin servidor no hay garantía de horario exacto: si pasás días sin abrirla, algunos avisos pueden llegar tarde o no llegar. */
+const notifOn = () => { try { return localStorage.getItem("receater.notify") === "1" && "Notification" in window && Notification.permission === "granted"; } catch { return false; } };
+var swReg = null;
+if ("serviceWorker" in navigator && /^https:$|^http:$/.test(location.protocol) && location.hostname !== ""){
+  navigator.serviceWorker.register("sw.js").then(r => { swReg = r; scheduleAlertsSoon(); }).catch(() => {});
+}
+function buildAlerts(){
+  const out = [], now = new Date(), today = dateOnly(toLocalInput(now)), lim = new Date(today.getTime() + 21 * 864e5);
+  const at = (d, h, m = 0) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.getTime(); };
+  const amt = xs => [["ARS", fmtARS], ["USD", fmtUSD]].map(([c, f]) => { const v = round2(xs.filter(x => x.currency === c).reduce((a, x) => a + x.amount, 0)); return v ? f.format(v) : ""; }).filter(Boolean).join(" + ");
+  // Tarjetas: el día antes y el día del vencimiento, si no está pagada
+  const ents = entries();
+  data.cards.filter(c => c.rule !== "open").forEach(card => {
+    const byD = {}; ents.forEach(x => { if (x.cardId === card.id && !x.payId){ const d = x.date.slice(0,10), dd = dateOnly(d); if (dd >= today && dd <= lim) (byD[d] ||= []).push(x); } });
+    Object.entries(byD).forEach(([d, xs]) => {
+      if (data.cardPayments.some(p => p.cardId === card.id && p.date === d)) return;
+      const t = amt(xs), dd = dateOnly(d);
+      out.push({ id: `card:${card.id}:${d}:pre`, at: at(new Date(dd.getTime() - 864e5), 10), title: `Mañana vence ${card.name}`, body: `Te llega ${t}. Cuando la pagues, anotalo en Receater.` });
+      out.push({ id: `card:${card.id}:${d}:day`, at: at(dd, 9), title: `Hoy vence ${card.name}`, body: `${t}. ¿Ya la pagaste?` });
+    });
+  });
+  // Fijos que pagás vos o por débito: el día que vencen
+  const [cy, cm] = periodOf(now);
+  [[cy, cm], [cy, cm + 1]].forEach(([y, m]) => fixInstances(y, m).forEach(i => {
+    if (i.f.how === "card" || !["pending","todebit","partial"].includes(i.state) || i.due < today || i.due > lim) return;
+    const left = i.expected ? money(round2(i.expected - i.paid), i.currency) : "";
+    out.push({ id: `fix:${i.f.id}:${i.key}`, at: at(i.due, 9, 30), title: i.state === "todebit" ? `Hoy se debita ${i.f.name}` : `Hoy vence ${i.f.name}`,
+      body: (left ? left + ". " : "") + (i.state === "todebit" ? "Confirmalo en Receater cuando lo veas." : "Marcalo como pagado en Receater.") });
+  }));
+  // Día de cobro
+  if (data.payRule && !isFree()){
+    const nx = payDate(cy, cm + 1);
+    if (nx <= lim) out.push({ id: `pay:${toLocalInput(nx)}`, at: at(nx, 10), title: "¡Hoy cobrás!", body: "¿Cargamos el sueldo? Así Recy arranca el mes nuevo." });
+  }
+  // Préstamos que tenés que devolver
+  data.incomes.filter(i => i.category === "prestamo" && i.loanFrom && i.dueDate && loanLeft(i) > 0.004).forEach(i => {
+    const dd = dateOnly(i.dueDate); if (dd < today || dd > lim) return;
+    out.push({ id: `loan:${i.id}`, at: at(new Date(dd.getTime() - 864e5), 10), title: `Mañana le devolvés a ${i.loanFrom}`, body: money(loanLeft(i), i.currency) });
+  });
+  return out.filter(a => a.at > Date.now() - 864e5);
+}
+var alertsT = null;
+function scheduleAlertsSoon(){ clearTimeout(alertsT); alertsT = setTimeout(scheduleAlerts, 1500); }
+async function scheduleAlerts(){
+  if (!notifOn() || !("caches" in window)) return;
+  try {
+    const c = await caches.open("receater-alerts"), r = await c.match("alerts.json"), prev = r ? await r.json() : { shown: [] };
+    await c.put("alerts.json", new Response(JSON.stringify({ list: buildAlerts(), shown: prev.shown || [] }), { headers: { "Content-Type": "application/json" } }));
+    const reg = swReg || (await navigator.serviceWorker.getRegistration());
+    if (reg && reg.active) reg.active.postMessage({ type: "fire" });
+  } catch {}
+}
+async function enableNotif(){
+  if (!("Notification" in window) || !("serviceWorker" in navigator)){
+    const ios = /iPhone|iPad/.test(navigator.userAgent);
+    uiAlert(ios ? "En iPhone, primero instalá Receater: en Safari tocá Compartir → \"Agregar a pantalla de inicio\". Después abrila desde ese ícono y activá los avisos acá." : "Este navegador no permite avisos. Probá desde Chrome, con la app instalada.");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted"){ uiAlert("No me diste permiso para avisarte. Si cambiás de idea, habilitalo en los ajustes del navegador para este sitio."); return; }
+  try { localStorage.setItem("receater.notify", "1"); } catch {}
+  try { const reg = swReg || await navigator.serviceWorker.ready; if (reg.periodicSync) await reg.periodicSync.register("receater-alerts", { minInterval: 6 * 3600 * 1000 }); } catch {}
+  await scheduleAlerts();
+  try { const reg = swReg || await navigator.serviceWorker.ready; reg.showNotification("Listo, te voy a avisar", { body: "Vencimientos de tarjetas y fijos, y el día que cobrás.", icon: "icon.svg" }); } catch {}
+  const n = buildAlerts().length;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  uiAlert(`Avisos activados. Tenés ${n} ${n === 1 ? "aviso programado" : "avisos programados"} para las próximas 3 semanas.` + (standalone ? "" : " Para que lleguen aunque no abras la app, instalala en el celular (Agregar a pantalla de inicio).") + " Como no usamos servidor, si pasás varios días sin abrir Receater algunos pueden llegar tarde.");
+  openSettings();
 }
 
 let futureOk = false, dupOk = false;
@@ -6843,12 +6917,22 @@ function openSettings(){
   $("setWho").textContent = who || "Sin entrar con Google";
   $("setAiTxt").textContent = aiKey() ? "Activado ✓" : "Cargá con tus palabras o con foto del ticket.";
   $("setVer").textContent = "Versión " + BUILD;
+  $("setNotifTxt").textContent = notifOn() ? "Activados ✓ Vencimientos de tarjetas y fijos, y el día de cobro." : "Que te avise cuando vence una tarjeta, un fijo o cuando cobrás.";
   $("setBg").classList.add("open"); $("setSheet").classList.add("open");
 }
 function closeSettings(){ $("setBg").classList.remove("open"); $("setSheet").classList.remove("open"); }
 $("setBtn").onclick = openSettings; $("setClose").onclick = closeSettings; $("setBg").onclick = closeSettings;
 $("setAi").onclick = () => { closeSettings(); openAi(); };
 $("setPpl").onclick = () => { closeSettings(); openPeople(); };
+$("setNotif").onclick = async () => {
+  if (notifOn()){
+    if (!await uiDialog({ msg: "Los avisos están activados. ¿Querés apagarlos?", ok: "Apagar avisos", cancel: "Dejarlos", danger: true })) return;
+    try { localStorage.removeItem("receater.notify"); } catch {}
+    try { const reg = swReg || await navigator.serviceWorker.getRegistration(); if (reg && reg.periodicSync) await reg.periodicSync.unregister("receater-alerts"); await caches.delete("receater-alerts"); } catch {}
+    openSettings(); return;
+  }
+  enableNotif();
+};
 
 /* ---------- Borrar los datos locales (solo sin sesión de Google) ---------- */
 (() => {
