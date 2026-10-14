@@ -1550,7 +1550,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div class="field" id="otherField">
     <label class="switch"><input type="checkbox" id="otherOn"> Lo pagó otra persona</label>
     <div id="otherBox" hidden>
-      <input class="input" id="otherWho" placeholder="¿Quién pagó?" autocomplete="off" style="margin-top:10px">
+      <input class="input" id="otherWho" aria-label="Quién pagó" placeholder="¿Quién pagó?" autocomplete="off" style="margin-top:10px">
       <div class="chips suggest" id="otherSuggest" style="margin-top:8px"></div>
       <div class="field two" style="margin-top:10px">
         <div><label class="lbl-sm" for="otherMine">Tu parte</label><input class="input" id="otherMine" inputmode="decimal" autocomplete="off"></div>
@@ -1563,7 +1563,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div class="field" id="lendField">
     <label class="switch"><input type="checkbox" id="lendOn"> Le presté plata a alguien</label>
     <div id="lendBox" hidden>
-      <input class="input" id="lendTo" placeholder="¿A quién?" autocomplete="off" style="margin-top:10px">
+      <input class="input" id="lendTo" aria-label="A quién le prestaste" placeholder="¿A quién?" autocomplete="off" style="margin-top:10px">
       <div class="chips suggest" id="lendSuggest" style="margin-top:8px"></div>
       <div class="fx-hint">Cuenta como gasto hasta que te lo devuelva.</div>
     </div>
@@ -1573,7 +1573,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <label class="switch"><input type="checkbox" id="splitOn"> Lo pagué yo y lo dividimos</label>
     <div id="splitBox" hidden>
       <div class="split-add">
-        <input class="input" id="personName" placeholder="¿Con quién?" autocomplete="off" enterkeyhint="done">
+        <input class="input" id="personName" aria-label="Con quién dividís" placeholder="¿Con quién?" autocomplete="off" enterkeyhint="done">
         <button type="button" class="btn ghost" id="addPerson">Agregar</button>
       </div>
       <div class="chips suggest" id="suggest"></div>
@@ -1668,7 +1668,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <label class="switch"><input type="checkbox" id="fixShareOn"> Lo pago yo y lo comparto</label>
     <div id="fixShareBox" hidden>
       <div class="split-add">
-        <input class="input" id="fixSharePerson" placeholder="¿Con quién?" autocomplete="off">
+        <input class="input" id="fixSharePerson" aria-label="Con quién compartís el fijo" placeholder="¿Con quién?" autocomplete="off">
         <button type="button" class="btn ghost" id="fixShareAdd">Agregar</button>
       </div>
       <div class="chips suggest" id="fixShareSuggest"></div>
@@ -1800,7 +1800,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 <div class="sheet" id="pplSheet" role="dialog" aria-modal="true" aria-labelledby="pplTitle">
   <h3 id="pplTitle">Personas</h3>
   <p class="fx-hint" style="margin:0 0 10px">Las personas con las que dividís gastos o te prestás plata. Aparecen como sugerencia al cargar.</p>
-  <div class="split-add"><input class="input" id="pplNew" placeholder="Nombre" autocomplete="off"><button type="button" class="btn ghost" id="pplAdd">Agregar</button></div>
+  <div class="split-add"><input class="input" id="pplNew" aria-label="Nombre de la persona" placeholder="Nombre" autocomplete="off"><button type="button" class="btn ghost" id="pplAdd">Agregar</button></div>
   <ul class="jar-hist" id="pplList"></ul>
   <div class="actions"><button type="button" class="btn ghost" id="pplClose">Listo</button></div>
 </div>
@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1200";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1210";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
