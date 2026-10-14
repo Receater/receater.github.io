@@ -519,6 +519,9 @@ button{cursor:pointer}
 .donut-center{max-width:60%;left:50%;top:50%;transform:translate(-50%,-50%)}
 .donut-center .v{font-size:clamp(.95rem,4.6vw,1.2rem);white-space:nowrap}
 .donut-center .l{font-size:.7rem;line-height:1.25}
+.donut-wrap .donut-center{max-width:min(128px,35vw)}
+.fx-pie .donut-wrap .donut-center{max-width:min(118px,32vw)}
+.card-donut .donut-wrap .donut-center{max-width:min(100px,28vw)}
 .paper .donut-center .v{font-family:"Playfair Display",Georgia,serif}
 
 /* Diario simplificado: papel blanco, letra de la app, secciones claras */
@@ -647,6 +650,8 @@ button{cursor:pointer}
 .search-sum{background:#FBF8F1;color:#1F1F1F;border-radius:8px;padding:12px 14px;margin:6px 0 10px;display:grid;gap:3px;font-family:"Courier Prime","Courier New",ui-monospace,monospace}
 .search-sum span{font-weight:700}.search-sum small{color:#6E6A62}
 .search-month{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px}
+.pp-ok{flex-basis:100%;text-align:right;color:#1E7A50;font-weight:700;font-size:.86rem}
+.pp-ahead{font-size:.86rem}
 .card-btns{display:flex;gap:8px 10px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .st-rev{flex-basis:100%;text-align:right;font-size:.84rem;padding:2px 0}
 .st-warn{flex-basis:100%;margin-top:8px;border:1.5px solid #E0A13A;background:#FFF6E3;color:#7A4B00;border-radius:6px;padding:9px 10px;text-align:left;font-weight:700;font-size:.86rem}
@@ -1975,7 +1980,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1450";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1510";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5336,7 +5341,7 @@ function renderDash(){
     const center = document.createElement("div"); center.className = "donut-center";
     center.innerHTML = `<div class="v"></div><div class="l"></div>`;
     const hasSav = list.some(isSaving);
-    center.querySelector(".l").textContent = (hasSav ? "gastos + ahorro · " : "") + (inc > 0 ? `de ${money(inc,cur)} cobrados` : periodShort(viewYear,viewMonth));
+    center.querySelector(".l").textContent = (hasSav ? "gastos + ahorro, " : "") + (inc > 0 ? `de ${money(inc,cur)} cobrados` : periodShort(viewYear,viewMonth));
     center.querySelector(".v").textContent = new Intl.NumberFormat("es-AR",{style:"currency",currency:cur,maximumFractionDigits:0}).format(total);
     wrap.append(svg, center); box.append(wrap);
 
@@ -5596,7 +5601,12 @@ function renderCardsDash(list, cur){
     const prevM = bill ? monthOf(bill.close) : monthName(viewYear, viewMonth - 1);
     const up = document.createElement("button"); up.type = "button"; up.className = "small-btn st-up";
     up.textContent = card.rule === "open" ? "📄 Subir resumen" : closed ? `📄 Subir resumen de ${prevM}` : "📄 Subir un resumen"; up.onclick = () => openStmtUpload(card);
-    const pp = document.createElement("button"); pp.type = "button"; pp.className = "small-btn"; pp.textContent = "Pagué la tarjeta"; pp.onclick = () => openCardPayFor(card);
+    const billD = [...new Set(all.filter(x => x.cardId === card.id && inPeriod(x, viewYear, viewMonth) && !x.estc).map(x => x.date.slice(0,10)))];
+    const payP = data.cardPayments.filter(p => p.cardId === card.id && inPeriod({ date: p.date + "T12:00" }, viewYear, viewMonth));
+    const allPaid = payP.length && billD.every(d => data.cardPayments.some(p => p.cardId === card.id && p.date === d));
+    const pp = document.createElement("button"); pp.type = "button"; pp.className = allPaid ? "linkbtn pp-ahead" : "small-btn"; pp.onclick = () => openCardPayFor(card);
+    pp.textContent = allPaid ? "Adelantar un pago" : "Pagué la tarjeta";
+    if (allPaid){ const ok = document.createElement("span"); ok.className = "pp-ok"; ok.textContent = `✓ Pagada el ${shortDate(dateOnly(payP.sort((a,b) => b.date.localeCompare(a.date))[0].date))}`; next.append(ok); }
     const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(...(card.rule === "open" ? [up, ed] : [pp, up, ed]));
     next.append(eb);
     if (card.rule !== "open"){ const h = document.createElement("small"); h.className = "st-hint";
