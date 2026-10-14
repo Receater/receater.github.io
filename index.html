@@ -614,6 +614,13 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.ask-log{display:flex;flex-direction:column;gap:8px;margin:6px 0 10px}
+.ask-msg{max-width:88%;padding:9px 12px;border-radius:10px;line-height:1.4;font-size:.95rem;white-space:pre-wrap}
+.ask-msg.me{align-self:flex-end;background:#1F1F1F;color:#FBF8F1}
+.ask-msg.recy{align-self:flex-start;background:#FFFEFB;border:1.5px dashed #BDB6A5}
+.ask-msg.busy{color:var(--muted);font-style:italic}
+.ask-sug{margin:4px 0 10px}.ask-sug .chip{font-size:.85rem;padding:6px 10px;min-height:36px}
+.ask-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
 .buy-cta{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin:18px 0 6px;padding:12px 14px;border:1.5px dashed #BDB6A5;border-radius:8px;background:#FFFEFB;color:#1F1F1F}
 .buy-cta>span:first-child{font-size:1.6rem}
 .buy-cta strong{display:block;font-size:1rem}.buy-cta small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
@@ -1375,6 +1382,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
           <div class="facts" id="facts"></div>
         </section>
       <section>
+        <button type="button" class="buy-cta" id="askOpen"><span aria-hidden="true">💬</span><span><strong>Preguntale a Recy</strong><small>"¿Cuánto gasté en delivery?", "¿Cuánto me debe Delfi?", "¿En qué gasté más que en septiembre?"</small></span></button>
         <button type="button" class="buy-cta" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá cómo te quedan los próximos meses antes de comprar algo, en cuotas o no.</small></span></button>
         <div class="sec-head"><h3>Tarjetas</h3><button type="button" class="small-btn" id="addCardDash">Agregar tarjeta</button></div>
         <div id="cardsBox"></div>
@@ -1896,6 +1904,19 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 
+<div class="sheet-bg" id="askBg"></div>
+<div class="sheet" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <h3 id="askTitle">Preguntale a Recy</h3>
+  <div id="askLog" class="ask-log" aria-live="polite"></div>
+  <div class="chips ask-sug" id="askSug"></div>
+  <div class="ask-row">
+    <textarea class="input" id="askQ" rows="2" placeholder="Ej: ¿cuánto gasté en Starbucks este año?" aria-label="Tu pregunta para Recy" enterkeyhint="send"></textarea>
+    <button type="button" class="btn primary" id="askGo">Preguntar</button>
+  </div>
+  <p class="fx-hint">Recy contesta con tus datos usando Gemini (lo que activaste en Recy inteligente). Los números los calcula con lo que tenés cargado.</p>
+  <div class="actions"><button type="button" class="btn ghost" id="askClose">Cerrar</button></div>
+</div>
+
 <div class="sheet-bg" id="buyBg"></div>
 <div class="sheet" id="buySheet" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
   <h3 id="buyTitle">¿Me lo puedo comprar?</h3>
@@ -1951,7 +1972,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1430";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1440";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2943,6 +2964,63 @@ function renderFixedPend(){
   });
 }
 
+/* ---------- Preguntale a Recy: preguntas sobre tus datos (Gemini, con un resumen de tus datos armado en el teléfono) ---------- */
+let askBusy = false;
+function openAsk(){
+  $("askLog").innerHTML = ""; $("askQ").value = "";
+  const sug = $("askSug"); sug.innerHTML = "";
+  const [py, pm] = periodOf(new Date()), prev = monthName(py, pm - 1);
+  const people = knownPeople().slice(0, 1);
+  ["¿En qué gasté más este mes?", `¿Gasté más o menos que en ${prev}?`, people[0] ? `¿Cuánto me debe ${people[0]}?` : "¿Cuánto me queda por día?", "¿Cuánto gasté en delivery este mes?"].forEach(t => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = () => { $("askQ").value = t; askGo(); }; sug.append(b); });
+  if (!aiKey()){ askMsg("recy", "Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez)."); const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy"; a.onclick = () => { closeAsk(); openAi(); }; $("askLog").append(a); }
+  $("askBg").classList.add("open"); $("askSheet").classList.add("open");
+}
+function closeAsk(){ $("askBg").classList.remove("open"); $("askSheet").classList.remove("open"); }
+$("askOpen").onclick = openAsk; $("askClose").onclick = closeAsk; $("askBg").onclick = closeAsk;
+function askMsg(who, text){ const d = document.createElement("div"); d.className = "ask-msg " + who; d.textContent = text; $("askLog").append(d); try { d.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch {} return d; }
+/* Tus datos, resumidos en texto: los últimos 6 meses por categoría, y el detalle de los últimos 3 */
+function askContext(){
+  const [cy, cm] = periodOf(new Date()), L = [], f = n => Math.round(n);
+  L.push(`Hoy: ${toLocalInput(new Date())}. Cobra: ${ruleText()}. Los "meses" son períodos de sueldo a sueldo.`);
+  for (let k = 5; k >= 0; k--){
+    const d0 = new Date(cy, cm - k, 1), y = d0.getFullYear(), m = d0.getMonth();
+    const ars = monthExpenses(y, m, "ARS"), usd = monthExpenses(y, m, "USD"); if (!ars.length && !usd.length && k) continue;
+    const by = {}; ars.forEach(x => by[catById(x.category).name] = (by[catById(x.category).name] || 0) + x.amount);
+    const inc = data.incomes.filter(e => inPeriod(e, y, m)).map(e => `${kindById(e.category).name} ${e.currency} ${f(e.amount)}`).join(", ");
+    L.push(`PERÍODO ${periodTitle(y, m)}${k === 0 ? " (actual, en curso)" : ""}: gasto total ARS ${f(ars.reduce((a,x) => a + x.amount, 0))}; USD ${f(usd.reduce((a,x) => a + x.amount, 0))}. Por categoría (ARS): ${Object.entries(by).sort((a,b) => b[1]-a[1]).map(([c, v]) => `${c} ${f(v)}`).join("; ") || "nada"}. Ingresos: ${inc || "ninguno"}.`);
+  }
+  L.push("DETALLE DE GASTOS (últimos 3 períodos; fecha | categoría | nota | monto | moneda | medio):");
+  for (let k = 2; k >= 0; k--){
+    const d0 = new Date(cy, cm - k, 1);
+    monthExpenses(d0.getFullYear(), d0.getMonth(), "ARS").concat(monthExpenses(d0.getFullYear(), d0.getMonth(), "USD")).slice(0, 250)
+      .forEach(x => L.push(`${x.date.slice(0,10)} | ${catById(x.category).name} | ${x.note || ""}${x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : ""} | ${f(x.amount)} | ${x.currency} | ${x.cardId && cardById(x.cardId) ? cardById(x.cardId).name : (x.src && x.src.method) || ""}`));
+  }
+  const bal = balances(); if (bal.length) L.push("CUENTAS CON PERSONAS (positivo = te debe, negativo = le debés): " + bal.map(x => `${x.name}: ARS ${f(x.ARS)}${x.USD ? `, USD ${x.USD}` : ""}`).join("; "));
+  const S2 = fixSummary(cy, cm); L.push(`FIJOS del período actual: total ARS ${f(S2.total)}, pagado ${f(S2.paid)}, por pagar ${f(S2.toPay)}, en tarjeta ${f(S2.inCard)}. ` + S2.list.map(i => `${i.f.name} ${i.currency} ${f(i.expected || 0)} (${i.state})`).join("; "));
+  if (data.jars && data.jars.length) L.push("FRASCOS DE AHORRO: " + data.jars.map(j => `${j.name}: ${j.currency} ${f(jarBalance(j))}${j.goal ? ` de ${f(j.goal)}` : ""}`).join("; "));
+  const bud = budgetStatus(cy, cm); if (bud.length) L.push("TOPES: " + bud.map(x => `${catById(x.id).name} ${f(x.spent)} de ${f(x.cap)}`).join("; "));
+  return L.join("\n");
+}
+async function askGo(){
+  const q = $("askQ").value.trim(); if (!q || askBusy) return;
+  if (!aiKey()){ askMsg("recy", "Primero activá Recy inteligente."); return; }
+  askMsg("me", q); $("askQ").value = ""; askBusy = true; $("askGo").disabled = true;
+  const w = askMsg("recy busy", "Recy está mirando tus números…");
+  try {
+    const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Contestá la pregunta del usuario SOLO con los datos de abajo, en español rioplatense, corto (máximo 3 o 4 oraciones), con los montos en formato argentino ($ 12.345). Si con los datos no alcanza para responder, decilo. No inventes.
+Respondé SOLO un JSON: {"respuesta":"..."}
+
+DATOS:
+${askContext()}
+
+PREGUNTA: """${q}"""` }], { fast: true, timeout: 60000 });
+    w.classList.remove("busy"); w.textContent = (r && r.respuesta) || "No me salió una respuesta. Probá preguntarlo de otra forma.";
+  } catch (e){ w.classList.remove("busy"); w.textContent = (aiErrorMsg(e) || "Algo falló.").replace(" Usé el modo simple.", ""); }
+  askBusy = false; $("askGo").disabled = false;
+}
+$("askGo").onclick = askGo;
+$("askQ").addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); askGo(); } });
 /* ---------- ¿Me lo puedo comprar?: cómo quedan los próximos meses con esta compra ---------- */
 let buy = { cur: "ARS", how: "cash" };
 function openBuy(){
@@ -4968,6 +5046,7 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("pbSheet").classList.contains("open")) closePersonBal();
   else if ($("budSheet").classList.contains("open")) closeBudgets();
   else if ($("buySheet").classList.contains("open")) closeBuy();
+  else if ($("askSheet").classList.contains("open")) closeAsk();
   else if ($("stSheet").classList.contains("open")) closeStmt();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
