@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1150";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1200";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5003,7 +5003,8 @@ function renderDash(){
     });
     const center = document.createElement("div"); center.className = "donut-center";
     center.innerHTML = `<div class="v"></div><div class="l"></div>`;
-    center.querySelector(".l").textContent = inc > 0 ? `de ${money(inc,cur)} cobrados` : periodShort(viewYear,viewMonth);
+    const hasSav = list.some(isSaving);
+    center.querySelector(".l").textContent = (hasSav ? "gastos + ahorro · " : "") + (inc > 0 ? `de ${money(inc,cur)} cobrados` : periodShort(viewYear,viewMonth));
     center.querySelector(".v").textContent = new Intl.NumberFormat("es-AR",{style:"currency",currency:cur,maximumFractionDigits:0}).format(total);
     wrap.append(svg, center); box.append(wrap);
 
@@ -5346,10 +5347,11 @@ function stageDash(){
   const topPct = top && base ? Math.round(top[1] / base * 100) : 0;
   const diff = now - before;
   renderStage("stageDash", {
-    label: "Gastaste", big: fmtARS.format(round2(now)),
-    bar: inc ? now / inc : null, over: inc && now > inc,
-    lines: [inc && `Es el ${Math.round(now / inc * 100)}% de lo que cobraste`,
-      savedNow > 0.5 ? `Aparte, ahorraste ${fmtARS.format(savedNow)}` : null,
+    // Con ahorro, el número grande es lo mismo que el centro de la torta: gastos + ahorro
+    label: savedNow > 0.5 ? "Gastaste + ahorraste" : "Gastaste", big: fmtARS.format(round2(savedNow > 0.5 ? allNow : now)),
+    bar: inc ? (savedNow > 0.5 ? allNow : now) / inc : null, over: inc && allNow > inc,
+    lines: [savedNow > 0.5 ? `Gastos ${fmtARS.format(round2(now))} · Ahorro ${fmtARS.format(savedNow)}` : null,
+      inc && `Es el ${Math.round((savedNow > 0.5 ? allNow : now) / inc * 100)}% de lo que cobraste`,
       top && `Donde más: ${catById(top[0]).name}, ${fmtARS.format(round2(top[1]))} (${topPct}% ${inc > 0 ? "de tu sueldo" : "de tus gastos"})`,
       top && top[0] === "tarjeta_sd" ? "Son pagos de tarjeta que no cargaste compra por compra." : null,
       before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}` : null],
