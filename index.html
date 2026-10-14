@@ -614,6 +614,14 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.bud-row{display:grid;grid-template-columns:12px minmax(0,1fr) 130px;gap:10px;align-items:center;padding:6px 0;border-bottom:1.5px dotted #D9D3C6}
+.bud-row .dot{width:10px;height:10px;border-radius:50%}
+.bud-row .n{font-weight:700}
+.bud-bar{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.bud-bar i{display:block;height:100%;background:#1E8A5B}
+.bud-bar.near i{background:#E0A13A}.bud-bar.over i{background:#C9374B}
+.bud-t{font-size:.76rem;color:var(--muted);margin-top:3px}.bud-t.over{color:#C9374B;font-weight:700}
+.bud-link{display:block;margin:6px 0 10px;font-size:.88rem}
 .search-bar{display:flex;align-items:center;gap:8px;margin:14px 0 6px;background:#FBF8F1;border:1.5px dashed #BDB6A5;border-radius:8px;padding:2px 6px 2px 12px}
 .search-bar .input{border:0;background:transparent;box-shadow:none;padding-left:0;font-family:"Courier Prime","Courier New",ui-monospace,monospace;color:#1F1F1F;min-width:0;flex:1}
 .search-bar .input:focus{box-shadow:none;outline:none}
@@ -1877,6 +1885,17 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 
+<div class="sheet-bg" id="budBg"></div>
+<div class="sheet" id="budSheet" role="dialog" aria-modal="true" aria-labelledby="budTitle">
+  <h3 id="budTitle">Topes por categoría</h3>
+  <p class="fx-hint">Poné cuánto querés gastar como máximo por mes en cada categoría (en pesos). Recy te avisa cuando vas por el 80% y cuando te pasás. Dejalo vacío para no tener tope.</p>
+  <div id="budList"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="budCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="budSave">Guardar</button>
+  </div>
+</div>
+
 <div class="sheet-bg" id="xlBg"></div>
 <div class="sheet" id="xlSheet" role="dialog" aria-modal="true" aria-labelledby="xlTitle">
   <h3 id="xlTitle">Exportar a Excel</h3>
@@ -1909,7 +1928,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1400";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1410";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2672,6 +2691,7 @@ function render(){
       }
     }
   }
+  if (isCurrentPeriod(viewYear, viewMonth)) budgetStatus(viewYear, viewMonth).filter(x => x.pct >= 0.8).slice(0, 2).forEach(x => screen.push(budLine(x)));
   if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
   setBoardLines($("meta"), screen);
   $("totalUsd").hidden = true;
@@ -2900,6 +2920,41 @@ function renderFixedPend(){
   });
 }
 
+/* ---------- Topes por categoría: data.budgets = { categoría: tope mensual en pesos } ---------- */
+function budgetStatus(y, m){
+  const b = data.budgets || {}, ids = Object.keys(b).filter(id => b[id] > 0);
+  if (!ids.length) return [];
+  const spent = {}; monthExpenses(y, m, "ARS").forEach(x => spent[x.category] = (spent[x.category] || 0) + x.amount);
+  return ids.map(id => ({ id, cap: b[id], spent: round2(spent[id] || 0), pct: (spent[id] || 0) / b[id] })).sort((a,b2) => b2.pct - a.pct);
+}
+const budLine = s2 => s2.pct >= 1 ? `${catById(s2.id).name}: te pasaste del tope por ${fmtARS.format(round2(s2.spent - s2.cap))}` : `${catById(s2.id).name}: vas por el ${Math.round(s2.pct * 100)}% del tope`;
+/* Al cargar un gasto: si con ese cruzaste el 80% o el tope, avisar una sola vez por mes */
+function budgetCheck(cat, y, m){
+  const st2 = budgetStatus(y, m).find(x => x.id === cat); if (!st2) return;
+  const lvl = st2.pct >= 1 ? 100 : st2.pct >= 0.8 ? 80 : 0; if (!lvl) return;
+  const k = `${monthKey(y, m)}|${cat}|${lvl}`; data.budgetWarned = data.budgetWarned || {};
+  if (data.budgetWarned[k]) return; data.budgetWarned[k] = 1; persist();
+  setTimeout(() => uiAlert(lvl === 100 ? `Ojo: con este gasto te pasaste del tope de ${catById(cat).name} (${fmtARS.format(st2.spent)} de ${fmtARS.format(st2.cap)}).`
+    : `Vas por el ${Math.round(st2.pct * 100)}% de lo que querías gastar en ${catById(cat).name} este mes (${fmtARS.format(st2.spent)} de ${fmtARS.format(st2.cap)}).`), 350);
+}
+function openBudgets(){
+  const box = $("budList"); box.innerHTML = ""; const b = data.budgets || {};
+  allCats().filter(c => !c.hidden && c.id !== "ahorro").forEach(c => {
+    const r = document.createElement("label"); r.className = "bud-row";
+    const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+    const n = document.createElement("span"); n.className = "n"; n.textContent = c.name;
+    const i = document.createElement("input"); i.className = "input"; i.inputMode = "decimal"; i.placeholder = "Sin tope"; i.dataset.cat = c.id; i.setAttribute("aria-label", `Tope de ${c.name}`);
+    i.value = b[c.id] ? String(b[c.id]) : "";
+    r.append(dot, n, i); box.append(r);
+  });
+  $("budBg").classList.add("open"); $("budSheet").classList.add("open");
+}
+function closeBudgets(){ $("budBg").classList.remove("open"); $("budSheet").classList.remove("open"); }
+$("budCancel").onclick = closeBudgets; $("budBg").onclick = closeBudgets;
+$("budSave").onclick = () => {
+  const b = {}; $("budList").querySelectorAll("input").forEach(i => { const v = parseAmount(i.value); if (v > 0) b[i.dataset.cat] = round2(v); });
+  data.budgets = b; persist(); closeBudgets(); render();
+};
 /* ---------- Buscador: en todos los meses, por nota, categoría, persona, tarjeta, productos o monto ---------- */
 let searchQ = "";
 const normS = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -4794,6 +4849,7 @@ $("sheet").addEventListener("submit", ev => {
   persist();
   [viewYear, viewMonth] = periodOf(date);
   closeSheet(); feedRecy(); render();
+  if (mode === "expense" && fields.currency === "ARS") budgetCheck(fields.category, viewYear, viewMonth);
   if (askPay) setTimeout(openPay, 400);
 });
 $("del").onclick = async () => {
@@ -4810,6 +4866,7 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("setSheet").classList.contains("open")) closeSettings();
   else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("pbSheet").classList.contains("open")) closePersonBal();
+  else if ($("budSheet").classList.contains("open")) closeBudgets();
   else if ($("stSheet").classList.contains("open")) closeStmt();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
@@ -5100,6 +5157,12 @@ function renderDash(){
       mid.append(n);
       if (c.desc){ const hp = document.createElement("div"); hp.className = "help"; hp.textContent = c.desc; mid.append(hp); }
       mid.append(d);
+      const cap = cur === "ARS" && (data.budgets || {})[id];
+      if (cap){ const r = v / cap, bar = document.createElement("div"); bar.className = "bud-bar" + (r >= 1 ? " over" : r >= 0.8 ? " near" : "");
+        const f = document.createElement("i"); f.style.width = Math.min(100, r * 100) + "%"; bar.append(f);
+        const bt = document.createElement("div"); bt.className = "bud-t" + (r >= 1 ? " over" : "");
+        bt.textContent = r >= 1 ? `Te pasaste ${fmtARS.format(round2(v - cap))} del tope de ${fmtARS.format(cap)}` : `${Math.round(r * 100)}% del tope de ${fmtARS.format(cap)}`;
+        mid.append(bar, bt); }
       const a = document.createElement("div"); a.className = "a"; a.textContent = money(v,cur);
       const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(v);
       a.append(pc);
@@ -5134,6 +5197,8 @@ function renderDash(){
       li.append(dot, n, a); ul.append(li);
     }
     box.append(ul);
+    if (cur === "ARS"){ const tb = document.createElement("button"); tb.type = "button"; tb.className = "linkbtn bud-link";
+      tb.textContent = Object.keys(data.budgets || {}).length ? "Cambiar los topes por categoría" : "Ponerle un tope a cada categoría"; tb.onclick = openBudgets; box.append(tb); }
     laterNote();
   }
 
