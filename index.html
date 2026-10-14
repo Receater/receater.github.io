@@ -614,6 +614,16 @@ button{cursor:pointer}
 .pb-dir{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
 .pb-dir button{overflow-wrap:anywhere;padding:10px 8px}
 .due-usd{color:#8A5A00 !important}
+.buy-cta{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin:18px 0 6px;padding:12px 14px;border:1.5px dashed #BDB6A5;border-radius:8px;background:#FFFEFB;color:#1F1F1F}
+.buy-cta>span:first-child{font-size:1.6rem}
+.buy-cta strong{display:block;font-size:1rem}.buy-cta small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
+.buy-v{font-weight:700;margin:14px 0 8px;padding:10px 12px;border-radius:6px;background:#F2EDE0}
+.buy-v.ok{background:#E7F4EC;color:#1E6B45}.buy-v.warn{background:#FFF6E3;color:#7A4B00}.buy-v.neg{background:#FBE9EC;color:#A3283A}
+.buy-t{width:100%;border-collapse:collapse;font-size:.86rem}
+.buy-t th{text-align:right;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:4px 2px;border-bottom:1.5px dashed #BDB6A5}
+.buy-t th:first-child,.buy-t td:first-child{text-align:left}
+.buy-t td{text-align:right;padding:7px 2px;border-bottom:1.5px dotted #D9D3C6;font-family:"IBM Plex Mono",ui-monospace,monospace;white-space:nowrap}
+.buy-t td.neg{color:#C9374B;font-weight:700}.buy-t td.warn{color:#8A5A00;font-weight:700}.buy-t td.ok{color:#1E7A50}
 .bud-row{display:grid;grid-template-columns:12px minmax(0,1fr) 130px;gap:10px;align-items:center;padding:6px 0;border-bottom:1.5px dotted #D9D3C6}
 .bud-row .dot{width:10px;height:10px;border-radius:50%}
 .bud-row .n{font-weight:700}
@@ -1365,6 +1375,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
           <div class="facts" id="facts"></div>
         </section>
       <section>
+        <button type="button" class="buy-cta" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá cómo te quedan los próximos meses antes de comprar algo, en cuotas o no.</small></span></button>
         <div class="sec-head"><h3>Tarjetas</h3><button type="button" class="small-btn" id="addCardDash">Agregar tarjeta</button></div>
         <div id="cardsBox"></div>
       </section>
@@ -1885,6 +1896,18 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 
+<div class="sheet-bg" id="buyBg"></div>
+<div class="sheet" id="buySheet" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
+  <h3 id="buyTitle">¿Me lo puedo comprar?</h3>
+  <div class="field"><label for="buyName">Qué es (opcional)</label><input class="input" id="buyName" placeholder="Ej: zapatillas, celular" autocomplete="off"></div>
+  <div class="field"><label for="buyAmount">Cuánto sale en total</label><input class="input" id="buyAmount" inputmode="decimal" placeholder="0" autocomplete="off"></div>
+  <div class="field"><span class="lbl">Moneda</span><div class="seg" role="group" id="buyCur"><button type="button" data-bcur="ARS" aria-pressed="true">$</button><button type="button" data-bcur="USD" aria-pressed="false">US$</button></div></div>
+  <div class="field"><span class="lbl">Cómo lo pagás</span><div class="chips" id="buyHow"></div></div>
+  <div class="field" id="buyCuotasF"><label for="buyCuotas">Cuotas</label><select class="input" id="buyCuotas"><option value="1">1 pago</option><option>3</option><option>6</option><option>9</option><option>12</option><option>18</option><option>24</option></select></div>
+  <div id="buyOut"></div>
+  <div class="actions"><button type="button" class="btn ghost" id="buyClose">Cerrar</button></div>
+</div>
+
 <div class="sheet-bg" id="budBg"></div>
 <div class="sheet" id="budSheet" role="dialog" aria-modal="true" aria-labelledby="budTitle">
   <h3 id="budTitle">Topes por categoría</h3>
@@ -1928,7 +1951,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1410";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1430";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2920,6 +2943,83 @@ function renderFixedPend(){
   });
 }
 
+/* ---------- ¿Me lo puedo comprar?: cómo quedan los próximos meses con esta compra ---------- */
+let buy = { cur: "ARS", how: "cash" };
+function openBuy(){
+  $("buyName").value = ""; $("buyAmount").value = ""; $("buyCuotas").value = "1";
+  buy = { cur: "ARS", how: data.cards[0] ? data.cards[0].id : "cash" };
+  renderBuy(); $("buyBg").classList.add("open"); $("buySheet").classList.add("open"); setTimeout(() => $("buyAmount").focus(), 150);
+}
+function closeBuy(){ $("buyBg").classList.remove("open"); $("buySheet").classList.remove("open"); }
+$("buyOpen").onclick = openBuy; $("buyClose").onclick = closeBuy; $("buyBg").onclick = closeBuy;
+document.querySelectorAll("[data-bcur]").forEach(b => b.onclick = () => { buy.cur = b.dataset.bcur; renderBuy(); });
+$("buyAmount").addEventListener("input", () => renderBuyOut()); $("buyCuotas").onchange = () => renderBuyOut();
+function renderBuy(){
+  document.querySelectorAll("[data-bcur]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.bcur === buy.cur)));
+  const box = $("buyHow"); box.innerHTML = "";
+  [...data.cards.map(c => [c.id, c.name]), ["cash", "Efectivo / débito"]].forEach(([id, n]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = n; b.setAttribute("aria-pressed", String(buy.how === id));
+    b.onclick = () => { buy.how = id; renderBuy(); }; box.append(b); });
+  $("buyCuotasF").hidden = buy.how === "cash"; if (buy.how === "cash") $("buyCuotas").value = "1";
+  renderBuyOut();
+}
+/* Lo que ya tenés comprometido en un período, en pesos (los dólares al dólar de hoy) */
+function committedIn(y, m){
+  const rate = fixUsdRate() || 0, toA = x => x.currency === "USD" ? x.amount * rate : x.amount;
+  if (isCurrentPeriod(y, m)) return round2(monthExpenses(y, m, "ARS").reduce((s2, x) => s2 + x.amount, 0) + monthExpenses(y, m, "USD").reduce((s2, x) => s2 + x.amount * rate, 0) + fixedPendingARS(y, m));
+  const card = entries().filter(x => x.cardId && !(x.src && x.src.virtual) && inPeriod(x, y, m)).reduce((s2, x) => s2 + toA(x), 0);
+  return round2(card + fixSummary(y, m).total);
+}
+/* Lo que gastás en el día a día (sin fijos, sin tarjeta, sin ahorro), promedio de los últimos meses completos */
+function dailyAvgARS(){
+  const [cy, cm] = periodOf(new Date()), vals = [];
+  for (let k = 1; k <= 3; k++){
+    const d0 = new Date(cy, cm - k, 1), y = d0.getFullYear(), m = d0.getMonth();
+    const v = monthExpenses(y, m, "ARS").filter(x => !x.cardId && !isFixedEnt(x) && !isSaving(x)).reduce((s2, x) => s2 + x.amount, 0);
+    if (v > 0) vals.push(v);
+  }
+  return vals.length ? round2(vals.reduce((a,b) => a + b, 0) / vals.length) : 0;
+}
+function lastSalaryARS(){
+  const s2 = data.incomes.filter(e => e.category === "sueldo" && e.currency === "ARS").sort((a,b) => b.date.localeCompare(a.date))[0];
+  return s2 ? s2.amount : 0;
+}
+function renderBuyOut(){
+  const out = $("buyOut"); out.innerHTML = "";
+  const amt = parseAmount($("buyAmount").value) || 0; if (!(amt > 0)) return;
+  const rate = fixUsdRate() || 0, n = Number($("buyCuotas").value) || 1;
+  if (buy.cur === "USD" && !rate){ out.innerHTML = '<p class="fx-hint">Necesito una cotización del dólar para calcularlo en pesos.</p>'; return; }
+  const ars = buy.cur === "USD" ? amt * rate : amt, [cy, cm] = periodOf(new Date()), add = {};
+  if (buy.how === "cash") add[monthKey(cy, cm)] = ars;
+  else {
+    const sched = cardSchedule({ method: "card", cardId: buy.how, installments: n, date: `${toLocalInput(new Date())}T12:00`, amount: amt, currency: buy.cur });
+    sched.forEach(d => { const [y, m] = d ? periodOf(`${toLocalInput(d)}T12:00`) : [cy, cm + 1]; const k = monthKey(y, m); add[k] = (add[k] || 0) + ars / n; });
+  }
+  const sal = lastSalaryARS(), daily = dailyAvgARS(), rows = [];
+  for (let k = 0; k < Math.max(3, Math.min(13, n + 2)); k++){
+    const d0 = new Date(cy, cm + k, 1), y = d0.getFullYear(), m = d0.getMonth(), key = monthKey(y, m);
+    const com = round2(committedIn(y, m) + (k > 0 ? daily : 0)), plus = round2(add[key] || 0);
+    rows.push({ y, m, com, plus, left: sal ? round2(sal - com - plus) : null });
+  }
+  const t = document.createElement("table"); t.className = "buy-t";
+  t.innerHTML = "<thead><tr><th>Mes</th><th>Ya tenés</th><th>Esta compra</th><th>Te queda</th></tr></thead>";
+  const tb = document.createElement("tbody");
+  rows.forEach(r => { const tr = document.createElement("tr");
+    [monthName(r.y, r.m, { month: "short" }).replace(".", ""), f0ARS(r.com), r.plus ? "+ " + f0ARS(r.plus) : "—", r.left == null ? "?" : f0ARS(r.left)].forEach((v, i) => {
+      const td = document.createElement("td"); td.textContent = v; if (i === 3 && r.left != null) td.className = r.left < 0 ? "neg" : r.left < sal * 0.1 ? "warn" : "ok"; tr.append(td); });
+    tb.append(tr); });
+  t.append(tb);
+  const worst = rows.filter(r => r.plus).sort((a,b) => (a.left ?? 0) - (b.left ?? 0))[0];
+  const v = document.createElement("p"); v.className = "buy-v";
+  if (!sal) v.textContent = "Cargá tu sueldo para que te diga cuánto te queda cada mes.";
+  else if (worst && worst.left < 0) { v.className += " neg"; v.textContent = `Ojo: en ${monthName(worst.y, worst.m)} no te alcanzaría, te faltarían ${f0ARS(-worst.left)}.`; }
+  else if (worst && worst.left < sal * 0.1) { v.className += " warn"; v.textContent = `Te alcanza, pero justo: en ${monthName(worst.y, worst.m)} te quedarían ${f0ARS(worst.left)}.`; }
+  else if (worst) { v.className += " ok"; v.textContent = `Te alcanza. El mes más ajustado es ${monthName(worst.y, worst.m)}: te quedarían ${f0ARS(worst.left)}.`; }
+  out.append(v, t);
+  const h = document.createElement("p"); h.className = "fx-hint";
+  h.textContent = `"Ya tenés": este mes, lo que ya gastaste más los fijos que faltan; los meses que vienen, los fijos, las cuotas de tarjeta${daily ? ` y ${f0ARS(daily)} de gastos del día a día (tu promedio de los últimos meses)` : " (todavía no tengo meses completos para estimar tu día a día, así que no lo cuento)"}${rate ? "; los dólares al dólar de hoy" : ""}. "Te queda": tu último sueldo (${sal ? f0ARS(sal) : "sin cargar"}) menos todo eso.`;
+  out.append(h);
+}
 /* ---------- Topes por categoría: data.budgets = { categoría: tope mensual en pesos } ---------- */
 function budgetStatus(y, m){
   const b = data.budgets || {}, ids = Object.keys(b).filter(id => b[id] > 0);
@@ -4867,6 +4967,7 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return;
   else if ($("pplSheet").classList.contains("open")) closePeople();
   else if ($("pbSheet").classList.contains("open")) closePersonBal();
   else if ($("budSheet").classList.contains("open")) closeBudgets();
+  else if ($("buySheet").classList.contains("open")) closeBuy();
   else if ($("stSheet").classList.contains("open")) closeStmt();
   else if ($("xlSheet").classList.contains("open")) closeXls();
   else if ($("fixSheet").classList.contains("open")) closeFixed();
