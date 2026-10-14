@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1210";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1220";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -4615,7 +4615,7 @@ function persist(){
   if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
 }
 
-let futureOk = false;
+let futureOk = false, dupOk = false;
 $("sheet").addEventListener("submit", ev => {
   ev.preventDefault();
   if (mode === "cardpay"){
@@ -4652,10 +4652,20 @@ $("sheet").addEventListener("submit", ev => {
   if (/^\s*-/.test($("amount").value)){ $("err").textContent = mode === "expense" ? "Poné el monto sin el signo menos. Si te devolvieron plata, cargalo como Ingreso." : "Poné el monto sin el signo menos."; $("amount").focus(); return; }
   // Fecha muy adelante (más de un mes): confirmar, por si fue un error de tipeo
   if (!futureOk && $("date").value && dateOnly($("date").value) - new Date() > 31 * 864e5){
-    uiConfirm(`La fecha es el ${shortDate(dateOnly($("date").value))} de ${dateOnly($("date").value).getFullYear()}, más de un mes adelante. ¿Está bien?`).then(ok => { if (ok){ futureOk = true; $("sheet").requestSubmit(); futureOk = false; } else $("date").focus(); });
+    uiConfirm(`La fecha es el ${shortDate(dateOnly($("date").value))} de ${dateOnly($("date").value).getFullYear()}, más de un mes adelante. ¿Está bien?`).then(ok => { if (ok){ futureOk = true; const d0 = dupOk; $("sheet").requestSubmit(); futureOk = false; dupOk = d0; } else $("date").focus(); });
     return;
   }
   if (!(amount > 0)){ $("err").textContent = "Poné un monto mayor a cero."; $("amount").focus(); return; }
+  // ¿Ya hay uno igual ese día (mismo monto, moneda y medio de pago)? Puede ser un doble toque o una carga repetida
+  if (!dupOk && !editing && mode === "expense"){
+    const day = $("date").value || toLocalInput(new Date()), a2 = Math.round(amount * 100) / 100;
+    const twin = data.expenses.find(e => !e.fx && e.date.slice(0,10) === day && e.currency === currency && Math.abs(e.amount - a2) < 0.005 && (e.method || "") === (method || "") && (method !== "card" || e.cardId === cardId));
+    if (twin){
+      uiConfirm(`Ya tenés un gasto igual ese día (${money(twin.amount, twin.currency)}${twin.note ? ", " + twin.note : ""}, a las ${twin.date.slice(11,16)}). ¿Lo cargo igual?`)
+        .then(ok => { if (ok){ dupOk = true; $("sheet").requestSubmit(); dupOk = false; } });
+      return;
+    }
+  }
   const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
   const fields = { amount: Math.round(amount*100)/100, currency, category: mode === "income" ? incomeKind : category, date, note: $("note").value.trim() };
   if (mode === "expense"){
