@@ -933,9 +933,9 @@ html{overflow-y:scroll;scrollbar-gutter:stable}
 #fixSheet .head-btn.ghost{color:#2A2412}
 
 /* ===== Nuevo frasco: frasco de vidrio con tapa del color del frasco ===== */
-#jarSheet{--jar-color:#1E8A5B;--paper:#EFF8F7;--ink:#1B2430;--muted:#5A6B76;--line:rgba(110,150,160,.5);--bg:rgba(255,255,255,.6);--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;color-scheme:light;color:var(--ink)}
-#jarSheet.jarsheet{background:transparent;padding:0;overflow:visible;border-radius:0;box-shadow:none;max-height:92vh;max-height:92dvh}
-#jarSheet.jarsheet.open{display:flex;flex-direction:column}
+#jarSheet,#jmSheet{--jar-color:#1E8A5B;--paper:#EFF8F7;--ink:#1B2430;--muted:#5A6B76;--line:rgba(110,150,160,.5);--bg:rgba(255,255,255,.6);--accent:#2F5BEA;--accent-ink:#fff;--usd:#1E7A50;--danger:#C9374B;color-scheme:light;color:var(--ink)}
+#jarSheet.jarsheet,#jmSheet.jarsheet{background:transparent;padding:0;overflow:visible;border-radius:0;box-shadow:none;max-height:92vh;max-height:92dvh}
+#jarSheet.jarsheet.open,#jmSheet.jarsheet.open{display:flex;flex-direction:column}
 .jar-lid{position:relative;flex:none;height:40px;margin:0 30px;z-index:3;border-radius:14px 14px 5px 5px;
   background:
     linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(0,0,0,.16)),
@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1300";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1310";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -6141,6 +6141,7 @@ function openJarMove(j, kind){
   $("jmHint").textContent = kind === "adjust" ? `Hoy figura ${m.format(jarBalance(j))}. La diferencia queda como ajuste (intereses, rendimiento, cotización).`
     : kind === "deposit" ? "Esto no cuenta como gasto del mes. Si la plata sale de tu sueldo, mejor cargala como gasto con categoría Ahorro." : "";
   $("jmErr").textContent = "";
+  $("jmSheet").style.setProperty("--jar-color", j.color || "#1E8A5B");   // la tapa del color del frasco
   $("jmBg").classList.add("open"); $("jmSheet").classList.add("open");
   setTimeout(() => $("jmAmount").focus(), 120);
 }
@@ -6543,17 +6544,17 @@ function buildSheetHeads(){
     head.addEventListener("touchend", end); head.addEventListener("touchcancel", end);
   });
 }
-document.querySelectorAll(".sheet").forEach(sh => { if (sh.id !== "jarSheet") sh.classList.add("notepad"); });
+document.querySelectorAll(".sheet").forEach(sh => { if (sh.id !== "jarSheet" && sh.id !== "jmSheet") sh.classList.add("notepad"); });
 buildSheetHeads();
 /* El frasco: tapa arriba, cuello y cuerpo de vidrio (todo el contenido va adentro del vidrio) */
-(function jarify(){
-  const js = $("jarSheet"); if (js.querySelector(":scope > .jar-glass")) return;
+["jarSheet", "jmSheet"].forEach(function jarify(id){
+  const js = $(id); if (js.querySelector(":scope > .jar-glass")) return;
   const glass = document.createElement("div"); glass.className = "jar-glass";
   while (js.firstChild) glass.append(js.firstChild);
   const lid = document.createElement("div"); lid.className = "jar-lid"; lid.setAttribute("aria-hidden", "true");
   const neck = document.createElement("div"); neck.className = "jar-neck"; neck.setAttribute("aria-hidden", "true");
   js.append(lid, neck, glass); js.classList.add("jarsheet");
-})();
+});
 /* El fijo: notita amarilla con chinche (todo el contenido va en el papel) */
 (function postitify(){
   const fs = $("fixSheet"); if (fs.querySelector(":scope > .postit-paper")) return;
