@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1130";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1140";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -1935,7 +1935,7 @@ const CATEGORIES = [
   {id:"otros",       name:"Otros",             color:"#8C8C8C"},
   {id:"ahorro",      name:"Ahorro",            color:"#1E8A5B"},
   {id:"intereses",   name:"Intereses e impuestos", color:"#A0522D", hidden:true},
-  {id:"tarjeta_sd",  name:"Tarjeta sin detalle", color:"#5B6B82", hidden:true, desc:"Lo que pagaste de la tarjeta y no cargaste compra por compra."},
+  {id:"tarjeta_sd",  name:"Sin anotar", color:"#5B6B82", hidden:true, desc:"Lo que pagaste de la tarjeta y no cargaste compra por compra."},
   {id:"prestamo",    name:"Préstamos que hiciste", color:"#8C6A4F", hidden:true},
   {id:"devolucion",  name:"Devolución de préstamo", color:"#B0322A", hidden:true},
 ];
@@ -2343,13 +2343,13 @@ function entries(){
     const extra = backfill(p.cardId, d, "ARS", round2((p.amount || 0) - assigned), mine);
     const noDetail = !mine.some(x => x.currency === "ARS");   // sin compras en pesos cargadas: lo pagado en pesos es "sin detalle"
     if (extra > 0.5) out.push({ id:`int:${p.id}`, amount:extra, currency:"ARS", category: "tarjeta_sd",
-      note: noDetail ? "Compras sin cargar" : "Compras sin cargar, intereses o impuestos", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
+      note: noDetail ? "Sin anotar" : "Sin anotar (compras, intereses o impuestos)", date:`${d}T00:00`, cardId:p.cardId, payId:p.id });
     if (p.usd > 0){
       const usdItems = mine.filter(x => x.currency === "USD"), assignedU = usdItems.reduce((s,x) => s + x.amount, 0);
       const rr = p.usdArs ? p.usdArs / p.usd : p.rate;
       const extraU = backfill(p.cardId, d, "USD", round2(p.usd - assignedU), mine, p.usdMode === "ars" && rr > 0 ? rr : 0);
       const noDetailU = !usdItems.length;   // sin compras en dólares cargadas
-      const catU = "tarjeta_sd", noteU = noDetailU ? "Compras en dólares sin cargar" : "Compras en dólares sin cargar, intereses o impuestos";
+      const catU = "tarjeta_sd", noteU = noDetailU ? "Sin anotar (en dólares)" : "Sin anotar en dólares (compras, intereses o impuestos)";
       if (p.usdMode === "ars" && rr > 0){
         // Los dólares de la tarjeta se pagaron con pesos: cuentan como pesos a esa cotización
         usdItems.forEach(x => { x.note = [x.note, `${fmtUSD.format(x.amount)} a ${fmtARS.format(round2(rr))}`].filter(Boolean).join(", "); x.amount = round2(x.amount * rr); x.currency = "ARS"; });
@@ -2366,7 +2366,7 @@ function entries(){
       const mineS = out.filter(x => x.cardId === cid && !x.stmtKey && x.date.slice(0,10) === d);
       const have = mineS.filter(x => x.currency === c).reduce((s2,x) => s2 + x.amount, 0);
       const extra = backfill(cid, d, c, round2(tot - have), mineS);
-      if (extra > eps) out.push({ id:`stmt:${k}:${c}`, amount: extra, currency: c, category: "tarjeta_sd", note: "Falta anotar (según el resumen)",
+      if (extra > eps) out.push({ id:`stmt:${k}:${c}`, amount: extra, currency: c, category: "tarjeta_sd", note: "Sin anotar (según el resumen)",
         date:`${d}T00:00`, cardId: cid, stmtKey: k, src: { stmt: true } });
     });
   });
@@ -3661,7 +3661,7 @@ function renderCpk(){
   else {
     const p = pendingFor(card, dateOnly($("date").value || toLocalInput(new Date()))); pre = p.ars; preU = p.usd;
     hint.textContent = p.ars || p.usd
-      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia queda como "Tarjeta sin detalle".`
+      ? `Tenés ${[p.ars && fmtARS.format(p.ars), p.usd && fmtUSD.format(p.usd)].filter(Boolean).join(" y ")} sin pagar en esta tarjeta. Este pago se queda con esas compras. Si pagaste más, la diferencia queda como "Sin anotar".`
       : "No tenés compras cargadas sin pagar en esta tarjeta. Lo que pongas cuenta como un gasto de tarjeta en esta fecha.";
   }
   if (!$("cpkAmount").value && pre) $("cpkAmount").value = String(pre).replace(".",",");
@@ -4485,7 +4485,7 @@ function renderStmt(){
   const pcb = document.createElement("input"); pcb.type = "checkbox"; pcb.checked = st.paid; pcb.onchange = () => { st.paid = pcb.checked; };
   pay.append(pcb, r.vencimiento ? ` Ya lo pagué (el ${shortDate(dateOnly(r.vencimiento))})` : " Ya lo pagué");
   if (r.total_ars > 0 || r.total_usd > 0) b.append(pay);
-  b.append(P("fx-hint", `Vas a cargar ${n} ${n === 1 ? "gasto" : "gastos"}: ${[sumOn("ARS") && fmtARS.format(sumOn("ARS")), sumOn("USD") && fmtUSD.format(sumOn("USD"))].filter(Boolean).join(" + ") || "$ 0"}. Lo que el total tenga de más (cosas que no se leyeron) queda como "sin detalle".`));
+  b.append(P("fx-hint", `Vas a cargar ${n} ${n === 1 ? "gasto" : "gastos"}: ${[sumOn("ARS") && fmtARS.format(sumOn("ARS")), sumOn("USD") && fmtUSD.format(sumOn("USD"))].filter(Boolean).join(" + ") || "$ 0"}. Lo que el total tenga de más (cosas que no se leyeron) queda como "Sin anotar".`));
   const save = document.createElement("button"); save.type = "button"; save.className = "btn primary st-wide"; save.textContent = n ? `Cargar ${n} ${n === 1 ? "gasto" : "gastos"}` : "Listo"; save.onclick = stmtSave;
   b.append(save);
 }
@@ -4860,7 +4860,7 @@ function openCardPay(card){
   $("cpTitle").textContent = `Pagué ${card.name}`;
   $("cpDate").value = toLocalInput(new Date());
   $("cpAmount").value = pend.ars ? String(pend.ars).replace(".",",") : "";
-  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia queda como "Tarjeta sin detalle".`;
+  $("cpHint").textContent = `Tenés ${fmtARS.format(pend.ars)} en compras pendientes${pend.usd ? ` y ${fmtUSD.format(pend.usd)}` : ""}. Si pagaste más, la diferencia queda como "Sin anotar".`;
   $("cpErr").textContent = "";
   $("cpBg").classList.add("open"); $("cpSheet").classList.add("open");
 }
@@ -5042,7 +5042,7 @@ function renderDash(){
           const dd = document.createElement("span"); dd.className = "d"; dd.textContent = shortDate(dateOnly(x.date));
           const card = x.cardId ? cardById(x.cardId) : null;
           const tt = document.createElement("span"); tt.className = "t";
-          tt.textContent = [x.note || (x.payId ? "Tarjeta sin detalle" : c.name), card && card.name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null].filter(Boolean).join(" · ");
+          tt.textContent = [x.note || (x.payId ? "Sin anotar" : c.name), card && card.name, x.of > 1 ? `cuota ${x.cuota}/${x.of}` : null].filter(Boolean).join(" · ");
           const aa = document.createElement("span"); aa.className = "a"; aa.textContent = money(x.amount, x.currency);
           b.append(dd, tt, aa); b.onclick = () => openEntry(x);
           box2.append(b);
@@ -5119,7 +5119,7 @@ function cardDonut(card, xs, total, cur){
   const rank = id => id === "__stmt" ? 2 : id === "tarjeta_sd" ? 1 : 0;
   const sorted = Object.entries(byC).sort((a,b) => rank(a[0]) - rank(b[0]) || b[1] - a[1]);
   const color = id => id === "__stmt" ? SD_COLOR : id === "tarjeta_sd" ? "#7E776A" : catById(id).color;
-  const name = id => id === "__stmt" ? "Falta anotar" : id === "tarjeta_sd" ? "No sé qué es / sin detalle" : catById(id).name;
+  const name = id => id === "__stmt" ? "Sin anotar" : id === "tarjeta_sd" ? "No sé qué es" : catById(id).name;
   const wrap = document.createElement("div"); wrap.className = "donut-wrap";
   const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":`En qué se te va ${card.name}: ` + sorted.map(([id,v]) => `${name(id)} ${Math.round(v/total*100)}%`).join(", ")});
   const r = 78, C = 2*Math.PI*r; let off = 0;
@@ -5240,7 +5240,7 @@ function renderCardsDash(list, cur){
         ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
         const real = x => !x.payId && !x.stmtKey && !x.estc && !x.src.virtual;
         const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
-          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Falta anotar", ds.filter(x => x.stmtKey)], ["Impuestos y comisiones (estimado)", ds.filter(x => x.estc)], ["Sin anotar o intereses", ds.filter(x => x.payId)]].filter(([, a]) => a.length);
+          ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Sin anotar", ds.filter(x => x.stmtKey || x.payId)], ["Impuestos y comisiones (estimado)", ds.filter(x => x.estc)]].filter(([, a]) => a.length);
         const br = document.createElement("small"); br.className = "due-br"; br.textContent = parts.map(([n, a]) => `${n} ${both(a)}`).join(" · ");
         const w = document.createElement("div"); w.className = "due-wrap"; w.append(ln, br);
         const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
