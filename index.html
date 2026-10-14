@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-13.0010";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1130";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -1990,8 +1990,10 @@ const toTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 function parseAmount(s){
   s = String(s).trim().replace(/\s|\$|US/gi,"");
   if (!s) return NaN;
-  // "12.345,67" o "12345.67" o "12345,5"
-  if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  // "12.345,67", "12345.67", "12345,5" y también "1,000.50" (el último separador es el de los decimales)
+  if (s.includes(",") && s.includes(".")){ s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g,"").replace(",",".") : s.replace(/,/g,""); }
+  else if ((s.match(/,/g)||[]).length > 1) s = s.replace(/,/g,"");
+  else if (s.includes(",")) s = s.replace(",",".");
   else if ((s.match(/\./g)||[]).length > 1 || /\.\d{3}$/.test(s)) s = s.replace(/\./g,"");
   return Number(s);
 }
@@ -2015,6 +2017,11 @@ function fmtAmountStr(v){
     if (!(el instanceof HTMLInputElement) || el.inputMode !== "decimal") return;
     const raw = desc.get.call(el), caret = el.selectionStart ?? raw.length;
     let t = raw.replace(/[^\d.,]/g, "");
+    // Pegado de otro lado: "1,000.50" o "1000.50" (punto decimal) -> "1000,50"
+    if (e.inputType === "insertFromPaste" || (t.includes(",") && t.includes("."))){
+      const lc = t.lastIndexOf(","), ld = t.lastIndexOf(".");
+      if (ld > lc && /\.\d{1,2}$/.test(t) && (lc >= 0 || e.inputType === "insertFromPaste")) t = t.slice(0, ld).replace(/[.,]/g, "") + "," + t.slice(ld + 1);
+    }
     if (!t.includes(",") && /\.$/.test(t) && e.data === ".") t = t.slice(0, -1) + ",";   // punto tipeado al final = coma decimal
     t = t.replace(/\./g, "");
     const k = t.indexOf(","), hasC = k >= 0;
@@ -4380,7 +4387,7 @@ function renderStmt(){
     const prevM = bill ? monthOf(bill.close) : monthName(viewYear, viewMonth - 1);
     b.append(P("fx-hint st-which", bill && bill.close > dateOnly(toLocalInput(new Date()))
       ? `El resumen que se paga en ${monthName(viewYear, viewMonth)} todavía no cerró (cierra el ${shortDate(bill.close)}). Podés subir uno anterior: lo pongo en el mes en que vence.`
-      : `Para ${monthName(viewYear, viewMonth)} es el resumen que vence en ${monthName(viewYear, viewMonth)} (el banco suele llamarlo "${prevM}"). Si subís otro, lo pongo en el mes en que vence. Lo que ya tenías cargado no se repite: si no estoy seguro, te pregunto.`));
+      : `Para ${monthName(viewYear, viewMonth)} es el resumen que vence ${bill ? "el " + shortDate(bill.due) : "en " + monthName(viewYear, viewMonth)} (el banco suele llamarlo "${prevM}"). Si subís otro, lo pongo en el mes en que vence. Lo que ya tenías cargado no se repite: si no estoy seguro, te pregunto.`));
     if (!aiKey()){
       const n2 = P("fx-hint", "Sin Recy inteligente puedo leer el PDF del banco, pero no adivino las categorías (te las pregunto todas). Activándolo (gratis) también lee fotos y sugiere categorías. ");
       const a = document.createElement("button"); a.type = "button"; a.className = "linkbtn"; a.textContent = "Activar Recy"; a.onclick = () => { closeStmt(); openAi(); }; n2.append(a); b.append(n2);
@@ -4608,6 +4615,7 @@ function persist(){
   if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
 }
 
+let futureOk = false;
 $("sheet").addEventListener("submit", ev => {
   ev.preventDefault();
   if (mode === "cardpay"){
@@ -4641,6 +4649,12 @@ $("sheet").addEventListener("submit", ev => {
     closeSheet(); feedRecy(); render(); return;
   }
   const amount = parseAmount($("amount").value);
+  if (/^\s*-/.test($("amount").value)){ $("err").textContent = mode === "expense" ? "Poné el monto sin el signo menos. Si te devolvieron plata, cargalo como Ingreso." : "Poné el monto sin el signo menos."; $("amount").focus(); return; }
+  // Fecha muy adelante (más de un mes): confirmar, por si fue un error de tipeo
+  if (!futureOk && $("date").value && dateOnly($("date").value) - new Date() > 31 * 864e5){
+    uiConfirm(`La fecha es el ${shortDate(dateOnly($("date").value))} de ${dateOnly($("date").value).getFullYear()}, más de un mes adelante. ¿Está bien?`).then(ok => { if (ok){ futureOk = true; $("sheet").requestSubmit(); futureOk = false; } else $("date").focus(); });
+    return;
+  }
   if (!(amount > 0)){ $("err").textContent = "Poné un monto mayor a cero."; $("amount").focus(); return; }
   const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
   const fields = { amount: Math.round(amount*100)/100, currency, category: mode === "income" ? incomeKind : category, date, note: $("note").value.trim() };
@@ -5244,7 +5258,7 @@ function renderCardsDash(list, cur){
     const eb = document.createElement("div"); eb.className = "card-btns"; eb.append(up, ed);
     next.append(eb);
     if (card.rule !== "open"){ const h = document.createElement("small"); h.className = "st-hint";
-      h.textContent = bill ? (closed ? `El que vence en ${monthName(viewYear, viewMonth)} (el ${shortDate(bill.due)}); el banco suele llamarlo "${prevM}".` : `El de ${prevM} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`)
+      h.textContent = bill ? (closed ? `El que vence el ${shortDate(bill.due)}; el banco suele llamarlo "${prevM}".` : `El de ${prevM} cierra el ${shortDate(bill.close)}; subilo cuando te llegue.`)
         : `El que vence en ${monthName(viewYear, viewMonth)}; el banco suele llamarlo "${prevM}".`;
       next.append(h); }
     const reps = card.rule === "open" ? [] : findRepeats(card, viewYear, viewMonth);
