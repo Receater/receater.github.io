@@ -1897,7 +1897,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1250";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.1300";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2805,6 +2805,8 @@ function renderPayGroup(r){
 }
 
 /* Menú de un fijo por sesión (igual en Movimientos y en Fijos): ajustar sesiones del mes, pagar y editar */
+/* El último pago cargado de un fijo en ese mes (para corregirlo desde Fijos) */
+const fixPayOf = i => data.expenses.filter(e => e.fixedId === i.f.id && e.fixedKey === i.key).sort((a,b) => b.date.localeCompare(a.date))[0] || null;
 function fixSessActs(i){
   const box = document.createElement("div"); box.className = "fx-acts sess-acts";
   const paid = ["paid","cardpaid"].includes(i.state);
@@ -2815,6 +2817,7 @@ function fixSessActs(i){
   step.append(btn("−", "", () => { if (i.sessions > 0) adj(-1); }, "Una sesión menos"), n, btn("+", "", () => adj(1), "Una sesión más"));
   box.append(step);
   if (!paid) box.append(btn("Pagar", "primary", () => openSheetForFixed(i)));
+  const pe = fixPayOf(i); if (pe) box.append(btn("Ver pago", "", () => openSheet(pe)));
   box.append(btn("Editar", "", () => openFixed(i.f)));
   return box;
 }
@@ -5768,6 +5771,7 @@ function renderFixed(){
         const paid = ["paid","cardpaid"].includes(i.state);
         if (i.f.how === "card") btn("Monto de este mes", "", () => openFixMonth(i));
         else if (!paid) btn("Pagar", "primary", () => openSheetForFixed(i));
+        const pe = fixPayOf(i); if (pe) btn("Ver pago", "", () => openSheet(pe));
         btn("Editar", "", () => openFixed(i.f));
         t.append(acts);
       }
