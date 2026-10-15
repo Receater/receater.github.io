@@ -666,7 +666,7 @@ button{cursor:pointer}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
 .card-acts .chip{font-size:.85rem;padding:6px 11px;min-height:36px}
-.card-acts .chip-main{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.card-acts .chip-main{background:#1B2430;color:#fff;-webkit-text-fill-color:#fff;border-color:#1B2430;font-weight:700}
 .card-btns{display:flex;gap:8px 10px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .st-rev{flex-basis:100%;text-align:right;font-size:.84rem;padding:2px 0}
 .st-warn{flex-basis:100%;margin-top:8px;border:1.5px solid #E0A13A;background:#FFF6E3;color:#7A4B00;border-radius:6px;padding:9px 10px;text-align:left;font-weight:700;font-size:.86rem}
@@ -2007,7 +2007,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.1800";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.2230";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -7100,7 +7100,7 @@ async function checkNewVersion(){
   if (updShown || Date.now() - updLast < 60000) return; updLast = Date.now();
   try {
     const r = await fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
-    const m = (await r.text()).match(/const BUILD = "([^"]+)"/);
+    const m = (await r.text()).match(/const BUILD = "2026-10-14.2230"]+)"/);
     if (m && m[1] !== BUILD){
       updShown = true;
       const bar = document.createElement("div"); bar.className = "upd-bar"; bar.setAttribute("role", "status");
