@@ -665,6 +665,10 @@ button{cursor:pointer}
 .card-edit{border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
+.mclose{position:relative;margin:10px 0 0}
+.mclose-go{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 44px 12px 14px;border-radius:14px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#1B2430;cursor:pointer}
+.mclose-go>span:first-child{font-size:1.5rem}.mclose-go strong{display:block;text-transform:none}.mclose-go small{color:#5A6B76}
+.mclose-x{position:absolute;top:6px;right:6px;width:32px;height:32px;border:0;background:none;font-size:1.3rem;color:#5A6B76;cursor:pointer}
 .freq{margin:0 0 12px}.freq .chips{margin-top:6px}
 .cq{margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--line)}
 .cq-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.cq-h span{font-size:.78rem;color:var(--muted)}
@@ -1390,6 +1394,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 
   <div id="viewDash" hidden>
     <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
+    <div class="mclose" id="mClose" hidden></div>
     <div class="quick-row">
       <button type="button" class="quick-btn" id="askOpen"><span aria-hidden="true">💬</span><span><strong>Preguntale a Recy</strong><small>Sobre tus gastos</small></span></button>
       <button type="button" class="quick-btn" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá los próximos meses</small></span></button>
@@ -2015,7 +2020,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.2330";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-15.0000";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5550,7 +5555,48 @@ function openEntry(x){
   if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }   // (también los fijos estimados)
   if (data.expenses.includes(src) || data.incomes.includes(src)) openSheet(src);
 }
+/* Cierre del mes: cómo te fue en un período, en pocas líneas */
+function monthCloseText(y, m){
+  const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1;
+  const all = monthExpenses(y, m, "ARS"), sp = all.filter(x => !isSaving(x)), tot = sp.reduce((a,x) => a + x.amount, 0);
+  const sav = all.filter(isSaving).reduce((a,x) => a + x.amount, 0);
+  const prevSp = monthExpenses(py, pm, "ARS").filter(x => !isSaving(x)), prevT = prevSp.reduce((a,x) => a + x.amount, 0);
+  const inc = data.incomes.filter(e => inPeriod(e, y, m) && e.currency === "ARS").reduce((a,e) => a + e.amount, 0);
+  const L = [];
+  let l1 = `Gastaste ${f0ARS(tot)}`;
+  if (prevT > 0){ const d = (tot / prevT - 1) * 100; l1 += Math.abs(d) < 1 ? `, casi igual que en ${monthName(py, pm)}` : `, ${Math.round(Math.abs(d))}% ${d > 0 ? "más" : "menos"} que en ${monthName(py, pm)}`;
+    const r = INFL && INFL.m[`${y}-${String(m+1).padStart(2,"0")}`];
+    if (r != null){ const real = (tot / prevT / (1 + r / 100) - 1) * 100; l1 += ` (con la inflación de ${String(r).replace(".", ",")}%, ${Math.abs(real) < 1 ? "quedaste igual" : Math.round(Math.abs(real)) + "% " + (real > 0 ? "más" : "menos") + " de verdad"})`; } }
+  L.push(l1 + ".");
+  if (inc > 0){ const left = inc - tot - sav; L.push(left >= 0 ? `Cobraste ${f0ARS(inc)} y te sobraron ${f0ARS(left)}${sav > 0 ? `, además de los ${f0ARS(sav)} que ahorraste` : ""}. 👌` : `Cobraste ${f0ARS(inc)}: gastaste ${f0ARS(-left)} más de lo que entró.`); }
+  else if (sav > 0) L.push(`Ahorraste ${f0ARS(sav)}.`);
+  const bc = byCat(sp), top = Object.entries(bc).sort((a,b) => b[1] - a[1])[0];
+  if (top && tot > 0) L.push(`Donde más gastaste: ${catById(top[0]).name}, ${f0ARS(top[1])} (${Math.round(top[1] / tot * 100)}%).`);
+  const pc = byCat(prevSp), up = Object.entries(bc).filter(([k,v]) => pc[k] > 0 && v - pc[k] > Math.max(5000, tot * 0.03)).sort((a,b) => (b[1] - pc[b[0]]) - (a[1] - pc[a[0]]))[0];
+  if (up) L.push(`Lo que más subió: ${catById(up[0]).name}, ${f0ARS(up[1] - pc[up[0]])} más que el mes anterior.`);
+  const b = data.budgets || {}, ids = Object.keys(b).filter(id => b[id] > 0);
+  if (ids.length){ const over = ids.filter(id => (bc[id] || 0) > b[id]);
+    L.push(over.length ? `Te pasaste en ${over.length} de ${ids.length} topes: ${over.map(id => catById(id).name).join(", ")}.` : `Respetaste todos tus topes 💪`); }
+  return { title: `Cómo te fue en ${monthName(y, m)}`, lines: L, tot };
+}
+function renderMonthClose(){
+  const box = $("mClose"); box.innerHTML = ""; box.hidden = true;
+  if (!isCurrentPeriod(viewYear, viewMonth)) return;
+  const py = viewMonth === 0 ? viewYear - 1 : viewYear, pm = viewMonth === 0 ? 11 : viewMonth - 1, key = monthKey(py, pm);
+  if ((data.closeSeen || {})[key] || (new Date() - payDate(viewYear, viewMonth)) > 15 * 864e5) return;
+  const c = monthCloseText(py, pm); if (!c.tot) return;
+  box.hidden = false;
+  const go = document.createElement("button"); go.type = "button"; go.className = "mclose-go";
+  go.innerHTML = '<span aria-hidden="true">📒</span><span><strong></strong><small>Tocá para ver el cierre del mes</small></span>';
+  go.querySelector("strong").textContent = `Cerró ${monthName(py, pm)}`;
+  go.onclick = async () => { await uiDialog({ msg: c.title + "\n\n" + c.lines.map(t => "• " + t).join("\n"), ok: "Listo" });
+    data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
+  const x = document.createElement("button"); x.type = "button"; x.className = "mclose-x"; x.textContent = "×"; x.setAttribute("aria-label", "Ocultar");
+  x.onclick = () => { data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
+  box.append(go, x);
+}
 function renderDash(){
+  renderMonthClose();
   const cur = dashCur;
   const list = monthExpenses(viewYear, viewMonth, cur);
   const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
