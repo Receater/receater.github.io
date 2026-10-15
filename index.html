@@ -218,8 +218,8 @@ button{cursor:pointer}
 .range-btn{border:0;background:none;color:var(--muted);font-size:.85rem;padding:2px 4px;text-decoration:underline dotted;text-underline-offset:3px}
 #payBg{z-index:12}
 #paySheet{z-index:13}
-.opts{display:grid;gap:10px}
-.opt{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.opts{display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+.opt{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
 .opt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent)}
 .opt strong{display:block}
 .opt span{display:block;color:var(--muted);font-size:.88rem;margin-top:2px}
@@ -408,6 +408,9 @@ button{cursor:pointer}
 .cur-box{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .cur-box-h{margin:0 0 2px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .cur-box .amount-row input{font-size:1.7rem}
+.card-head{flex-wrap:wrap;row-gap:6px}.card-head>h2{min-width:0}
+.pay-boxes{grid-template-columns:minmax(0,1fr)}.cur-box{min-width:0}.cur-box input{min-width:0;max-width:100%}.cur-box .two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.opt-extra select{min-width:0;flex:1 1 auto;max-width:100%}
 .pay-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding:0 4px;font-size:.95rem}
 .pay-total strong{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:1.2rem}
 
@@ -2034,7 +2037,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-15.1450";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-15.1500";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
