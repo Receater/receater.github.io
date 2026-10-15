@@ -2037,7 +2037,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-15.1500";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-15.1500b";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5134,7 +5134,9 @@ function openSheet(exp){
   $("typeTabs").hidden = !!exp;
   setMode(exp ? (isIncome(exp) ? "income" : exp.fx ? "fx" : "expense") : "expense");
   $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
-  setTimeout(() => (mode === "fx" ? $("fxUsd") : $("amount")).focus(), 120);
+  // Arranca arriba de todo: el foco no tiene que hacer bajar la hoja (ni la página)
+  $("sheet").scrollTop = 0;
+  setTimeout(() => { const y = window.scrollY; (mode === "fx" ? $("fxUsd") : $("amount")).focus({ preventScroll: true }); $("sheet").scrollTop = 0; window.scrollTo(0, y); }, 120);
 }
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
 
