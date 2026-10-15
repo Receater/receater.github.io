@@ -1379,6 +1379,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <button type="button" class="small-btn primary" id="cloudLogin">Entrar con Google</button>
       <button type="button" class="small-btn" id="cloudLater">Ahora no</button>
     </div>
+    <p class="fx-hint" style="margin:8px 0 0">Al entrar aceptás los <a href="terminos.html" target="_blank" rel="noopener">Términos</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a>.</p>
   </div>
 
   <div id="viewList">
@@ -1928,6 +1929,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
   <div class="set-group">
     <a class="set-row as-btn" href="privacidad.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Privacidad</strong><span>Qué datos usa Receater y dónde se guardan.</span></div><span class="chev2">›</span></a>
+    <a class="set-row as-btn" href="terminos.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Términos de uso</strong><span>Las reglas de la app, en corto.</span></div><span class="chev2">›</span></a>
   </div>
   <p class="fx-hint" id="setVer" style="text-align:center;margin-top:20px"></p>
   <div class="actions"><button type="button" class="btn ghost" id="setClose">Listo</button></div>
@@ -2037,7 +2039,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-15.1500b";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-15.1745";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
