@@ -7100,7 +7100,7 @@ async function checkNewVersion(){
   if (updShown || Date.now() - updLast < 60000) return; updLast = Date.now();
   try {
     const r = await fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
-    const m = (await r.text()).match(/const BUILD = "2026-10-14.2230"]+)"/);
+    const m = (await r.text()).match(/const BUILD = "([^"]+)"/);
     if (m && m[1] !== BUILD){
       updShown = true;
       const bar = document.createElement("div"); bar.className = "upd-bar"; bar.setAttribute("role", "status");
