@@ -665,6 +665,11 @@ button{cursor:pointer}
 .card-edit{border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
+.sp-body{padding:4px 2px 2px}.sp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.sp-row span{display:flex;flex-direction:column}.sp-row small{font-size:.76rem;color:var(--muted)}.sp-row strong{white-space:nowrap}
+.sp-tap{cursor:pointer}.sp-total{border-bottom:0;border-top:2px solid var(--ink);margin-top:2px;font-size:1.08rem}.sp-total strong{color:#1E7A50;font-size:1.2rem}
+.sp-total.neg strong,.sp-row .neg{color:#C9374B}.sp-next{margin-top:14px}.sp-nh{font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sp-warn{color:#9A6A00 !important}
 .mclose{position:relative;margin:10px 0 0}
 .mclose-go{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 44px 12px 14px;border-radius:14px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#1B2430;cursor:pointer}
 .mclose-go>span:first-child{font-size:1.5rem}.mclose-go strong{display:block;text-transform:none}.mclose-go small{color:#5A6B76}
@@ -1395,6 +1400,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div id="viewDash" hidden>
     <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
     <div class="mclose" id="mClose" hidden></div>
+    <div id="savePlanBox"></div>
     <div class="quick-row">
       <button type="button" class="quick-btn" id="askOpen"><span aria-hidden="true">💬</span><span><strong>Preguntale a Recy</strong><small>Sobre tus gastos</small></span></button>
       <button type="button" class="quick-btn" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá los próximos meses</small></span></button>
@@ -2020,7 +2026,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-15.0000";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-15.0030";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -3549,8 +3555,16 @@ function updateCardWhen(){
   ps.innerHTML = ""; for (let i = 0; i < n; i++){ const o = document.createElement("option"); o.value = i; o.textContent = i; ps.append(o); }
   ps.value = Math.min(prev, n - 1);
   const fake = { method:"card", cardId, installments: n, paidInstallments: Number(ps.value) || 0, date:`${$("date").value || toLocalInput(new Date())}T12:00`, amount:1 };
-  $("cardWhen").textContent = cardWhenText(fake) + ". Te resta recién cuando se paga.";
+  let extra = "";
+  const amt = parseAmount($("amount").value);
+  if (!editing && amt > 0 && currency === "ARS" && mode === "expense"){
+    const sch = cardSchedule({ ...fake, amount: amt }).filter(Boolean);
+    if (sch.length){ const [py, pm] = periodOf(sch[0]), per = amt / n, B = savePlan(py, pm), A = round2(B.save - per);
+      if (B.inc) extra = ` Con esto, en ${monthName(py, pm)} te quedarían ${A >= 0 ? f0ARS(A) : "−" + f0ARS(-A)} para ahorrar (en vez de ${f0ARS(B.save)}).`; }
+  }
+  $("cardWhen").textContent = cardWhenText(fake) + ". Te resta recién cuando se paga." + extra;
 }
+$("amount").addEventListener("input", () => { if (method === "card") updateCardWhen(); });
 $("cuotas").onchange = updateCardWhen;
 $("paidCuotas").onchange = updateCardWhen;
 $("date").addEventListener("change", updateCardWhen);
@@ -5555,6 +5569,91 @@ function openEntry(x){
   if (src.virtual){ const f = fixById(src.fixedId); if (f) openFixed(f); return; }   // (también los fijos estimados)
   if (data.expenses.includes(src) || data.incomes.includes(src)) openSheet(src);
 }
+/* Cuánto podés ahorrar en un período: sueldo − tarjeta que vence − fijos sin tarjeta − día a día */
+function dailyAvg(){
+  if (data.dailyBudget > 0) return { v: data.dailyBudget, manual: true, n: 0 };
+  const [cy, cm] = periodOf(new Date()), vals = [];
+  for (let k = 1; k <= 3; k++){
+    const d = new Date(cy, cm - k, 1), xs = monthExpenses(d.getFullYear(), d.getMonth(), "ARS")
+      .filter(x => !x.cardId && !isFixedEnt(x) && !(x.src && x.src.virtual) && !isSaving(x) && !x.jarId && !(x.src && x.src.jarId));
+    const t = xs.reduce((a,x) => a + x.amount, 0); if (t > 0) vals.push(t);
+  }
+  return { v: vals.length ? round2(vals.reduce((a,b) => a + b, 0) / vals.length) : 0, manual: false, n: vals.length };
+}
+function lastSalary(){ const s2 = data.incomes.filter(e => e.category === "sueldo" && e.currency === "ARS").sort((a,b) => b.date.localeCompare(a.date))[0]; return s2 ? s2.amount : 0; }
+function savePlan(y, m, extraCard = 0){
+  const rate = fixUsdRate() || data.lastRate || 0;
+  let inc = data.incomes.filter(e => inPeriod(e, y, m) && e.currency === "ARS" && e.category === "sueldo").reduce((a,e) => a + e.amount, 0), incEst = false;
+  if (!inc){ inc = lastSalary(); incEst = true; }
+  const fx = fixInstances(y, m), val = i => (i.expected || i.paid || 0) * (i.currency === "USD" ? rate : 1);
+  const fixNo = fx.filter(i => i.f.how !== "card").reduce((a,i) => a + val(i), 0), fixCard = fx.filter(i => i.f.how === "card").reduce((a,i) => a + val(i), 0);
+  const cardX = monthExpenses(y, m).filter(x => x.cardId && !(x.src && x.src.virtual));
+  const buys = cardX.reduce((a,x) => a + (x.currency === "USD" ? x.amount * rate : x.amount), 0);
+  const cuotas = cardX.filter(x => x.of > 1).reduce((a,x) => a + (x.currency === "USD" ? x.amount * rate : x.amount), 0);
+  const card = round2(buys + fixCard + extraCard), daily = dailyAvg();
+  return { y, m, inc, incEst, card, cuotas: round2(cuotas), buys: round2(buys - cuotas), fixCard: round2(fixCard), fixNo: round2(fixNo), daily: daily.v, dailyInfo: daily,
+    save: round2(inc - card - fixNo - daily.v) };
+}
+function renderSavePlan(){
+  const box = $("savePlanBox"); box.innerHTML = "";
+  if (!isCurrentPeriod(viewYear, viewMonth)) return;
+  const P = savePlan(viewYear, viewMonth); if (!P.inc) return;
+  const sec = document.createElement("section"); sec.className = "clip sp";
+  const clamp = document.createElement("div"); clamp.className = "clip-clamp"; clamp.setAttribute("aria-hidden", "true");
+  const paper = document.createElement("div"); paper.className = "clip-paper";
+  const top = document.createElement("div"); top.className = "cal-top";
+  top.innerHTML = '<div class="cal-title"></div><div class="cal-sub"></div>';
+  top.firstChild.textContent = `Cuánto podés ahorrar en ${monthName(viewYear, viewMonth)}`;
+  top.lastChild.textContent = P.incEst ? "con tu último sueldo (todavía no cargaste el de este mes)" : "con lo que ya sabemos que se va";
+  paper.append(top);
+  const body = document.createElement("div"); body.className = "sp-body";
+  const row = (lbl, v, sub, cls) => { const r = document.createElement("div"); r.className = "sp-row" + (cls ? " " + cls : "");
+    const a = document.createElement("span"); a.textContent = lbl; if (sub){ const sm = document.createElement("small"); sm.textContent = sub; a.append(sm); }
+    const b = document.createElement("strong"); b.textContent = v; r.append(a, b); body.append(r); return r; };
+  row("Sueldo", f0ARS(P.inc));
+  if (P.card) row("− Tarjeta que vence", f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
+  if (P.fixNo) row("− Fijos sin tarjeta", f0ARS(P.fixNo));
+  const dr = row("− Día a día", f0ARS(P.daily), P.dailyInfo.manual ? "el número que pusiste · tocá para cambiar" : P.dailyInfo.n ? `promedio en efectivo/débito de ${P.dailyInfo.n} ${P.dailyInfo.n > 1 ? "meses" : "mes"} · tocá para cambiar` : "sin datos todavía · tocá para ponerlo", "sp-tap");
+  dr.onclick = editDaily;
+  row(P.save >= 0 ? "Podés ahorrar" : "Te faltaría", f0ARS(Math.abs(P.save)), "", "sp-total" + (P.save < 0 ? " neg" : ""));
+  const sav = monthExpenses(viewYear, viewMonth, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
+  if (sav > 0 && P.save > 0){ const h = document.createElement("p"); h.className = "fx-hint"; h.textContent = sav >= P.save ? `Ya separaste ${f0ARS(sav)} 💪 llegaste.` : `Ya separaste ${f0ARS(sav)}, te faltan ${f0ARS(P.save - sav)}.`; body.append(h); }
+  // Próximos 3 meses
+  const nx = document.createElement("div"); nx.className = "sp-next";
+  const h4 = document.createElement("div"); h4.className = "sp-nh"; h4.textContent = "Los próximos meses"; nx.append(h4);
+  let prev = P;
+  for (let k = 1; k <= 3; k++){
+    const d = new Date(viewYear, viewMonth + k, 1), Q = savePlan(d.getFullYear(), d.getMonth());
+    const r = document.createElement("div"); r.className = "sp-row";
+    const a = document.createElement("span"); a.textContent = monthName(Q.y, Q.m)[0].toUpperCase() + monthName(Q.y, Q.m).slice(1);
+    const sm = document.createElement("small"); sm.textContent = `tarjeta ${f0ARS(Q.card)}`; a.append(sm);
+    const b = document.createElement("strong"); b.textContent = (Q.save < 0 ? "−" : "") + f0ARS(Math.abs(Q.save)); if (Q.save < 0) b.className = "neg";
+    r.append(a, b); nx.append(r);
+    if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03)){
+      const w = document.createElement("p"); w.className = "fx-hint sp-warn";
+      w.textContent = `Por lo que vas comprando con tarjeta, en ${monthName(Q.y, Q.m)} vas a poder ahorrar ${f0ARS(Q.card - P.card)} menos que ahora.`; nx.append(w); }
+    prev = Q;
+  }
+  const nt = document.createElement("p"); nt.className = "fx-hint"; nt.textContent = "Cada mes suma lo que ya compraste con tarjeta y vence ahí. Si seguís comprando, baja."; nx.append(nt);
+  body.append(nx);
+  if (data.jars.some(j => j.currency === "ARS") && P.save > 0){
+    const go = document.createElement("button"); go.type = "button"; go.className = "small-btn primary"; go.style.marginTop = "10px"; go.textContent = "Mandar a un frasco"; go.onclick = () => setTab("jars"); body.append(go); }
+  paper.append(body); sec.append(clamp, paper); box.append(sec);
+}
+async function editDaily(){
+  const cur = data.dailyBudget > 0 ? data.dailyBudget : 0, avg = (() => { const d0 = data.dailyBudget; data.dailyBudget = 0; const a = dailyAvg(); data.dailyBudget = d0; return a; })();
+  const bg = document.createElement("div"); bg.className = "dlg-bg";
+  const box = document.createElement("div"); box.className = "dlg";
+  box.innerHTML = '<p>¿Cuánto gastás por mes en el día a día (sin tarjeta ni fijos)?</p><input class="input" inputmode="decimal" autocomplete="off"><p class="fx-hint" style="margin:8px 0 14px"></p><div class="dlg-acts"></div>';
+  const inp = box.querySelector("input"); inp.value = cur ? String(cur) : ""; inp.placeholder = avg.v ? String(Math.round(avg.v)) : "Ej: 300000";
+  box.querySelector(".fx-hint").textContent = avg.v ? `Tu promedio real es ${f0ARS(avg.v)}. Dejalo vacío para usar el promedio.` : "Dejalo vacío para que lo calcule solo cuando tengas datos.";
+  const acts = box.querySelector(".dlg-acts");
+  const close = () => bg.remove();
+  const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
+  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar";
+  o.onclick = () => { const v = parseAmount(inp.value); data.dailyBudget = v > 0 ? round2(v) : 0; persist(); close(); render(); };
+  acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => inp.focus(), 50);
+}
 /* Cierre del mes: cómo te fue en un período, en pocas líneas */
 function monthCloseText(y, m){
   const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1;
@@ -5596,7 +5695,7 @@ function renderMonthClose(){
   box.append(go, x);
 }
 function renderDash(){
-  renderMonthClose();
+  renderMonthClose(); renderSavePlan();
   const cur = dashCur;
   const list = monthExpenses(viewYear, viewMonth, cur);
   const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
