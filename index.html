@@ -665,6 +665,7 @@ button{cursor:pointer}
 .card-edit{border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
+.freq{margin:0 0 12px}.freq .chips{margin-top:6px}
 .cq{margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--line)}
 .cq-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.cq-h span{font-size:.78rem;color:var(--muted)}
 .cq-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;align-items:end}
@@ -1472,6 +1473,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <p>✨ <strong>Recy puede cargar por vos.</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Para eso necesita que lo actives una vez.</p>
     <button type="button" class="small-btn primary" id="aiInviteBtn">Activar</button>
   </div>
+  <div class="freq" id="freqBox" hidden><span class="lbl">Lo de siempre</span><div class="chips" id="freqChips"></div></div>
   <div class="tell" id="tellBox">
     <div class="tell-busy" id="tellBusy" hidden role="status" aria-live="polite">
       <span class="spin" aria-hidden="true"></span>
@@ -2013,7 +2015,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.2300";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.2330";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -3462,6 +3464,36 @@ function renderItem(e){
 /* ---------- Hoja de carga ---------- */
 let editing = null, currency = "ARS", category = "super", incomeKind = "sueldo", mode = "expense";
 let method = data.lastMethod || "cash", cardId = null;
+/* Gastos frecuentes: lo que cargaste 3+ veces en los últimos 3 meses (mismo nombre), para cargarlo de un toque */
+function frequentExpenses(){
+  const lim = Date.now() - 92 * 864e5, g = {};
+  data.expenses.forEach(e => {
+    if (isIncome(e) || e.fx || e.fixedId || e.source === "statement" || e.repaysId || e.jarId || !e.note || new Date(e.date) < lim) return;
+    const k = e.note.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (!k) return;
+    (g[k] = g[k] || []).push(e);
+  });
+  return Object.values(g).filter(a => a.length >= 3).map(a => { a.sort((x,y) => y.date.localeCompare(x.date)); return { last: a[0], n: a.length }; })
+    .sort((a,b) => b.n - a.n).slice(0, 5);
+}
+function renderFreq(){
+  const box = $("freqBox"), ch = $("freqChips"); ch.innerHTML = "";
+  const list = !editing && mode === "expense" ? frequentExpenses() : [];
+  box.hidden = !list.length;
+  list.forEach(({ last: e }) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip";
+    const t = document.createElement("span"); t.className = "card-tag"; t.style.background = catById(e.category).color; b.append(t, `${e.note} · ${money(e.amount, e.currency)}`);
+    b.onclick = () => {
+      $("amount").value = String(e.amount).replace(".", ","); $("note").value = e.note;
+      category = e.category; setCurrency(e.currency);
+      method = e.method || "cash"; cardId = e.method === "card" && cardById(e.cardId) ? e.cardId : null; if (method === "card" && !cardId) method = "cash";
+      $("cuotas").value = 1; renderMethods(); renderCats();
+      ch.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      $("amount").focus(); $("amount").select();
+    };
+    ch.append(b);
+  });
+}
 function setMode(m){
   mode = m;
   document.querySelectorAll("#typeTabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.type === m)));
@@ -3474,6 +3506,7 @@ function setMode(m){
   const tellOk = !editing && (m === "expense" || m === "income");
   $("tellBox").hidden = !tellOk || !aiKey();
   $("aiInvite").hidden = !tellOk || !!aiKey();
+  renderFreq();
   updateBorrowField(); updateLendField();
   if (typeof renderItems === "function") renderItems();
   if (typeof updateFixField === "function") updateFixField();
