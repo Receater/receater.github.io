@@ -665,6 +665,12 @@ button{cursor:pointer}
 .card-edit{border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
+.cq{margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--line)}
+.cq-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.cq-h span{font-size:.78rem;color:var(--muted)}
+.cq-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px;align-items:end}
+.cq-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--ink);min-height:110px}
+.cq-v{font-size:.72rem;font-weight:700;white-space:nowrap}.cq-bar{width:70%;border-radius:6px 6px 2px 2px;background:var(--accent)}
+.cq-m{font-size:.78rem;color:var(--muted);text-transform:capitalize}
 .card-acts .chip{font-size:.85rem;padding:6px 11px;min-height:36px}
 .card-acts .chip-main{background:#1B2430;color:#fff;-webkit-text-fill-color:#fff;border-color:#1B2430;font-weight:700}
 .card-btns{display:flex;gap:8px 10px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
@@ -802,7 +808,7 @@ select.input,.opt-extra select,.payday select,#cuotas,#paidCuotas{-webkit-appear
 .dlg::before{content:"";position:absolute;left:50%;top:-9px;width:74px;height:20px;margin-left:-37px;transform:rotate(-2deg);
   background:rgba(246,216,96,.85);box-shadow:0 1px 2px rgba(0,0,0,.15)}
 @keyframes dlgPop{from{transform:translateY(10px) scale(.97);opacity:0}to{transform:none;opacity:1}}
-.dlg p{margin:0 0 18px;font-size:1.02rem;line-height:1.45;padding:0 4px;overflow-wrap:anywhere}
+.dlg p{margin:0 0 18px;font-size:1.02rem;line-height:1.45;padding:0 4px;overflow-wrap:anywhere;white-space:pre-line}
 .dlg-acts{display:flex;gap:10px}
 .dlg-acts .btn{flex:1;border-radius:6px !important;font-family:inherit;font-weight:700;min-height:46px}
 .dlg-acts .btn.primary{background:#1F1F1F;color:#FBF8F1;border:1.5px solid #1F1F1F}
@@ -2007,7 +2013,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-14.2230";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-14.2300";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5831,6 +5837,45 @@ function renderCardsDash(list, cur){
     if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
     box.append(el);
   });
+  box.append(cuotasAhead(all));
+}
+/* Cuotas que vienen: cuánto se te va en cuotas los próximos 6 meses y cuándo se liberan */
+function cuotasAhead(all){
+  const frag = document.createDocumentFragment();
+  const cq = all.filter(x => x.cardId && x.of > 1);
+  const months = []; for (let k = 1; k <= 6; k++){ const d = new Date(viewYear, viewMonth + k, 1); months.push([d.getFullYear(), d.getMonth()]); }
+  const cols = months.map(([y,m]) => { const xs = cq.filter(x => inPeriod(x, y, m));
+    return { y, m, xs, ars: xs.filter(x => x.currency === "ARS").reduce((s2,x) => s2 + x.amount, 0), usd: xs.filter(x => x.currency === "USD").reduce((s2,x) => s2 + x.amount, 0) }; });
+  if (!cols.some(c => c.ars || c.usd)) return frag;
+  const sec = document.createElement("div"); sec.className = "cq";
+  const h = document.createElement("div"); h.className = "cq-h"; h.innerHTML = "<strong>Cuotas que vienen</strong><span>tocá un mes para ver el detalle</span>"; sec.append(h);
+  const max = Math.max(...cols.map(c => c.ars), 1), bars = document.createElement("div"); bars.className = "cq-bars";
+  cols.forEach(c => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "cq-col";
+    const v = document.createElement("span"); v.className = "cq-v"; v.textContent = c.ars ? "$" + (c.ars >= 1e6 ? String(Math.round(c.ars / 1e5) / 10).replace(".", ",") + "M" : Math.round(c.ars / 1000) + "k") : "—";
+    const bar = document.createElement("span"); bar.className = "cq-bar"; bar.style.height = Math.max(c.ars ? 6 : 2, Math.round(c.ars / max * 64)) + "px";
+    const l = document.createElement("span"); l.className = "cq-m"; l.textContent = monthName(c.y, c.m, { month: "short" }).replace(".", "");
+    b.append(v, bar, l);
+    b.onclick = () => {
+      if (!c.xs.length){ uiAlert(`En ${monthName(c.y, c.m)} no tenés cuotas.`); return; }
+      const byE = c.xs.slice().sort((a,b2) => b2.amount - a.amount).map(x => `• ${x.note || catById(x.category).name}: cuota ${x.cuota} de ${x.of}, ${money(x.amount, x.currency)}${x.cuota === x.of ? " (la última)" : ""}`);
+      uiAlert(`Cuotas de ${monthName(c.y, c.m)}: ${fmtARS.format(c.ars)}${c.usd ? " + " + fmtUSD.format(c.usd) : ""}\n\n${byE.join("\n")}`);
+    };
+    bars.append(b);
+  });
+  sec.append(bars);
+  // Cuándo se libera algo: el primer mes en que terminan cuotas
+  const cur = cq.filter(x => inPeriod(x, viewYear, viewMonth));
+  const arr = [{ y: viewYear, m: viewMonth, xs: cur }, ...cols.slice(0, 5)], ends = arr.map(c => c.xs.filter(x => x.cuota === x.of));
+  const k = ends.findIndex(e => e.length);
+  if (k >= 0){
+    const fin = ends[k].filter(x => x.currency === "ARS"), free = fin.reduce((s2,x) => s2 + x.amount, 0);
+    const names = [...new Set(fin.map(x => x.note || catById(x.category).name))];
+    if (free > 0){ const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "8px 0 0";
+      p.textContent = `Después de ${monthName(arr[k].y, arr[k].m)} se te liberan ${f0ARS(free)} por mes (termina${names.length > 1 ? "n" : ""} ${names.slice(0,3).join(", ")}${names.length > 3 ? " y más" : ""}).`;
+      sec.append(p); }
+  }
+  frag.append(sec); return frag;
 }
 
 /* ---------- Recy en cada pestaña ---------- */
