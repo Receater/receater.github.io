@@ -35,6 +35,6 @@ Ver [DEPLOY.md](DEPLOY.md).
 
 ## Pendiente
 
-- Leer tickets con foto (necesita un pequeño servidor para no exponer la API key).
-- Préstamos sueltos.
-- Cotización del dólar automática.
+- Versión de escritorio: misma estética y contenido, pero aprovechando el ancho de la pantalla (columnas) en vez de scrollear todo.
+- Importar movimientos de Mercado Pago / banco subiendo el archivo.
+- Reconexión con Drive sin cartel (necesita un servidor mínimo, ej. Cloudflare Worker).

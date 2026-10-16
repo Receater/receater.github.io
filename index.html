@@ -323,6 +323,8 @@ section[data-fold].folded>.sec-head>button{display:none}
 .wd-bar{width:72%;border-radius:6px 6px 2px 2px;background:#C9CFD8}.wd-col.top .wd-bar{background:var(--accent)}.wd-col.we .wd-bar{background:#E08A2C}.wd-m{font-size:.76rem;color:var(--muted)}
 .share-month{display:block;margin:18px auto 0}
 .unfold-all{display:block;margin:6px auto 0;font-size:.85rem}
+.ic{width:1.15em;height:1.15em;vertical-align:-.2em;fill:currentColor;flex:none;display:inline-block}
+.quick-btn>span[aria-hidden] .ic,.mclose-go>span:first-child .ic{width:26px;height:26px}
 .usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
 .usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
 .brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
@@ -1412,6 +1414,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </style>
 </head>
 <body>
+<!-- Íconos: Phosphor Icons (MIT) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol><symbol id="i-chat" viewBox="0 0 256 256"><path d="M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128ZM84,116a12,12,0,1,0,12,12A12,12,0,0,0,84,116Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,172,116Zm60,12A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Zm-16,0A88,88,0,1,0,51.81,172.06a8,8,0,0,1,.66,6.54L40,216,77.4,203.53a7.85,7.85,0,0,1,2.53-.42,8,8,0,0,1,4,1.08A88,88,0,0,0,216,128Z"/></symbol><symbol id="i-calc" viewBox="0 0 256 256"><path d="M80,120h96a8,8,0,0,0,8-8V64a8,8,0,0,0-8-8H80a8,8,0,0,0-8,8v48A8,8,0,0,0,80,120Zm8-48h80v32H88ZM200,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V40A16,16,0,0,0,200,24Zm0,192H56V40H200ZM100,148a12,12,0,1,1-12-12A12,12,0,0,1,100,148Zm40,0a12,12,0,1,1-12-12A12,12,0,0,1,140,148Zm40,0a12,12,0,1,1-12-12A12,12,0,0,1,180,148Zm-80,40a12,12,0,1,1-12-12A12,12,0,0,1,100,188Zm40,0a12,12,0,1,1-12-12A12,12,0,0,1,140,188Zm40,0a12,12,0,1,1-12-12A12,12,0,0,1,180,188Z"/></symbol><symbol id="i-image" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,16V158.75l-26.07-26.06a16,16,0,0,0-22.63,0l-20,20-44-44a16,16,0,0,0-22.62,0L40,149.37V56ZM40,172l52-52,80,80H40Zm176,28H194.63l-36-36,20-20L216,181.38V200ZM144,100a12,12,0,1,1,12,12A12,12,0,0,1,144,100Z"/></symbol><symbol id="i-camera" viewBox="0 0 256 256"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.71,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm8,136a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V80a8,8,0,0,1,8-8H80a8,8,0,0,0,6.66-3.56L100.28,48h55.43l13.63,20.44A8,8,0,0,0,176,72h32a8,8,0,0,1,8,8ZM128,88a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,88Zm0,72a28,28,0,1,1,28-28A28,28,0,0,1,128,160Z"/></symbol><symbol id="i-pencil" viewBox="0 0 256 256"><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/></symbol><symbol id="i-sparkle" viewBox="0 0 256 256"><path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"/></symbol><symbol id="i-warning" viewBox="0 0 256 256"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z"/></symbol><symbol id="i-target" viewBox="0 0 256 256"><path d="M221.87,83.16A104.1,104.1,0,1,1,195.67,49l22.67-22.68a8,8,0,0,1,11.32,11.32l-96,96a8,8,0,0,1-11.32-11.32l27.72-27.72a40,40,0,1,0,17.87,31.09,8,8,0,1,1,16-.9,56,56,0,1,1-22.38-41.65L184.3,60.39a87.88,87.88,0,1,0,23.13,29.67,8,8,0,0,1,14.44-6.9Z"/></symbol><symbol id="i-piggy" viewBox="0 0 256 256"><path d="M192,116a12,12,0,1,1-12-12A12,12,0,0,1,192,116ZM152,64H112a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm96,48v32a24,24,0,0,1-24,24h-2.36l-16.21,45.38A16,16,0,0,1,190.36,224H177.64a16,16,0,0,1-15.07-10.62L160.65,208h-57.3l-1.92,5.38A16,16,0,0,1,86.36,224H73.64a16,16,0,0,1-15.07-10.62L46,178.22a87.69,87.69,0,0,1-21.44-48.38A16,16,0,0,0,16,144a8,8,0,0,1-16,0,32,32,0,0,1,24.28-31A88.12,88.12,0,0,1,112,32H216a8,8,0,0,1,0,16H194.61a87.93,87.93,0,0,1,30.17,37c.43,1,.85,2,1.25,3A24,24,0,0,1,248,112Zm-16,0a8,8,0,0,0-8-8h-3.66a8,8,0,0,1-7.64-5.6A71.9,71.9,0,0,0,144,48H112A72,72,0,0,0,58.91,168.64a8,8,0,0,1,1.64,2.71L73.64,208H86.36l3.82-10.69A8,8,0,0,1,97.71,192h68.58a8,8,0,0,1,7.53,5.31L177.64,208h12.72l18.11-50.69A8,8,0,0,1,216,152h8a8,8,0,0,0,8-8Z"/></symbol><symbol id="i-ticket" viewBox="0 0 256 256"><path d="M232,104a8,8,0,0,0,8-8V64a16,16,0,0,0-16-16H32A16,16,0,0,0,16,64V96a8,8,0,0,0,8,8,24,24,0,0,1,0,48,8,8,0,0,0-8,8v32a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V160a8,8,0,0,0-8-8,24,24,0,0,1,0-48ZM32,167.2a40,40,0,0,0,0-78.4V64H88V192H32Zm192,0V192H104V64H224V88.8a40,40,0,0,0,0,78.4Z"/></symbol><symbol id="i-list" viewBox="0 0 256 256"><path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"/></symbol><symbol id="i-news" viewBox="0 0 256 256"><path d="M88,112a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H96A8,8,0,0,1,88,112Zm8,40h80a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM232,64V184a24,24,0,0,1-24,24H32A24,24,0,0,1,8,184.11V88a8,8,0,0,1,16,0v96a8,8,0,0,0,16,0V64A16,16,0,0,1,56,48H216A16,16,0,0,1,232,64Zm-16,0H56V184a23.84,23.84,0,0,1-1.37,8H208a8,8,0,0,0,8-8Z"/></symbol><symbol id="i-pin" viewBox="0 0 256 256"><path d="M235.32,81.37,174.63,20.69a16,16,0,0,0-22.63,0L98.37,74.49c-10.66-3.34-35-7.37-60.4,13.14a16,16,0,0,0-1.29,23.78L85,159.71,42.34,202.34a8,8,0,0,0,11.32,11.32L96.29,171l48.29,48.29A16,16,0,0,0,155.9,224c.38,0,.75,0,1.13,0a15.93,15.93,0,0,0,11.64-6.33c19.64-26.1,17.75-47.32,13.19-60L235.33,104A16,16,0,0,0,235.32,81.37ZM224,92.69h0l-57.27,57.46a8,8,0,0,0-1.49,9.22c9.46,18.93-1.8,38.59-9.34,48.62L48,100.08c12.08-9.74,23.64-12.31,32.48-12.31A40.13,40.13,0,0,1,96.81,91a8,8,0,0,0,9.25-1.51L163.32,32,224,92.68Z"/></symbol><symbol id="i-gear" viewBox="0 0 256 256"><path d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Zm-16.1-6.5a73.93,73.93,0,0,1,0,8.68,8,8,0,0,0,1.74,5.48l14.19,17.73a91.57,91.57,0,0,1-6.23,15L187,173.11a8,8,0,0,0-5.1,2.64,74.11,74.11,0,0,1-6.14,6.14,8,8,0,0,0-2.64,5.1l-2.51,22.58a91.32,91.32,0,0,1-15,6.23l-17.74-14.19a8,8,0,0,0-5-1.75h-.48a73.93,73.93,0,0,1-8.68,0,8,8,0,0,0-5.48,1.74L100.45,215.8a91.57,91.57,0,0,1-15-6.23L82.89,187a8,8,0,0,0-2.64-5.1,74.11,74.11,0,0,1-6.14-6.14,8,8,0,0,0-5.1-2.64L46.43,170.6a91.32,91.32,0,0,1-6.23-15l14.19-17.74a8,8,0,0,0,1.74-5.48,73.93,73.93,0,0,1,0-8.68,8,8,0,0,0-1.74-5.48L40.2,100.45a91.57,91.57,0,0,1,6.23-15L69,82.89a8,8,0,0,0,5.1-2.64,74.11,74.11,0,0,1,6.14-6.14A8,8,0,0,0,82.89,69L85.4,46.43a91.32,91.32,0,0,1,15-6.23l17.74,14.19a8,8,0,0,0,5.48,1.74,73.93,73.93,0,0,1,8.68,0,8,8,0,0,0,5.48-1.74L155.55,40.2a91.57,91.57,0,0,1,15,6.23L173.11,69a8,8,0,0,0,2.64,5.1,74.11,74.11,0,0,1,6.14,6.14,8,8,0,0,0,5.1,2.64l22.58,2.51a91.32,91.32,0,0,1,6.23,15l-14.19,17.74A8,8,0,0,0,199.87,123.66Z"/></symbol><symbol id="i-notebook" viewBox="0 0 256 256"><path d="M184,112a8,8,0,0,1-8,8H112a8,8,0,0,1,0-16h64A8,8,0,0,1,184,112Zm-8,24H112a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm48-88V208a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48ZM48,208H72V48H48Zm160,0V48H88V208H208Z"/></symbol><symbol id="i-download" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></symbol><symbol id="i-share" viewBox="0 0 256 256"><path d="M176,160a39.89,39.89,0,0,0-28.62,12.09l-46.1-29.63a39.8,39.8,0,0,0,0-28.92l46.1-29.63a40,40,0,1,0-8.66-13.45l-46.1,29.63a40,40,0,1,0,0,55.82l46.1,29.63A40,40,0,1,0,176,160Zm0-128a24,24,0,1,1-24,24A24,24,0,0,1,176,32ZM64,152a24,24,0,1,1,24-24A24,24,0,0,1,64,152Zm112,72a24,24,0,1,1,24-24A24,24,0,0,1,176,224Z"/></symbol><symbol id="i-file" viewBox="0 0 256 256"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"/></symbol><symbol id="i-coins" viewBox="0 0 256 256"><path d="M184,89.57V84c0-25.08-37.83-44-88-44S8,58.92,8,84v40c0,20.89,26.25,37.49,64,42.46V172c0,25.08,37.83,44,88,44s88-18.92,88-44V132C248,111.3,222.58,94.68,184,89.57ZM232,132c0,13.22-30.79,28-72,28-3.73,0-7.43-.13-11.08-.37C170.49,151.77,184,139,184,124V105.74C213.87,110.19,232,122.27,232,132ZM72,150.25V126.46A183.74,183.74,0,0,0,96,128a183.74,183.74,0,0,0,24-1.54v23.79A163,163,0,0,1,96,152,163,163,0,0,1,72,150.25Zm96-40.32V124c0,8.39-12.41,17.4-32,22.87V123.5C148.91,120.37,159.84,115.71,168,109.93ZM96,56c41.21,0,72,14.78,72,28s-30.79,28-72,28S24,97.22,24,84,54.79,56,96,56ZM24,124V109.93c8.16,5.78,19.09,10.44,32,13.57v23.37C36.41,141.4,24,132.39,24,124Zm64,48v-4.17c2.63.1,5.29.17,8,.17,3.88,0,7.67-.13,11.39-.35A121.92,121.92,0,0,0,120,171.41v23.46C100.41,189.4,88,180.39,88,172Zm48,26.25V174.4a179.48,179.48,0,0,0,24,1.6,183.74,183.74,0,0,0,24-1.54v23.79a165.45,165.45,0,0,1-48,0Zm64-3.38V171.5c12.91-3.13,23.84-7.79,32-13.57V172C232,180.39,219.59,189.4,200,194.87Z"/></symbol><symbol id="i-upload" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z"/></symbol></svg>
 <div id="scene" aria-hidden="true"></div>
 <main class="wrap">
   <header class="brand">
@@ -1441,7 +1445,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 
 
   <div class="cloud-banner" id="aiCard" hidden>
-    <p>✨ <strong>¿Querés que Recy cargue por vos?</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Se activa en un minuto.</p>
+    <p><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg> <strong>¿Querés que Recy cargue por vos?</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Se activa en un minuto.</p>
     <div class="row">
       <button type="button" class="small-btn primary" id="aiCardGo">Activar</button>
       <button type="button" class="small-btn" id="aiCardLater">Ahora no</button>
@@ -1472,7 +1476,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </section>
 
   <div class="search-bar" role="search">
-    <span aria-hidden="true">🔍</span>
+    <span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
     <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
     <button type="button" class="x" id="searchX" aria-label="Borrar la búsqueda" hidden>×</button>
   </div>
@@ -1486,8 +1490,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
     <div class="mclose" id="mClose" hidden></div>
     <div class="quick-row">
-      <button type="button" class="quick-btn" id="askOpen"><span aria-hidden="true">💬</span><span><strong>Preguntale a Recy</strong><small>Sobre tus gastos</small></span></button>
-      <button type="button" class="quick-btn" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá los próximos meses</small></span></button>
+      <button type="button" class="quick-btn" id="askOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg></span><span><strong>Preguntale a Recy</strong><small>Sobre tus gastos</small></span></button>
+      <button type="button" class="quick-btn" id="buyOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá los próximos meses</small></span></button>
     </div>
     <article class="paper" aria-label="El Diario de Recy">
       <header class="masthead">
@@ -1522,7 +1526,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
         <h3 class="sec-h">Gastos de los últimos 6 meses</h3>
         <div id="barsBox"></div>
       </section>
-      <button type="button" class="small-btn share-month" id="shareMonth">📸 Guardar el mes como imagen</button>
+      <button type="button" class="small-btn share-month" id="shareMonth"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg> Guardar el mes como imagen</button>
       <footer class="paper-foot">Recy, corresponsal en tu billetera. Impreso con tus tickets triturados.</footer>
     </article>
   </div>
@@ -1535,7 +1539,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 
   <div id="viewJars" hidden>
     <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
-    <button type="button" class="quick-btn sp-open" id="spOpen"><span aria-hidden="true">🐷</span><span><strong>¿Cuánto puedo ahorrar?</strong><small>Este mes y los que vienen, según tu tarjeta</small></span></button>
+    <button type="button" class="quick-btn sp-open" id="spOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-piggy"/></svg></span><span><strong>¿Cuánto puedo ahorrar?</strong><small>Este mes y los que vienen, según tu tarjeta</small></span></button>
     <div id="jarList"></div>
     <section class="card" id="jarGrowthCard">
       <div class="card-head">
@@ -1572,7 +1576,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
   <h3 id="sheetTitle">Nuevo gasto</h3>
   <div class="ai-invite" id="aiInvite" hidden>
-    <p>✨ <strong>Recy puede cargar por vos.</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Para eso necesita que lo actives una vez.</p>
+    <p><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg> <strong>Recy puede cargar por vos.</strong> Contale lo que gastaste con tus palabras o sacale una foto al ticket. Para eso necesita que lo actives una vez.</p>
     <button type="button" class="small-btn primary" id="aiInviteBtn">Activar</button>
   </div>
   <div class="freq" id="freqBox" hidden><span class="lbl">Lo de siempre</span><div class="chips" id="freqChips"></div></div>
@@ -1583,8 +1587,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     </div>
     <textarea class="input" id="tellInput" rows="2" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
     <div class="tell-row" style="margin-top:8px">
-      <button type="button" class="small-btn" id="tellPhoto" aria-label="Sacar foto del ticket">📷 Sacar foto</button>
-      <button type="button" class="small-btn" id="tellPick" aria-label="Subir una imagen del ticket">🖼️ Subir imagen</button>
+      <button type="button" class="small-btn" id="tellPhoto" aria-label="Sacar foto del ticket"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg> Sacar foto</button>
+      <button type="button" class="small-btn" id="tellPick" aria-label="Subir una imagen del ticket"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Subir imagen</button>
       <input type="file" id="tellFile" accept="image/*" capture="environment" hidden>
       <input type="file" id="tellFile2" accept="image/*" hidden>
       <span style="flex:1"></span>
@@ -2148,7 +2152,9 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.1930";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.2000";const ico = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const icoTxt = (n, t) => { const f = document.createElement("span"); f.innerHTML = ico(n); f.append(" " + t); return f; };
+/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -2732,7 +2738,7 @@ function jarInflText(j, bal){
   if (!last || need - put < 1 || need <= 0) return "";
   const dif = round2(bal - need), pc = Math.round(Math.abs(dif) / need * 100);
   return `Con la inflación (hasta ${ymName(last)}), para que lo que pusiste valga lo mismo hoy tendrías que tener ${f0ARS(need)}. ` +
-    (Math.abs(dif) < need * 0.005 ? "Le estás empatando." : dif > 0 ? `Le ganás por ${f0ARS(dif)} (${pc}%) 💪` : `Le perdés ${f0ARS(-dif)} (${pc}%). Si es plata quieta, conviene ponerla a rendir.`);
+    (Math.abs(dif) < need * 0.005 ? "Le estás empatando." : dif > 0 ? `Le ganás por ${f0ARS(dif)} (${pc}%)` : `Le perdés ${f0ARS(-dif)} (${pc}%). Si es plata quieta, conviene ponerla a rendir.`);
 }
 function salaryInflText(){
   if (!INFL) return "";
@@ -2745,7 +2751,7 @@ function salaryInflText(){
   const up = (L.amount / B.amount - 1) * 100, inf = (r.f - 1) * 100, real = (L.amount / B.amount / r.f - 1) * 100;
   const fp = v => (Math.abs(v) < 10 ? Math.round(v * 10) / 10 : Math.round(v)).toString().replace(".", ",") + "%";
   return `Desde ${ymName(bym)} tu sueldo ${up >= 0 ? "subió " + fp(up) : "bajó " + fp(-up)} y la inflación fue ${fp(inf)}` + (r.to < lym ? ` (dato hasta ${ymName(r.to)})` : "") + ". " +
-    (Math.abs(real) < 0.5 ? "Quedaste empatado." : real > 0 ? `Le ganaste: hoy rinde ${fp(real)} más 💪` : `Le perdiste: hoy rinde ${fp(-real)} menos.`);
+    (Math.abs(real) < 0.5 ? "Quedaste empatado." : real > 0 ? `Le ganaste: hoy rinde ${fp(real)} más` : `Le perdiste: hoy rinde ${fp(-real)} menos.`);
 }
 function renderJarDetail(){
   const j = data.jars.find(x => x.id === jdOpen); if (!j){ if (jdOpen) closeJarDetail(); return; }
@@ -3870,7 +3876,7 @@ function suggestInto(boxId, inputId){
   const box = $(boxId); box.innerHTML = "";
   knownPeople().slice(0, 10).forEach(n => { const c = document.createElement("button"); c.type = "button"; c.className = "chip"; c.textContent = n;
     c.onclick = () => { $(inputId).value = n; }; box.append(c); });
-  const g = document.createElement("button"); g.type = "button"; g.className = "chip mgr"; g.textContent = "✎ Personas"; g.onclick = openPeople; box.append(g);
+  const g = document.createElement("button"); g.type = "button"; g.className = "chip mgr"; g.append(icoTxt("pencil", "Personas")); g.onclick = openPeople; box.append(g);
 }
 /* Modal de personas */
 function openPeople(){ renderPeople(); $("pplNew").value = ""; $("pplBg").classList.add("open"); $("pplSheet").classList.add("open"); }
@@ -4086,7 +4092,7 @@ function renderCats(){
     const b = document.createElement("button"); b.type = "button"; b.className = "chip" + (catEditing ? " edit" : "");
     b.setAttribute("aria-pressed", String(!catEditing && c.id === sel));
     const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
-    b.append(dot, document.createTextNode(c.name + (catEditing ? " ✎" : "")));
+    b.append(dot, document.createTextNode(c.name)); if (catEditing){ const x = document.createElement("span"); x.innerHTML = ico("pencil"); b.append(x); }
     b.onclick = catEditing ? () => openCat(c)
       : () => { if (mode === "income") incomeKind = c.id; else { category = c.id; catUserPicked = true; $("catSug").hidden = true; } renderCats(); updateUntilField(); updateJarField(); updateBorrowField(); };
     box.append(b);
@@ -4116,7 +4122,7 @@ $("note").addEventListener("input", () => {
     const c = suggestCat($("note").value);
     if (!c){ $("catSug").hidden = true; return; }
     if (c !== category){ category = c; renderCats(); updateJarField(); }
-    $("catSug").hidden = false; $("catSug").textContent = `✨ Recy eligió ${catById(c).name} porque así lo cargaste antes. Si no es, tocá otra.`;
+    $("catSug").hidden = false; $("catSug").innerHTML = ""; $("catSug").append(icoTxt("sparkle", `Recy eligió ${catById(c).name} porque así lo cargaste antes. Si no es, tocá otra.`));
   }, 350);
 });
 $("catEditToggle").onclick = () => { catEditing = !catEditing; renderCats(); };
@@ -5316,7 +5322,7 @@ function buildAlerts(){
   if (data.remindDaily !== false) for (let k = 0; k < 7; k++){
     const d = new Date(today.getTime() + k * 864e5), ds = toLocalInput(d);
     if (k === 0 && data.expenses.some(e => (e.createdAt || e.date || "").slice(0,10) === ds)) continue;
-    out.push({ id: `rem:${ds}`, at: at(d, 21), title: "¿Cargaste lo de hoy? 🧾", body: "Contale a Recy en qué gastaste hoy, así tus números quedan al día." });
+    out.push({ id: `rem:${ds}`, at: at(d, 21), title: "¿Cargaste lo de hoy?", body: "Contale a Recy en qué gastaste hoy, así tus números quedan al día." });
   }
   // Tarjetas: el día antes y el día del vencimiento, si no está pagada
   const ents = entries();
@@ -5813,17 +5819,17 @@ function renderSavePlan(){
   hero.append(el("small", "", P.save >= 0 ? `En ${mes} te quedan para ahorrar` : `En ${mes} no te alcanza. Te faltan`), el("strong", "", f0ARS(Math.abs(P.save))));
   const u = usdTxt(Math.abs(P.save)); if (u) hero.append(el("small", "sp-usd", u));
   box.append(hero);
-  if (!P.daily){ const w = el("button", "sp-alert"); w.type = "button"; w.textContent = "⚠️ Falta saber cuánto gastás por mes en gastos varios (súper, comida, salidas). Sin eso, este número es más alto de lo real. Tocá para ponerlo ✎"; w.onclick = editDaily; box.append(w); }
+  if (!P.daily){ const w = el("button", "sp-alert"); w.type = "button"; w.innerHTML = ico("warning") + " "; w.append("Falta saber cuánto gastás por mes en gastos varios (súper, comida, salidas). Sin eso, este número es más alto de lo real. Tocá para ponerlo."); w.insertAdjacentHTML("beforeend", " " + ico("pencil")); w.onclick = editDaily; box.append(w); }
   // 2) Meta
   const sav = savedIn(vy, vm), gA = goalARS(), card = el("div", "sp-card");
   if (gA > 0){
     const h = el("button", "sp-card-h"); h.type = "button";
-    h.append(el("span", "", "🎯 Tu meta por mes"), el("b", "", (goalCur() === "USD" ? fmtUSD.format(data.saveGoal) : f0ARS(data.saveGoal)) + " ✎")); h.onclick = editSaveGoal; card.append(h);
+    h.append(icoTxt("target", "Tu meta por mes"), el("b", "", (goalCur() === "USD" ? fmtUSD.format(data.saveGoal) : f0ARS(data.saveGoal)) + " ")); h.lastChild.insertAdjacentHTML("beforeend", ico("pencil")); h.onclick = editSaveGoal; card.append(h);
     const bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(Math.min(1, sav / gA) * 100) + "%"; bar.append(fill); card.append(bar);
-    card.append(el("small", "", sav >= gA ? `Separaste ${f0ARS(sav)}. ¡Cumpliste la meta! 💪` : `Separaste ${f0ARS(sav)} de ${f0ARS(gA)}. Te faltan ${f0ARS(gA - sav)}.`));
+    card.append(el("small", "", sav >= gA ? `Separaste ${f0ARS(sav)}. ¡Cumpliste la meta!` : `Separaste ${f0ARS(sav)} de ${f0ARS(gA)}. Te faltan ${f0ARS(gA - sav)}.`));
     if (P.save < gA && sav < gA) card.append(el("small", "sp-warn", P.save > 0 ? `Ojo: este mes solo te quedan ${f0ARS(P.save)}, no alcanza para la meta.` : "Ojo: este mes no te queda plata para la meta."));
   } else {
-    const b = el("button", "sp-card-h"); b.type = "button"; b.append(el("span", "", "🎯 Ponerme una meta de ahorro por mes"), el("b", "", "＋")); b.onclick = editSaveGoal; card.append(b);
+    const b = el("button", "sp-card-h"); b.type = "button"; b.append(icoTxt("target", "Ponerme una meta de ahorro por mes"), el("b", "", "+")); b.onclick = editSaveGoal; card.append(b);
     if (sav > 0) card.append(el("small", "", `Este mes ya separaste ${f0ARS(sav)}.`));
   }
   box.append(card);
@@ -5831,7 +5837,7 @@ function renderSavePlan(){
   const left = round2((gA ? Math.min(gA, Math.max(P.save, 0)) : Math.max(P.save, 0)) - sav), jars = data.jars;
   if (left > 0 && jars.length){
     const w = el("div", "sp-jars"); w.append(el("small", "", `Separar ${f0ARS(left)} ahora en:`));
-    jars.forEach(j => { const b = el("button", "chip", "🫙 " + j.name); b.type = "button"; b.style.borderColor = j.color;
+    jars.forEach(j => { const b = el("button", "chip"); b.append(icoTxt("coins", j.name)); b.type = "button"; b.style.borderColor = j.color;
       b.onclick = () => { closeSavePlan(); openJarMove(j, "deposit"); const r = usdRateNow(), v = j.currency === "USD" ? (r ? Math.round(left / r) : 0) : Math.round(left);
         setTimeout(() => { if (v) $("jmAmount").value = String(v).replace(/\B(?=(\d{3})+(?!\d))/g, "."); $("jmNote").value = "Ahorro del mes"; }, 30); }; w.append(b); });
     box.append(w);
@@ -5841,7 +5847,7 @@ function renderSavePlan(){
   // 3) De dónde sale el número
   fold("calc", "¿De dónde sale este número?", B => {
     const row = (lbl, v, sub, cls, onEdit) => { const r = el(onEdit ? "button" : "div", "sp-row" + (cls ? " " + cls : "")); if (onEdit){ r.type = "button"; r.onclick = onEdit; }
-      const a = el("span", "", lbl + (onEdit ? " ✎" : "")); if (sub) a.append(el("small", "", sub)); r.append(a, el("strong", "", v)); B.append(r); };
+      const a = el("span", "", lbl + (onEdit ? " " : "")); if (onEdit) a.insertAdjacentHTML("beforeend", ico("pencil")); if (sub) a.append(el("small", "", sub)); r.append(a, el("strong", "", v)); B.append(r); };
     row("Tu sueldo", "+ " + f0ARS(P.inc), P.incEst ? "el último que cargaste" : "");
     if (P.card) row("Tarjeta que pagás este mes", "− " + f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
     if (P.fixNo) row("Fijos sin tarjeta", "− " + f0ARS(P.fixNo), "alquiler, servicios…");
@@ -5901,12 +5907,12 @@ function renderOnb(){
   } else if (st === "como"){
     T("Cómo funciona");
     const ul = document.createElement("ul"); ul.className = "onb-list";
-    [["🎟️","Darle a Recy","El botón de abajo. Ahí cargás cada gasto o ingreso: escribiendo, con foto del ticket o a mano."],
-     ["📋","Movimientos","Todo lo que cargaste, día por día, y cuánto llevás gastado."],
-     ["📰","Resumen","En qué se te va la plata, tus tarjetas y las cuotas que vienen."],
-     ["📌","Fijos","Lo que pagás todos los meses. Te avisa cuando vencen."],
-     ["🫙","Ahorros","Frascos para ahorrar y cuánto podés ahorrar este mes."]].forEach(([e,t,d]) => {
-      const li = document.createElement("li"); li.innerHTML = `<span>${e}</span><span><b></b></span>`; li.querySelector("b").textContent = t; li.lastChild.append(d); ul.append(li); });
+    [["ticket","Darle a Recy","El botón de abajo. Ahí cargás cada gasto o ingreso: escribiendo, con foto del ticket o a mano."],
+     ["list","Movimientos","Todo lo que cargaste, día por día, y cuánto llevás gastado."],
+     ["news","Resumen","En qué se te va la plata, tus tarjetas y las cuotas que vienen."],
+     ["pin","Fijos","Lo que pagás todos los meses. Te avisa cuando vencen."],
+     ["piggy","Ahorros","Frascos para ahorrar y cuánto podés ahorrar este mes."]].forEach(([e,t,d]) => {
+      const li = document.createElement("li"); li.innerHTML = `<span>${ico(e)}</span><span><b></b></span>`; li.querySelector("b").textContent = t; li.lastChild.append(d); ul.append(li); });
     B.append(ul);
     P("Un mes en Receater va de cobro a cobro, no del 1 al 30. Por eso ahora te pregunto cuándo cobrás.", "hint");
   } else if (st === "sueldo"){
@@ -5985,10 +5991,10 @@ function renderOnb(){
       if (!onbDrive) P("Si preferís, lo hacés después desde Ajustes.", "hint");
     }
   } else {
-    T("¡Listo! Ya te puedo ayudar 🎉");
+    T("¡Listo! Ya te puedo ayudar");
     const ul = document.createElement("ul"); ul.className = "onb-list";
-    [["🎟️","Cada vez que gastes, tocá Darle a Recy."],["📷","¿Tenés el ticket? Sacale foto o subí la imagen."],["🐷","En Ahorros mirá cuánto podés ahorrar este mes."],["⚙️","Esta guía la volvés a ver en Ajustes."]]
-      .forEach(([e,t]) => { const li = document.createElement("li"); li.innerHTML = "<span></span><span></span>"; li.firstChild.textContent = e; li.lastChild.textContent = t; ul.append(li); });
+    [["ticket","Cada vez que gastes, tocá Darle a Recy."],["camera","¿Tenés el ticket? Sacale foto o subí la imagen."],["piggy","En Ahorros mirá cuánto podés ahorrar este mes."],["gear","Esta guía la volvés a ver en Ajustes."]]
+      .forEach(([e,t]) => { const li = document.createElement("li"); li.innerHTML = `<span>${ico(e)}</span><span></span>`; li.lastChild.textContent = t; ul.append(li); });
     B.append(ul);
   }
 }
@@ -6068,7 +6074,7 @@ function monthCloseText(y, m){
     const r = INFL && INFL.m[`${y}-${String(m+1).padStart(2,"0")}`];
     if (r != null){ const real = (tot / prevT / (1 + r / 100) - 1) * 100; l1 += ` (con la inflación de ${String(r).replace(".", ",")}%, ${Math.abs(real) < 1 ? "quedaste igual" : Math.round(Math.abs(real)) + "% " + (real > 0 ? "más" : "menos") + " de verdad"})`; } }
   L.push(l1 + ".");
-  if (inc > 0){ const left = inc - tot - sav; L.push(left >= 0 ? `Cobraste ${f0ARS(inc)} y te sobraron ${f0ARS(left)}${sav > 0 ? `, además de los ${f0ARS(sav)} que ahorraste` : ""}. 👌` : `Cobraste ${f0ARS(inc)}: gastaste ${f0ARS(-left)} más de lo que entró.`); }
+  if (inc > 0){ const left = inc - tot - sav; L.push(left >= 0 ? `Cobraste ${f0ARS(inc)} y te sobraron ${f0ARS(left)}${sav > 0 ? `, además de los ${f0ARS(sav)} que ahorraste` : ""}.` : `Cobraste ${f0ARS(inc)}: gastaste ${f0ARS(-left)} más de lo que entró.`); }
   else if (sav > 0) L.push(`Ahorraste ${f0ARS(sav)}.`);
   const bc = byCat(sp), top = Object.entries(bc).sort((a,b) => b[1] - a[1])[0];
   if (top && tot > 0) L.push(`Donde más gastaste: ${catById(top[0]).name}, ${f0ARS(top[1])} (${Math.round(top[1] / tot * 100)}%).`);
@@ -6076,7 +6082,7 @@ function monthCloseText(y, m){
   if (up) L.push(`Lo que más subió: ${catById(up[0]).name}, ${f0ARS(up[1] - pc[up[0]])} más que el mes anterior.`);
   const b = data.budgets || {}, ids = Object.keys(b).filter(id => b[id] > 0);
   if (ids.length){ const over = ids.filter(id => (bc[id] || 0) > b[id]);
-    L.push(over.length ? `Te pasaste en ${over.length} de ${ids.length} topes: ${over.map(id => catById(id).name).join(", ")}.` : `Respetaste todos tus topes 💪`); }
+    L.push(over.length ? `Te pasaste en ${over.length} de ${ids.length} topes: ${over.map(id => catById(id).name).join(", ")}.` : `Respetaste todos tus topes.`); }
   return { title: `Cómo te fue en ${monthName(y, m)}`, lines: L, tot };
 }
 function renderMonthClose(){
@@ -6087,7 +6093,7 @@ function renderMonthClose(){
   const c = monthCloseText(py, pm); if (!c.tot) return;
   box.hidden = false;
   const go = document.createElement("button"); go.type = "button"; go.className = "mclose-go";
-  go.innerHTML = '<span aria-hidden="true">📒</span><span><strong></strong><small>Tocá para ver el cierre del mes</small></span>';
+  go.innerHTML = `<span aria-hidden="true">${ico("notebook")}</span><span><strong></strong><small>Tocá para ver el cierre del mes</small></span>`;
   go.querySelector("strong").textContent = `Cerró ${monthName(py, pm)}`;
   go.onclick = async () => { await uiDialog({ msg: c.title + "\n\n" + c.lines.map(t => "• " + t).join("\n"), ok: "Listo" });
     data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
@@ -6162,7 +6168,7 @@ async function shareMonthImage(){
     let col = ct.color; if (/^var\(/.test(col)) col = "#2F5BEA"; g.fillStyle = col; g.fillRect(110, yy + 18, Math.max(8, (W - 220) * v / mx), 22);
     yy += 100; });
   g.textAlign = "center";
-  if (sav > 0){ g.font = F(40, 800); g.fillStyle = "#1E7A50"; g.fillText(`Ahorraste ${f0ARS(sav)} 💪`, W/2, yy + 40); }
+  if (sav > 0){ g.font = F(40, 800); g.fillStyle = "#1E7A50"; g.fillText(`Ahorraste ${f0ARS(sav)}`, W/2, yy + 40); }
   g.font = F(28, 500); g.fillStyle = "#8A8170"; g.fillText("Hecho con Receater · receater.github.io", W/2, H - 90);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   const name = `receater-${monthKey(y, m)}.png`, file = new File([blob], name, { type: "image/png" });
@@ -6173,8 +6179,8 @@ async function shareMonthImage(){
   const img = document.createElement("img"); img.src = URL.createObjectURL(blob); img.alt = "Tu mes en una imagen"; img.style.cssText = "width:100%;max-height:45vh;object-fit:contain;border-radius:6px;margin-bottom:12px";
   const acts = document.createElement("div"); acts.className = "dlg-acts";
   const close = () => { bg.remove(); URL.revokeObjectURL(img.src); };
-  const d = document.createElement("button"); d.type = "button"; d.className = "btn ghost"; d.textContent = "⬇️ Descargar"; d.onclick = () => { download(); close(); };
-  const sh = document.createElement("button"); sh.type = "button"; sh.className = "btn primary"; sh.textContent = "Compartir"; sh.onclick = async () => { try { await navigator.share({ files: [file], title: periodTitle(y, m) }); } catch {} close(); };
+  const d = document.createElement("button"); d.type = "button"; d.className = "btn ghost"; d.innerHTML = ico("download") + " Descargar"; d.onclick = () => { download(); close(); };
+  const sh = document.createElement("button"); sh.type = "button"; sh.className = "btn primary"; sh.innerHTML = ico("share") + " Compartir"; sh.onclick = async () => { try { await navigator.share({ files: [file], title: periodTitle(y, m) }); } catch {} close(); };
   acts.append(d, sh); box.append(img, acts); bg.append(box); bg.onclick = e => { if (e.target === bg) close(); }; document.body.append(bg);
 }
 $("shareMonth").onclick = shareMonthImage;
@@ -6473,7 +6479,7 @@ function renderCardsDash(list, cur){
       });
     }
     // Editar: un lápiz al lado del nombre
-    const ed = document.createElement("button"); ed.type = "button"; ed.className = "card-edit"; ed.textContent = "✎"; ed.setAttribute("aria-label", `Editar ${card.name}`); ed.onclick = () => openCard(card, false);
+    const ed = document.createElement("button"); ed.type = "button"; ed.className = "card-edit"; ed.innerHTML = ico("pencil"); ed.setAttribute("aria-label", `Editar ${card.name}`); ed.onclick = () => openCard(card, false);
     nm.append(ed);
     // El resumen que se paga en este mes es, para casi todos los bancos, el "del mes anterior" (el mes en que cerró)
     const bill = card.rule === "open" ? null : billOf(card, viewYear, viewMonth), closed = !bill || bill.close <= today;
@@ -6487,13 +6493,14 @@ function renderCardsDash(list, cur){
       const allPaid = payP.length && billD.every(d => data.cardPayments.some(p => p.cardId === card.id && p.date === d));
       row.append(mkB(allPaid ? "Adelantar un pago" : "Pagué la tarjeta", "chip" + (allPaid ? "" : " chip-main"), () => openCardPayFor(card)));
     }
-    row.append(mkB(card.rule === "open" ? "📄 Subir resumen" : closed ? `📄 Resumen de ${prevM}` : "📄 Subir resumen", "chip", () => openStmtUpload(card),
+    row.append(mkB(card.rule === "open" ? "Subir resumen" : closed ? `Resumen de ${prevM}` : "Subir resumen", "chip", () => openStmtUpload(card),
       bill && closed ? `Subir el resumen de ${prevM}, el que vence el ${shortDate(bill.due)}` : "Subir un resumen"));
+    { const last = row.lastElementChild; if (last){ const t = last.textContent; last.innerHTML = ico("file") + " "; last.append(t); } }
     const mine2 = stmtExpensesIn(card, viewYear, viewMonth);
     if (mine2.length) row.append(mkB(`Ver lo del resumen (${mine2.length})`, "chip", () => openStmtManage(card)));
     foot.append(row);
     const reps = card.rule === "open" ? [] : findRepeats(card, viewYear, viewMonth);
-    if (reps.length) foot.append(mkB(`⚠️ Puede haber ${reps.length} ${reps.length === 1 ? "cosa repetida" : "cosas repetidas"} · Revisar`, "st-warn", () => openRepeats(card)));
+    if (reps.length) foot.append(mkB(`Puede haber ${reps.length} ${reps.length === 1 ? "cosa repetida" : "cosas repetidas"} · Revisar`, "st-warn", () => openRepeats(card)));
     next.append(foot);
     el.append(next);
     if (total > 0) el.append(cardDonut(card, xs, total, cur)); else { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = "Nada pagado con esta tarjeta en este período."; el.append(p); }
@@ -6656,7 +6663,7 @@ function stageJars(){
   if (sc.mode === "total"){
     renderStage("stageJars", {
       label: "Ahorrado", big: T.balA || !T.balU ? fmtARS.format(T.balA) : fmtUSD.format(T.balU), bar,
-      lines: [goalARS() > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0), g0 = goalARS(); return v0 >= g0 ? `Meta del mes cumplida 💪` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(g0)}`; })() : null,
+      lines: [goalARS() > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0), g0 = goalARS(); return v0 >= g0 ? `Meta del mes cumplida` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(g0)}`; })() : null,
         T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
         best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
       mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "full",
