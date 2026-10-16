@@ -274,6 +274,8 @@ button{cursor:pointer}
 .receipt .meta{overflow-wrap:anywhere}
 
 /* Google Drive */
+.sp-open{width:100%;margin:10px 0 4px}
+#spSheet .clip{margin:0}
 .usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
 .usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
 .brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
@@ -1414,7 +1416,6 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div id="viewDash" hidden>
     <section class="recy-stage" id="stageDash" aria-label="Resumen del período"></section>
     <div class="mclose" id="mClose" hidden></div>
-    <div id="savePlanBox"></div>
     <div class="quick-row">
       <button type="button" class="quick-btn" id="askOpen"><span aria-hidden="true">💬</span><span><strong>Preguntale a Recy</strong><small>Sobre tus gastos</small></span></button>
       <button type="button" class="quick-btn" id="buyOpen"><span aria-hidden="true">🧮</span><span><strong>¿Me lo puedo comprar?</strong><small>Mirá los próximos meses</small></span></button>
@@ -1459,6 +1460,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 
   <div id="viewJars" hidden>
     <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
+    <button type="button" class="quick-btn sp-open" id="spOpen"><span aria-hidden="true">🐷</span><span><strong>¿Cuánto puedo ahorrar?</strong><small>Este mes y los que vienen, según tu tarjeta</small></span></button>
     <div id="jarList"></div>
     <section class="card" id="jarGrowthCard">
       <div class="card-head">
@@ -1999,6 +2001,14 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   <div class="actions"><button type="button" class="btn ghost" id="buyClose">Cerrar</button></div>
 </div>
 
+<div class="sheet-bg" id="spBg"></div>
+<div class="sheet" id="spSheet" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+  <h3 id="spTitle">Cuánto podés ahorrar</h3>
+  <div id="savePlanBox"></div>
+  <div class="actions">
+    <button type="button" class="btn primary" id="spClose">Listo</button>
+  </div>
+</div>
 <div class="sheet-bg" id="budBg"></div>
 <div class="sheet" id="budSheet" role="dialog" aria-modal="true" aria-labelledby="budTitle">
   <h3 id="budTitle">Topes por categoría</h3>
@@ -2042,7 +2052,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.1045";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.1100";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5636,15 +5646,13 @@ function savePlan(y, m, extraCard = 0){
 }
 function renderSavePlan(){
   const box = $("savePlanBox"); box.innerHTML = "";
-  if (!isCurrentPeriod(viewYear, viewMonth)) return;
-  const P = savePlan(viewYear, viewMonth); if (!P.inc) return;
-  const sec = document.createElement("section"); sec.className = "clip sp";
-  const clamp = document.createElement("div"); clamp.className = "clip-clamp"; clamp.setAttribute("aria-hidden", "true");
-  const paper = document.createElement("div"); paper.className = "clip-paper";
-  const top = document.createElement("div"); top.className = "cal-top";
-  top.innerHTML = '<div class="cal-title"></div><div class="cal-sub"></div>';
-  top.firstChild.textContent = `Cuánto podés ahorrar en ${monthName(viewYear, viewMonth)}`;
-  top.lastChild.textContent = P.incEst ? "con tu último sueldo (todavía no cargaste el de este mes)" : "con lo que ya sabemos que se va";
+  const [viewYear, viewMonth] = periodOf(new Date());
+  const P = savePlan(viewYear, viewMonth);
+  if (!P.inc){ box.innerHTML = '<p class="fx-hint">Cargá tu sueldo (Darle a Recy → Ingreso) y te calculo cuánto podés ahorrar.</p>'; return; }
+  $("spTitle").textContent = `Cuánto podés ahorrar en ${monthName(viewYear, viewMonth)}`;
+  const sec = document.createElement("div"), paper = sec;
+  const top = document.createElement("p"); top.className = "fx-hint"; top.style.margin = "0 0 6px";
+  top.textContent = P.incEst ? "Con tu último sueldo (todavía no cargaste el de este mes)." : "Con lo que ya sabemos que se va.";
   paper.append(top);
   const body = document.createElement("div"); body.className = "sp-body";
   const row = (lbl, v, sub, cls) => { const r = document.createElement("div"); r.className = "sp-row" + (cls ? " " + cls : "");
@@ -5677,9 +5685,12 @@ function renderSavePlan(){
   const nt = document.createElement("p"); nt.className = "fx-hint"; nt.textContent = "Cada mes suma lo que ya compraste con tarjeta y vence ahí. Si seguís comprando, baja."; nx.append(nt);
   body.append(nx);
   if (data.jars.some(j => j.currency === "ARS") && P.save > 0){
-    const go = document.createElement("button"); go.type = "button"; go.className = "small-btn primary"; go.style.marginTop = "10px"; go.textContent = "Mandar a un frasco"; go.onclick = () => setTab("jars"); body.append(go); }
-  paper.append(body); sec.append(clamp, paper); box.append(sec);
+    const go = document.createElement("button"); go.type = "button"; go.className = "small-btn primary"; go.style.marginTop = "10px"; go.textContent = "Mandar a un frasco"; go.onclick = () => { closeSavePlan(); setTab("jars"); }; body.append(go); }
+  paper.append(body); box.append(sec);
 }
+function openSavePlan(){ renderSavePlan(); $("spBg").classList.add("open"); $("spSheet").classList.add("open"); $("spSheet").scrollTop = 0; }
+function closeSavePlan(){ $("spBg").classList.remove("open"); $("spSheet").classList.remove("open"); }
+$("spOpen").onclick = openSavePlan; $("spClose").onclick = closeSavePlan; $("spBg").onclick = closeSavePlan;
 async function editDaily(){
   const cur = data.dailyBudget > 0 ? data.dailyBudget : 0, avg = (() => { const d0 = data.dailyBudget; data.dailyBudget = 0; const a = dailyAvg(); data.dailyBudget = d0; return a; })();
   const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5691,7 +5702,7 @@ async function editDaily(){
   const close = () => bg.remove();
   const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
   const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar";
-  o.onclick = () => { const v = parseAmount(inp.value); data.dailyBudget = v > 0 ? round2(v) : 0; persist(); close(); render(); };
+  o.onclick = () => { const v = parseAmount(inp.value); data.dailyBudget = v > 0 ? round2(v) : 0; persist(); close(); render(); if ($("spSheet").classList.contains("open")) renderSavePlan(); };
   acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => inp.focus(), 50);
 }
 /* Cierre del mes: cómo te fue en un período, en pocas líneas */
@@ -5735,7 +5746,7 @@ function renderMonthClose(){
   box.append(go, x);
 }
 function renderDash(){
-  renderMonthClose(); renderSavePlan();
+  renderMonthClose();
   const cur = dashCur;
   const list = monthExpenses(viewYear, viewMonth, cur);
   const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
