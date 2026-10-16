@@ -274,6 +274,8 @@ button{cursor:pointer}
 .receipt .meta{overflow-wrap:anywhere}
 
 /* Google Drive */
+.usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
+.usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
 .brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
 .hello{font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand-actions{display:flex;gap:6px;min-width:0;justify-content:flex-end}
@@ -1346,6 +1348,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <span class="logo">Rec<span>eater</span></span>
       <span class="hello" id="hello" hidden></span>
     </div>
+    <button type="button" class="usd-pill" id="usdPill" hidden aria-label="Cotización del dólar"></button>
     <button type="button" class="icon-btn gear" id="setBtn" aria-label="Ajustes">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
     </button>
@@ -2039,7 +2042,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-15.1745";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.1045";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -4241,6 +4244,27 @@ function getQuotes(){
     .finally(() => { clearTimeout(t); quotesLoading = null; });
   return quotesLoading;
 }
+/* Dólar siempre a la vista, arriba */
+const USD_NAMES = { oficial:"Oficial", blue:"Blue", bolsa:"MEP", contadoconliqui:"CCL", tarjeta:"Tarjeta", cripto:"Cripto", mayorista:"Mayorista" };
+function renderUsdPill(){
+  const el = $("usdPill"), m = quotes && quotes.map; if (!m || !m.blue && !m.oficial){ el.hidden = true; return; }
+  el.hidden = false; el.innerHTML = "";
+  const f = v => "$" + Math.round(v).toLocaleString("es-AR");
+  if (m.blue){ const a = document.createElement("span"); a.innerHTML = "Blue <b></b>"; a.querySelector("b").textContent = f(m.blue.venta); el.append(a); }
+  if (m.oficial){ const o = document.createElement("span"); o.className = "o"; o.textContent = "Oficial " + f(m.oficial.venta); el.append(o); }
+}
+function refreshUsdPill(){ getQuotes().then(renderUsdPill); }
+$("usdPill").onclick = () => {
+  const m = quotes && quotes.map; if (!m) return;
+  const f = v => v ? "$" + Math.round(v).toLocaleString("es-AR") : "—";
+  const rows = Object.keys(USD_NAMES).filter(k => m[k]).map(k => `${USD_NAMES[k]}: compra ${f(m[k].compra)} · venta ${f(m[k].venta)}`);
+  const ago = Math.round((Date.now() - quotes.at) / 60000);
+  uiAlert(`Dólar hoy\n\n${rows.join("\n")}\n\nActualizado hace ${ago < 1 ? "menos de un minuto" : ago + " min"}. Fuente: DolarApi.`);
+};
+try { const c = JSON.parse(localStorage.getItem("receater.quotes") || "null"); if (c && c.map && !quotes) quotes = c; } catch {}
+setTimeout(() => { renderUsdPill(); refreshUsdPill(); }, 300);
+setInterval(refreshUsdPill, 30 * 60e3);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshUsdPill(); });
 const FXQ = { box:"fxQuotes", info:"fxQuoteInfo", rate:"fxRate", key:"receater.fxCasa" };
 const CPKQ = { box:"cpkQuotes", info:"cpkQuoteInfo", rate:"cpkRate", key:"receater.cpkCasa" };
 const f0ARS = n => new Intl.NumberFormat("es-AR", { style:"currency", currency:"ARS", maximumFractionDigits:0 }).format(n);
