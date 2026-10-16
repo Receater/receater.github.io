@@ -290,6 +290,15 @@ button{cursor:pointer}
 .onb-row .x{border:0;background:none;font-size:1.2rem;color:#5A6B76;cursor:pointer}
 .onb-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .onb-acts{display:flex;justify-content:space-between;gap:10px;margin-top:14px}.onb-acts .btn{flex:1}
+section[data-fold]>.sec-head h3,section[data-fold]>h3.sec-h{cursor:pointer;user-select:none}
+section[data-fold]>.sec-head h3::after,section[data-fold]>h3.sec-h::after{content:" ▾";font-size:.8em;opacity:.55}
+section[data-fold].folded>.sec-head h3::after,section[data-fold].folded>h3.sec-h::after{content:" ▸"}
+section[data-fold].folded>*:not(.sec-head):not(.sec-h){display:none !important}
+section[data-fold].folded>.sec-head>button{display:none}
+.wd-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;align-items:end;margin-top:8px}
+.wd-col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.wd-v{font-size:.68rem;font-weight:700;white-space:nowrap}
+.wd-bar{width:72%;border-radius:6px 6px 2px 2px;background:#C9CFD8}.wd-col.top .wd-bar{background:var(--accent)}.wd-col.we .wd-bar{background:#E08A2C}.wd-m{font-size:.76rem;color:var(--muted)}
+.share-month{display:block;margin:18px auto 0}
 .usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
 .usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
 .brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
@@ -699,6 +708,9 @@ button{cursor:pointer}
 .sp-bar{height:8px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin:0 0 6px}.sp-bar span{display:block;height:100%;background:#1E7A50}
 .sp-alert{display:block;width:100%;text-align:left;font:inherit;font-size:.84rem;line-height:1.35;padding:10px 12px;margin:0 0 12px;border-radius:12px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#5A4500;cursor:pointer}
 #spSheet .sp-nh{margin:14px 0 2px}
+.sp-goal{display:block;margin:-4px auto 10px;font-size:.88rem}
+.sp-jars{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}.sp-jars small{width:100%;color:var(--muted);font-size:.84rem}
+.sp-sim label{display:block;font-weight:700;font-size:.84rem;margin:10px 0 4px}.sp-sim select{margin-top:6px}
 .mclose{position:relative;margin:10px 0 0}
 .mclose-go{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 44px 12px 14px;border-radius:14px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#1B2430;cursor:pointer}
 .mclose-go>span:first-child{font-size:1.5rem}.mclose-go strong{display:block;text-transform:none}.mclose-go small{color:#5A6B76}
@@ -1451,25 +1463,30 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <p class="kicker" id="leadKicker">Economía personal</p>
       <h2 class="headline" id="leadHead" hidden></h2>
       <p class="deck" id="leadDeck" hidden></p>
-        <section>
+        <section data-fold="donut">
           <div class="sec-head">
             <h3 id="donutTitle">En qué se te va</h3>
           </div>
           <div id="donutBox"></div>
           <p class="caption">Tocá una categoría para ver sus gastos.</p>
         </section>
-        <section>
+        <section data-fold="breves">
           <h3 class="sec-h">Breves</h3>
           <div class="facts" id="facts"></div>
         </section>
-      <section>
+        <section data-fold="dias">
+          <h3 class="sec-h">Qué días gastás más</h3>
+          <div id="daysBox"></div>
+        </section>
+      <section data-fold="tarjetas">
         <div class="sec-head"><h3>Tarjetas</h3><button type="button" class="small-btn" id="addCardDash">Agregar tarjeta</button></div>
         <div id="cardsBox"></div>
       </section>
-      <section class="bars">
+      <section class="bars" data-fold="bars">
         <h3 class="sec-h">Gastos de los últimos 6 meses</h3>
         <div id="barsBox"></div>
       </section>
+      <button type="button" class="small-btn share-month" id="shareMonth">📸 Guardar el mes como imagen</button>
       <footer class="paper-foot">Recy, corresponsal en tu billetera. Impreso con tus tickets triturados.</footer>
     </article>
   </div>
@@ -2088,7 +2105,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.1600";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.1700";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5252,6 +5269,12 @@ function buildAlerts(){
   const out = [], now = new Date(), today = dateOnly(toLocalInput(now)), lim = new Date(today.getTime() + 21 * 864e5);
   const at = (d, h, m = 0) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.getTime(); };
   const amt = xs => [["ARS", fmtARS], ["USD", fmtUSD]].map(([c, f]) => { const v = round2(xs.filter(x => x.currency === c).reduce((a, x) => a + x.amount, 0)); return v ? f.format(v) : ""; }).filter(Boolean).join(" + ");
+  // Recordatorio a la noche para cargar lo del día (si ese día no cargaste nada)
+  if (data.remindDaily !== false) for (let k = 0; k < 7; k++){
+    const d = new Date(today.getTime() + k * 864e5), ds = toLocalInput(d);
+    if (k === 0 && data.expenses.some(e => (e.createdAt || e.date || "").slice(0,10) === ds)) continue;
+    out.push({ id: `rem:${ds}`, at: at(d, 21), title: "¿Cargaste lo de hoy? 🧾", body: "Contale a Recy en qué gastaste hoy, así tus números quedan al día." });
+  }
   // Tarjetas: el día antes y el día del vencimiento, si no está pagada
   const ents = entries();
   data.cards.filter(c => c.rule !== "open").forEach(card => {
@@ -5704,6 +5727,24 @@ function savePlan(y, m, extraCard = 0){
   return { y, m, inc, incEst, card, cuotas: round2(cuotas), buys: round2(buys - cuotas), fixCard: round2(fixCard), fixNo: round2(fixNo), daily: daily.v, dailyInfo: daily,
     save: round2(inc - card - fixNo - daily.v) };
 }
+/* Lo que separaste para ahorrar en un período: gastos "Ahorro" + lo que sumaste a frascos en pesos (menos lo que sacaste) */
+function savedIn(y, m){
+  let v = monthExpenses(y, m, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
+  data.jarMoves.forEach(mv => { const j = jarById(mv.jarId); if (!j || j.currency !== "ARS" || mv.kind === "adjust" || mv.note === "Saldo inicial") return;
+    if (inPeriod({ date: mv.date.slice(0,10) + "T12:00" }, y, m)) v += mv.amount; });
+  return round2(Math.max(0, v));
+}
+async function editSaveGoal(){
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg";
+  box.innerHTML = '<p><b>¿Cuánto querés ahorrar por mes?</b><br><span style="font-size:.9rem">Recy te va diciendo si vas bien. Dejalo vacío para no tener meta.</span></p><input class="input" inputmode="decimal" autocomplete="off" placeholder="Ej: 300.000"><div class="dlg-acts" style="margin-top:14px"></div>';
+  const inp = box.querySelector("input"); if (data.saveGoal > 0) inp.value = String(data.saveGoal);
+  const acts = box.querySelector(".dlg-acts"), close = () => bg.remove();
+  const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
+  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar";
+  o.onclick = () => { const v = parseAmount(inp.value); data.saveGoal = v > 0 ? round2(v) : 0; persist(); close(); render(); if ($("spSheet").classList.contains("open")) renderSavePlan(); };
+  acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => inp.focus(), 50);
+}
+let simLess = 0, simBuy = 0, simN = 6;
 function renderSavePlan(){
   const box = $("savePlanBox"); box.innerHTML = "";
   const [vy, vm] = periodOf(new Date());
@@ -5715,12 +5756,22 @@ function renderSavePlan(){
   const hero = el("div", "sp-hero" + (P.save < 0 ? " neg" : ""));
   hero.append(el("small", "", P.save >= 0 ? `En ${mes} te quedan para ahorrar unos` : `En ${mes} no te alcanza: te faltan unos`),
     el("strong", "", f0ARS(Math.abs(P.save))));
-  const sav = monthExpenses(vy, vm, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
-  if (P.save > 0){
-    const pct = Math.min(1, sav / P.save), bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(pct * 100) + "%"; bar.append(fill); hero.append(bar);
-    hero.append(el("small", "", sav <= 0 ? "Todavía no separaste nada este mes." : sav >= P.save ? `Ya separaste ${f0ARS(sav)}. ¡Llegaste! 💪` : `Ya separaste ${f0ARS(sav)}. Te faltan ${f0ARS(P.save - sav)}.`));
+  const sav = savedIn(vy, vm), goal = data.saveGoal > 0 ? data.saveGoal : 0, target = goal || Math.max(0, P.save);
+  if (target > 0){
+    const pct = Math.min(1, sav / target), bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(pct * 100) + "%"; bar.append(fill); hero.append(bar);
+    hero.append(el("small", "", (goal ? `Tu meta: ${f0ARS(goal)}. ` : "") + (sav <= 0 ? "Todavía no separaste nada este mes." : sav >= target ? `Ya separaste ${f0ARS(sav)}. ¡Llegaste! 💪` : `Ya separaste ${f0ARS(sav)}. Te faltan ${f0ARS(target - sav)}.`)));
   }
   box.append(hero);
+  const gl = el("button", "linkbtn sp-goal", goal ? "Cambiar mi meta de ahorro" : "🎯 Ponerme una meta de ahorro por mes"); gl.type = "button"; gl.onclick = editSaveGoal; box.append(gl);
+  if (goal && P.save < goal) box.append(el("p", "fx-hint sp-warn", P.save > 0 ? `Con lo que ya tenés comprometido no llegás a tu meta: te quedan ${f0ARS(P.save)} y la meta es ${f0ARS(goal)}. Te faltan ${f0ARS(goal - P.save)}.` : `Este mes no te queda nada para tu meta de ${f0ARS(goal)}.`));
+  // Mandar a un frasco, con el monto ya puesto
+  const left = round2((goal ? Math.min(goal, Math.max(P.save, 0)) : Math.max(P.save, 0)) - sav), jars = data.jars.filter(j => j.currency === "ARS");
+  if (left > 0 && jars.length){
+    const w = el("div", "sp-jars"); w.append(el("small", "", `Separar ${f0ARS(left)} en:`));
+    jars.forEach(j => { const b = el("button", "chip", "🫙 " + j.name); b.type = "button"; b.style.borderColor = j.color;
+      b.onclick = () => { closeSavePlan(); openJarMove(j, "deposit"); setTimeout(() => { $("jmAmount").value = String(Math.round(left)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); $("jmNote").value = "Ahorro del mes"; }, 30); }; w.append(b); });
+    box.append(w);
+  }
   if (!P.daily) { const w = el("button", "sp-alert"); w.type = "button";
     w.textContent = "⚠️ No sé cuánto gastás en el día a día (súper, comida, salidas en efectivo o débito), así que este número seguro es más alto de lo real. Tocá acá y poné un aproximado."; w.onclick = editDaily; box.append(w); }
   // 2) Cómo se calcula
@@ -5746,8 +5797,28 @@ function renderSavePlan(){
     if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03))
       nx.append(el("p", "fx-hint sp-warn", `Ojo: por lo que ya compraste con tarjeta, en ${nm} vas a poder ahorrar ${f0ARS(Q.card - P.card)} menos que en ${mes}.`));
   }
-  if (data.jars.some(j => j.currency === "ARS") && P.save > 0){
-    const go = el("button", "small-btn primary", "Mandar a un frasco"); go.type = "button"; go.style.marginTop = "12px"; go.onclick = () => { closeSavePlan(); setTab("jars"); }; box.append(go); }
+  // 4) ¿Y si…? (simulador)
+  box.append(el("div", "sp-nh", "¿Y si…?"));
+  box.append(el("p", "fx-hint", "Probá cambios y mirá cómo te quedaría el ahorro. No se guarda nada."));
+  const sim = el("div", "sp-sim"); box.append(sim);
+  const mk = (lbl, val, set, ph) => { const l = el("label", "", lbl), i = el("input", "input"); i.inputMode = "decimal"; i.placeholder = ph; i.value = val ? String(val) : "";
+    i.oninput = () => { set(parseAmount(i.value) || 0); drawSim(); }; sim.append(l, i); return i; };
+  mk("…gasto menos por mes en el día a día", simLess, v => simLess = v, "Ej: 50.000");
+  mk("…compro algo en cuotas (precio total)", simBuy, v => simBuy = v, "Ej: 600.000");
+  const ns = el("select", "input"); [1,3,6,9,12,18].forEach(n => { const o = el("option", "", n === 1 ? "1 pago" : `${n} cuotas`); o.value = n; ns.append(o); }); ns.value = simN;
+  ns.onchange = () => { simN = Number(ns.value); drawSim(); }; sim.append(ns);
+  const out = el("div", "sp-body"); sim.append(out);
+  function drawSim(){
+    out.innerHTML = "";
+    if (!simLess && !simBuy){ out.append(el("p", "fx-hint", "Completá algo arriba para ver la diferencia.")); return; }
+    for (let k = 1; k <= 4; k++){
+      const d = new Date(vy, vm + k, 1), Q = savePlan(d.getFullYear(), d.getMonth()), nm = monthName(Q.y, Q.m);
+      const after = round2(Q.save + simLess - (simBuy && k <= simN ? simBuy / simN : 0));
+      const r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1)); a.append(el("small", "", `hoy: ${f0ARS(Q.save)}`));
+      r.append(a, el("strong", after < 0 ? "neg" : "", (after < 0 ? "− " : "") + f0ARS(Math.abs(after)))); out.append(r);
+    }
+  }
+  drawSim();
 }
 /* ---------- Guía de inicio (onboarding): explica la app y carga lo básico ---------- */
 const ONB_KEY = "receater.onb";
@@ -5925,8 +5996,82 @@ function renderMonthClose(){
   x.onclick = () => { data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
   box.append(go, x);
 }
+/* Secciones del Resumen que se pliegan (se acuerda cuáles cerraste) */
+const FOLD_DEFAULT = { breves: true, bars: true };
+function foldState(){ try { return Object.assign({}, FOLD_DEFAULT, JSON.parse(localStorage.getItem("receater.folds") || "{}")); } catch { return { ...FOLD_DEFAULT }; } }
+function applyFolds(){ const st = foldState(); document.querySelectorAll("section[data-fold]").forEach(sec => sec.classList.toggle("folded", !!st[sec.dataset.fold])); }
+document.querySelectorAll("section[data-fold]").forEach(sec => {
+  const h = sec.querySelector(":scope>.sec-head h3, :scope>h3.sec-h"); if (!h) return;
+  h.setAttribute("role", "button"); h.tabIndex = 0;
+  const tog = () => { const st = foldState(); st[sec.dataset.fold] = !sec.classList.contains("folded"); try { localStorage.setItem("receater.folds", JSON.stringify(st)); } catch {} applyFolds(); };
+  h.onclick = tog; h.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); tog(); } };
+});
+applyFolds();
+/* Qué días de la semana gastás más (últimos 3 meses, sin tarjeta, fijos ni ahorro) */
+function renderWeekdays(){
+  const box = $("daysBox"); box.innerHTML = "";
+  const lim = new Date(Date.now() - 91 * 864e5), xs = data.expenses.filter(e => !isIncome(e) && e.currency === "ARS" && !isCardExp(e) && !e.fixedId && !isSaving(e) && !e.jarId && !e.fx && !e.repaysId && new Date(e.date) >= lim && new Date(e.date) <= new Date());
+  const first = xs.reduce((m, e) => Math.min(m, new Date(e.date).getTime()), Date.now()), weeks = Math.max(1, (Date.now() - first) / (7 * 864e5));
+  if (xs.length < 8 || weeks < 2){ const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = "Cargá un par de semanas de gastos y te muestro qué días gastás más."; box.append(p); return; }
+  const sum = [0,0,0,0,0,0,0], cat = {};   // 0 = lunes
+  xs.forEach(e => { const d = (new Date(e.date).getDay() + 6) % 7, v = eff(e); sum[d] += v; if (d >= 5) cat[e.category] = (cat[e.category] || 0) + v; });
+  const avg = sum.map(v => v / weeks), max = Math.max(...avg, 1), top = avg.indexOf(Math.max(...avg));
+  const N = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"], NL = ["lunes","martes","miércoles","jueves","viernes","sábados","domingos"];
+  const k = v => v >= 1e6 ? "$" + String(Math.round(v / 1e5) / 10).replace(".", ",") + "M" : v >= 1000 ? "$" + Math.round(v / 1000) + "k" : v ? "$" + Math.round(v) : "—";
+  const bars = document.createElement("div"); bars.className = "wd-bars";
+  avg.forEach((v, i) => { const c = document.createElement("div"); c.className = "wd-col" + (i === top ? " top" : i >= 5 ? " we" : "");
+    c.innerHTML = '<span class="wd-v"></span><span class="wd-bar"></span><span class="wd-m"></span>';
+    c.querySelector(".wd-v").textContent = k(v); c.querySelector(".wd-bar").style.height = Math.max(3, Math.round(v / max * 70)) + "px"; c.querySelector(".wd-m").textContent = N[i]; bars.append(c); });
+  box.append(bars);
+  const we = (avg[5] + avg[6]) / 2, wk = avg.slice(0, 5).reduce((a,b) => a + b, 0) / 5;
+  const ln = [];
+  ln.push(`Los ${NL[top]} son tu día más caro: unos ${f0ARS(avg[top])} en promedio.`);
+  if (wk > 0 && we > wk * 1.25){ const tc = Object.entries(cat).sort((a,b) => b[1] - a[1])[0];
+    ln.push(`El fin de semana gastás ${we / wk >= 1.95 ? Math.round(we / wk) + " veces" : Math.round((we / wk - 1) * 100) + "% más"} por día que entre semana${tc ? `, sobre todo en ${catById(tc[0]).name}` : ""}.`); }
+  else if (wk > 0 && we < wk * 0.8) ln.push("El fin de semana gastás menos que entre semana.");
+  ln.push(`Por semana se te van unos ${f0ARS(avg.reduce((a,b) => a + b, 0))} en el día a día.`);
+  ln.forEach(t => { const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "6px 0 0"; p.textContent = t; box.append(p); });
+  const n = document.createElement("p"); n.className = "fx-hint"; n.style.cssText = "margin:6px 0 0;font-size:.76rem"; n.textContent = "Últimos 3 meses, sin tarjeta ni fijos."; box.append(n);
+}
+/* El mes en una imagen para guardar o compartir */
+async function shareMonthImage(){
+  const y = viewYear, m = viewMonth, all = monthExpenses(y, m, "ARS"), sp = all.filter(x => !isSaving(x)), tot = sp.reduce((a,x) => a + x.amount, 0);
+  const sav = all.filter(isSaving).reduce((a,x) => a + x.amount, 0);
+  const inc = data.incomes.filter(e => inPeriod(e, y, m) && e.currency === "ARS").reduce((a,e) => a + e.amount, 0);
+  const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1, prev = monthExpenses(py, pm, "ARS").filter(x => !isSaving(x)).reduce((a,x) => a + x.amount, 0);
+  const cats = Object.entries(byCat(sp)).sort((a,b) => b[1] - a[1]).slice(0, 6);
+  const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  g.fillStyle = "#FBF8F1"; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "#C2AE7F"; g.setLineDash([14, 10]); g.lineWidth = 4; g.strokeRect(40, 40, W - 80, H - 80); g.setLineDash([]);
+  const F = (sz, w = 700, fam = "system-ui, -apple-system, Segoe UI, sans-serif") => `${w} ${sz}px ${fam}`;
+  g.fillStyle = "#1B2430"; g.textAlign = "center";
+  g.font = F(30, 600); g.fillText("EL DIARIO DE RECY", W/2, 120);
+  g.font = F(64, 800, "Georgia, serif"); g.fillText(periodTitle(y, m), W/2, 200);
+  g.fillRect(100, 235, W - 200, 4);
+  g.font = F(34, 600); g.fillStyle = "#5A6B76"; g.fillText("Gastaste", W/2, 310);
+  g.font = F(110, 800); g.fillStyle = "#1B2430"; g.fillText(f0ARS(tot), W/2, 420);
+  g.font = F(34, 500); g.fillStyle = "#5A6B76";
+  const sub = [prev > 0 ? `${tot >= prev ? "+" : "−"}${Math.round(Math.abs(tot / prev - 1) * 100)}% vs ${monthName(py, pm)}` : null, inc > 0 ? `${Math.round(tot / inc * 100)}% de lo que cobraste` : null].filter(Boolean).join("  ·  ");
+  if (sub) g.fillText(sub, W/2, 475);
+  let yy = 560; g.textAlign = "left";
+  const mx = cats.length ? cats[0][1] : 1;
+  cats.forEach(([id, v]) => { const ct = catById(id);
+    g.font = F(36, 700); g.fillStyle = "#1B2430"; g.fillText(ct.name, 110, yy);
+    g.textAlign = "right"; g.fillText(f0ARS(v), W - 110, yy); g.textAlign = "left";
+    g.fillStyle = "#E6DECB"; g.fillRect(110, yy + 18, W - 220, 22);
+    let col = ct.color; if (/^var\(/.test(col)) col = "#2F5BEA"; g.fillStyle = col; g.fillRect(110, yy + 18, Math.max(8, (W - 220) * v / mx), 22);
+    yy += 100; });
+  g.textAlign = "center";
+  if (sav > 0){ g.font = F(40, 800); g.fillStyle = "#1E7A50"; g.fillText(`Ahorraste ${f0ARS(sav)} 💪`, W/2, yy + 40); }
+  g.font = F(28, 500); g.fillStyle = "#8A8170"; g.fillText("Hecho con Receater · receater.github.io", W/2, H - 90);
+  const blob = await new Promise(r => c.toBlob(r, "image/png"));
+  const name = `receater-${monthKey(y, m)}.png`, file = new File([blob], name, { type: "image/png" });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: periodTitle(y, m) }); return; } } catch (e){ if (e && e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$("shareMonth").onclick = shareMonthImage;
 function renderDash(){
-  renderMonthClose();
+  renderMonthClose(); renderWeekdays();
   const cur = dashCur;
   const list = monthExpenses(viewYear, viewMonth, cur);
   const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
@@ -6403,7 +6548,8 @@ function stageJars(){
   if (sc.mode === "total"){
     renderStage("stageJars", {
       label: "Ahorrado", big: T.balA || !T.balU ? fmtARS.format(T.balA) : fmtUSD.format(T.balU), bar,
-      lines: [T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
+      lines: [data.saveGoal > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0); return v0 >= data.saveGoal ? `Meta del mes cumplida: ${f0ARS(v0)} 💪` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(data.saveGoal)}`; })() : null,
+        T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
         best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
       mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "full",
       line: !data.jars.length ? "Armemos tu primer frasco." : best ? `Te falta poco para ${best.j.name}.` : "Qué rico cuando ahorrás."
