@@ -276,20 +276,43 @@ button{cursor:pointer}
 /* Google Drive */
 .sp-open{width:100%;margin:14px 0 6px}
 #spSheet .clip{margin:0}
-.onb{position:fixed;inset:0;z-index:9000;background:rgba(15,18,24,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.onb{position:fixed;inset:0;z-index:9000;background:rgba(15,18,24,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}
 .onb[hidden]{display:none}
-.onb-card{width:100%;max-width:440px;max-height:calc(100dvh - 32px);overflow-y:auto;background:#FBF8F1;color:#1B2430;border-radius:18px;border:1.5px dashed #C2AE7F;padding:18px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,.35);color-scheme:light;--ink:#1B2430;--muted:#5A6B76;--line:#D9CFB8;--paper:#FBF8F1}
-.onb h2{font-size:1.25rem;margin:4px 0 8px;line-height:1.25}.onb p{margin:0 0 10px;line-height:1.45}
-.onb-dots{display:flex;gap:6px;justify-content:center;margin-bottom:6px}.onb-dots span{width:8px;height:8px;border-radius:50%;background:#D9CFB8}.onb-dots span.on{background:#2F5BEA;width:20px;border-radius:99px}
-.onb-recy{width:84px;height:84px;margin:0 auto}.onb-recy svg{width:100%;height:100%}
-.onb-list{margin:0 0 10px;padding:0;list-style:none;display:grid;gap:8px}.onb-list li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;line-height:1.35;font-size:.94rem}.onb-list li b{display:block}
-.onb .input{width:100%;box-sizing:border-box}.onb label{display:block;font-weight:700;font-size:.85rem;margin:10px 0 4px}
-.onb .hint{font-size:.82rem;color:#5A6B76;margin:4px 0 0;line-height:1.35}
-.onb-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
-.onb-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 28px;gap:6px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed #D9CFB8}.onb-row input:first-child{grid-column:1 / -1;font-weight:700}
-.onb-row .x{border:0;background:none;font-size:1.2rem;color:#5A6B76;cursor:pointer}
-.onb-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
-.onb-acts{display:flex;justify-content:space-between;gap:10px;margin-top:14px}.onb-acts .btn{flex:1}
+.onb-card{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--bg:#F2EDE0;--accent:#2F5BEA;color-scheme:light;
+  width:100%;max-width:420px;height:min(640px,calc(100dvh - 32px));display:flex;flex-direction:column;background:var(--paper);color:var(--ink);
+  border-radius:6px;padding:16px 18px 14px;box-shadow:0 14px 40px rgba(0,0,0,.4);font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  background-image:repeating-linear-gradient(transparent 0 27px,rgba(47,91,234,.07) 27px 28px)}
+.onb-top{flex:none;text-align:center}
+.onb h2{font-family:inherit;text-transform:uppercase;letter-spacing:.06em;font-size:1rem;margin:4px 0 8px;line-height:1.3}
+.onb-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 6px;margin:0 -2px}
+.onb p{margin:0 0 10px;line-height:1.45;font-size:.92rem}
+.onb-dots{display:flex;gap:5px;justify-content:center;margin-bottom:4px}.onb-dots span{width:7px;height:7px;border-radius:50%;background:#D9D3C6}.onb-dots span.on{background:#1F1F1F;width:18px;border-radius:99px}
+.onb-recy{width:64px;height:64px;margin:0 auto}.onb-recy svg{width:100%;height:100%}
+.onb-list{margin:0 0 10px;padding:0;list-style:none;display:grid;gap:8px}.onb-list li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:6px;align-items:start;line-height:1.35;font-size:.88rem}.onb-list li b{display:block}
+.onb .input{width:100%;box-sizing:border-box;min-height:0;height:38px;padding:4px 2px;font-size:16px;background:transparent;border:0;border-bottom:1.5px solid #1F1F1F;border-radius:0;font-family:inherit;color:var(--ink)}
+.onb select.input{padding-right:24px}
+.onb .input:focus{outline:none;border-bottom:2px solid var(--accent);box-shadow:none}
+.onb label{display:block;font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:12px 0 2px}
+.onb .hint{font-size:.8rem;color:var(--muted);margin:6px 0 0;line-height:1.35}
+.onb .chip{border-radius:6px;font-family:inherit;border-color:#BDB6A5;min-height:34px;padding:5px 10px;font-size:.86rem}
+.onb .chip[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
+.onb .btn{border-radius:6px !important;font-family:inherit;min-height:42px}
+.onb .btn.primary{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
+.onb-chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 8px;position:sticky;top:-2px;z-index:2;background:var(--paper);border-bottom:1.5px dashed #BDB6A5}
+.onb-seg{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+.onb-row{display:grid;grid-template-columns:minmax(0,1fr) 64px 26px;gap:8px;align-items:end;padding:8px 0 10px;border-bottom:1px dashed #D9D3C6}
+.onb-row .full{grid-column:1 / -1}
+.onb-row label{margin:0 0 2px}
+.onb-row .x{border:0;background:none;font-size:1.2rem;color:var(--muted);cursor:pointer;height:38px}
+.onb-card3{display:grid;grid-template-columns:minmax(0,1fr) 70px 70px 26px;gap:8px;align-items:end;padding:8px 0 10px;border-bottom:1px dashed #D9D3C6}
+.onb-acts{flex:none;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding-top:10px;border-top:1.5px dashed #BDB6A5}
+.onb-acts .linkbtn{justify-self:center;color:var(--muted);font-family:inherit;font-size:.86rem}
+.onb-acts .btn{padding:0 14px;white-space:nowrap}
+@media (max-width:380px){.onb-card{padding:14px 12px 12px}.onb-acts{gap:4px}.onb-acts .btn{padding:0 10px;font-size:.88rem}.onb-acts .linkbtn{font-size:.8rem}}
+.onb .err{min-height:0;margin:4px 0 0;font-size:.84rem}
+.onb-busy{display:flex;align-items:center;gap:10px;padding:12px;border:1.5px dashed #BDB6A5;border-radius:6px;margin-top:10px;font-size:.9rem}
+.onb-ok{padding:12px;border-radius:6px;background:#EAF6EF;border:1.5px solid #9CCFB0;margin-top:10px;font-size:.9rem}
+.onb-bad{padding:12px;border-radius:6px;background:#FBECEE;border:1.5px solid #E6A5AF;margin-top:10px;font-size:.9rem}
 section[data-fold]>.sec-head h3,section[data-fold]>h3.sec-h{cursor:pointer;user-select:none}
 section[data-fold]>.sec-head h3::after,section[data-fold]>h3.sec-h::after{content:" ▾";font-size:.8em;opacity:.55}
 section[data-fold].folded>.sec-head h3::after,section[data-fold].folded>h3.sec-h::after{content:" ▸"}
@@ -299,6 +322,7 @@ section[data-fold].folded>.sec-head>button{display:none}
 .wd-col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.wd-v{font-size:.68rem;font-weight:700;white-space:nowrap}
 .wd-bar{width:72%;border-radius:6px 6px 2px 2px;background:#C9CFD8}.wd-col.top .wd-bar{background:var(--accent)}.wd-col.we .wd-bar{background:#E08A2C}.wd-m{font-size:.76rem;color:var(--muted)}
 .share-month{display:block;margin:18px auto 0}
+.unfold-all{display:block;margin:6px auto 0;font-size:.85rem}
 .usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
 .usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
 .brand-left{display:flex;flex-direction:column;min-width:0;line-height:1.2}
@@ -308,7 +332,9 @@ section[data-fold].folded>.sec-head>button{display:none}
 #payBtn:not(.set-row){max-width:48vw}
 #syncBtn.ok{color:var(--usd)}
 #syncBtn.warn{color:var(--danger)}
-.cloud-banner{background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--line)}
+.cloud-banner{--paper:#FBF8F1;--ink:#1F1F1F;--muted:#6E6A62;color-scheme:light;background:#FBF8F1 !important;color:#1F1F1F !important;border-radius:6px !important;padding:14px 16px;margin-bottom:14px;border:1.5px dashed #BDB6A5 !important;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.cloud-banner .small-btn{border-radius:6px;font-family:inherit}.cloud-banner .small-btn.primary{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}.cloud-banner .small-btn:not(.primary){background:transparent;color:#1F1F1F;border-color:#BDB6A5}
+.cloud-banner .fx-hint{color:#6E6A62 !important;font-family:inherit}.cloud-banner a{color:#2F5BEA}
 .cloud-banner p{margin:0 0 10px;font-size:.93rem}
 .cloud-banner .row{display:flex;gap:8px;flex-wrap:wrap}
 
@@ -708,6 +734,15 @@ section[data-fold].folded>.sec-head>button{display:none}
 .sp-bar{height:8px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin:0 0 6px}.sp-bar span{display:block;height:100%;background:#1E7A50}
 .sp-alert{display:block;width:100%;text-align:left;font:inherit;font-size:.84rem;line-height:1.35;padding:10px 12px;margin:0 0 12px;border-radius:12px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#5A4500;cursor:pointer}
 #spSheet .sp-nh{margin:14px 0 2px}
+.sp-usd{margin-top:-4px;font-weight:700;color:#1E7A50 !important}
+.sp-card{border:1.5px dashed #BDB6A5;border-radius:8px;padding:10px 12px;margin:0 0 12px;display:grid;gap:6px}
+.sp-card-h{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.sp-card small{font-size:.84rem;color:var(--muted)}.sp-card .sp-bar{margin:2px 0}
+.sp-fold{border-top:1.5px dashed #BDB6A5;padding:4px 0}
+.sp-fold>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.82rem}
+.sp-fold>summary::-webkit-details-marker{display:none}.sp-fold>summary::after{content:"▸";transition:transform .15s}.sp-fold[open]>summary::after{transform:rotate(90deg)}
+.sp-fold-b{padding:0 0 8px}.sp-fold-b label{display:block;font-weight:700;font-size:.8rem;margin:10px 0 2px}.sp-fold-b select,.sp-fold-b input{margin-top:8px;width:100%;max-width:100%;box-sizing:border-box}
+button.sp-row{width:100%;background:none;border:0;border-bottom:1px dashed var(--line);font:inherit;color:inherit;text-align:left;cursor:pointer}
 .sp-goal{display:block;margin:-4px auto 10px;font-size:.88rem}
 .sp-jars{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px}.sp-jars small{width:100%;color:var(--muted);font-size:.84rem}
 .sp-sim label{display:block;font-weight:700;font-size:.84rem;margin:10px 0 4px}.sp-sim select{margin-top:6px}
@@ -1460,6 +1495,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
         <h1 class="mast-title">El Diario de Recy</h1>
         <div class="mast-bottom"><span id="paperDate"></span><span>Año 1</span></div>
       </header>
+      <button type="button" class="linkbtn unfold-all" id="unfoldAll" hidden>Desplegar todas las secciones</button>
       <p class="kicker" id="leadKicker">Economía personal</p>
       <h2 class="headline" id="leadHead" hidden></h2>
       <p class="deck" id="leadDeck" hidden></p>
@@ -1471,7 +1507,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
           <p class="caption">Tocá una categoría para ver sus gastos.</p>
         </section>
         <section data-fold="breves">
-          <h3 class="sec-h">Breves</h3>
+          <h3 class="sec-h">Datos del mes</h3>
           <div class="facts" id="facts"></div>
         </section>
         <section data-fold="dias">
@@ -1964,6 +2000,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <div class="set-label">Recy</div>
     <button type="button" class="set-row as-btn" id="setAi"><div><strong>Recy inteligente</strong><span id="setAiTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setNotif"><div><strong>Avisos en el celular</strong><span id="setNotifTxt"></span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setRemind" hidden><div><strong>Recordatorio para cargar gastos</strong><span id="setRemindTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setPpl"><div><strong>Personas</strong><span>Con quién dividís gastos o te prestás plata.</span></div><span class="chev2">›</span></button>
   </div>
   <div class="set-group">
@@ -2046,12 +2083,18 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 
 <div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-labelledby="onbTitle">
   <div class="onb-card">
-    <div class="onb-dots" id="onbDots" aria-hidden="true"></div>
-    <div class="onb-recy" id="onbRecy" aria-hidden="true"></div>
-    <h2 id="onbTitle"></h2>
-    <div id="onbBody"></div>
+    <div class="onb-top">
+      <div class="onb-dots" id="onbDots" aria-hidden="true"></div>
+      <div class="onb-recy" id="onbRecy" aria-hidden="true"></div>
+      <h2 id="onbTitle"></h2>
+    </div>
+    <div class="onb-scroll" id="onbBody"></div>
     <div class="err" id="onbErr"></div>
-    <div class="onb-acts"><button type="button" class="btn ghost" id="onbSkip">Saltear</button><button type="button" class="btn primary" id="onbNext">Siguiente</button></div>
+    <div class="onb-acts">
+      <button type="button" class="btn ghost" id="onbBack">← Atrás</button>
+      <button type="button" class="linkbtn" id="onbSkip">Saltear</button>
+      <button type="button" class="btn primary" id="onbNext">Siguiente</button>
+    </div>
   </div>
 </div>
 <div class="sheet-bg" id="spBg"></div>
@@ -2105,7 +2148,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.1700";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.1930";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5727,24 +5770,37 @@ function savePlan(y, m, extraCard = 0){
   return { y, m, inc, incEst, card, cuotas: round2(cuotas), buys: round2(buys - cuotas), fixCard: round2(fixCard), fixNo: round2(fixNo), daily: daily.v, dailyInfo: daily,
     save: round2(inc - card - fixNo - daily.v) };
 }
-/* Lo que separaste para ahorrar en un período: gastos "Ahorro" + lo que sumaste a frascos en pesos (menos lo que sacaste) */
+/* Lo que separaste para ahorrar en un período (en pesos): gastos "Ahorro" + lo que sumaste a frascos (los de dólares, pasados a pesos) */
+const usdRateNow = () => { const q = jarUsdRate(); return q ? q.venta : 0; };
 function savedIn(y, m){
+  const r = usdRateNow();
   let v = monthExpenses(y, m, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
-  data.jarMoves.forEach(mv => { const j = jarById(mv.jarId); if (!j || j.currency !== "ARS" || mv.kind === "adjust" || mv.note === "Saldo inicial") return;
-    if (inPeriod({ date: mv.date.slice(0,10) + "T12:00" }, y, m)) v += mv.amount; });
+  data.jarMoves.forEach(mv => { const j = jarById(mv.jarId); if (!j || mv.kind === "adjust" || mv.note === "Saldo inicial") return;
+    if (!inPeriod({ date: mv.date.slice(0,10) + "T12:00" }, y, m)) return;
+    v += j.currency === "USD" ? (r ? mv.amount * r : 0) : mv.amount; });
   return round2(Math.max(0, v));
 }
-async function editSaveGoal(){
-  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg";
-  box.innerHTML = '<p><b>¿Cuánto querés ahorrar por mes?</b><br><span style="font-size:.9rem">Recy te va diciendo si vas bien. Dejalo vacío para no tener meta.</span></p><input class="input" inputmode="decimal" autocomplete="off" placeholder="Ej: 300.000"><div class="dlg-acts" style="margin-top:14px"></div>';
-  const inp = box.querySelector("input"); if (data.saveGoal > 0) inp.value = String(data.saveGoal);
-  const acts = box.querySelector(".dlg-acts"), close = () => bg.remove();
+const goalCur = () => data.saveGoalCur === "USD" ? "USD" : "ARS";
+const goalARS = () => !(data.saveGoal > 0) ? 0 : goalCur() === "USD" ? round2(data.saveGoal * (usdRateNow() || 0)) : data.saveGoal;
+const usdTxt = v => { const r = usdRateNow(); return r && v ? `≈ ${fmtUSD.format(Math.round(v / r))}` : ""; };
+function miniDialog(html, onOk){
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg"; box.innerHTML = html;
+  const acts = document.createElement("div"); acts.className = "dlg-acts"; acts.style.marginTop = "14px"; const close = () => bg.remove();
   const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
-  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar";
-  o.onclick = () => { const v = parseAmount(inp.value); data.saveGoal = v > 0 ? round2(v) : 0; persist(); close(); render(); if ($("spSheet").classList.contains("open")) renderSavePlan(); };
-  acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => inp.focus(), 50);
+  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar"; o.onclick = () => { if (onOk(box) !== false) close(); };
+  acts.append(c, o); box.append(acts); bg.append(box); bg.onclick = e => { if (e.target === bg) close(); }; document.body.append(bg);
+  setTimeout(() => { const i = box.querySelector("input"); if (i) i.focus(); }, 50); return box;
+}
+function editSaveGoal(){
+  let cur = goalCur();
+  const box = miniDialog('<p><b>¿Cuánto querés ahorrar por mes?</b></p><div class="seg" role="group" aria-label="Moneda" style="margin-bottom:10px"><button type="button" data-c="ARS">Pesos</button><button type="button" data-c="USD">Dólares</button></div><input class="input" inputmode="decimal" autocomplete="off"><p class="fx-hint" style="margin:8px 0 0">Recy te va diciendo si vas bien. Dejalo vacío para no tener meta.</p>',
+    b => { const v = parseAmount(b.querySelector("input").value); data.saveGoal = v > 0 ? round2(v) : 0; data.saveGoalCur = cur; persist(); render(); if ($("spSheet").classList.contains("open")) renderSavePlan(); });
+  const inp = box.querySelector("input"); if (data.saveGoal > 0) inp.value = String(data.saveGoal);
+  const paint = () => { box.querySelectorAll("[data-c]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === cur))); inp.placeholder = cur === "USD" ? "Ej: US$ 200" : "Ej: $ 300.000"; };
+  box.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { cur = b.dataset.c; paint(); inp.focus(); }); paint();
 }
 let simLess = 0, simBuy = 0, simN = 6;
+const spOpenState = { calc: false, next: true, sim: false };
 function renderSavePlan(){
   const box = $("savePlanBox"); box.innerHTML = "";
   const [vy, vm] = periodOf(new Date());
@@ -5752,149 +5808,182 @@ function renderSavePlan(){
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   $("spTitle").textContent = "¿Cuánto puedo ahorrar?";
   if (!P.inc){ box.append(el("p", "fx-hint", "Primero cargá tu sueldo (Darle a Recy → Ingreso) y te calculo cuánto te queda para ahorrar.")); return; }
-  // 1) La respuesta, grande
+  // 1) La respuesta
   const hero = el("div", "sp-hero" + (P.save < 0 ? " neg" : ""));
-  hero.append(el("small", "", P.save >= 0 ? `En ${mes} te quedan para ahorrar unos` : `En ${mes} no te alcanza: te faltan unos`),
-    el("strong", "", f0ARS(Math.abs(P.save))));
-  const sav = savedIn(vy, vm), goal = data.saveGoal > 0 ? data.saveGoal : 0, target = goal || Math.max(0, P.save);
-  if (target > 0){
-    const pct = Math.min(1, sav / target), bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(pct * 100) + "%"; bar.append(fill); hero.append(bar);
-    hero.append(el("small", "", (goal ? `Tu meta: ${f0ARS(goal)}. ` : "") + (sav <= 0 ? "Todavía no separaste nada este mes." : sav >= target ? `Ya separaste ${f0ARS(sav)}. ¡Llegaste! 💪` : `Ya separaste ${f0ARS(sav)}. Te faltan ${f0ARS(target - sav)}.`)));
-  }
+  hero.append(el("small", "", P.save >= 0 ? `En ${mes} te quedan para ahorrar` : `En ${mes} no te alcanza. Te faltan`), el("strong", "", f0ARS(Math.abs(P.save))));
+  const u = usdTxt(Math.abs(P.save)); if (u) hero.append(el("small", "sp-usd", u));
   box.append(hero);
-  const gl = el("button", "linkbtn sp-goal", goal ? "Cambiar mi meta de ahorro" : "🎯 Ponerme una meta de ahorro por mes"); gl.type = "button"; gl.onclick = editSaveGoal; box.append(gl);
-  if (goal && P.save < goal) box.append(el("p", "fx-hint sp-warn", P.save > 0 ? `Con lo que ya tenés comprometido no llegás a tu meta: te quedan ${f0ARS(P.save)} y la meta es ${f0ARS(goal)}. Te faltan ${f0ARS(goal - P.save)}.` : `Este mes no te queda nada para tu meta de ${f0ARS(goal)}.`));
-  // Mandar a un frasco, con el monto ya puesto
-  const left = round2((goal ? Math.min(goal, Math.max(P.save, 0)) : Math.max(P.save, 0)) - sav), jars = data.jars.filter(j => j.currency === "ARS");
+  if (!P.daily){ const w = el("button", "sp-alert"); w.type = "button"; w.textContent = "⚠️ Falta saber cuánto gastás por mes en gastos varios (súper, comida, salidas). Sin eso, este número es más alto de lo real. Tocá para ponerlo ✎"; w.onclick = editDaily; box.append(w); }
+  // 2) Meta
+  const sav = savedIn(vy, vm), gA = goalARS(), card = el("div", "sp-card");
+  if (gA > 0){
+    const h = el("button", "sp-card-h"); h.type = "button";
+    h.append(el("span", "", "🎯 Tu meta por mes"), el("b", "", (goalCur() === "USD" ? fmtUSD.format(data.saveGoal) : f0ARS(data.saveGoal)) + " ✎")); h.onclick = editSaveGoal; card.append(h);
+    const bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(Math.min(1, sav / gA) * 100) + "%"; bar.append(fill); card.append(bar);
+    card.append(el("small", "", sav >= gA ? `Separaste ${f0ARS(sav)}. ¡Cumpliste la meta! 💪` : `Separaste ${f0ARS(sav)} de ${f0ARS(gA)}. Te faltan ${f0ARS(gA - sav)}.`));
+    if (P.save < gA && sav < gA) card.append(el("small", "sp-warn", P.save > 0 ? `Ojo: este mes solo te quedan ${f0ARS(P.save)}, no alcanza para la meta.` : "Ojo: este mes no te queda plata para la meta."));
+  } else {
+    const b = el("button", "sp-card-h"); b.type = "button"; b.append(el("span", "", "🎯 Ponerme una meta de ahorro por mes"), el("b", "", "＋")); b.onclick = editSaveGoal; card.append(b);
+    if (sav > 0) card.append(el("small", "", `Este mes ya separaste ${f0ARS(sav)}.`));
+  }
+  box.append(card);
+  // Separar en un frasco (con el monto ya puesto)
+  const left = round2((gA ? Math.min(gA, Math.max(P.save, 0)) : Math.max(P.save, 0)) - sav), jars = data.jars;
   if (left > 0 && jars.length){
-    const w = el("div", "sp-jars"); w.append(el("small", "", `Separar ${f0ARS(left)} en:`));
+    const w = el("div", "sp-jars"); w.append(el("small", "", `Separar ${f0ARS(left)} ahora en:`));
     jars.forEach(j => { const b = el("button", "chip", "🫙 " + j.name); b.type = "button"; b.style.borderColor = j.color;
-      b.onclick = () => { closeSavePlan(); openJarMove(j, "deposit"); setTimeout(() => { $("jmAmount").value = String(Math.round(left)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); $("jmNote").value = "Ahorro del mes"; }, 30); }; w.append(b); });
+      b.onclick = () => { closeSavePlan(); openJarMove(j, "deposit"); const r = usdRateNow(), v = j.currency === "USD" ? (r ? Math.round(left / r) : 0) : Math.round(left);
+        setTimeout(() => { if (v) $("jmAmount").value = String(v).replace(/\B(?=(\d{3})+(?!\d))/g, "."); $("jmNote").value = "Ahorro del mes"; }, 30); }; w.append(b); });
     box.append(w);
   }
-  if (!P.daily) { const w = el("button", "sp-alert"); w.type = "button";
-    w.textContent = "⚠️ No sé cuánto gastás en el día a día (súper, comida, salidas en efectivo o débito), así que este número seguro es más alto de lo real. Tocá acá y poné un aproximado."; w.onclick = editDaily; box.append(w); }
-  // 2) Cómo se calcula
-  box.append(el("div", "sp-nh", "Cómo lo calculo"));
-  const body = el("div", "sp-body"); box.append(body);
-  const row = (lbl, v, sub, cls) => { const r = el("div", "sp-row" + (cls ? " " + cls : "")), a = el("span", "", lbl);
-    if (sub) a.append(el("small", "", sub)); r.append(a, el("strong", "", v)); body.append(r); return r; };
-  row("Tu sueldo", "+ " + f0ARS(P.inc), P.incEst ? "el último que cargaste (falta el de este mes)" : "");
-  if (P.card) row("Lo que pagás de tarjeta este mes", "− " + f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos con tarjeta ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
-  if (P.fixNo) row("Fijos que pagás aparte", "− " + f0ARS(P.fixNo), "alquiler, servicios, débitos…");
-  const dr = row("Gastos del día a día", "− " + f0ARS(P.daily), P.dailyInfo.manual ? "el número que pusiste · tocá para cambiarlo" : P.dailyInfo.n ? `lo que gastás en promedio sin tarjeta · tocá para cambiarlo` : "tocá para ponerlo", "sp-tap");
-  dr.onclick = editDaily;
-  row(P.save >= 0 ? "Te queda para ahorrar" : "Te falta", f0ARS(Math.abs(P.save)), "", "sp-total" + (P.save < 0 ? " neg" : ""));
-  // 3) Próximos meses
-  box.append(el("div", "sp-nh", "Y los próximos meses"));
-  box.append(el("p", "fx-hint", "Si no comprás nada más con tarjeta, esto es lo que te quedaría. Cada compra nueva con tarjeta lo baja."));
-  const nx = el("div", "sp-body"); box.append(nx);
-  for (let k = 1; k <= 3; k++){
-    const d = new Date(vy, vm + k, 1), Q = savePlan(d.getFullYear(), d.getMonth()), nm = monthName(Q.y, Q.m);
-    const r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1));
-    a.append(el("small", "", Q.card ? `ya tenés ${f0ARS(Q.card)} de tarjeta` : "sin nada de tarjeta todavía"));
-    const v = el("strong", Q.save < 0 ? "neg" : "", (Q.save < 0 ? "− " : "") + f0ARS(Math.abs(Q.save))); r.append(a, v); nx.append(r);
-    if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03))
-      nx.append(el("p", "fx-hint sp-warn", `Ojo: por lo que ya compraste con tarjeta, en ${nm} vas a poder ahorrar ${f0ARS(Q.card - P.card)} menos que en ${mes}.`));
-  }
-  // 4) ¿Y si…? (simulador)
-  box.append(el("div", "sp-nh", "¿Y si…?"));
-  box.append(el("p", "fx-hint", "Probá cambios y mirá cómo te quedaría el ahorro. No se guarda nada."));
-  const sim = el("div", "sp-sim"); box.append(sim);
-  const mk = (lbl, val, set, ph) => { const l = el("label", "", lbl), i = el("input", "input"); i.inputMode = "decimal"; i.placeholder = ph; i.value = val ? String(val) : "";
-    i.oninput = () => { set(parseAmount(i.value) || 0); drawSim(); }; sim.append(l, i); return i; };
-  mk("…gasto menos por mes en el día a día", simLess, v => simLess = v, "Ej: 50.000");
-  mk("…compro algo en cuotas (precio total)", simBuy, v => simBuy = v, "Ej: 600.000");
-  const ns = el("select", "input"); [1,3,6,9,12,18].forEach(n => { const o = el("option", "", n === 1 ? "1 pago" : `${n} cuotas`); o.value = n; ns.append(o); }); ns.value = simN;
-  ns.onchange = () => { simN = Number(ns.value); drawSim(); }; sim.append(ns);
-  const out = el("div", "sp-body"); sim.append(out);
-  function drawSim(){
-    out.innerHTML = "";
-    if (!simLess && !simBuy){ out.append(el("p", "fx-hint", "Completá algo arriba para ver la diferencia.")); return; }
-    for (let k = 1; k <= 4; k++){
+  const fold = (key, title, build) => { const d = el("details", "sp-fold"); d.open = !!spOpenState[key]; d.ontoggle = () => spOpenState[key] = d.open;
+    const sm = el("summary", "", title); d.append(sm); const inner = el("div", "sp-fold-b"); build(inner); d.append(inner); box.append(d); };
+  // 3) De dónde sale el número
+  fold("calc", "¿De dónde sale este número?", B => {
+    const row = (lbl, v, sub, cls, onEdit) => { const r = el(onEdit ? "button" : "div", "sp-row" + (cls ? " " + cls : "")); if (onEdit){ r.type = "button"; r.onclick = onEdit; }
+      const a = el("span", "", lbl + (onEdit ? " ✎" : "")); if (sub) a.append(el("small", "", sub)); r.append(a, el("strong", "", v)); B.append(r); };
+    row("Tu sueldo", "+ " + f0ARS(P.inc), P.incEst ? "el último que cargaste" : "");
+    if (P.card) row("Tarjeta que pagás este mes", "− " + f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
+    if (P.fixNo) row("Fijos sin tarjeta", "− " + f0ARS(P.fixNo), "alquiler, servicios…");
+    row("Gastos varios del mes", "− " + f0ARS(P.daily), P.dailyInfo.manual ? "el total que pusiste para todo el mes" : P.dailyInfo.n ? "lo que gastás por mes, según lo que cargaste" : "todavía no lo sé", "sp-tap", editDaily);
+    row(P.save >= 0 ? "Te queda" : "Te falta", f0ARS(Math.abs(P.save)), "", "sp-total" + (P.save < 0 ? " neg" : ""));
+  });
+  // 4) Próximos meses
+  fold("next", "Los próximos meses", B => {
+    B.append(el("p", "fx-hint", "Lo que te quedaría si no comprás nada más con tarjeta."));
+    for (let k = 1; k <= 3; k++){
       const d = new Date(vy, vm + k, 1), Q = savePlan(d.getFullYear(), d.getMonth()), nm = monthName(Q.y, Q.m);
-      const after = round2(Q.save + simLess - (simBuy && k <= simN ? simBuy / simN : 0));
-      const r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1)); a.append(el("small", "", `hoy: ${f0ARS(Q.save)}`));
-      r.append(a, el("strong", after < 0 ? "neg" : "", (after < 0 ? "− " : "") + f0ARS(Math.abs(after)))); out.append(r);
+      const r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1)); if (Q.card) a.append(el("small", "", `tarjeta ${f0ARS(Q.card)}`));
+      r.append(a, el("strong", Q.save < 0 ? "neg" : "", (Q.save < 0 ? "− " : "") + f0ARS(Math.abs(Q.save)))); B.append(r);
+      if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03)) B.append(el("p", "fx-hint sp-warn", `Por lo que ya compraste con tarjeta, en ${nm} te quedan ${f0ARS(Q.card - P.card)} menos.`));
     }
-  }
-  drawSim();
+  });
+  // 5) Simular
+  fold("sim", "Simular cambios", B => {
+    const mk = (lbl, val, set, ph) => { const l = el("label", "", lbl), i = el("input", "input"); i.inputMode = "decimal"; i.placeholder = ph; i.value = val ? String(val) : ""; i.oninput = () => { set(parseAmount(i.value) || 0); draw(); }; B.append(l, i); };
+    mk("Si gasto menos por mes…", simLess, v => simLess = v, "Ej: 50.000");
+    mk("Si compro algo en cuotas (precio total)…", simBuy, v => simBuy = v, "Ej: 600.000");
+    const ns = el("select", "input"); [1,3,6,9,12,18].forEach(n => { const o = el("option", "", n === 1 ? "en 1 pago" : `en ${n} cuotas`); o.value = n; ns.append(o); }); ns.value = simN; ns.onchange = () => { simN = Number(ns.value); draw(); }; B.append(ns);
+    const out = el("div", "sp-sim-out"); B.append(out);
+    function draw(){ out.innerHTML = "";
+      if (!simLess && !simBuy){ out.append(el("p", "fx-hint", "Completá algo y te muestro cómo te quedaría cada mes.")); return; }
+      for (let k = 1; k <= 4; k++){ const d = new Date(vy, vm + k, 1), Q = savePlan(d.getFullYear(), d.getMonth()), nm = monthName(Q.y, Q.m);
+        const after = round2(Q.save + simLess - (simBuy && k <= simN ? simBuy / simN : 0)), r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1));
+        r.append(a, el("strong", after < 0 ? "neg" : "", `${f0ARS(Q.save)} → ${after < 0 ? "−" : ""}${f0ARS(Math.abs(after))}`)); out.append(r); } }
+    draw();
+  });
 }
 /* ---------- Guía de inicio (onboarding): explica la app y carga lo básico ---------- */
 const ONB_KEY = "receater.onb";
-let onbStep = 0, onbFix = [];
+let onbStep = 0, onbFix = [], onbCards = [], onbRule = null, onbDrive = null;
 const ONB_FIX = [["Alquiler","casa"],["Expensas","casa"],["Luz","casa"],["Gas","casa"],["Internet","casa"],["Celular","casa"],["Netflix","suscripciones"],["Spotify","suscripciones"],["Gimnasio","salud"],["Prepaga","salud"]];
 const ONB_STEPS = ["hola", "como", "sueldo", "diario", "fijos", "tarjeta", "drive", "listo"];
-function openOnb(){ onbStep = 0; onbFix = []; $("onb").hidden = false; renderOnb(); }
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+function openOnb(){ onbStep = 0; onbFix = data.fixed.filter(f => f.onb).map(f => ({ name: f.name, category: f.category, amount: String(f.amount), day: String(f.day) })); onbCards = [{ name: "", close: "", due: "" }]; onbRule = data.payRule || null; onbDrive = null; $("onb").hidden = false; renderOnb(); }
 function closeOnb(){ $("onb").hidden = true; try { localStorage.setItem(ONB_KEY, "1"); } catch {} render(); }
 function renderOnb(){
-  const st = ONB_STEPS[onbStep], B = $("onbBody"); B.innerHTML = ""; $("onbErr").textContent = "";
+  const st = ONB_STEPS[onbStep], B = $("onbBody"); B.innerHTML = ""; B.scrollTop = 0; $("onbErr").textContent = "";
   $("onbDots").innerHTML = ONB_STEPS.map((_, i) => `<span class="${i === onbStep ? "on" : ""}"></span>`).join("");
-  $("onbRecy").innerHTML = recySVG(st === "listo" ? "happy" : "happy");
+  $("onbRecy").innerHTML = recySVG("happy");
   const T = t => $("onbTitle").textContent = t, P = (t, cls) => { const p = document.createElement("p"); if (cls) p.className = cls; p.textContent = t; B.append(p); return p; };
-  const field = (lbl, id, ph, hint, mode = "decimal") => { const l = document.createElement("label"); l.htmlFor = id; l.textContent = lbl; const i = document.createElement("input"); i.className = "input"; i.id = id; i.placeholder = ph; i.inputMode = mode; i.autocomplete = "off"; B.append(l, i); if (hint) P(hint, "hint"); return i; };
-  $("onbSkip").textContent = st === "hola" ? "Ya la conozco" : st === "listo" ? "" : "Saltear";
-  $("onbSkip").hidden = st === "listo";
-  $("onbNext").textContent = st === "hola" ? "Empezar" : st === "listo" ? "¡A usarla!" : st === "drive" ? "Ahora no" : "Siguiente";
+  const mkIn = (id, ph, mode = "decimal", val = "") => { const i = document.createElement("input"); i.className = "input"; if (id) i.id = id; i.placeholder = ph; i.inputMode = mode; i.autocomplete = "off"; i.value = val; return i; };
+  const field = (lbl, id, ph, hint, mode = "decimal") => { const l = document.createElement("label"); l.htmlFor = id; l.textContent = lbl; const i = mkIn(id, ph, mode); B.append(l, i); if (hint) P(hint, "hint"); return i; };
+  $("onbBack").style.visibility = onbStep === 0 || st === "listo" ? "hidden" : "visible";
+  $("onbSkip").textContent = st === "hola" ? "Ya la conozco" : "Saltear";
+  $("onbSkip").style.visibility = st === "listo" || st === "como" ? "hidden" : "visible";
+  $("onbNext").textContent = st === "hola" ? "Empezar" : st === "listo" ? "¡A usarla!" : "Siguiente";
+  $("onbNext").disabled = false;
   if (st === "hola"){
-    T("¡Hola! Soy Recy 👋");
-    P("Te ayudo a saber en qué se te va la plata y cuánto podés ahorrar. Te explico cómo funciona en un minuto y cargamos lo básico juntos.");
-    P("Todo lo que cargues queda en tu celu (y en tu Drive si querés). Nadie más lo ve.", "hint");
+    T("¡Hola! Soy Recy");
+    P("Te ayudo a saber en qué se te va la plata y cuánto podés ahorrar.");
+    P("En un minuto te muestro cómo funciona y cargamos lo básico juntos. Todo se puede cambiar después.");
+    P("Lo que cargues queda en tu celu (y en tu Drive si querés). Nadie más lo ve.", "hint");
   } else if (st === "como"){
     T("Cómo funciona");
     const ul = document.createElement("ul"); ul.className = "onb-list";
     [["🎟️","Darle a Recy","El botón de abajo. Ahí cargás cada gasto o ingreso: escribiendo, con foto del ticket o a mano."],
-     ["📋","Movimientos","Todo lo que cargaste, día por día. Arriba ves cuánto llevás gastado en el mes."],
-     ["📰","Resumen","En qué se te va la plata, tus tarjetas y lo que viene en cuotas."],
-     ["📌","Fijos","Lo que pagás todos los meses (alquiler, servicios). Te avisa cuando vencen."],
-     ["🫙","Ahorros","Frascos para tus ahorros y cuánto podés ahorrar este mes."]].forEach(([e,t,d]) => {
+     ["📋","Movimientos","Todo lo que cargaste, día por día, y cuánto llevás gastado."],
+     ["📰","Resumen","En qué se te va la plata, tus tarjetas y las cuotas que vienen."],
+     ["📌","Fijos","Lo que pagás todos los meses. Te avisa cuando vencen."],
+     ["🫙","Ahorros","Frascos para ahorrar y cuánto podés ahorrar este mes."]].forEach(([e,t,d]) => {
       const li = document.createElement("li"); li.innerHTML = `<span>${e}</span><span><b></b></span>`; li.querySelector("b").textContent = t; li.lastChild.append(d); ul.append(li); });
     B.append(ul);
-    P("Un mes en Receater va de cobro a cobro, no del 1 al 30. Por eso te pregunto cuándo cobrás.", "hint");
+    P("Un mes en Receater va de cobro a cobro, no del 1 al 30. Por eso ahora te pregunto cuándo cobrás.", "hint");
   } else if (st === "sueldo"){
-    T("¿Cuánto cobrás y cuándo?");
-    field("Tu sueldo (en mano, por mes)", "onbSal", "Ej: 1.500.000", "Si cobrás distinto cada mes, poné uno aproximado. Después cargás el real cuando cobrás.");
-    const l = document.createElement("label"); l.htmlFor = "onbRule"; l.textContent = "¿Cuándo cobrás?";
-    const sel = document.createElement("select"); sel.className = "input"; sel.id = "onbRule";
-    sel.innerHTML = '<option value="lb">El último día hábil del mes</option>' + Array.from({length:28}, (_, i) => `<option value="${i+1}">El día ${i+1}</option>`).join("") + '<option value="free">No tengo un día fijo</option>';
-    sel.value = data.payRule || "lb"; B.append(l, sel);
+    T("¿Cuándo y cuánto cobrás?");
+    const l0 = document.createElement("label"); l0.textContent = "¿Cuándo cobrás?"; B.append(l0);
+    const seg = document.createElement("div"); seg.className = "onb-seg"; B.append(seg);
+    const dayWrap = document.createElement("div"); B.append(dayWrap);
+    const kind = () => onbRule === "lb" ? "lb" : onbRule === "free" ? "free" : onbRule ? "day" : null;
+    const drawSeg = () => { seg.innerHTML = ""; dayWrap.innerHTML = "";
+      [["day","Un día fijo"],["lb","Último día hábil"],["free","No tengo día fijo"]].forEach(([k, t]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t;
+        b.setAttribute("aria-pressed", String(kind() === k)); b.onclick = () => { onbRule = k === "day" ? (/^\d+$/.test(onbRule || "") ? onbRule : "1") : k; drawSeg(); }; seg.append(b); });
+      if (kind() === "day"){ const l = document.createElement("label"); l.htmlFor = "onbDay"; l.textContent = "¿Qué día del mes?";
+        const sel = document.createElement("select"); sel.className = "input"; sel.id = "onbDay"; sel.innerHTML = Array.from({length:28}, (_, i) => `<option value="${i+1}">El ${i+1}</option>`).join("");
+        sel.value = onbRule; sel.onchange = () => onbRule = sel.value; dayWrap.append(l, sel); }
+      if (kind() === "free") { const p = document.createElement("p"); p.className = "hint"; p.textContent = "Perfecto: cada vez que cobres, lo cargás y Recy arma tu mes desde ese día."; dayWrap.append(p); }
+    };
+    drawSeg();
+    field("¿Cuánto cobrás por mes? (en mano)", "onbSal", "Ej: 1.500.000", "Si varía, poné uno aproximado. Cuando cobres, cargás el real.");
+    const pv = data.incomes.find(e => e.category === "sueldo" && e.onb); if (pv) $("onbSal").value = String(pv.amount);
   } else if (st === "diario"){
-    T("Tus gastos del día a día");
-    P("Sumá, más o menos, cuánto se te va en un mes entero en las cosas de todos los días: súper, comida, nafta, salidas, cafés… pagadas en efectivo, débito o transferencia.");
-    P("No cuentes lo que pagás con tarjeta de crédito ni los gastos fijos (eso lo cargamos aparte).", "hint");
-    field("Total por mes (aproximado)", "onbDaily", "Ej: 400.000", "No es lo que gastás en un día: es el total de un mes. Si no tenés idea, dejalo vacío y lo calculo yo con lo que vayas cargando.");
+    T("Tus gastos varios del mes");
+    P("Todo lo que gastás en un mes en cosas de todos los días: súper, comida, nafta, salidas, cafés… pagado en efectivo, débito o transferencia.");
+    field("¿Cuánto es eso en un mes entero?", "onbDaily", "Ej: 400.000", "Es el total de un mes, no de un día. Sin tarjeta de crédito ni fijos. Si no sabés, dejalo vacío y lo calculo yo con lo que vayas cargando.");
     if (data.dailyBudget > 0) $("onbDaily").value = String(data.dailyBudget);
   } else if (st === "fijos"){
     T("¿Qué pagás todos los meses?");
-    P("Tocá los que tengas y poné cuánto pagás y qué día vence. Podés agregar más después en la pestaña Fijos.");
     const ch = document.createElement("div"); ch.className = "onb-chips"; B.append(ch);
     const rows = document.createElement("div"); B.append(rows);
-    const draw = () => { rows.innerHTML = "";
+    const hint = document.createElement("p"); hint.className = "hint"; B.append(hint);
+    const draw = () => { rows.innerHTML = ""; hint.textContent = onbFix.length ? "Podés agregar más después en la pestaña Fijos." : "Tocá los que tengas arriba y completá cuánto pagás y qué día vence.";
       onbFix.forEach((f, i) => { const r = document.createElement("div"); r.className = "onb-row";
-        const n = document.createElement("input"); n.className = "input"; n.value = f.name; n.placeholder = "Nombre"; n.oninput = () => f.name = n.value;
-        const a = document.createElement("input"); a.className = "input"; a.inputMode = "decimal"; a.placeholder = "$ por mes"; a.value = f.amount || ""; a.oninput = () => f.amount = a.value;
-        const d = document.createElement("input"); d.className = "input"; d.inputMode = "numeric"; d.placeholder = "Día"; d.value = f.day || ""; d.oninput = () => f.day = d.value;
+        const n = mkIn("", "Nombre", "text", f.name); n.className = "input full"; n.style.fontWeight = "700"; n.oninput = () => f.name = n.value;
+        const aw = document.createElement("div"), al = document.createElement("label"); al.textContent = "Por mes"; const a = mkIn("", "$", "decimal", f.amount || ""); a.oninput = () => f.amount = a.value; aw.append(al, a);
+        const dw = document.createElement("div"), dl = document.createElement("label"); dl.textContent = "Vence"; const d = mkIn("", "Día", "numeric", f.day || ""); d.oninput = () => f.day = d.value; dw.append(dl, d);
         const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Quitar"); x.onclick = () => { onbFix.splice(i, 1); draw(); drawChips(); };
-        r.append(n, a, d, x); rows.append(r); }); };
+        n.style.gridColumn = "1 / -1"; r.append(n, aw, dw, x); rows.append(r); }); };
+    const add = (name, cat) => { onbFix.push({ name, category: cat }); draw(); drawChips();
+      const last = rows.lastElementChild; if (last){ last.scrollIntoView({ block: "nearest", behavior: "smooth" }); const t = name ? last.querySelectorAll("input")[1] : last.querySelector("input"); setTimeout(() => t.focus({ preventScroll: true }), 50); } };
     const drawChips = () => { ch.innerHTML = "";
-      ONB_FIX.filter(([n]) => !onbFix.some(f => f.name === n)).forEach(([n, c]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = "+ " + n;
-        b.onclick = () => { onbFix.push({ name: n, category: c }); draw(); drawChips(); const ins = rows.querySelectorAll(".onb-row input[inputmode=decimal]"); ins[ins.length-1].focus(); }; ch.append(b); });
-      const o = document.createElement("button"); o.type = "button"; o.className = "chip"; o.textContent = "+ Otro";
-      o.onclick = () => { onbFix.push({ name: "", category: "casa" }); draw(); rows.querySelector(".onb-row:last-child input").focus(); }; ch.append(o); };
+      ONB_FIX.filter(([n]) => !onbFix.some(f => f.name === n)).forEach(([n, c]) => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = "+ " + n; b.onclick = () => add(n, c); ch.append(b); });
+      const o = document.createElement("button"); o.type = "button"; o.className = "chip"; o.textContent = "+ Otro"; o.onclick = () => add("", "casa"); ch.append(o); };
     drawChips(); draw();
   } else if (st === "tarjeta"){
     T("¿Usás tarjeta de crédito?");
-    P("Si me decís cuándo cierra y cuándo vence, te digo cuánto vas a pagar cada mes y cuándo.");
-    field("Nombre", "onbCard", "Ej: Visa Galicia", "", "text");
-    const two = document.createElement("div"); two.className = "onb-two"; B.append(two);
-    [["onbClose","Día de cierre","Ej: 24"],["onbDue","Día de vencimiento","Ej: 5"]].forEach(([id,l,ph]) => { const w = document.createElement("div"); const lb = document.createElement("label"); lb.htmlFor = id; lb.textContent = l;
-      const i = document.createElement("input"); i.className = "input"; i.id = id; i.inputMode = "numeric"; i.placeholder = ph; w.append(lb, i); two.append(w); });
-    P("Están en el resumen de la tarjeta. Si no la usás, tocá Saltear.", "hint");
+    P("Con el día de cierre y de vencimiento te digo cuánto vas a pagar cada mes. Están en el resumen de la tarjeta.");
+    const rows = document.createElement("div"); B.append(rows);
+    const draw = () => { rows.innerHTML = "";
+      onbCards.forEach((c, i) => { const r = document.createElement("div"); r.className = "onb-card3";
+        const mk = (lbl, key, ph, mode) => { const w = document.createElement("div"), l = document.createElement("label"); l.textContent = lbl; const inp = mkIn("", ph, mode, c[key]); inp.oninput = () => c[key] = inp.value; w.append(l, inp); return w; };
+        r.append(mk("Tarjeta", "name", "Ej: Visa Galicia", "text"), mk("Cierra", "close", "Día", "numeric"), mk("Vence", "due", "Día", "numeric"));
+        const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.style.cssText = "border:0;background:none;font-size:1.2rem;color:var(--muted);height:38px;cursor:pointer"; x.textContent = "×"; x.setAttribute("aria-label", "Quitar");
+        x.onclick = () => { onbCards.splice(i, 1); if (!onbCards.length) onbCards.push({ name: "", close: "", due: "" }); draw(); }; r.append(x); rows.append(r); });
+      const more = document.createElement("button"); more.type = "button"; more.className = "chip"; more.style.marginTop = "10px"; more.textContent = "+ Agregar otra tarjeta";
+      more.onclick = () => { onbCards.push({ name: "", close: "", due: "" }); draw(); const l = rows.querySelectorAll(".onb-card3"); l[l.length-1].scrollIntoView({ block: "nearest" }); l[l.length-1].querySelector("input").focus({ preventScroll: true }); };
+      rows.append(more); };
+    draw();
+    P("Si no usás, tocá Saltear.", "hint");
   } else if (st === "drive"){
     T("¿Guardamos todo en tu Drive?");
-    P("Así no perdés nada si cambiás de celu y lo podés ver desde la compu. Se guarda en un archivo en tu Google Drive: yo no veo nada.");
-    const g = document.createElement("button"); g.type = "button"; g.className = "btn primary"; g.style.width = "100%"; g.textContent = "Entrar con Google";
-    g.onclick = () => { try { localStorage.setItem(ONB_KEY, "1"); } catch {} onbStep++; renderOnb(); cloud.connect(); }; B.append(g);
+    P("Así no perdés nada si cambiás de celu y lo ves desde la compu. Se guarda en un archivo de tu Google Drive: yo no veo nada.");
+    const box = document.createElement("div"); B.append(box);
+    if (onbDrive === "busy"){ box.className = "onb-busy"; box.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Conectando con Google… Completá lo que te pide la ventana de Google.</span>'; $("onbNext").disabled = true; }
+    else if (onbDrive === "ok"){ box.className = "onb-ok"; box.textContent = "¡Listo! Ya estás conectado y todo se guarda en tu Drive ✓"; }
+    else {
+      if (onbDrive){ const e = document.createElement("div"); e.className = "onb-bad"; e.textContent = onbDrive; box.append(e); }
+      const g = document.createElement("button"); g.type = "button"; g.className = "btn primary"; g.style.cssText = "width:100%;margin-top:10px"; g.textContent = onbDrive ? "Probar de nuevo" : "Entrar con Google";
+      g.onclick = async () => {
+        onbDrive = "busy"; renderOnb();
+        let r; try { r = await cloud.connect(); } catch { r = { ok: false, err: "fail" }; }
+        const why = { popup_closed: "Cerraste la ventana de Google antes de terminar.", popup_failed_to_open: "El navegador bloqueó la ventana de Google. Permití las ventanas emergentes y probá de nuevo.",
+          access_denied: "No diste permiso para usar tu Drive.", offline: "No hay internet en este momento.", web: "Para conectar, abrí la app desde receater.github.io." };
+        onbDrive = r && r.ok ? "ok" : `No pudimos conectar. ${why[r && r.err] || "Probá de nuevo en un rato."}`;
+        if (ONB_STEPS[onbStep] === "drive") renderOnb();
+      };
+      box.append(g);
+      if (!onbDrive) P("Si preferís, lo hacés después desde Ajustes.", "hint");
+    }
   } else {
     T("¡Listo! Ya te puedo ayudar 🎉");
     const ul = document.createElement("ul"); ul.className = "onb-list";
@@ -5906,33 +5995,43 @@ function renderOnb(){
 function onbSave(){
   const st = ONB_STEPS[onbStep];
   if (st === "sueldo"){
-    const v = parseAmount($("onbSal").value), r = $("onbRule").value;
-    payRule = r; data.payRule = r; delete data.payday;
+    const v = parseAmount($("onbSal").value);
+    if (!onbRule && v > 0){ $("onbErr").textContent = "Elegí cuándo cobrás (o tocá Saltear)."; return false; }
+    if (onbRule){ payRule = onbRule; data.payRule = onbRule; delete data.payday; }
     if (v > 0){ const [cy, cm] = periodOf(new Date()), d = isFree() ? new Date() : payDate(cy, cm);
-      if (!data.incomes.some(e => e.category === "sueldo" && inPeriod(e, cy, cm)))
-        data.incomes.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), type: "income", amount: round2(v), currency: "ARS", category: "sueldo", date: `${toLocalInput(d)}T09:00`, note: "Sueldo" + (isFree() ? "" : ""), ...(isFree() ? { until: toLocalInput(new Date(Date.now() + 30 * 864e5)) } : {}) }); }
+      const prev = data.incomes.find(e => e.category === "sueldo" && e.onb);
+      if (prev) prev.amount = round2(v);
+      else if (!data.incomes.some(e => e.category === "sueldo" && inPeriod(e, cy, cm)))
+        data.incomes.push({ id: uid(), type: "income", amount: round2(v), currency: "ARS", category: "sueldo", date: `${toLocalInput(d)}T09:00`, note: "Sueldo", onb: true, ...(isFree() ? { until: toLocalInput(new Date(Date.now() + 30 * 864e5)) } : {}) }); }
     persist(); [viewYear, viewMonth] = periodOf(new Date());
   } else if (st === "diario"){
     const v = parseAmount($("onbDaily").value); data.dailyBudget = v > 0 ? round2(v) : 0; persist();
   } else if (st === "fijos"){
     const key = monthKey(...periodOf(new Date()));
+    data.fixed = data.fixed.filter(f => !f.onb);
     for (const f of onbFix){
       const a = parseAmount(String(f.amount || "")), d = Math.min(31, Math.max(1, parseInt(f.day, 10) || 10));
       if (!f.name.trim() || !(a > 0)) continue;
-      data.fixed.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), name: f.name.trim(), category: f.category || "casa", currency: "ARS", amount: round2(a), day: d, how: "manual", start: key, end: null, history: [], monthAmounts: {} });
+      data.fixed.push({ id: uid(), name: f.name.trim(), category: f.category || "casa", currency: "ARS", amount: round2(a), day: d, how: "manual", start: key, end: null, history: [], monthAmounts: {}, onb: true });
     }
-    onbFix = []; persist();
+    persist();
   } else if (st === "tarjeta"){
-    const n = $("onbCard").value.trim(), c = parseInt($("onbClose").value, 10), d = parseInt($("onbDue").value, 10);
-    if (n || c || d){
-      if (!n || !(c >= 1 && c <= 31) || !(d >= 1 && d <= 31)){ $("onbErr").textContent = "Completá el nombre, el día de cierre y el de vencimiento (o tocá Saltear)."; return false; }
-      data.cards.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name: n, color: CARD_COLORS[data.cards.length % CARD_COLORS.length], closeDay: c, rule: "due", day: d }); persist();
+    const ok = [];
+    for (const c of onbCards){
+      const n = (c.name || "").trim(), cl = parseInt(c.close, 10), du = parseInt(c.due, 10);
+      if (!n && !c.close && !c.due) continue;
+      if (!n || !(cl >= 1 && cl <= 31) || !(du >= 1 && du <= 31)){ $("onbErr").textContent = "A cada tarjeta le falta nombre, día de cierre o de vencimiento."; return false; }
+      ok.push({ n, cl, du });
     }
+    data.cards = data.cards.filter(c => !c.onb);
+    ok.forEach(o => data.cards.push({ id: uid(), name: o.n, color: CARD_COLORS[data.cards.length % CARD_COLORS.length], closeDay: o.cl, rule: "due", day: o.du, onb: true }));
+    persist();
   }
   return true;
 }
-$("onbNext").onclick = () => { if (ONB_STEPS[onbStep] === "listo"){ closeOnb(); return; } if (onbSave() === false) return; onbStep++; renderOnb(); $("onb").querySelector(".onb-card").scrollTop = 0; };
-$("onbSkip").onclick = () => { if (ONB_STEPS[onbStep] === "hola"){ closeOnb(); return; } if (ONB_STEPS[onbStep] === "fijos") onbFix = []; onbStep++; renderOnb(); };
+$("onbNext").onclick = () => { if (ONB_STEPS[onbStep] === "listo"){ closeOnb(); return; } if (onbSave() === false) return; onbStep++; renderOnb(); };
+$("onbBack").onclick = () => { if (onbStep > 0){ onbStep--; renderOnb(); } };
+$("onbSkip").onclick = () => { if (ONB_STEPS[onbStep] === "hola"){ closeOnb(); return; } onbStep++; renderOnb(); };
 $("setOnb").onclick = () => { closeSettings(); openOnb(); };
 setTimeout(() => {
   let seen = false; try { seen = !!localStorage.getItem(ONB_KEY); } catch {}
@@ -5946,7 +6045,7 @@ async function editDaily(){
   const cur = data.dailyBudget > 0 ? data.dailyBudget : 0, avg = (() => { const d0 = data.dailyBudget; data.dailyBudget = 0; const a = dailyAvg(); data.dailyBudget = d0; return a; })();
   const bg = document.createElement("div"); bg.className = "dlg-bg";
   const box = document.createElement("div"); box.className = "dlg";
-  box.innerHTML = '<p><b>¿Cuánto se te va en un mes entero en el día a día?</b><br><span style="font-size:.9rem">Súper, comida, nafta, salidas… pagado en efectivo, débito o transferencia. No el gasto de un día: el total del mes. Sin tarjeta ni fijos.</span></p><input class="input" inputmode="decimal" autocomplete="off"><p class="fx-hint" style="margin:8px 0 14px"></p><div class="dlg-acts"></div>';
+  box.innerHTML = '<p><b>Gastos varios del mes</b><br><span style="font-size:.9rem">Sumá todo lo que gastás <b>en un mes entero</b> en súper, comida, nafta, salidas… (efectivo, débito o transferencia). No es lo de un día. No cuentes tarjeta ni fijos.</span></p><input class="input" inputmode="decimal" autocomplete="off"><p class="fx-hint" style="margin:8px 0 14px"></p><div class="dlg-acts"></div>';
   const inp = box.querySelector("input"); inp.value = cur ? String(cur) : ""; inp.placeholder = avg.v ? String(Math.round(avg.v)) : "Ej: 300000";
   box.querySelector(".fx-hint").textContent = avg.v ? `Según lo que cargaste, gastás unos ${f0ARS(avg.v)} por mes. Dejalo vacío y uso ese número.` : "Si no sabés, dejalo vacío: lo calculo yo con lo que vayas cargando.";
   const acts = box.querySelector(".dlg-acts");
@@ -5999,7 +6098,8 @@ function renderMonthClose(){
 /* Secciones del Resumen que se pliegan (se acuerda cuáles cerraste) */
 const FOLD_DEFAULT = { breves: true, bars: true };
 function foldState(){ try { return Object.assign({}, FOLD_DEFAULT, JSON.parse(localStorage.getItem("receater.folds") || "{}")); } catch { return { ...FOLD_DEFAULT }; } }
-function applyFolds(){ const st = foldState(); document.querySelectorAll("section[data-fold]").forEach(sec => sec.classList.toggle("folded", !!st[sec.dataset.fold])); }
+function applyFolds(){ const st = foldState(); let any = false; document.querySelectorAll("section[data-fold]").forEach(sec => { sec.classList.toggle("folded", !!st[sec.dataset.fold]); any = any || !!st[sec.dataset.fold]; }); const u = $("unfoldAll"); if (u) u.hidden = !any; }
+$("unfoldAll").onclick = () => { const st = {}; document.querySelectorAll("section[data-fold]").forEach(sec => st[sec.dataset.fold] = false); try { localStorage.setItem("receater.folds", JSON.stringify(st)); } catch {} applyFolds(); };
 document.querySelectorAll("section[data-fold]").forEach(sec => {
   const h = sec.querySelector(":scope>.sec-head h3, :scope>h3.sec-h"); if (!h) return;
   h.setAttribute("role", "button"); h.tabIndex = 0;
@@ -6066,8 +6166,16 @@ async function shareMonthImage(){
   g.font = F(28, 500); g.fillStyle = "#8A8170"; g.fillText("Hecho con Receater · receater.github.io", W/2, H - 90);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   const name = `receater-${monthKey(y, m)}.png`, file = new File([blob], name, { type: "image/png" });
-  try { if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: periodTitle(y, m) }); return; } } catch (e){ if (e && e.name === "AbortError") return; }
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  if (!canShare){ download(); return; }
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg";
+  const img = document.createElement("img"); img.src = URL.createObjectURL(blob); img.alt = "Tu mes en una imagen"; img.style.cssText = "width:100%;max-height:45vh;object-fit:contain;border-radius:6px;margin-bottom:12px";
+  const acts = document.createElement("div"); acts.className = "dlg-acts";
+  const close = () => { bg.remove(); URL.revokeObjectURL(img.src); };
+  const d = document.createElement("button"); d.type = "button"; d.className = "btn ghost"; d.textContent = "⬇️ Descargar"; d.onclick = () => { download(); close(); };
+  const sh = document.createElement("button"); sh.type = "button"; sh.className = "btn primary"; sh.textContent = "Compartir"; sh.onclick = async () => { try { await navigator.share({ files: [file], title: periodTitle(y, m) }); } catch {} close(); };
+  acts.append(d, sh); box.append(img, acts); bg.append(box); bg.onclick = e => { if (e.target === bg) close(); }; document.body.append(bg);
 }
 $("shareMonth").onclick = shareMonthImage;
 function renderDash(){
@@ -6548,7 +6656,7 @@ function stageJars(){
   if (sc.mode === "total"){
     renderStage("stageJars", {
       label: "Ahorrado", big: T.balA || !T.balU ? fmtARS.format(T.balA) : fmtUSD.format(T.balU), bar,
-      lines: [data.saveGoal > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0); return v0 >= data.saveGoal ? `Meta del mes cumplida: ${f0ARS(v0)} 💪` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(data.saveGoal)}`; })() : null,
+      lines: [goalARS() > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0), g0 = goalARS(); return v0 >= g0 ? `Meta del mes cumplida 💪` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(g0)}`; })() : null,
         T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
         best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
       mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "full",
@@ -7400,10 +7508,11 @@ window.cloud = (() => {
     } catch (e) { status(e.message === "expired" ? "Se renueva al tocar" : "Sin sincronizar", e.message === "expired" ? "ok" : "warn"); }
   }
   async function connect(){
-    if (!onLine()){ uiAlert("Para entrar con Google, abrí la app desde su dirección web (https)."); return; }
-    status("Conectando…");
+    if (!onLine()){ uiAlert("Para entrar con Google, abrí la app desde su dirección web (https)."); return { ok: false, err: "web" }; }
+    if (!navigator.onLine) return { ok: false, err: "offline" };
+    status("Conectando…"); lastLoginErr = null;
     const ok = await login("select_account", false);   // al entrar, siempre te deja elegir la cuenta
-    if (!ok){ status("Entrar", "warn"); return; }
+    if (!ok){ status("Entrar", "warn"); return { ok: false, err: lastLoginErr || "fail" }; }
     $("cloudBanner").hidden = true;
     // Si entraste con otra cuenta distinta a la de antes, no mezclamos datos: arrancamos limpio con lo de esa cuenta
     try {
@@ -7412,10 +7521,11 @@ window.cloud = (() => {
       if (prev && u.emailAddress && u.emailAddress.toLowerCase() !== prev.toLowerCase()){
         ls.del(LINKED_KEY); ls.del(STORE_KEY); ls.del(USER_KEY);
         ls.set("receater.email", u.emailAddress);
-        location.reload(); return;
+        location.reload(); return { ok: true };
       }
     } catch {}
     await sync();
+    return { ok: true };
   }
   async function logout(){
     if (!await uiConfirm("¿Cerrar sesión? Tus datos quedan guardados en tu Drive y se borran de este dispositivo.")) return;
@@ -7588,13 +7698,15 @@ function openSettings(){
   $("setWho").textContent = who || "Sin entrar con Google";
   $("setAiTxt").textContent = aiKey() ? "Activado ✓" : "Cargá con tus palabras o con foto del ticket.";
   $("setVer").textContent = "Versión " + BUILD;
-  $("setNotifTxt").textContent = notifOn() ? "Activados ✓ Vencimientos de tarjetas y fijos, y el día de cobro." : "Que te avise cuando vence una tarjeta, un fijo o cuando cobrás.";
+  $("setNotifTxt").textContent = notifOn() ? "Prendidos ✓ · tocá para apagarlos" : "Apagados · tocá para prenderlos. Te aviso vencimientos, el cobro y si te olvidaste de cargar.";
+  $("setRemind").hidden = !notifOn(); $("setRemindTxt").textContent = data.remindDaily === false ? "Apagado · tocá para prenderlo" : "Prendido ✓ · a las 21, si ese día no cargaste nada";
   $("setBg").classList.add("open"); $("setSheet").classList.add("open");
 }
 function closeSettings(){ $("setBg").classList.remove("open"); $("setSheet").classList.remove("open"); }
 $("setBtn").onclick = openSettings; $("setClose").onclick = closeSettings; $("setBg").onclick = closeSettings;
 $("setAi").onclick = () => { closeSettings(); openAi(); };
 $("setPpl").onclick = () => { closeSettings(); openPeople(); };
+$("setRemind").onclick = () => { data.remindDaily = data.remindDaily === false; persist(); openSettings(); };
 $("setNotif").onclick = async () => {
   if (notifOn()){
     if (!await uiDialog({ msg: "Los avisos están activados. ¿Querés apagarlos?", ok: "Apagar avisos", cancel: "Dejarlos", danger: true })) return;
