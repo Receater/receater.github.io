@@ -274,7 +274,7 @@ button{cursor:pointer}
 .receipt .meta{overflow-wrap:anywhere}
 
 /* Google Drive */
-.sp-open{width:100%;margin:10px 0 4px}
+.sp-open{width:100%;margin:14px 0 6px}
 #spSheet .clip{margin:0}
 .usd-pill{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:0;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:4px 9px;font-size:.76rem;line-height:1.25;cursor:pointer;white-space:nowrap;min-width:0}
 .usd-pill b{font-weight:800}.usd-pill .o{color:#5A6B76}
@@ -669,7 +669,8 @@ button{cursor:pointer}
 .search-month{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px}
 .pp-ok{flex-basis:100%;text-align:right;color:#1E7A50;font-weight:700;font-size:.86rem}
 .pp-ahead{font-size:.86rem}
-.card-edit{border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
+.cardx-head>strong{display:flex;align-items:center;gap:4px;overflow:visible !important}.cx-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cardx-head .card-tag{flex:none}
+.card-edit{flex:none;border:0;background:none;color:var(--muted);font-size:1rem;min-width:32px;min-height:32px;margin-left:2px}
 .card-foot{flex-basis:100%;margin-top:8px}
 .card-acts{display:flex;flex-wrap:wrap;gap:6px}
 .sp-body{padding:4px 2px 2px}.sp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line)}
@@ -677,6 +678,12 @@ button{cursor:pointer}
 .sp-tap{cursor:pointer}.sp-total{border-bottom:0;border-top:2px solid var(--ink);margin-top:2px;font-size:1.08rem}.sp-total strong{color:#1E7A50;font-size:1.2rem}
 .sp-total.neg strong,.sp-row .neg{color:#C9374B}.sp-next{margin-top:14px}.sp-nh{font-weight:800;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sp-warn{color:#9A6A00 !important}
+.sp-hero{text-align:center;padding:14px 12px;border-radius:14px;background:#EAF6EF;border:1.5px solid #9CCFB0;margin:2px 0 12px}
+.sp-hero small{display:block;color:#3E5A4A;font-size:.85rem}.sp-hero strong{display:block;font-size:2rem;color:#1E7A50;line-height:1.15;margin:2px 0 8px}
+.sp-hero.neg{background:#FBECEE;border-color:#E6A5AF}.sp-hero.neg strong{color:#C9374B}
+.sp-bar{height:8px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin:0 0 6px}.sp-bar span{display:block;height:100%;background:#1E7A50}
+.sp-alert{display:block;width:100%;text-align:left;font:inherit;font-size:.84rem;line-height:1.35;padding:10px 12px;margin:0 0 12px;border-radius:12px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#5A4500;cursor:pointer}
+#spSheet .sp-nh{margin:14px 0 2px}
 .mclose{position:relative;margin:10px 0 0}
 .mclose-go{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 44px 12px 14px;border-radius:14px;border:1.5px dashed #C9A227;background:#FFF6D8;color:#1B2430;cursor:pointer}
 .mclose-go>span:first-child{font-size:1.5rem}.mclose-go strong{display:block;text-transform:none}.mclose-go small{color:#5A6B76}
@@ -2052,7 +2059,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.1100";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
+const BUILD = "2026-10-16.1330";/* ---------- Diálogos propios (en vez de los del navegador) ---------- */
 function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
   return new Promise(res => {
     const bg = document.createElement("div"); bg.className = "dlg-bg";
@@ -5646,47 +5653,48 @@ function savePlan(y, m, extraCard = 0){
 }
 function renderSavePlan(){
   const box = $("savePlanBox"); box.innerHTML = "";
-  const [viewYear, viewMonth] = periodOf(new Date());
-  const P = savePlan(viewYear, viewMonth);
-  if (!P.inc){ box.innerHTML = '<p class="fx-hint">Cargá tu sueldo (Darle a Recy → Ingreso) y te calculo cuánto podés ahorrar.</p>'; return; }
-  $("spTitle").textContent = `Cuánto podés ahorrar en ${monthName(viewYear, viewMonth)}`;
-  const sec = document.createElement("div"), paper = sec;
-  const top = document.createElement("p"); top.className = "fx-hint"; top.style.margin = "0 0 6px";
-  top.textContent = P.incEst ? "Con tu último sueldo (todavía no cargaste el de este mes)." : "Con lo que ya sabemos que se va.";
-  paper.append(top);
-  const body = document.createElement("div"); body.className = "sp-body";
-  const row = (lbl, v, sub, cls) => { const r = document.createElement("div"); r.className = "sp-row" + (cls ? " " + cls : "");
-    const a = document.createElement("span"); a.textContent = lbl; if (sub){ const sm = document.createElement("small"); sm.textContent = sub; a.append(sm); }
-    const b = document.createElement("strong"); b.textContent = v; r.append(a, b); body.append(r); return r; };
-  row("Sueldo", f0ARS(P.inc));
-  if (P.card) row("− Tarjeta que vence", f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
-  if (P.fixNo) row("− Fijos sin tarjeta", f0ARS(P.fixNo));
-  const dr = row("− Día a día", f0ARS(P.daily), P.dailyInfo.manual ? "el número que pusiste · tocá para cambiar" : P.dailyInfo.n ? `promedio en efectivo/débito de ${P.dailyInfo.n} ${P.dailyInfo.n > 1 ? "meses" : "mes"} · tocá para cambiar` : "sin datos todavía · tocá para ponerlo", "sp-tap");
-  dr.onclick = editDaily;
-  row(P.save >= 0 ? "Podés ahorrar" : "Te faltaría", f0ARS(Math.abs(P.save)), "", "sp-total" + (P.save < 0 ? " neg" : ""));
-  const sav = monthExpenses(viewYear, viewMonth, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
-  if (sav > 0 && P.save > 0){ const h = document.createElement("p"); h.className = "fx-hint"; h.textContent = sav >= P.save ? `Ya separaste ${f0ARS(sav)} 💪 llegaste.` : `Ya separaste ${f0ARS(sav)}, te faltan ${f0ARS(P.save - sav)}.`; body.append(h); }
-  // Próximos 3 meses
-  const nx = document.createElement("div"); nx.className = "sp-next";
-  const h4 = document.createElement("div"); h4.className = "sp-nh"; h4.textContent = "Los próximos meses"; nx.append(h4);
-  let prev = P;
-  for (let k = 1; k <= 3; k++){
-    const d = new Date(viewYear, viewMonth + k, 1), Q = savePlan(d.getFullYear(), d.getMonth());
-    const r = document.createElement("div"); r.className = "sp-row";
-    const a = document.createElement("span"); a.textContent = monthName(Q.y, Q.m)[0].toUpperCase() + monthName(Q.y, Q.m).slice(1);
-    const sm = document.createElement("small"); sm.textContent = `tarjeta ${f0ARS(Q.card)}`; a.append(sm);
-    const b = document.createElement("strong"); b.textContent = (Q.save < 0 ? "−" : "") + f0ARS(Math.abs(Q.save)); if (Q.save < 0) b.className = "neg";
-    r.append(a, b); nx.append(r);
-    if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03)){
-      const w = document.createElement("p"); w.className = "fx-hint sp-warn";
-      w.textContent = `Por lo que vas comprando con tarjeta, en ${monthName(Q.y, Q.m)} vas a poder ahorrar ${f0ARS(Q.card - P.card)} menos que ahora.`; nx.append(w); }
-    prev = Q;
+  const [vy, vm] = periodOf(new Date());
+  const P = savePlan(vy, vm), mes = monthName(vy, vm);
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  $("spTitle").textContent = "¿Cuánto puedo ahorrar?";
+  if (!P.inc){ box.append(el("p", "fx-hint", "Primero cargá tu sueldo (Darle a Recy → Ingreso) y te calculo cuánto te queda para ahorrar.")); return; }
+  // 1) La respuesta, grande
+  const hero = el("div", "sp-hero" + (P.save < 0 ? " neg" : ""));
+  hero.append(el("small", "", P.save >= 0 ? `En ${mes} te quedan para ahorrar unos` : `En ${mes} no te alcanza: te faltan unos`),
+    el("strong", "", f0ARS(Math.abs(P.save))));
+  const sav = monthExpenses(vy, vm, "ARS").filter(isSaving).reduce((a,x) => a + x.amount, 0);
+  if (P.save > 0){
+    const pct = Math.min(1, sav / P.save), bar = el("div", "sp-bar"), fill = el("span"); fill.style.width = Math.round(pct * 100) + "%"; bar.append(fill); hero.append(bar);
+    hero.append(el("small", "", sav <= 0 ? "Todavía no separaste nada este mes." : sav >= P.save ? `Ya separaste ${f0ARS(sav)}. ¡Llegaste! 💪` : `Ya separaste ${f0ARS(sav)}. Te faltan ${f0ARS(P.save - sav)}.`));
   }
-  const nt = document.createElement("p"); nt.className = "fx-hint"; nt.textContent = "Cada mes suma lo que ya compraste con tarjeta y vence ahí. Si seguís comprando, baja."; nx.append(nt);
-  body.append(nx);
+  box.append(hero);
+  if (!P.daily) { const w = el("button", "sp-alert"); w.type = "button";
+    w.textContent = "⚠️ No sé cuánto gastás en el día a día (súper, comida, salidas en efectivo o débito), así que este número seguro es más alto de lo real. Tocá acá y poné un aproximado."; w.onclick = editDaily; box.append(w); }
+  // 2) Cómo se calcula
+  box.append(el("div", "sp-nh", "Cómo lo calculo"));
+  const body = el("div", "sp-body"); box.append(body);
+  const row = (lbl, v, sub, cls) => { const r = el("div", "sp-row" + (cls ? " " + cls : "")), a = el("span", "", lbl);
+    if (sub) a.append(el("small", "", sub)); r.append(a, el("strong", "", v)); body.append(r); return r; };
+  row("Tu sueldo", "+ " + f0ARS(P.inc), P.incEst ? "el último que cargaste (falta el de este mes)" : "");
+  if (P.card) row("Lo que pagás de tarjeta este mes", "− " + f0ARS(P.card), [P.buys ? `compras ${f0ARS(P.buys)}` : "", P.cuotas ? `cuotas ${f0ARS(P.cuotas)}` : "", P.fixCard ? `fijos con tarjeta ${f0ARS(P.fixCard)}` : ""].filter(Boolean).join(" · "));
+  if (P.fixNo) row("Fijos que pagás aparte", "− " + f0ARS(P.fixNo), "alquiler, servicios, débitos…");
+  const dr = row("Gastos del día a día", "− " + f0ARS(P.daily), P.dailyInfo.manual ? "el número que pusiste · tocá para cambiarlo" : P.dailyInfo.n ? `lo que gastás en promedio sin tarjeta · tocá para cambiarlo` : "tocá para ponerlo", "sp-tap");
+  dr.onclick = editDaily;
+  row(P.save >= 0 ? "Te queda para ahorrar" : "Te falta", f0ARS(Math.abs(P.save)), "", "sp-total" + (P.save < 0 ? " neg" : ""));
+  // 3) Próximos meses
+  box.append(el("div", "sp-nh", "Y los próximos meses"));
+  box.append(el("p", "fx-hint", "Si no comprás nada más con tarjeta, esto es lo que te quedaría. Cada compra nueva con tarjeta lo baja."));
+  const nx = el("div", "sp-body"); box.append(nx);
+  for (let k = 1; k <= 3; k++){
+    const d = new Date(vy, vm + k, 1), Q = savePlan(d.getFullYear(), d.getMonth()), nm = monthName(Q.y, Q.m);
+    const r = el("div", "sp-row"), a = el("span", "", nm[0].toUpperCase() + nm.slice(1));
+    a.append(el("small", "", Q.card ? `ya tenés ${f0ARS(Q.card)} de tarjeta` : "sin nada de tarjeta todavía"));
+    const v = el("strong", Q.save < 0 ? "neg" : "", (Q.save < 0 ? "− " : "") + f0ARS(Math.abs(Q.save))); r.append(a, v); nx.append(r);
+    if (k === 1 && Q.card - P.card > Math.max(20000, P.inc * 0.03))
+      nx.append(el("p", "fx-hint sp-warn", `Ojo: por lo que ya compraste con tarjeta, en ${nm} vas a poder ahorrar ${f0ARS(Q.card - P.card)} menos que en ${mes}.`));
+  }
   if (data.jars.some(j => j.currency === "ARS") && P.save > 0){
-    const go = document.createElement("button"); go.type = "button"; go.className = "small-btn primary"; go.style.marginTop = "10px"; go.textContent = "Mandar a un frasco"; go.onclick = () => { closeSavePlan(); setTab("jars"); }; body.append(go); }
-  paper.append(body); box.append(sec);
+    const go = el("button", "small-btn primary", "Mandar a un frasco"); go.type = "button"; go.style.marginTop = "12px"; go.onclick = () => { closeSavePlan(); setTab("jars"); }; box.append(go); }
 }
 function openSavePlan(){ renderSavePlan(); $("spBg").classList.add("open"); $("spSheet").classList.add("open"); $("spSheet").scrollTop = 0; }
 function closeSavePlan(){ $("spBg").classList.remove("open"); $("spSheet").classList.remove("open"); }
@@ -6007,7 +6015,7 @@ function renderCardsDash(list, cur){
     const el = document.createElement("div"); el.className = "cardx";
     const head = document.createElement("div"); head.className = "cardx-head";
     const nm = document.createElement("strong"); const tg = document.createElement("span"); tg.className = "card-tag"; tg.style.background = card.color;
-    nm.append(tg, card.name);
+    const nmT = document.createElement("span"); nmT.className = "cx-name"; nmT.textContent = card.name; nm.append(tg, nmT);
     const t = document.createElement("span"); t.className = "t"; t.textContent = money(total, cur);
     head.append(nm, t); el.append(head);
     const next = document.createElement("div"); next.className = "next";
@@ -6027,7 +6035,7 @@ function renderCardsDash(list, cur){
         const ds = mine.filter(x => x.date.slice(0,10) === d), paid = data.cardPayments.some(p => p.cardId === card.id && p.date === d);
         const ln = document.createElement("span"); ln.className = "due";
         const strong = document.createElement("strong"); strong.textContent = both(ds);
-        ln.append(paid ? "Pagaste " : (dateOnly(d) >= today ? "Te llega " : "Vencía "), strong, ` el ${shortDate(dateOnly(d))}`);
+        if (paid || dateOnly(d) >= today) ln.append(paid ? "Pagaste " : "Te llega ", strong, ` el ${shortDate(dateOnly(d))}`); else ln.append(`Venció el ${shortDate(dateOnly(d))}: `, strong, " · ¿ya la pagaste?");
         const real = x => !x.payId && !x.stmtKey && !x.estc && !x.src.virtual;
         const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
           ["Fijos", ds.filter(x => x.src && x.src.virtual)], ["Sin anotar", ds.filter(x => x.stmtKey || x.payId)], ["Impuestos y comisiones (estimado)", ds.filter(x => x.estc)]].filter(([, a]) => a.length);
