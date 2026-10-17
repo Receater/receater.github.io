@@ -1415,11 +1415,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 #scene svg{opacity:var(--scene-op,.6);filter:saturate(.85)}
 /* Resumen: la ciudad siempre de día, también en modo oscuro */
 #scene[data-scene="fixed"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
-#scene[data-scene="fixed"],#scene[data-scene="list"],#scene[data-scene="jars"]{background:#EFE6D6}
-#scene[data-scene="fixed"] svg,#scene[data-scene="list"] svg{opacity:.42}
-#scene[data-scene="jars"]{background:#7A5A45 !important}#scene[data-scene="jars"] svg{opacity:.55 !important}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene]:not([data-scene="dash"]){background:#D9CCB5} :root:not([data-theme="light"]) #scene[data-scene]:not([data-scene="dash"]) svg{opacity:.5} }
-:root[data-theme="dark"] #scene[data-scene]:not([data-scene="dash"]){background:#D9CCB5}:root[data-theme="dark"] #scene[data-scene]:not([data-scene="dash"]) svg{opacity:.5}
+/* Todos los fondos con la misma intensidad que Resumen (apagados, para que se lea la app) */
+#scene[data-scene="fixed"] svg,#scene[data-scene="list"] svg,#scene[data-scene="jars"] svg{opacity:.55;filter:saturate(.8)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene] svg{opacity:.7} }
+:root[data-theme="dark"] #scene[data-scene] svg{opacity:.7}
 #scene[data-scene="dash"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) #scene[data-scene="dash"] svg{opacity:.72}
@@ -2166,7 +2165,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-17.0530";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-17.0545";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6873,8 +6872,8 @@ const SCENES = {
     const CT = 604, FL = 748;   // mesada y piso
     const wall = `<rect width="${WW}" height="800" fill="#F1E8D8"/>`;
     // alacenas de arriba
-    let upper = `<rect y="0" width="${WW}" height="150" fill="#C8A47A"/><rect y="150" width="${WW}" height="8" fill="#A9835A"/>`;
-    for (let x = 10; x < WW - 60; x += 96) upper += `<rect x="${x}" y="12" width="84" height="128" rx="4" fill="#D7B48B"/><rect x="${x + 8}" y="20" width="68" height="112" rx="3" fill="none" stroke="#B4844F" stroke-width="2"/><rect x="${x + 64}" y="110" width="5" height="18" rx="2.5" fill="#8C6A43"/>`;
+    let upper = `<rect y="0" width="${WW}" height="110" fill="#C8A47A"/><rect y="110" width="${WW}" height="8" fill="#A9835A"/>`;
+    for (let x = 10; x < WW - 60; x += 96) upper += `<rect x="${x}" y="10" width="84" height="92" rx="4" fill="#D7B48B"/><rect x="${x + 8}" y="17" width="68" height="78" rx="3" fill="none" stroke="#B4844F" stroke-width="2"/><rect x="${x + 64}" y="74" width="5" height="16" rx="2.5" fill="#8C6A43"/>`;
     // azulejos detrás de la mesada
     let tiles = ""; for (let y = 470; y < CT; y += 22) for (let x = ((y - 470) / 22 % 2) * 11; x < WW; x += 22) tiles += `<rect x="${x + 1}" y="${y + 1}" width="20" height="20" rx="2" fill="#FBF6EC"/>`;
     tiles = `<rect y="470" width="${WW}" height="${CT - 470}" fill="#E3D8C4"/>` + tiles;
@@ -6883,7 +6882,7 @@ const SCENES = {
     for (let x = 10; x < WW - 60; x += 96) lower += `<rect x="${x}" y="${CT + 22}" width="84" height="${FL - CT - 34}" rx="4" fill="#D7B48B"/><rect x="${x + 64}" y="${CT + 34}" width="5" height="22" rx="2.5" fill="#8C6A43"/>`;
     const floor = `<rect y="${FL}" width="${WW}" height="${800 - FL}" fill="#BFA27C"/>${Array.from({length: Math.ceil(WW / 40)}, (_, k) => `<rect x="${k * 40}" y="${FL}" width="20" height="26" fill="#B09270"/><rect x="${k * 40 + 20}" y="${FL + 26}" width="20" height="26" fill="#B09270"/>`).join("")}`;
     // heladera con facturas, calendario y una foto con imanes
-    const fridge = (x, w) => { const top = 190, h = FL - top;
+    const fridge = (x, w) => { const top = 290, h = FL - top;
       const mag = (mx, my, c) => `<circle cx="${mx}" cy="${my}" r="4" fill="${c}"/>`;
       const note = (nx, ny, rot, c, kind) => `<g transform="translate(${nx} ${ny}) rotate(${rot}) scale(.5)">${B.bill(0, 0, 0, kind, c)}</g>`;
       return `<g><rect x="${x}" y="${top}" width="${w}" height="${h}" rx="10" fill="#F7F4EE"/><rect x="${x + w - 10}" y="${top}" width="10" height="${h}" rx="5" fill="#000" opacity=".05"/>
@@ -6902,9 +6901,9 @@ const SCENES = {
     const mug = x => `<g transform="translate(${x} ${CT - 26})"><rect width="22" height="26" rx="4" fill="#8DB4E6"/><path d="M22 6 q9 0 9 8 t-9 8" stroke="#8DB4E6" stroke-width="4" fill="none"/></g>`;
     const bowl = x => `<g transform="translate(${x} ${CT})"><circle cx="16" cy="-16" r="9" fill="#F4C24E"/><circle cx="30" cy="-19" r="10" fill="#76C29B"/><circle cx="43" cy="-15" r="8" fill="#EE8A73"/><path d="M0 -12 h60 q-4 12 -30 12 q-26 0 -30 -12z" fill="#8DB4E6"/></g>`;
     if (!wide) return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">${wall}${upper}${tiles}${lower}${floor}
-      ${clock(330, 214, 30)}${win(250, 300, 140, 110)}${fridge(14, 158)}${kettle(220)}${mug(300)}${bowl(340)}</svg>`;
+      ${clock(330, 214, 30)}${win(250, 300, 140, 110)}${fridge(18, 128)}${kettle(220)}${mug(300)}${bowl(340)}</svg>`;
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">${wall}${upper}${tiles}${lower}${floor}
-      ${fridge(lz - 90, 180)}${clock(rz, 216, 32)}${win(rz - 110, 290, 220, 140)}${kettle(rz - 100)}${mug(rz + 50)}${bowl(lz + 120)}
+      ${fridge(lz - 80, 150)}${clock(rz, 216, 32)}${win(rz - 110, 290, 220, 140)}${kettle(rz - 100)}${mug(rz + 50)}${bowl(lz + 120)}
     </svg>`;
   },
   // Ahorros: una biblioteca de madera chocolate, con estantes llenos de frascos de distintos tamaños (como los de la app)
@@ -6913,18 +6912,18 @@ const SCENES = {
     const col = ["#76C29B","#F4C24E","#EE8A73","#8DB4E6","#C97B62","#ADC2A0","#E39B7E"];
     const jar = (x, base, w, c, lvl) => { const k = w / 80, h = 110 * k, top = 28, bot = 104, ly = bot - (bot - top) * lvl;
       return `<g transform="translate(${x} ${base - h}) scale(${k})"><rect x="9" y="26" width="62" height="80" rx="16" fill="#F3EEE6" opacity=".85"/><rect x="13" y="${ly}" width="54" height="${bot + 2 - ly - 4}" rx="12" fill="${c}"/>
-        <rect x="9" y="26" width="62" height="80" rx="16" fill="none" stroke="#6E5A48" stroke-width="2.5" opacity=".5"/><path d="M18 40 V 88" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+        <rect x="9" y="26" width="62" height="80" rx="16" fill="none" stroke="#2F231B" stroke-width="2.5" opacity=".4"/><path d="M18 40 V 88" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".45"/>
         <rect x="16" y="18" width="48" height="10" rx="3" fill="#8C7660" opacity=".6"/><rect x="13" y="6" width="54" height="14" rx="4" fill="${c}"/><rect x="13" y="6" width="54" height="5" rx="3" fill="#fff" opacity=".2"/></g>`; };
     let sh = "";
     const rowH = 124, first = 150;
     for (let i = 0; i < 6; i++){ const y = first + i * rowH;
-      sh += `<rect x="0" y="${y}" width="${WW}" height="14" fill="#7A4E32"/><rect x="0" y="${y}" width="${WW}" height="3" fill="#9A6A48"/><rect x="0" y="${y + 14}" width="${WW}" height="8" fill="#000" opacity=".18"/>`;
+      sh += `<rect x="0" y="${y}" width="${WW}" height="14" fill="#5E4636"/><rect x="0" y="${y}" width="${WW}" height="3" fill="#77594A"/><rect x="0" y="${y + 14}" width="${WW}" height="8" fill="#000" opacity=".18"/>`;
       for (let x = 14 + (i % 2) * 18; x < WW - 30;){ const w = 34 + Math.floor(R() * 26), p0 = Math.floor((x + 6) / 210) * 210 - 6, nx = p0 + 210;
-        if (x + w > nx - 6){ x = nx + 22; continue; }
+        if (x < p0 + 24){ x = p0 + 24; continue; } if (x + w > nx - 6){ x = nx + 24; continue; }
         sh += jar(x, y, w, col[Math.floor(R() * col.length)], .3 + R() * .6); x += w + 6 + Math.floor(R() * 16); } }
-    let posts = ""; for (let x = -6; x < WW + 10; x += 210) posts += `<rect x="${x}" y="0" width="16" height="800" fill="#6A412A"/><rect x="${x + 12}" y="0" width="4" height="800" fill="#000" opacity=".15"/>`;
-    let planks = ""; for (let x = 0; x < WW; x += 42) planks += `<rect x="${x}" y="0" width="2" height="800" fill="#4E2F1E" opacity=".35"/>`;
-    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#5C3A26"/>${planks}<rect width="${WW}" height="800" fill="#000" opacity=".06"/>${sh}${posts}<rect width="${WW}" height="40" fill="#6A412A"/><rect y="36" width="${WW}" height="8" fill="#7A4E32"/></svg>`;
+    let posts = ""; for (let x = -6; x < WW + 10; x += 210) posts += `<rect x="${x}" y="0" width="16" height="800" fill="#3E2E24"/><rect x="${x + 12}" y="0" width="4" height="800" fill="#000" opacity=".15"/>`;
+    let planks = ""; for (let x = 0; x < WW; x += 42) planks += `<rect x="${x}" y="0" width="2" height="800" fill="#2F231B" opacity=".35"/>`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#46352A"/>${planks}<rect width="${WW}" height="800" fill="#000" opacity=".06"/>${sh}${posts}<rect width="${WW}" height="40" fill="#3E2E24"/><rect y="36" width="${WW}" height="8" fill="#5E4636"/></svg>`;
   }
 };
 let sceneOn = null, sceneKey = "";
