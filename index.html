@@ -324,6 +324,8 @@ section[data-fold].folded>.sec-head>button{display:none}
 .share-month{display:block;margin:18px auto 0}
 .unfold-all{display:block;margin:6px auto 0;font-size:.85rem}
 .ck{color:#1E7A50 !important;font-weight:800;display:inline !important;margin:0 !important}
+.recy-stage .lcd{min-height:var(--lcd-h,300px);box-sizing:border-box}
+@media (min-width:901px){.recy-stage .lcd{min-height:var(--lcd-h,240px)}}
 .ic{width:1em;height:1em;vertical-align:-.125em;fill:currentColor;flex:none;display:inline-block}
 .chip .ic,.small-btn .ic,.btn .ic,.linkbtn .ic{width:.9em;height:.9em;margin-right:.15em}
 .card-edit{color:inherit !important;font-size:.82rem !important;opacity:.75}.card-edit .ic{width:1em;height:1em}
@@ -2158,7 +2160,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-16.2050";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-17.0400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2959,8 +2961,18 @@ function renderRange(){
 let [viewYear, viewMonth] = periodOf(now);
 const $ = id => document.getElementById(id);
 
+/* Todas las pizarras de Recy miden lo mismo: la más alta que se vio manda (así no salta al cambiar de pestaña) */
+function equalizeBoards(){
+  const st = [...document.querySelectorAll(".recy-stage .lcd")].find(e => e.offsetParent); if (!st) return;
+  const key = "receater.lcdH." + (innerWidth <= 480 ? "s" : innerWidth <= 900 ? "m" : "l");
+  let max = innerWidth <= 900 ? 305 : 243; try { max = Math.max(max, +localStorage.getItem(key) || 0); } catch {}
+  st.style.minHeight = "0"; const h = Math.ceil(st.getBoundingClientRect().height); st.style.minHeight = "";
+  if (h > max){ max = h; try { localStorage.setItem(key, String(max)); } catch {} }
+  document.documentElement.style.setProperty("--lcd-h", max + "px");
+}
+window.addEventListener("resize", () => setTimeout(equalizeBoards, 150));
 function render(){
-  setScene(tab);
+  setScene(tab); requestAnimationFrame(equalizeBoards);
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
   $("next").disabled = false;
@@ -6767,73 +6779,91 @@ const SCENES = {
       <rect y="640" width="${WW}" height="20" fill="var(--sc-wood2)"/><rect y="660" width="${WW}" height="140" fill="var(--sc-wood)"/>${right}${left}
     </svg>`;
   },
-  // Resumen: una calle de Nueva York con cielo, nubes, ventanas prendidas, árboles, faroles, kiosco de diarios y taxis
+  // Resumen: una calle de ciudad con profundidad (edificios lejanos), fachadas con detalles, locales en planta baja y vereda
   dash: (W, colU) => {
-    const B = sceneBits, wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
-    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(100, s / 2), rz = WW - Math.max(100, s / 2);
-    if (!wide){
-      let sd = 11;
-      const bld = (x, w, h, c) => { let win = "";
-        for (let yy = 800 - h + 16; yy < 690; yy += 24) for (let xx = x + 9; xx < x + w - 12; xx += 17){ sd = (sd * 9301 + 49297) % 233280; const on = sd / 233280 > .62;
-          win += `<rect x="${xx}" y="${yy}" width="9" height="12" rx="1.5" fill="${on ? "var(--sc-warm)" : "var(--sc-1)"}"/>`; }
-        return `<rect x="${x}" y="${800 - h}" width="${w}" height="${h}" fill="${c}"/>${win}`; };
-      return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-        <rect width="420" height="800" fill="var(--sc-sky)"/>${B.cloud(20, 70, 1)}${B.cloud(260, 130, .8)}${B.cloud(150, 220, .6)}
-        <circle cx="350" cy="80" r="28" fill="var(--sc-warm)" opacity=".85"/>
-        ${bld(-10, 92, 430, "var(--sc-blue)")}${bld(80, 72, 540, "var(--sc-3)")}${bld(150, 102, 370, "var(--sc-red)")}${bld(250, 66, 610, "var(--sc-3)")}${bld(314, 116, 450, "var(--sc-blue)")}
-        <path d="M273 190 l10 -46 10 46z" fill="var(--sc-3)"/>
-        <g transform="translate(336 316)"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>
-        <rect y="730" width="420" height="70" fill="var(--sc-3)"/><rect y="724" width="420" height="8" fill="var(--sc-2)"/>
-        <g fill="var(--sc-1)" opacity=".7"><rect x="20" y="770" width="40" height="6" rx="3"/><rect x="120" y="770" width="40" height="6" rx="3"/><rect x="220" y="770" width="40" height="6" rx="3"/><rect x="320" y="770" width="40" height="6" rx="3"/></g>
-        ${B.tree(140)}${B.tree(300)}${B.kiosk(28, 626)}${B.lampPost(386, 540)}${B.car(196, 700, "var(--sc-warm)")}
-      </svg>`;
+    const wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(110, s / 2), rz = WW - Math.max(110, s / 2);
+    const G = 726;                                   // nivel de la vereda
+    const pal = [["#E9DBC2","#D9C7A8"],["#C8B496","#B7A283"],["#EE9C84","#DE8A72"],["#95B8E3","#83A7D4"],["#B9CDA9","#A7BC97"],["#F2E6CF","#E1D3B8"]];
+    const awnC = ["#EE8A73","#76C29B","#8DB4E6","#F4C24E"];
+    let far = "", main = "", roofs = "";
+    // Fondo: edificios lejanos, lisos y claritos
+    for (let x = -30; x < WW + 30;){ const w = 50 + Math.floor(R() * 60), h = 240 + Math.floor(R() * 220);
+      far += `<rect x="${x}" y="${G - h}" width="${w}" height="${h}" fill="#C3D3E4"/>`;
+      for (let yy = G - h + 14; yy < G - 60; yy += 30) for (let xx = x + 8; xx + 6 <= x + w - 8; xx += 14) if (R() > .55) far += `<rect x="${xx}" y="${yy}" width="6" height="9" fill="#DCE7F1"/>`;
+      x += w + 4; }
+    // Edificios principales
+    let x = -12, i = 0;
+    while (x < WW + 10){
+      const bw = 96 + Math.floor(R() * 60), bh = (wide ? 250 : 300) + Math.floor(R() * (wide ? 300 : 330)), top = G - bh, [c, cd] = pal[Math.floor(R() * pal.length)];
+      main += `<rect x="${x}" y="${top}" width="${bw}" height="${bh}" fill="${c}"/><rect x="${x + bw - 10}" y="${top}" width="10" height="${bh}" fill="#000" opacity=".06"/>`;
+      main += `<rect x="${x - 4}" y="${top - 6}" width="${bw + 8}" height="9" rx="1" fill="${cd}"/>`;
+      // ventanas: grilla centrada que entra entera en la fachada
+      const ww = 13, gx = 9, n = Math.max(1, Math.floor((bw - 26 + gx) / (ww + gx))), x0 = x + (bw - (n * ww + (n - 1) * gx)) / 2;
+      const shop = 62, lastY = G - shop - 22;
+      for (let y = top + 22; y + 18 <= lastY; y += 30) for (let k = 0; k < n; k++){ const wx = x0 + k * (ww + gx), lit = R() > .7;
+        main += `<rect x="${wx - 1.5}" y="${y - 1.5}" width="${ww + 3}" height="21" rx="1.5" fill="${cd}"/><rect x="${wx}" y="${y}" width="${ww}" height="18" fill="${lit ? "#F7D98A" : "#EEF3F8"}"/><rect x="${wx}" y="${y + 8}" width="${ww}" height="1.5" fill="${cd}" opacity=".7"/>`; }
+      // planta baja: local con toldo, vidriera y puerta
+      const ac = awnC[i % awnC.length], sy = G - shop;
+      main += `<rect x="${x}" y="${sy}" width="${bw}" height="${shop}" fill="${cd}"/><rect x="${x + 8}" y="${sy + 22}" width="${bw * .55}" height="${shop - 26}" fill="#EEF3F8"/><rect x="${x + 8}" y="${sy + 22}" width="${bw * .55}" height="${shop - 26}" fill="#fff" opacity=".35"/>`;
+      main += `<rect x="${x + bw * .68}" y="${sy + 18}" width="${bw * .22}" height="${shop - 18}" rx="2" fill="#8C7660"/><circle cx="${x + bw * .68 + 5}" cy="${sy + 42}" r="1.8" fill="#F4C24E"/>`;
+      let aw = ""; const nAw = Math.max(4, Math.round(bw / 16)), sw = bw / nAw;
+      for (let k = 0; k < nAw; k++) aw += `<path d="M${x + k * sw} ${sy + 2} h${sw} v12 q${-sw / 2} 8 ${-sw} 0z" fill="${k % 2 ? "#FBF6EC" : ac}"/>`;
+      main += aw;
+      // techo: tanque de agua, antena o equipos de aire (apoyados sobre el techo)
+      const kind = i % 4, rx = x + bw * (.25 + R() * .3);
+      if (kind === 0) roofs += `<g transform="translate(${rx} ${top - 6})"><path d="M4 0 v-16 M28 0 v-16 M10 -16 L22 0 M22 -16 L10 0" stroke="#8C7660" stroke-width="2.5"/><rect x="0" y="-48" width="32" height="32" rx="3" fill="#B4844F"/><path d="M-2 -48 L16 -62 L34 -48z" fill="#8C6A43"/><rect x="0" y="-38" width="32" height="2.5" fill="#8C6A43"/><rect x="0" y="-28" width="32" height="2.5" fill="#8C6A43"/></g>`;
+      else if (kind === 1) roofs += `<g transform="translate(${rx} ${top - 6})"><rect x="0" y="-14" width="26" height="14" rx="2" fill="#A9B3BF"/><rect x="4" y="-10" width="18" height="2" fill="#8792A0"/><rect x="34" y="-10" width="18" height="10" rx="2" fill="#A9B3BF"/></g>`;
+      else if (kind === 2) roofs += `<g transform="translate(${x + bw / 2} ${top - 6})"><path d="M0 0 v-52 M-10 -36 h20 M-7 -46 h14" stroke="#8C7660" stroke-width="2.5" stroke-linecap="round"/><circle cx="0" cy="-54" r="3" fill="#EE8A73"/></g>`;
+      x += bw + 2 + Math.floor(R() * 6); i++;
     }
-    // Ancho: un horizonte de edificios, con ventanas en patrón para no llenar la página de nodos
-    const litRng = sceneRng(29); let lit = ""; for (let c = 0; c < 5; c++) for (let r = 0; r < 4; r++) if (litRng() > .6) lit += `<rect x="${c * 17}" y="${r * 24 + 6}" width="9" height="12" rx="1.5" fill="var(--sc-warm)"/>`;
-    const cols = ["var(--sc-blue)","var(--sc-3)","var(--sc-red)","var(--sc-3)","var(--sc-blue)","var(--sc-2)"];
-    let blds = "", x = -20, i = 0;
-    while (x < WW + 20){
-      const bw = 70 + Math.floor(R() * 70), bh = 250 + Math.floor(R() * 330), top = 800 - bh, col = cols[Math.floor(R() * cols.length)];
-      blds += `<rect x="${x}" y="${top}" width="${bw}" height="${bh}" fill="${col}"/><rect x="${x + 9}" y="${top + 16}" width="${bw - 20}" height="${Math.max(0, 690 - top - 16)}" fill="url(#wDim)"/><rect x="${x + 9}" y="${top + 16}" width="${bw - 20}" height="${Math.max(0, 690 - top - 16)}" fill="url(#wLit)"/>`;
-      if (i % 5 === 2) blds += `<path d="M${x + bw / 2 - 10} ${top} l10 -50 l10 50z" fill="var(--sc-3)"/>`;
-      if (i % 5 === 4) blds += `<g transform="translate(${x + bw * .25} ${top - 66})"><path d="M0 30 q22 -16 44 0 v36 h-44z" fill="var(--sc-wood)"/><rect x="5" y="66" width="3" height="18" fill="var(--sc-3)"/><rect x="36" y="66" width="3" height="18" fill="var(--sc-3)"/><path d="M-3 30 l25 -18 25 18z" fill="var(--sc-wood2)"/></g>`;
-      x += bw - 4; i++;
-    }
-    let clouds = ""; const nc = Math.max(3, Math.round(WW / 230)); for (let c = 0; c < nc; c++) clouds += B.cloud(Math.round(c * WW / nc + R() * 90), 40 + Math.round(R() * 200), (.6 + R() * .5).toFixed(2));
-    let trees = "", posts = ""; for (let tx = 90; tx < WW - 40; tx += 200 + Math.floor(R() * 120)) trees += B.tree(tx); for (let px = 220; px < WW - 40; px += 320 + Math.floor(R() * 80)) posts += B.lampPost(px, 540);
-    let marks = ""; for (let mx = 20; mx < WW; mx += 100) marks += `<rect x="${mx}" y="770" width="40" height="6" rx="3"/>`;
+    // Vereda, cordón y calle
+    const marks = (() => { let m = ""; for (let mx = 18; mx < WW; mx += 92) m += `<rect x="${mx}" y="775" width="44" height="5" rx="2.5"/>`; return m; })();
+    let tiles = ""; for (let tx = 0; tx < WW; tx += 34) tiles += `<rect x="${tx}" y="${G}" width="1.5" height="16" fill="#CDBFA6"/>`;
+    const street = `<rect y="${G}" width="${WW}" height="16" fill="#E6DCC8"/>${tiles}<rect y="${G + 16}" width="${WW}" height="5" fill="#C9BBA0"/><rect y="${G + 21}" width="${WW}" height="${800 - G - 21}" fill="#8E95A3"/><g fill="#F4EEDF" opacity=".85">${marks}</g>`;
+    // Árboles, faroles, kiosco y autos (a escala entre ellos)
+    const tree = tx => `<g transform="translate(${tx} ${G + 8})"><rect x="-10" y="-4" width="20" height="8" rx="2" fill="#B4844F"/><rect x="-3" y="-42" width="6" height="40" fill="#8C6A43"/><circle cx="0" cy="-58" r="22" fill="#6DB891"/><circle cx="-14" cy="-46" r="14" fill="#6DB891"/><circle cx="14" cy="-46" r="14" fill="#5FA882"/><circle cx="6" cy="-66" r="12" fill="#86CCA6"/></g>`;
+    const post = px => `<g transform="translate(${px} ${G + 6})"><rect x="-5" y="-4" width="10" height="6" rx="2" fill="#5E6672"/><rect x="-2" y="-118" width="4" height="116" fill="#5E6672"/><path d="M0 -116 q0 -10 16 -10 h6" stroke="#5E6672" stroke-width="3.5" fill="none"/><ellipse cx="25" cy="-116" rx="5" ry="4" fill="#F7D98A"/><path d="M14 -120 h22 l-4 -8 h-14z" fill="#5E6672"/></g>`;
+    const car = (cx, col, flip) => `<g transform="translate(${cx} 760)${flip ? " scale(-1 1)" : ""}"><path d="M-52 0 v-12 q0 -6 6 -7 l14 -2 l12 -15 h34 l14 15 l18 3 q6 1 6 7 v11z" fill="${col}"/><path d="M-26 -22 l9 -11 h14 v11z M-1 -33 h13 l10 11 h-23z" fill="#DCEBF7"/><rect x="40" y="-14" width="6" height="4" rx="1" fill="#FFF3C4"/><rect x="-52" y="-12" width="5" height="4" rx="1" fill="#EE8A73"/><circle cx="-30" cy="0" r="9" fill="#2F3440"/><circle cx="-30" cy="0" r="4" fill="#AEB6C2"/><circle cx="28" cy="0" r="9" fill="#2F3440"/><circle cx="28" cy="0" r="4" fill="#AEB6C2"/></g>`;
+    const kiosk = kx => `<g transform="translate(${kx} ${G + 8})"><rect x="0" y="-74" width="70" height="74" rx="3" fill="#2F7A5C"/><rect x="-5" y="-84" width="80" height="12" rx="3" fill="#25654B"/><rect x="8" y="-64" width="54" height="26" fill="#F7F2E8"/><rect x="12" y="-60" width="20" height="3" fill="#B8A78C"/><rect x="12" y="-54" width="44" height="2" fill="#B8A78C"/><rect x="12" y="-49" width="36" height="2" fill="#B8A78C"/><rect x="8" y="-32" width="54" height="10" rx="2" fill="#25654B"/><g fill="#F7F2E8"><rect x="10" y="-30" width="14" height="6"/><rect x="28" y="-30" width="14" height="6"/><rect x="46" y="-30" width="14" height="6"/></g></g>`;
+    let deco = "";
+    if (wide){ for (let tx = 70; tx < WW - 40; tx += 190 + Math.floor(R() * 80)) deco += tree(tx); for (let px = 170; px < WW - 40; px += 300 + Math.floor(R() * 60)) deco += post(px);
+      deco += kiosk(lz - 35) + car(rz - 40, "#F4C24E") + car(Math.round(lz + 210), "#8DB4E6", true); }
+    else deco = kiosk(14) + tree(130) + post(206) + tree(300) + post(398) + car(250, "#F4C24E");
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
-      <defs><pattern id="wDim" width="17" height="24" patternUnits="userSpaceOnUse"><rect x="0" y="6" width="9" height="12" rx="1.5" fill="var(--sc-1)"/></pattern>
-        <pattern id="wLit" width="85" height="96" patternUnits="userSpaceOnUse">${lit}</pattern></defs>
-      <rect width="${WW}" height="800" fill="var(--sc-sky)"/>${clouds}<circle cx="${Math.round(WW * .86)}" cy="86" r="30" fill="var(--sc-warm)" opacity=".85"/>${blds}
-      <rect y="730" width="${WW}" height="70" fill="var(--sc-3)"/><rect y="724" width="${WW}" height="8" fill="var(--sc-2)"/><g fill="var(--sc-1)" opacity=".7">${marks}</g>
-      ${trees}${posts}${B.kiosk(lz - 40, 626)}${B.car(rz - 52, 700, "var(--sc-warm)")}${B.car(Math.round(lz + 190), 706, "var(--sc-blue)")}
+      <defs><linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFE3F6"/><stop offset="1" stop-color="#EDF4FA"/></linearGradient></defs>
+      <rect width="${WW}" height="800" fill="url(#dSky)"/>
+      <circle cx="${Math.round(WW * .84)}" cy="90" r="46" fill="#F9E3A0" opacity=".45"/><circle cx="${Math.round(WW * .84)}" cy="90" r="28" fill="#F4C24E"/>
+      ${sceneBits.cloud(Math.round(WW * .06), 80, 1)}${sceneBits.cloud(Math.round(WW * .5), 150, .75)}${wide ? sceneBits.cloud(Math.round(WW * .3), 60, .6) + sceneBits.cloud(Math.round(WW * .7), 210, .55) : ""}
+      ${far}${main}${roofs}${street}${deco}
     </svg>`;
   },
-  // Fijos: el rincón de las cuentas de la casa. Calendario con días marcados, reloj, corcho con las facturas (íconos) y el escritorio
+  // Fijos: el rincón de las cuentas en casa. Pared con empapelado, ventana, calendario, reloj, corcho con facturas, estante y escritorio
   fixed: (W, colU) => {
     const B = sceneBits, wide = W > 0, WW = wide ? W : 420;
-    if (!wide){
-      return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">
-        <rect width="420" height="800" fill="var(--sc-2)"/><rect width="420" height="800" fill="var(--sc-1)" opacity=".5"/>
-        ${B.calendar(22, 72)}${B.clock(330, 150)}${B.cork(22, 330)}
-        <rect y="660" width="420" height="140" fill="var(--sc-wood)"/><rect y="654" width="420" height="10" fill="var(--sc-wood2)"/>${B.lamp(300, 560)}${B.mug(60, 610)}
-      </svg>`;
-    }
-    const s = Math.max(0, (WW - colU) / 2), lz = Math.max(110, s / 2), rz = WW - Math.max(110, s / 2), zs = Math.min(1, Math.max(.5, (s - 30) / 400));
-    const frame = (x, y, w, h, art) => `<g transform="translate(${x} ${y})"><rect width="${w}" height="${h}" rx="4" fill="var(--sc-wood2)"/><rect x="7" y="7" width="${w - 14}" height="${h - 14}" fill="var(--sc-1)"/>${art(w, h)}</g>`;
-    const art1 = (w, h) => `<circle cx="${w * .62}" cy="${h * .36}" r="${w * .13}" fill="var(--sc-warm)"/><path d="M7 ${h - 7} L${w * .38} ${h * .5} L${w * .6} ${h * .72} L${w * .8} ${h * .58} L${w - 7} ${h * .76} V${h - 7}Z" fill="var(--sc-green)"/>`;
-    const art2 = (w, h) => `<rect x="${w * .22}" y="${h * .2}" width="${w * .56}" height="${h * .6}" rx="6" fill="var(--sc-blue)"/><circle cx="${w * .5}" cy="${h * .5}" r="${w * .14}" fill="var(--sc-red)"/>`;
-    let books = ""; const R = sceneRng(17), bc = ["var(--sc-red)","var(--sc-blue)","var(--sc-green)","var(--sc-warm)","var(--sc-3)"]; let bx = 0;
-    for (let b = 0; b < 12; b++){ const bw = 12 + Math.floor(R() * 10), bh = 44 + Math.floor(R() * 26); books += `<rect x="${bx}" y="${70 - bh}" width="${bw}" height="${bh}" rx="2" fill="${bc[b % 5]}"/>`; bx += bw + 2; }
-    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="${WW}" height="800" fill="var(--sc-2)"/><rect width="${WW}" height="800" fill="var(--sc-1)" opacity=".5"/>
-      ${B.calendar(lz - 96 * zs, 72, zs)}
-      ${frame(lz - 110 * zs, 72 + 200 * zs, 90 * zs, 110 * zs, art1)}${frame(lz + 14 * zs, 72 + 214 * zs, 96 * zs, 96 * zs, art2)}
-      <g transform="translate(${lz - 90 * zs} ${520}) scale(${zs})"><rect x="-10" y="70" width="${bx + 20}" height="10" rx="3" fill="var(--sc-wood2)"/>${books}</g>
-      ${B.clock(rz, 120, zs)}${B.cork(rz - 188 * zs, 210, zs)}
-      <rect y="660" width="${WW}" height="140" fill="var(--sc-wood)"/><rect y="654" width="${WW}" height="10" fill="var(--sc-wood2)"/>
-      ${B.lamp(rz - 30, 560)}${B.mug(lz + 40, 610)}${B.plant(lz - 90, 586)}
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(110, s / 2) : 110, rz = wide ? WW - Math.max(110, s / 2) : 310, zs = wide ? Math.min(1, Math.max(.5, (s - 30) / 400)) : 1;
+    const wall = `<defs><pattern id="fxPap" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="var(--sc-2)"/><rect x="0" width="22" height="44" fill="var(--sc-1)" opacity=".28"/><circle cx="33" cy="11" r="2.2" fill="var(--sc-3)" opacity=".25"/><circle cx="33" cy="33" r="2.2" fill="var(--sc-3)" opacity=".25"/></pattern></defs>
+      <rect width="${WW}" height="800" fill="url(#fxPap)"/>
+      <rect y="520" width="${WW}" height="140" fill="var(--sc-1)" opacity=".55"/><rect y="514" width="${WW}" height="9" fill="var(--sc-wood2)"/>`;
+    let panels = ""; for (let px = 14; px < WW - 40; px += 110) panels += `<rect x="${px}" y="540" width="92" height="100" rx="4" fill="none" stroke="var(--sc-3)" stroke-opacity=".35" stroke-width="2"/>`;
+    const clock = (x, y, sc) => `<g transform="translate(${x} ${y}) scale(${sc})"><circle r="52" fill="var(--sc-wood2)"/><circle r="45" fill="#FBF6EC"/>${Array.from({length:12}, (_, k) => { const a = k * Math.PI / 6; return `<rect x="-1.5" y="-41" width="3" height="${k % 3 ? 5 : 9}" fill="#5E6672" transform="rotate(${k * 30})"/>`; }).join("")}<path d="M0 0 V-28" stroke="#3A3F4A" stroke-width="5" stroke-linecap="round"/><path d="M0 0 L18 10" stroke="#3A3F4A" stroke-width="4" stroke-linecap="round"/><path d="M0 6 V-34" stroke="#EE8A73" stroke-width="1.5" transform="rotate(130)"/><circle r="4" fill="#3A3F4A"/></g>`;
+    const win = (x, y, w, h) => `<g transform="translate(${x} ${y})"><rect x="-8" y="-8" width="${w + 16}" height="${h + 16}" rx="4" fill="var(--sc-wood2)"/><rect width="${w}" height="${h}" fill="#CFE3F6"/><circle cx="${w * .7}" cy="${h * .3}" r="${w * .1}" fill="#F4C24E"/><path d="M0 ${h * .78} q${w * .25} -${h * .18} ${w * .5} -${h * .05} t${w * .5} -${h * .08} V${h} H0z" fill="#9CCFB0"/><rect x="${w / 2 - 3}" width="6" height="${h}" fill="var(--sc-wood2)"/><rect y="${h / 2 - 3}" width="${w}" height="6" fill="var(--sc-wood2)"/>
+      <path d="M-14 -14 h${w * .34} q-6 ${h * .5} 6 ${h + 20} h-${w * .34 - 8}z" fill="#EE8A73" opacity=".85"/><path d="M${w + 14} -14 h-${w * .34} q6 ${h * .5} -6 ${h + 20} h${w * .34 - 8}z" fill="#EE8A73" opacity=".85"/><rect x="-22" y="-20" width="${w + 44}" height="7" rx="3" fill="var(--sc-wood2)"/><rect x="-14" y="${h + 8}" width="${w + 28}" height="8" rx="2" fill="var(--sc-wood)"/></g>`;
+    const shelf = (x, y, sc) => { let bk = "", bx = 0; const R = sceneRng(17), bc = ["#EE8A73","#8DB4E6","#76C29B","#F4C24E","#B8A78C"];
+      for (let b = 0; b < 7; b++){ const bw = 11 + Math.floor(R() * 8), bh = 34 + Math.floor(R() * 18); bk += `<rect x="${bx}" y="${-bh}" width="${bw}" height="${bh}" rx="1.5" fill="${bc[b % 5]}"/><rect x="${bx + 2}" y="${-bh + 6}" width="${bw - 4}" height="3" fill="#fff" opacity=".5"/>`; bx += bw + 2; }
+      return `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="-8" y="0" width="${bx + 76}" height="9" rx="2" fill="var(--sc-wood2)"/><path d="M4 9 l8 14 M${bx + 56} 9 l-8 14" stroke="var(--sc-wood2)" stroke-width="4"/>${bk}
+        <g transform="translate(${bx + 12} 0)"><rect x="0" y="-22" width="26" height="22" rx="3" fill="#EE8A73"/><path d="M13 -22 C 2 -36, 4 -50, 13 -54 C 20 -46, 24 -34, 13 -22 Z M13 -22 C 24 -32, 32 -38, 34 -48 C 24 -46, 16 -36, 13 -22 Z" fill="#6DB891"/></g>
+        <g transform="translate(${bx + 46} 0)"><rect x="0" y="-26" width="18" height="26" rx="2" fill="#FBF6EC"/><rect x="3" y="-22" width="12" height="10" fill="#8DB4E6"/></g></g>`; };
+    const desk = `<rect y="654" width="${WW}" height="10" fill="var(--sc-wood2)"/><rect y="664" width="${WW}" height="136" fill="var(--sc-wood)"/>${Array.from({length: Math.ceil(WW / 140)}, (_, k) => `<rect x="${k * 140 + 30}" y="690" width="80" height="34" rx="3" fill="none" stroke="var(--sc-wood2)" stroke-width="3"/><rect x="${k * 140 + 62}" y="704" width="16" height="4" rx="2" fill="var(--sc-wood2)"/>`).join("")}`;
+    const lamp = (x) => `<g transform="translate(${x} 654)"><ellipse cx="0" cy="-3" rx="20" ry="5" fill="#5E6672"/><path d="M0 -4 L-14 -54 L18 -84" stroke="#5E6672" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 -96 l34 12 -8 18 -32 -12z" fill="#F4C24E"/><path d="M26 -74 l40 70 h-60z" fill="#F9E3A0" opacity=".25"/></g>`;
+    const mug = x => `<g transform="translate(${x} 618)"><rect x="0" y="0" width="30" height="36" rx="5" fill="#8DB4E6"/><path d="M30 8 q13 0 13 11 t-13 11" stroke="#8DB4E6" stroke-width="5" fill="none"/><path d="M8 -6 q4 -6 0 -12 M18 -6 q4 -6 0 -12" stroke="var(--sc-3)" stroke-width="2" fill="none" opacity=".6"/></g>`;
+    if (!wide) return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">${wall}${panels}
+        ${B.calendar(22, 72)}${clock(330, 130, 1)}${win(272, 222, 104, 78)}${B.cork(22, 338, .92)}
+        ${desk}${lamp(330)}${mug(60)}</svg>`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">${wall}${panels}
+      ${B.calendar(lz - 96 * zs, 70, zs)}${win(lz - 80 * zs, 300, 160 * zs, 120 * zs)}${shelf(lz - 90 * zs, 490, zs)}
+      ${clock(rz, 120, zs)}${B.cork(rz - 188 * zs, 210, zs)}
+      ${desk}${lamp(rz - 20)}${mug(lz + 40)}${B.plant(lz - 110, 586)}
     </svg>`;
   },
   // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas, de lado a lado
