@@ -1415,9 +1415,9 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 #scene svg{opacity:var(--scene-op,.6);filter:saturate(.85)}
 /* Resumen: la ciudad siempre de día, también en modo oscuro */
 #scene[data-scene="fixed"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
-#scene[data-scene="fixed"]{background:#EFE6D6}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene="fixed"]{background:#D9CCB5} :root:not([data-theme="light"]) #scene[data-scene="fixed"] svg{opacity:.85} }
-:root[data-theme="dark"] #scene[data-scene="fixed"]{background:#D9CCB5}:root[data-theme="dark"] #scene[data-scene="fixed"] svg{opacity:.85}
+#scene[data-scene="fixed"],#scene[data-scene="list"],#scene[data-scene="jars"]{background:#EFE6D6}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene]:not([data-scene="dash"]){background:#D9CCB5} :root:not([data-theme="light"]) #scene[data-scene]:not([data-scene="dash"]) svg{opacity:.85} }
+:root[data-theme="dark"] #scene[data-scene]:not([data-scene="dash"]){background:#D9CCB5}:root[data-theme="dark"] #scene[data-scene]:not([data-scene="dash"]) svg{opacity:.85}
 #scene[data-scene="dash"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) #scene[data-scene="dash"] svg{opacity:.72}
@@ -2164,7 +2164,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-17.0415";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-17.0500";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6766,21 +6766,39 @@ const sceneBits = {
   pendant(x){ return `<g><path d="M${x} 62 V106" stroke="var(--sc-3)" stroke-width="3"/><path d="M${x - 20} 132 L${x - 9} 106 H${x + 9} L${x + 20} 132 Z" fill="var(--sc-warm)"/><ellipse cx="${x}" cy="134" rx="20" ry="4" fill="var(--sc-warm)" opacity=".5"/></g>`; }
 };
 const SCENES = {
-  // Movimientos: adentro de un almacén. Toldo rayado, estantes con productos, lámparas colgantes y el mostrador con la caja
+  // Movimientos: adentro de un almacén de barrio. Toldo, estanterías con productos variados y etiquetas de precio, lámparas colgantes, mostrador con caja y balanza
   list: (W, colU) => {
-    const B = sceneBits, wide = W > 0, WW = wide ? W : 420, R = sceneRng(5);
-    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(100, s / 2), rz = WW - Math.max(100, s / 2);
-    let shelves = ""; const prod = ["var(--sc-red)","var(--sc-warm)","var(--sc-green)","var(--sc-blue)"];
-    for (let r = 0; r < 4; r++){ const y = 250 + r * 92; shelves += `<rect x="18" y="${y}" width="${WW - 36}" height="10" rx="2" fill="var(--sc-wood2)"/>`;
-      for (let x = 26; x < WW - 28;){ const q = R(), w = 18 + Math.floor(q * 22), h = 34 + Math.floor(q * 40);
-        shelves += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="3" fill="${prod[Math.floor(q * 4)]}"/><rect x="${x + 3}" y="${y - h + 8}" width="${w - 6}" height="8" rx="2" fill="var(--sc-1)" opacity=".8"/>`; x += w + 6; } }
-    let awn = ""; for (let x = 0; x < WW; x += 42) awn += `<path d="M${x} 0 h42 v62 q-21 18 -42 0z" fill="${(x / 42) % 2 ? "var(--sc-1)" : "var(--sc-red)"}"/>`;
-    let lamps = ""; if (wide){ for (let x = 150; x < WW - 40; x += 260 + Math.floor(R() * 90)) lamps += B.pendant(x); } else lamps = B.pendant(110) + B.pendant(310);
-    const left = wide ? B.plant(lz - 70, 568) + B.basket(lz + 6, 590) : B.plant(24, 568) + B.basket(110, 590);
-    const right = wide ? B.register(rz - 55, 548) + B.crates(rz - 190, 570) : B.register(286, 548);
+    const wide = W > 0, WW = wide ? W : 420, R = sceneRng(5);
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(120, s / 2) : 90, rz = wide ? WW - Math.max(120, s / 2) : 330;
+    const col = ["#EE8A73","#F4C24E","#76C29B","#8DB4E6","#C97B62","#ADC2A0","#E39B7E"];
+    // pared: arriba lisa, abajo azulejos
+    let tiles = ""; for (let ty = 600; ty < 652; ty += 26) for (let tx = (ty / 26 % 2) * 13; tx < WW; tx += 26) tiles += `<rect x="${tx + 1}" y="${ty + 1}" width="24" height="24" rx="2" fill="#F7F2E8"/>`;
+    let awn = ""; for (let x = 0; x < WW; x += 40) awn += `<path d="M${x} 0 h40 v56 q-20 16 -40 0z" fill="${(x / 40) % 2 ? "#FBF6EC" : "#EE8A73"}"/>`;
+    // productos
+    const item = (x, base) => { const t = Math.floor(R() * 5), c = col[Math.floor(R() * col.length)];
+      if (t === 0){ const w = 22, h = 30; return [w, `<rect x="${x}" y="${base - h}" width="${w}" height="${h}" rx="3" fill="${c}"/><rect x="${x}" y="${base - h + 8}" width="${w}" height="12" fill="#FBF6EC"/><rect x="${x + 4}" y="${base - h + 12}" width="${w - 8}" height="3" fill="${c}" opacity=".6"/><rect x="${x}" y="${base - h}" width="${w}" height="3" rx="1" fill="#000" opacity=".1"/>`]; }   // lata
+      if (t === 1){ const w = 16, h = 46; return [w, `<rect x="${x + 5}" y="${base - h}" width="6" height="8" rx="1" fill="#5E6672"/><path d="M${x + 4} ${base - h + 8} h8 l4 10 v${h - 18} h-16 v-${h - 18}z" fill="${c}" opacity=".9"/><rect x="${x}" y="${base - 22}" width="${w}" height="12" fill="#FBF6EC"/>`]; }   // botella
+      if (t === 2){ const w = 30 + Math.floor(R() * 10), h = 40 + Math.floor(R() * 12); return [w, `<rect x="${x}" y="${base - h}" width="${w}" height="${h}" rx="2" fill="${c}"/><rect x="${x + 4}" y="${base - h + 6}" width="${w - 8}" height="${h * .45}" rx="2" fill="#FBF6EC"/><circle cx="${x + w / 2}" cy="${base - h + 6 + h * .22}" r="${Math.min(w, h) * .14}" fill="${col[(Math.floor(R() * 7))]}"/><rect x="${x + w - 5}" y="${base - h}" width="5" height="${h}" fill="#000" opacity=".08"/>`]; }   // caja
+      if (t === 3){ const w = 24, h = 32; return [w, `<rect x="${x + 2}" y="${base - h - 6}" width="${w - 4}" height="7" rx="2" fill="#B4844F"/><rect x="${x}" y="${base - h}" width="${w}" height="${h}" rx="6" fill="#EEF3F8"/><rect x="${x + 3}" y="${base - h * .6}" width="${w - 6}" height="${h * .6 - 3}" rx="4" fill="${c}"/>`]; }   // frasco
+      const w = 28, h = 38; return [w, `<path d="M${x + 2} ${base - h} h${w - 4} l2 ${h} h-${w}z" fill="#D9C29A"/><path d="M${x + 2} ${base - h} h${w - 4} l-3 6 h-${w - 10}z" fill="#C6AE85"/><circle cx="${x + w / 2}" cy="${base - h * .45}" r="6" fill="${c}"/>`]; };   // bolsa de papel
+    const shelfRow = (x0, x1, y) => { let g = `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="9" fill="#B4844F"/><rect x="${x0}" y="${y + 9}" width="${x1 - x0}" height="5" fill="#000" opacity=".1"/>`;
+      for (let x = x0 + 8; x < x1 - 40;){ const [w, svg] = item(x, y); g += svg; x += w + 5 + Math.floor(R() * 6); }
+      for (let px = x0 + 40; px < x1 - 20; px += 120) g += `<rect x="${px}" y="${y + 9}" width="22" height="12" rx="2" fill="#FBF6EC"/><rect x="${px + 4}" y="${y + 13}" width="14" height="3" fill="#EE8A73"/>`;
+      return g; };
+    let shelves = ""; for (let r = 0; r < 5; r++) shelves += shelfRow(12, WW - 12, 182 + r * 84);
+    const sides = `<rect x="4" y="96" width="10" height="500" fill="#8C6A43"/><rect x="${WW - 14}" y="96" width="10" height="500" fill="#8C6A43"/>`;
+    const pend = x => `<g><path d="M${x} 50 V70" stroke="#5E6672" stroke-width="2.5"/><path d="M${x - 22} 92 L${x - 9} 70 H${x + 9} L${x + 22} 92 Z" fill="#3F8C6B"/><ellipse cx="${x}" cy="93" rx="8" ry="3.5" fill="#F7D98A"/><path d="M${x - 22} 94 L${x - 64} 200 H${x + 64} L${x + 22} 94 Z" fill="#F9E3A0" opacity=".16"/></g>`;
+    let lamps = ""; if (wide){ for (let x = 160; x < WW - 60; x += 280) lamps += pend(x); } else lamps = pend(110) + pend(310);
+    // mostrador con caja registradora, balanza y canasto de frutas
+    const counter = `<rect y="652" width="${WW}" height="10" fill="#8C6A43"/><rect y="662" width="${WW}" height="80" fill="#B4844F"/>${Array.from({length: Math.ceil(WW / 60)}, (_, k) => `<rect x="${k * 60}" y="662" width="2" height="80" fill="#8C6A43" opacity=".5"/>`).join("")}<rect y="742" width="${WW}" height="58" fill="#C8B496"/>${Array.from({length: Math.ceil(WW / 40)}, (_, k) => `<rect x="${k * 40}" y="742" width="20" height="29" fill="#B7A283"/><rect x="${k * 40 + 20}" y="771" width="20" height="29" fill="#B7A283"/>`).join("")}`;
+    const register = x => `<g transform="translate(${x} 652)"><rect x="0" y="-36" width="86" height="36" rx="5" fill="#5E6672"/><rect x="8" y="-30" width="42" height="12" rx="2" fill="#9CCFB0"/><g fill="#C9CFD8">${[0,1].map(r => [0,1,2].map(c => `<rect x="${56 + c * 9}" y="${-30 + r * 9}" width="7" height="6" rx="1"/>`).join("")).join("")}</g><rect x="10" y="-62" width="54" height="26" rx="3" fill="#7F95A8"/><rect x="16" y="-56" width="42" height="12" rx="2" fill="#DCEBF7"/></g>`;
+    const scale = x => `<g transform="translate(${x} 652)"><rect x="0" y="-8" width="56" height="8" rx="2" fill="#5E6672"/><rect x="22" y="-26" width="12" height="18" fill="#5E6672"/><ellipse cx="28" cy="-30" rx="30" ry="6" fill="#C9CFD8"/><circle cx="18" cy="-38" r="8" fill="#EE8A73"/><circle cx="34" cy="-39" r="9" fill="#F4C24E"/></g>`;
+    const basket = x => `<g transform="translate(${x} 652)"><circle cx="16" cy="-30" r="10" fill="#EE8A73"/><circle cx="34" cy="-34" r="11" fill="#76C29B"/><circle cx="52" cy="-30" r="9" fill="#F4C24E"/><path d="M0 -26 h70 l-8 26 h-54z" fill="#D9C29A"/><path d="M6 -18 h58 M10 -10 h50" stroke="#B4844F" stroke-width="2"/></g>`;
+    const left = wide ? basket(lz - 80) + scale(lz + 10) : basket(14) + scale(96);
+    const right = wide ? register(rz - 40) : register(300);
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
-      <rect width="${WW}" height="800" fill="var(--sc-2)"/>${awn}${shelves}${lamps}
-      <rect y="640" width="${WW}" height="20" fill="var(--sc-wood2)"/><rect y="660" width="${WW}" height="140" fill="var(--sc-wood)"/>${right}${left}
+      <rect width="${WW}" height="800" fill="#EFE6D6"/><rect y="596" width="${WW}" height="56" fill="#E6DCC8"/>${tiles}
+      ${sides}${shelves}${awn}${lamps}${counter}${left}${right}
     </svg>`;
   },
   // Resumen: una calle de ciudad con profundidad (edificios lejanos), fachadas con detalles, locales en planta baja y vereda
@@ -6846,47 +6864,63 @@ const SCENES = {
       ${far}${main}${roofs}${street}${deco}
     </svg>`;
   },
-  // Fijos: el rincón de las cuentas en casa. Pared con empapelado, ventana, calendario, reloj, corcho con facturas, estante y escritorio
+  // Fijos: el rincón de las cuentas en casa. Pared empapelada, ventana grande, calendario y reloj, corcho con facturas, estante y un escritorio con cosas arriba
   fixed: (W, colU) => {
     const B = sceneBits, wide = W > 0, WW = wide ? W : 420;
-    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(110, s / 2) : 110, rz = wide ? WW - Math.max(110, s / 2) : 310, zs = wide ? Math.min(1, Math.max(.5, (s - 30) / 400)) : 1;
-    const wall = `<defs><pattern id="fxPap" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="var(--sc-2)"/><rect x="0" width="22" height="44" fill="var(--sc-1)" opacity=".28"/><circle cx="33" cy="11" r="2.2" fill="var(--sc-3)" opacity=".25"/><circle cx="33" cy="33" r="2.2" fill="var(--sc-3)" opacity=".25"/></pattern></defs>
-      <rect width="${WW}" height="800" fill="url(#fxPap)"/>
-      <rect y="520" width="${WW}" height="140" fill="var(--sc-1)" opacity=".55"/><rect y="514" width="${WW}" height="9" fill="var(--sc-wood2)"/>`;
-    let panels = ""; for (let px = 14; px < WW - 40; px += 110) panels += `<rect x="${px}" y="540" width="92" height="100" rx="4" fill="none" stroke="var(--sc-3)" stroke-opacity=".35" stroke-width="2"/>`;
-    const clock = (x, y, sc) => `<g transform="translate(${x} ${y}) scale(${sc})"><circle r="52" fill="var(--sc-wood2)"/><circle r="45" fill="#FBF6EC"/>${Array.from({length:12}, (_, k) => { const a = k * Math.PI / 6; return `<rect x="-1.5" y="-41" width="3" height="${k % 3 ? 5 : 9}" fill="#5E6672" transform="rotate(${k * 30})"/>`; }).join("")}<path d="M0 0 V-28" stroke="#3A3F4A" stroke-width="5" stroke-linecap="round"/><path d="M0 0 L18 10" stroke="#3A3F4A" stroke-width="4" stroke-linecap="round"/><path d="M0 6 V-34" stroke="#EE8A73" stroke-width="1.5" transform="rotate(130)"/><circle r="4" fill="#3A3F4A"/></g>`;
-    const win = (x, y, w, h) => `<g transform="translate(${x} ${y})"><rect x="-8" y="-8" width="${w + 16}" height="${h + 16}" rx="4" fill="var(--sc-wood2)"/><rect width="${w}" height="${h}" fill="#CFE3F6"/><circle cx="${w * .7}" cy="${h * .3}" r="${w * .1}" fill="#F4C24E"/><path d="M0 ${h * .78} q${w * .25} -${h * .18} ${w * .5} -${h * .05} t${w * .5} -${h * .08} V${h} H0z" fill="#9CCFB0"/><rect x="${w / 2 - 3}" width="6" height="${h}" fill="var(--sc-wood2)"/><rect y="${h / 2 - 3}" width="${w}" height="6" fill="var(--sc-wood2)"/>
-      <path d="M-14 -14 h${w * .34} q-6 ${h * .5} 6 ${h + 20} h-${w * .34 - 8}z" fill="#EE8A73" opacity=".85"/><path d="M${w + 14} -14 h-${w * .34} q6 ${h * .5} -6 ${h + 20} h${w * .34 - 8}z" fill="#EE8A73" opacity=".85"/><rect x="-22" y="-20" width="${w + 44}" height="7" rx="3" fill="var(--sc-wood2)"/><rect x="-14" y="${h + 8}" width="${w + 28}" height="8" rx="2" fill="var(--sc-wood)"/></g>`;
-    const shelf = (x, y, sc) => { let bk = "", bx = 0; const R = sceneRng(17), bc = ["#EE8A73","#8DB4E6","#76C29B","#F4C24E","#B8A78C"];
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(120, s / 2) : 110, rz = wide ? WW - Math.max(120, s / 2) : 310, zs = wide ? Math.min(1, Math.max(.55, (s - 30) / 400)) : 1;
+    const TOP = 636;   // tapa del escritorio
+    const wall = `<defs><pattern id="fxPap" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#EADFCB"/><rect x="0" width="22" height="44" fill="#F7F2E8" opacity=".45"/><circle cx="33" cy="11" r="2.2" fill="#B8A78C" opacity=".3"/><circle cx="33" cy="33" r="2.2" fill="#B8A78C" opacity=".3"/></pattern></defs>
+      <rect width="${WW}" height="800" fill="url(#fxPap)"/><rect y="712" width="${WW}" height="10" fill="#B4844F"/>
+      <rect y="722" width="${WW}" height="78" fill="#C8A47A"/>${Array.from({length: Math.ceil(WW / 90)}, (_, k) => `<rect x="${k * 90 + (k % 2) * 30}" y="722" width="2" height="78" fill="#A9835A"/>`).join("")}<rect y="760" width="${WW}" height="2" fill="#A9835A"/>`;
+    const clock = (x, y, sc) => `<g transform="translate(${x} ${y}) scale(${sc})"><circle r="44" fill="#B4844F"/><circle r="38" fill="#FBF6EC"/>${Array.from({length:12}, (_, k) => `<rect x="-1.5" y="-35" width="3" height="${k % 3 ? 4 : 8}" fill="#5E6672" transform="rotate(${k * 30})"/>`).join("")}<path d="M0 0 V-24" stroke="#3A3F4A" stroke-width="4.5" stroke-linecap="round"/><path d="M0 0 L16 9" stroke="#3A3F4A" stroke-width="3.5" stroke-linecap="round"/><circle r="3.5" fill="#3A3F4A"/></g>`;
+    const cal = (x, y, sc) => `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="2" y="4" width="120" height="118" rx="5" fill="#000" opacity=".08"/><rect width="120" height="118" rx="5" fill="#FBF6EC"/><rect width="120" height="30" rx="5" fill="#EE8A73"/><rect y="24" width="120" height="6" fill="#EE8A73"/><circle cx="30" cy="0" r="4" fill="#5E6672"/><circle cx="90" cy="0" r="4" fill="#5E6672"/>${Array.from({length: 28}, (_, k) => { const cx = 10 + (k % 7) * 15, cy = 40 + Math.floor(k / 7) * 18; return `<rect x="${cx}" y="${cy}" width="11" height="12" rx="2" fill="#EADFCB"/>` + ([3, 9, 18, 26].includes(k) ? `<circle cx="${cx + 5.5}" cy="${cy + 6}" r="8" fill="none" stroke="#EE8A73" stroke-width="2.2"/>` : ""); }).join("")}</g>`;
+    const win = (x, y, w, h) => `<g transform="translate(${x} ${y})"><rect x="-8" y="-8" width="${w + 16}" height="${h + 16}" rx="4" fill="#B4844F"/><rect width="${w}" height="${h}" fill="#CFE3F6"/><circle cx="${w * .72}" cy="${h * .28}" r="${w * .09}" fill="#F4C24E"/>
+      <g fill="#FBF6EC"><circle cx="${w * .2}" cy="${h * .22}" r="${w * .06}"/><circle cx="${w * .28}" cy="${h * .2}" r="${w * .08}"/><circle cx="${w * .36}" cy="${h * .23}" r="${w * .05}"/></g>
+      <rect x="${w * .05}" y="${h * .55}" width="${w * .14}" height="${h * .45}" fill="#C97B62"/><rect x="${w * .22}" y="${h * .42}" width="${w * .16}" height="${h * .58}" fill="#95B8E3"/><rect x="${w * .62}" y="${h * .5}" width="${w * .15}" height="${h * .5}" fill="#D9C29A"/><rect x="${w * .8}" y="${h * .62}" width="${w * .14}" height="${h * .38}" fill="#ADC2A0"/>
+      <rect x="${w / 2 - 3}" width="6" height="${h}" fill="#B4844F"/><rect y="${h / 2 - 3}" width="${w}" height="6" fill="#B4844F"/>
+      <path d="M-14 -14 h${w * .3} q-6 ${h * .5} 6 ${h + 20} h-${w * .3 - 8}z" fill="#EE8A73" opacity=".9"/><path d="M${w + 14} -14 h-${w * .3} q6 ${h * .5} -6 ${h + 20} h${w * .3 - 8}z" fill="#EE8A73" opacity=".9"/><rect x="-22" y="-20" width="${w + 44}" height="7" rx="3" fill="#8C6A43"/><rect x="-14" y="${h + 8}" width="${w + 28}" height="8" rx="2" fill="#D7AE7E"/></g>`;
+    const shelf = (x, y, sc) => { let bk = "", bx = 0; const R = sceneRng(17), bc = ["#EE8A73","#8DB4E6","#76C29B","#F4C24E","#C97B62"];
       for (let b = 0; b < 7; b++){ const bw = 11 + Math.floor(R() * 8), bh = 34 + Math.floor(R() * 18); bk += `<rect x="${bx}" y="${-bh}" width="${bw}" height="${bh}" rx="1.5" fill="${bc[b % 5]}"/><rect x="${bx + 2}" y="${-bh + 6}" width="${bw - 4}" height="3" fill="#fff" opacity=".5"/>`; bx += bw + 2; }
-      return `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="-8" y="0" width="${bx + 76}" height="9" rx="2" fill="var(--sc-wood2)"/><path d="M4 9 l8 14 M${bx + 56} 9 l-8 14" stroke="var(--sc-wood2)" stroke-width="4"/>${bk}
-        <g transform="translate(${bx + 12} 0)"><rect x="0" y="-22" width="26" height="22" rx="3" fill="#EE8A73"/><path d="M13 -22 C 2 -36, 4 -50, 13 -54 C 20 -46, 24 -34, 13 -22 Z M13 -22 C 24 -32, 32 -38, 34 -48 C 24 -46, 16 -36, 13 -22 Z" fill="#6DB891"/></g>
+      return `<g transform="translate(${x} ${y}) scale(${sc})"><rect x="-8" y="0" width="${bx + 76}" height="9" rx="2" fill="#B4844F"/><rect x="-8" y="9" width="${bx + 76}" height="4" fill="#000" opacity=".1"/><path d="M4 9 l8 14 M${bx + 56} 9 l-8 14" stroke="#8C6A43" stroke-width="4"/>${bk}
+        <g transform="translate(${bx + 12} 0)"><rect x="0" y="-22" width="26" height="22" rx="3" fill="#C97B62"/><path d="M13 -22 C 2 -36, 4 -50, 13 -54 C 20 -46, 24 -34, 13 -22 Z M13 -22 C 24 -32, 32 -38, 34 -48 C 24 -46, 16 -36, 13 -22 Z" fill="#6DB891"/></g>
         <g transform="translate(${bx + 46} 0)"><rect x="0" y="-26" width="18" height="26" rx="2" fill="#FBF6EC"/><rect x="3" y="-22" width="12" height="10" fill="#8DB4E6"/></g></g>`; };
-    const desk = `<rect y="654" width="${WW}" height="10" fill="var(--sc-wood2)"/><rect y="664" width="${WW}" height="136" fill="var(--sc-wood)"/>${Array.from({length: Math.ceil(WW / 140)}, (_, k) => `<rect x="${k * 140 + 30}" y="690" width="80" height="34" rx="3" fill="none" stroke="var(--sc-wood2)" stroke-width="3"/><rect x="${k * 140 + 62}" y="704" width="16" height="4" rx="2" fill="var(--sc-wood2)"/>`).join("")}`;
-    const lamp = (x) => `<g transform="translate(${x} 654)"><ellipse cx="0" cy="-3" rx="20" ry="5" fill="#5E6672"/><path d="M0 -4 L-14 -54 L18 -84" stroke="#5E6672" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 -96 l34 12 -8 18 -32 -12z" fill="#F4C24E"/><path d="M26 -74 l40 70 h-60z" fill="#F9E3A0" opacity=".25"/></g>`;
-    const mug = x => `<g transform="translate(${x} 618)"><rect x="0" y="0" width="30" height="36" rx="5" fill="#8DB4E6"/><path d="M30 8 q13 0 13 11 t-13 11" stroke="#8DB4E6" stroke-width="5" fill="none"/><path d="M8 -6 q4 -6 0 -12 M18 -6 q4 -6 0 -12" stroke="var(--sc-3)" stroke-width="2" fill="none" opacity=".6"/></g>`;
-    if (!wide) return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">${wall}${panels}
-        ${B.calendar(22, 72)}${clock(330, 130, 1)}${win(272, 222, 104, 78)}${B.cork(22, 338, .92)}
-        ${desk}${lamp(330)}${mug(60)}</svg>`;
-    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">${wall}${panels}
-      ${B.calendar(lz - 96 * zs, 70, zs)}${win(lz - 80 * zs, 300, 160 * zs, 120 * zs)}${shelf(lz - 90 * zs, 490, zs)}
-      ${clock(rz, 120, zs)}${B.cork(rz - 188 * zs, 210, zs)}
-      ${desk}${lamp(rz - 20)}${mug(lz + 40)}${B.plant(lz - 110, 586)}
+    // escritorio: tapa, frente con cajones y patas que llegan al piso
+    let legs = ""; for (let lx = 24; lx < WW; lx += 260) legs += `<rect x="${lx}" y="${TOP + 60}" width="12" height="${722 - TOP - 60}" fill="#8C6A43"/><rect x="${lx + 200}" y="${TOP + 60}" width="12" height="${722 - TOP - 60}" fill="#8C6A43"/>`;
+    let drawers = ""; for (let dx = 40; dx < WW - 80; dx += 130) drawers += `<rect x="${dx}" y="${TOP + 20}" width="96" height="30" rx="3" fill="#C8A47A"/><rect x="${dx + 40}" y="${TOP + 32}" width="16" height="5" rx="2.5" fill="#8C6A43"/>`;
+    const desk = `${legs}<rect y="${TOP + 10}" width="${WW}" height="52" fill="#B4844F"/>${drawers}<rect y="${TOP}" width="${WW}" height="12" rx="2" fill="#D7AE7E"/><rect y="${TOP + 12}" width="${WW}" height="4" fill="#000" opacity=".12"/>`;
+    // cosas arriba del escritorio (apoyadas en la tapa)
+    const lamp = x => `<g transform="translate(${x} ${TOP})"><ellipse cx="0" cy="-3" rx="18" ry="5" fill="#5E6672"/><path d="M0 -4 L-12 -48 L16 -74" stroke="#5E6672" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 -86 l32 11 -8 17 -30 -11z" fill="#F4C24E"/><path d="M22 -66 l34 64 h-52z" fill="#F9E3A0" opacity=".25"/></g>`;
+    const mug = x => `<g transform="translate(${x} ${TOP - 32})"><rect x="0" y="0" width="26" height="32" rx="5" fill="#8DB4E6"/><path d="M26 7 q11 0 11 10 t-11 10" stroke="#8DB4E6" stroke-width="4.5" fill="none"/><path d="M7 -5 q4 -6 0 -12 M16 -5 q4 -6 0 -12" stroke="#B8A78C" stroke-width="2" fill="none"/></g>`;
+    const plant = x => `<g transform="translate(${x} ${TOP})"><path d="M2 -28 h30 l-4 28 h-22z" fill="#C97B62"/><path d="M17 -28 C 4 -44, 6 -62, 17 -66 C 25 -56, 29 -42, 17 -28 Z" fill="#6DB891"/><path d="M17 -28 C 30 -40, 38 -46, 40 -58 C 28 -56, 20 -44, 17 -28 Z" fill="#5FA882"/><path d="M17 -28 C 6 -34, -2 -40, -4 -50 C 6 -48, 14 -40, 17 -28 Z" fill="#86CCA6"/></g>`;
+    const papers = x => `<g transform="translate(${x} ${TOP})"><rect x="0" y="-6" width="60" height="6" rx="1" fill="#FBF6EC" transform="rotate(-3)"/><rect x="4" y="-12" width="60" height="6" rx="1" fill="#EEF3F8"/><rect x="8" y="-18" width="56" height="6" rx="1" fill="#FBF6EC" transform="rotate(2 30 -15)"/></g>`;
+    if (!wide) return `<svg viewBox="0 0 420 800" preserveAspectRatio="xMidYMax slice">${wall}
+        ${cal(26, 82, .9)}${clock(352, 118, 1)}${win(236, 196, 150, 110)}${B.cork(22, 350, .92)}
+        ${desk}${lamp(344)}${mug(56)}${papers(150)}</svg>`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">${wall}
+      ${win(lz - 110 * zs, 110, 220 * zs, 160 * zs)}${cal(lz - 60 * zs, 360, zs)}${shelf(lz - 90 * zs, 540, zs)}
+      ${clock(rz + 40 * zs, 110, zs)}${B.cork(rz - 188 * zs, 200, zs)}
+      ${desk}${lamp(rz + 60)}${mug(lz + 40)}${plant(lz - 110)}${papers(rz - 120)}
     </svg>`;
   },
-  // Ahorros: la alacena de la casa, con estantes de madera llenos de frascos y latas, de lado a lado
+  // Ahorros: la alacena. Estantes de madera con ménsulas, frascos con tapa y etiqueta, latas, una planta colgante y molduras arriba
   jars: (W, colU) => {
-    const WW = W > 0 ? W : 420;
-    let sh = "", seed = 7; const cols = ["var(--sc-green)","var(--sc-warm)","var(--sc-red)","var(--sc-blue)"];
-    for (let i = 0; i < 6; i++){ const y = 120 + i * 120;
-      sh += `<rect x="0" y="${y}" width="${WW}" height="14" fill="var(--sc-wood2)"/><rect x="0" y="${y + 14}" width="${WW}" height="6" fill="#000" opacity=".12"/>`;
-      let x = 10 + (i % 2) * 16;
-      while (x < WW - 20){ seed = (seed * 9301 + 49297) % 233280; const r = seed / 233280; seed = (seed * 9301 + 49297) % 233280; const r2 = seed / 233280;
-        const k = Math.floor(r * 4), w = 26 + Math.floor(r2 * 26), h = 40 + Math.floor(r * 44);
-        if (k === 1) sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="4" fill="${cols[(x + i) % 4]}"/><rect x="${x}" y="${y - h + 8}" width="${w}" height="10" fill="#fff" opacity=".6"/>`;
-        else sh += `<rect x="${x + 3}" y="${y - h - 8}" width="${w - 6}" height="10" rx="3" fill="${cols[(x + i + 1) % 4]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="9" fill="#fff" opacity=".55"/><rect x="${x + 4}" y="${y - h * .55}" width="${w - 8}" height="${h * .55 - 4}" rx="6" fill="${cols[(x + i) % 4]}"/>`;
-        x += w + 8 + Math.floor(r2 * 18); } }
-    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="var(--sc-wood)"/>${sh}</svg>`;
+    const WW = W > 0 ? W : 420, R = sceneRng(7);
+    const col = ["#76C29B","#F4C24E","#EE8A73","#8DB4E6","#C97B62","#ADC2A0"];
+    let sh = "";
+    for (let i = 0; i < 6; i++){ const y = 140 + i * 112;
+      sh += `<rect x="0" y="${y}" width="${WW}" height="12" fill="#B4844F"/><rect x="0" y="${y + 12}" width="${WW}" height="6" fill="#000" opacity=".12"/>`;
+      for (let bx = 30; bx < WW; bx += 180) sh += `<path d="M${bx} ${y + 12} v18 l16 -18z" fill="#8C6A43"/>`;
+      for (let x = 14 + (i % 2) * 14; x < WW - 40;){
+        const k = Math.floor(R() * 5), c = col[Math.floor(R() * col.length)];
+        if (k < 3){ const w = 30 + Math.floor(R() * 18), h = 46 + Math.floor(R() * 28), fill = .35 + R() * .5;
+          sh += `<rect x="${x + 3}" y="${y - h - 9}" width="${w - 6}" height="10" rx="3" fill="${col[(k + i) % col.length]}"/><rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="8" fill="#EEF3F8"/><rect x="${x + 4}" y="${y - h * fill}" width="${w - 8}" height="${h * fill - 4}" rx="5" fill="${c}"/><rect x="${x + 6}" y="${y - h + 6}" width="4" height="${h - 14}" rx="2" fill="#fff" opacity=".7"/>`
+            + (R() > .5 ? `<rect x="${x + 6}" y="${y - h * .62}" width="${w - 12}" height="12" rx="2" fill="#FBF6EC"/><rect x="${x + 10}" y="${y - h * .62 + 4}" width="${w - 20}" height="3" fill="#B8A78C"/>` : "");
+          x += w + 8 + Math.floor(R() * 12); }
+        else if (k === 3){ const w = 28, h = 34; sh += `<rect x="${x}" y="${y - h}" width="${w}" height="${h}" rx="3" fill="${c}"/><rect x="${x}" y="${y - h + 9}" width="${w}" height="14" fill="#FBF6EC"/><rect x="${x}" y="${y - h}" width="${w}" height="3" fill="#000" opacity=".12"/>`; x += w + 6; }
+        else { const w = 30, h = 40; sh += `<path d="M${x + 2} ${y - h} h${w - 4} l2 ${h} h-${w}z" fill="#D9C29A"/><path d="M${x + 2} ${y - h} h${w - 4} l-3 6 h-${w - 10}z" fill="#C6AE85"/><circle cx="${x + w / 2}" cy="${y - h * .45}" r="6" fill="${c}"/>`; x += w + 10; }
+      } }
+    const trim = `<rect width="${WW}" height="56" fill="#8C6A43"/><rect y="50" width="${WW}" height="12" fill="#B4844F"/>${Array.from({length: Math.ceil(WW / 30)}, (_, k) => `<rect x="${k * 30 + 6}" y="14" width="18" height="26" rx="3" fill="#A07650"/>`).join("")}`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#E6D5BA"/>${Array.from({length: Math.ceil(WW / 60)}, (_, k) => `<rect x="${k * 60}" y="0" width="2" height="800" fill="#D7C3A2"/>`).join("")}${sh}${trim}</svg>`;
   }
 };
 let sceneOn = null, sceneKey = "";
