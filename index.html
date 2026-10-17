@@ -1414,6 +1414,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 /* ===== Fondos más suaves para que no compitan con la interfaz ===== */
 #scene svg{opacity:var(--scene-op,.6);filter:saturate(.85)}
 /* Resumen: la ciudad siempre de día, también en modo oscuro */
+#scene[data-scene="fixed"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
+#scene[data-scene="fixed"]{background:#EFE6D6}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene="fixed"]{background:#D9CCB5} :root:not([data-theme="light"]) #scene[data-scene="fixed"] svg{opacity:.85} }
+:root[data-theme="dark"] #scene[data-scene="fixed"]{background:#D9CCB5}:root[data-theme="dark"] #scene[data-scene="fixed"] svg{opacity:.85}
 #scene[data-scene="dash"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) #scene[data-scene="dash"] svg{opacity:.72}
@@ -2160,7 +2164,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-17.0400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-17.0415";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6784,7 +6788,8 @@ const SCENES = {
     const wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
     const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = Math.max(110, s / 2), rz = WW - Math.max(110, s / 2);
     const G = 726;                                   // nivel de la vereda
-    const pal = [["#E9DBC2","#D9C7A8"],["#C8B496","#B7A283"],["#EE9C84","#DE8A72"],["#95B8E3","#83A7D4"],["#B9CDA9","#A7BC97"],["#F2E6CF","#E1D3B8"]];
+    const pal = [["#C97B62","#B26A52"],["#E8DCC4","#D6C6A8"],["#9E7360","#8A6352"],["#D9C29A","#C6AE85"],["#B8B6AF","#A3A19A"],["#8FAAC6","#7E99B5"],["#E39B7E","#CF8A6D"],["#ADC2A0","#9AB08D"],["#F1E4CB","#DFD0B3"],["#7F95A8","#6F8598"]];
+    let lastC = -1;
     const awnC = ["#EE8A73","#76C29B","#8DB4E6","#F4C24E"];
     let far = "", main = "", roofs = "";
     // Fondo: edificios lejanos, lisos y claritos
@@ -6795,7 +6800,8 @@ const SCENES = {
     // Edificios principales
     let x = -12, i = 0;
     while (x < WW + 10){
-      const bw = 96 + Math.floor(R() * 60), bh = (wide ? 250 : 300) + Math.floor(R() * (wide ? 300 : 330)), top = G - bh, [c, cd] = pal[Math.floor(R() * pal.length)];
+      let ci = Math.floor(R() * pal.length); if (ci === lastC) ci = (ci + 3) % pal.length; lastC = ci;
+      const bw = 96 + Math.floor(R() * 60), bh = (wide ? 250 : 300) + Math.floor(R() * (wide ? 300 : 330)), top = G - bh, [c, cd] = pal[ci];
       main += `<rect x="${x}" y="${top}" width="${bw}" height="${bh}" fill="${c}"/><rect x="${x + bw - 10}" y="${top}" width="10" height="${bh}" fill="#000" opacity=".06"/>`;
       main += `<rect x="${x - 4}" y="${top - 6}" width="${bw + 8}" height="9" rx="1" fill="${cd}"/>`;
       // ventanas: grilla centrada que entra entera en la fachada
@@ -6827,14 +6833,16 @@ const SCENES = {
     const car = (cx, col, flip) => `<g transform="translate(${cx} 760)${flip ? " scale(-1 1)" : ""}"><path d="M-52 0 v-12 q0 -6 6 -7 l14 -2 l12 -15 h34 l14 15 l18 3 q6 1 6 7 v11z" fill="${col}"/><path d="M-26 -22 l9 -11 h14 v11z M-1 -33 h13 l10 11 h-23z" fill="#DCEBF7"/><rect x="40" y="-14" width="6" height="4" rx="1" fill="#FFF3C4"/><rect x="-52" y="-12" width="5" height="4" rx="1" fill="#EE8A73"/><circle cx="-30" cy="0" r="9" fill="#2F3440"/><circle cx="-30" cy="0" r="4" fill="#AEB6C2"/><circle cx="28" cy="0" r="9" fill="#2F3440"/><circle cx="28" cy="0" r="4" fill="#AEB6C2"/></g>`;
     const kiosk = kx => `<g transform="translate(${kx} ${G + 8})"><rect x="0" y="-74" width="70" height="74" rx="3" fill="#2F7A5C"/><rect x="-5" y="-84" width="80" height="12" rx="3" fill="#25654B"/><rect x="8" y="-64" width="54" height="26" fill="#F7F2E8"/><rect x="12" y="-60" width="20" height="3" fill="#B8A78C"/><rect x="12" y="-54" width="44" height="2" fill="#B8A78C"/><rect x="12" y="-49" width="36" height="2" fill="#B8A78C"/><rect x="8" y="-32" width="54" height="10" rx="2" fill="#25654B"/><g fill="#F7F2E8"><rect x="10" y="-30" width="14" height="6"/><rect x="28" y="-30" width="14" height="6"/><rect x="46" y="-30" width="14" height="6"/></g></g>`;
     let deco = "";
-    if (wide){ for (let tx = 70; tx < WW - 40; tx += 190 + Math.floor(R() * 80)) deco += tree(tx); for (let px = 170; px < WW - 40; px += 300 + Math.floor(R() * 60)) deco += post(px);
-      deco += kiosk(lz - 35) + car(rz - 40, "#F4C24E") + car(Math.round(lz + 210), "#8DB4E6", true); }
-    else deco = kiosk(14) + tree(130) + post(206) + tree(300) + post(398) + car(250, "#F4C24E");
+    if (wide){ const kx = Math.round(lz - 35), free = (a, pad) => a < kx - pad || a > kx + 70 + pad;
+      for (let tx = 70; tx < WW - 40; tx += 190 + Math.floor(R() * 80)) if (free(tx, 40)) deco += tree(tx);
+      for (let px = 170; px < WW - 40; px += 300 + Math.floor(R() * 60)) if (free(px, 30)) deco += post(px);
+      deco += kiosk(kx) + car(rz - 40, "#F4C24E") + car(Math.round(lz + 210), "#8DB4E6", true); }
+    else deco = kiosk(22) + tree(160) + post(226) + tree(318) + post(398) + car(262, "#F4C24E");
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice">
       <defs><linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFE3F6"/><stop offset="1" stop-color="#EDF4FA"/></linearGradient></defs>
       <rect width="${WW}" height="800" fill="url(#dSky)"/>
-      <circle cx="${Math.round(WW * .84)}" cy="90" r="46" fill="#F9E3A0" opacity=".45"/><circle cx="${Math.round(WW * .84)}" cy="90" r="28" fill="#F4C24E"/>
-      ${sceneBits.cloud(Math.round(WW * .06), 80, 1)}${sceneBits.cloud(Math.round(WW * .5), 150, .75)}${wide ? sceneBits.cloud(Math.round(WW * .3), 60, .6) + sceneBits.cloud(Math.round(WW * .7), 210, .55) : ""}
+      <circle cx="${Math.round(WW * .84)}" cy="62" r="46" fill="#F9E3A0" opacity=".45"/><circle cx="${Math.round(WW * .84)}" cy="62" r="28" fill="#F4C24E"/>
+      ${sceneBits.cloud(Math.round(WW * .02), 60, 1.9)}${sceneBits.cloud(Math.round(WW * .46), 150, 1.4)}${wide ? sceneBits.cloud(Math.round(WW * .26), 40, 1.3) + sceneBits.cloud(Math.round(WW * .64), 200, 1.2) + sceneBits.cloud(Math.round(WW * .9), 250, 1) : ""}
       ${far}${main}${roofs}${street}${deco}
     </svg>`;
   },
