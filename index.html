@@ -1036,6 +1036,11 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+.y-row{display:flex;gap:10px;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px dashed var(--line,#d8ccb4);padding:10px 2px;font:inherit;color:inherit;cursor:pointer}
+.y-row:last-of-type{border-bottom:0}
+.y-main,.y-val{display:flex;flex-direction:column;min-width:0}.y-val{text-align:right;flex:0 0 auto}
+.y-main small,.y-val small{color:var(--muted,#7a6f5e);font-size:12.5px}.y-val small{color:#1E8A5B;white-space:pre-line}.y-val small.neg{color:#C0392B}
+
 /* Selector de mes con día */
 .month-btn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 8px;border-radius:10px;font:inherit;color:inherit;min-height:36px;letter-spacing:inherit}
 .month-btn .caret{font-size:.62em;color:var(--muted)}
@@ -1588,6 +1593,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
     <button type="button" class="quick-btn sp-open" id="spOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-piggy"/></svg></span><span><strong>¿Cuánto puedo ahorrar?</strong><small>Este mes y los que vienen, según tu tarjeta</small></span></button>
     <div id="jarList"></div>
+    <section class="card" id="yieldCard" style="margin-top:16px">
+      <div class="card-head"><h2>Plata que rinde</h2><button type="button" class="small-btn" id="yAdd">+ Agregar</button></div>
+      <div id="yieldList"></div>
+    </section>
     <section class="card" id="jarGrowthCard">
       <div class="card-head">
         <h2 id="jarHistTitle">Historial</h2>
@@ -2199,7 +2208,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.1900";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2746,6 +2755,8 @@ function cardWhenText(e){
    Los gastos de categoría Ahorro y las compras de dólares llevan jarId y suman solos al frasco. */
 if (!Array.isArray(data.jars)) data.jars = [];
 if (!Array.isArray(data.jarMoves)) data.jarMoves = [];
+/* data.yields: dónde rinde la plata { id, name, kind:"fund"|"rate", fund (nombre exacto en ArgentinaDatos), units, vcp0, tna (%), amount, start:"YYYY-MM-DD" } */
+if (!Array.isArray(data.yields)) data.yields = [];
 if (!data.lastJar || typeof data.lastJar !== "object") data.lastJar = {};
 const JAR_COLORS = ["#1E8A5B","#2F5BEA","#C9A227","#7A5AC8","#E08A2C","#1FA3B3","#D0485E","#E2689B","#6B7A8A"];
 const JAR_COLOR_NAMES = ["Verde","Azul","Dorado","Violeta","Naranja","Celeste","Rojo","Rosa","Gris"];
@@ -6178,7 +6189,7 @@ function renderMonthClose(){
     const L = document.createElement("div"), Rt = document.createElement("div"); L.className = "vcol-l"; Rt.className = "vcol-r";
     const kids = [...v.children], right = kids.filter(k => k.matches(rightSel));
     kids.forEach(k => (right.includes(k) ? Rt : L).append(k)); v.append(L, Rt); };
-  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList");
+  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList, #yieldCard");
   const paper = document.querySelector("#viewDash .paper"); if (paper && !paper.querySelector(".paper-cols")){
     const cols = document.createElement("div"); cols.className = "paper-cols"; const A = document.createElement("div"), Bc = document.createElement("div"); A.className = "pcol-a"; Bc.className = "pcol-b";
     const secs = [...paper.querySelectorAll(":scope > section")];
@@ -7409,8 +7420,119 @@ function renderJars(){
     }
   }
   renderJarHistory(r);
+  renderYields();
   if (jdOpen) renderJarDetail();
 }
+
+/* ===== Plata que rinde: fondos comunes (valor cuotaparte diario de ArgentinaDatos) o cuentas con tasa (TNA cargada a mano) ===== */
+const FCI_TYPES = ["mercadoDinero", "rentaFija"];
+let fciCache = null, fciLoading = null;
+try { fciCache = JSON.parse(localStorage.getItem("receater.fci") || "null"); } catch {}
+function loadFci(force){
+  const today = new Date().toISOString().slice(0, 10);
+  if (!force && fciCache && fciCache.day === today) return Promise.resolve(fciCache);
+  if (fciLoading) return fciLoading;
+  const get = (t, w) => fetch(`https://api.argentinadatos.com/v1/finanzas/fci/${t}/${w}`).then(r => r.ok ? r.json() : []).catch(() => []);
+  fciLoading = Promise.all(FCI_TYPES.flatMap(t => [get(t, "ultimo"), get(t, "penultimo")])).then(arr => {
+    const funds = {};
+    for (let i = 0; i < arr.length; i += 2){
+      const pen = {}; (arr[i + 1] || []).forEach(x => { if (x && x.vcp) pen[x.fondo] = x; });
+      (arr[i] || []).forEach(x => { if (!x || !x.vcp || !x.fondo) return; const p = pen[x.fondo];
+        if (x.fecha < new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10)) return; // fondos que ya no publican
+        funds[x.fondo] = { vcp: x.vcp, fecha: x.fecha, pvcp: p && p.fecha < x.fecha ? p.vcp : null, pfecha: p ? p.fecha : null, usd: /d[oó]lar|usd/i.test(x.fondo) }; });
+    }
+    if (Object.keys(funds).length){ fciCache = { day: today, funds }; try { localStorage.setItem("receater.fci", JSON.stringify(fciCache)); } catch {} }
+    fciLoading = null; return fciCache;
+  });
+  return fciLoading;
+}
+function fundInfo(name){ return fciCache && fciCache.funds[name] || null; }
+/* TNA aproximada del fondo según los dos últimos valores publicados */
+function fundTna(f){ if (!f || !f.pvcp) return null; const days = Math.max(1, Math.round((new Date(f.fecha) - new Date(f.pfecha)) / 864e5)); return (f.vcp / f.pvcp - 1) * 365 / days * 100; }
+function yCur(y){ return y.kind === "fund" ? (fundInfo(y.fund)?.usd || y.usd ? "USD" : "ARS") : (y.cur || "ARS"); }
+function yValue(y){
+  if (y.kind === "fund"){ const f = fundInfo(y.fund); return f ? y.units * f.vcp : y.amount; }
+  const days = Math.max(0, (Date.now() - new Date(y.start + "T00:00").getTime()) / 864e5);
+  return y.amount * Math.pow(1 + (y.tna || 0) / 100 / 365, days);
+}
+function yToday(y){
+  if (y.kind === "fund"){ const f = fundInfo(y.fund); if (!f || !f.pvcp) return null; const days = Math.max(1, Math.round((new Date(f.fecha) - new Date(f.pfecha)) / 864e5)); return y.units * (f.vcp - f.pvcp) / days; }
+  return yValue(y) * (y.tna || 0) / 100 / 365;
+}
+function yMoney(y, n, d){ const c = yCur(y); return c === "USD" ? fmtUSD.format(n) : (d ? fmtARS.format(n) : f0ARS(n)); }
+function renderYields(){
+  const box = $("yieldList"); if (!box) return; box.innerHTML = "";
+  if (!data.yields.length){
+    box.innerHTML = '<p class="fx-hint" style="margin:0">¿Tenés plata en una billetera o en un fondo común (Mercado Pago, Ualá, Fima…)? Cargala acá y Recy te dice cuánto te va rindiendo por día.</p>';
+    return;
+  }
+  if (data.yields.some(y => y.kind === "fund") && !fciCache) loadFci().then(c => { if (c) renderYields(); });
+  let mA = 0, mU = 0;
+  data.yields.forEach(y => {
+    const v = yValue(y), g = v - y.amount, t = yToday(y), f = y.kind === "fund" ? fundInfo(y.fund) : null;
+    const tna = y.kind === "fund" ? fundTna(f) : y.tna;
+    if (t){ if (yCur(y) === "USD") mU += t * 30; else mA += t * 30; }
+    const row = document.createElement("button"); row.type = "button"; row.className = "y-row";
+    row.innerHTML = `<span class="y-main"><strong></strong><small></small></span><span class="y-val"><b></b><small></small></span>`;
+    row.querySelector("strong").textContent = y.name;
+    row.querySelector(".y-main small").textContent = (y.kind === "fund" ? (f ? `Fondo · valor del ${f.fecha.split("-").reverse().slice(0, 2).join("/")}` : "Fondo · sin datos nuevos") : "Cuenta con tasa") + (tna != null ? ` · ${tna.toFixed(1).replace(".", ",")}% anual` : "");
+    row.querySelector("b").textContent = yMoney(y, v);
+    const sm = row.querySelector(".y-val small");
+    sm.textContent = (t != null ? `${t >= 0 ? "+" : "−"} ${yMoney(y, Math.abs(t), true)} por día` : "") + (Math.abs(g) >= 0.01 ? `\n${g >= 0 ? "ganaste" : "perdiste"} ${yMoney(y, Math.abs(g))}` : "");
+    if (g < 0 || (t != null && t < 0)) sm.classList.add("neg");
+    row.onclick = () => openYield(y);
+    box.append(row);
+  });
+  if (mA || mU){ const p = document.createElement("p"); p.className = "fx-hint"; p.style.margin = "8px 0 0";
+    p.textContent = `A este ritmo, en un mes te generan ≈ ${[mA && f0ARS(mA), mU && fmtUSD.format(mU)].filter(Boolean).join(" y ")}. Es una estimación: el número real lo ves en tu app.`; box.append(p); }
+}
+function openYield(y){
+  const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }, uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  const toast = t => { const m = box.querySelector("#yErr"); m.textContent = t; };
+  const isNew = !y; y = y ? { ...y } : { id: uid(), kind: "fund", name: "", amount: 0, start: todayISO(), tna: 0, cur: "ARS" };
+  const box = miniDialog(`<p><b>${isNew ? "¿Dónde rinde tu plata?" : "Plata que rinde"}</b></p>
+    <div class="seg" role="group" aria-label="Tipo" style="margin-bottom:10px"><button type="button" data-k="fund">Fondo común</button><button type="button" data-k="rate">Cuenta con tasa</button></div>
+    <div data-show="fund"><label class="fx-hint" for="yFund">Fondo</label><input class="input" id="yFund" list="yFundList" placeholder="Buscá: Fima, Cocos, Mercado…" autocomplete="off"><datalist id="yFundList"></datalist><p class="fx-hint" id="yFundMsg" style="margin:4px 0 8px"></p></div>
+    <div data-show="rate"><label class="fx-hint" for="yName">Nombre</label><input class="input" id="yName" placeholder="Ej: Naranja X" autocomplete="off" style="margin-bottom:8px">
+      <label class="fx-hint" for="yTna">Tasa anual (TNA %)</label><input class="input" id="yTna" inputmode="decimal" placeholder="Ej: 30" style="margin-bottom:8px">
+      <div class="seg" role="group" aria-label="Moneda" style="margin-bottom:8px"><button type="button" data-c="ARS">Pesos</button><button type="button" data-c="USD">Dólares</button></div></div>
+    <label class="fx-hint" for="yAmt">¿Cuánto tenés hoy?</label><input class="input" id="yAmt" inputmode="decimal" autocomplete="off">
+    <p id="yErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p><p class="fx-hint" style="margin:8px 0 0">Cuando cambie lo que tenés (pusiste o sacaste plata), actualizá este número con lo que diga tu app.</p>
+    ${isNew ? "" : '<button type="button" class="linkbtn" id="yDel" style="margin-top:10px;color:#C0392B">Borrar</button>'}`,
+    b => {
+      const amt = parseAmount(b.querySelector("#yAmt").value); if (!(amt > 0)){ toast("Poné cuánto tenés"); return false; }
+      if (y.kind === "fund"){
+        const nm = b.querySelector("#yFund").value.trim(), f = fundInfo(nm);
+        if (!f){ toast("Elegí un fondo de la lista"); return false; }
+        Object.assign(y, { name: nm.replace(/ - Clase .*/, ""), fund: nm, usd: f.usd, units: amt / f.vcp, vcp0: f.vcp });
+      } else {
+        const nm = b.querySelector("#yName").value.trim(); if (!nm){ toast("Poné un nombre"); return false; }
+        Object.assign(y, { name: nm, tna: parseAmount(b.querySelector("#yTna").value) || 0 });
+      }
+      y.amount = round2(amt); y.start = todayISO();
+      const i = data.yields.findIndex(x => x.id === y.id); if (i >= 0) data.yields[i] = y; else data.yields.push(y);
+      persist(); renderYields();
+    });
+  const paint = () => {
+    box.querySelectorAll("[data-k]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.k === y.kind)));
+    box.querySelectorAll("[data-c]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.c === (y.cur || "ARS"))));
+    box.querySelectorAll("[data-show]").forEach(x => x.hidden = x.dataset.show !== y.kind);
+  };
+  box.querySelectorAll("[data-k]").forEach(x => x.onclick = () => { y.kind = x.dataset.k; paint(); });
+  box.querySelectorAll("[data-c]").forEach(x => x.onclick = () => { y.cur = x.dataset.c; paint(); });
+  const fIn = box.querySelector("#yFund"), msg = box.querySelector("#yFundMsg");
+  const fillFunds = c => { if (!c){ msg.textContent = "No pude traer la lista de fondos. Probá más tarde o usá «Cuenta con tasa»."; return; }
+    box.querySelector("#yFundList").innerHTML = Object.keys(c.funds).sort().map(n => `<option value="${n.replace(/"/g, "&quot;")}">`).join(""); msg.textContent = ""; };
+  fIn.oninput = () => { const f = fundInfo(fIn.value.trim()), t = fundTna(f); msg.textContent = f ? `Valor de la cuotaparte: ${f.vcp.toLocaleString("es-AR")}` + (t != null ? ` · rinde ≈ ${t.toFixed(1).replace(".", ",")}% anual` : "") : ""; };
+  msg.textContent = "Cargando fondos…"; loadFci().then(fillFunds);
+  if (!isNew){
+    if (y.kind === "fund") fIn.value = y.fund; else { box.querySelector("#yName").value = y.name; box.querySelector("#yTna").value = String(y.tna || ""); }
+    box.querySelector("#yAmt").value = String(Math.round(yValue(y) * 100) / 100);
+    box.querySelector("#yDel").onclick = () => { data.yields = data.yields.filter(x => x.id !== y.id); persist(); renderYields(); box.parentElement.remove(); };
+  }
+  paint();
+}
+$("yAdd").onclick = () => openYield(null);
 /* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
 function renderJarHistory(r){
   updateFab();
