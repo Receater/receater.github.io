@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.1930`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.1915`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -57,6 +57,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - **Ajustes** (engranaje): cuenta de Google, cuándo cobrás, Recy inteligente (key de Gemini), avisos y recordatorio, personas, categorías, topes, exportar/importar, guía de inicio, privacidad y términos.
 
 ## 3. Diseño (respetar)
+
+- **REGLA DE TOMAS: todo lo nuevo va con la interfaz de la app.** Nunca una tarjeta blanca "normal", un formulario genérico o un diálogo del navegador. Antes de agregar algo, copiá el estilo de lo que ya existe en esa pestaña (libreta con espiral como el Historial, post-it, ticket, frasco, `miniDialog`). Ejemplo: "Plata que rinde" usa las mismas reglas que `#jarGrowthCard`.
 
 - **Estética**: objetos físicos ilustrados, planos y cálidos.
   - Las tabs son un estante de madera con cosas apoyadas.
@@ -205,7 +207,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 
 ## 7b. Plata que rinde
 
-- Tarjeta "Plata que rinde" en Ahorros (después de los frascos; en escritorio, columna derecha). Guarda `data.yields`: `{ id, kind:"fund"|"rate", name, amount, start, fund, units, vcp0, usd, tna, cur }`.
+- Libreta "Plata que rinde" (mismo estilo que el Historial) en Ahorros (después de los frascos; en escritorio, columna derecha). Guarda `data.yields`: `{ id, kind:"fund"|"rate", name, amount, start, fund, units, vcp0, usd, tna, cur }`.
 - **Fondo común**: se elige de la lista de ArgentinaDatos (`/v1/finanzas/fci/{mercadoDinero,rentaFija}/{ultimo,penultimo}`, sin key). Se guardan las cuotapartes (`units = monto / vcp`); el valor es `units × vcp` del día, lo de hoy sale de la diferencia con el valor anterior y la TNA se estima con esos dos valores. Cache diaria en `receater.fci`.
 - **Cuenta con tasa** (Naranja X, etc.): TNA a mano, interés compuesto diario desde `start`.
 - "¿Cuánto tenés hoy?" reinicia el cálculo con el monto real de la app. Es estimación; no se suma a gastos ni ingresos todavía.

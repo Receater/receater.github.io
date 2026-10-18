@@ -1036,7 +1036,10 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
-.y-row{display:flex;gap:10px;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px dashed var(--line,#d8ccb4);padding:10px 2px;font:inherit;color:inherit;cursor:pointer}
+#yieldCard .y-row,#yieldCard .small-btn{font-family:inherit}
+#yieldCard .small-btn{background:none;border:1.5px solid #1F1F1F;border-radius:6px;color:#1F1F1F;font-weight:700}
+#yieldCard .y-val small{color:#1E7A50}#yieldCard .y-main small{color:#6E6A62}
+.y-row{display:flex;gap:10px;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px dashed #D9D3C6;padding:10px 2px;font:inherit;color:inherit;cursor:pointer}
 .y-row:last-of-type{border-bottom:0}
 .y-main,.y-val{display:flex;flex-direction:column;min-width:0}.y-val{text-align:right;flex:0 0 auto}
 .y-main small,.y-val small{color:var(--muted,#7a6f5e);font-size:12.5px}.y-val small{color:#1E8A5B;white-space:pre-line}.y-val small.neg{color:#C0392B}
@@ -1369,17 +1372,17 @@ body{overflow-x:clip;max-width:100%}
 .clip .fp-sub .a{font-family:"IBM Plex Mono",ui-monospace,monospace}
 
 /* ===== Historial de ahorros: una libreta con espiral, igual que "cuentas con amigos" ===== */
-#jarGrowthCard{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border:0;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+#jarGrowthCard,#yieldCard{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border:0;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
   box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;--usd:#1E7A50;--danger:#C9374B;--accent:#2F5BEA;color-scheme:light}
-#jarGrowthCard::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
-#jarGrowthCard .card-head{border-bottom:1.5px dashed #BDB6A5;padding-bottom:10px;margin-bottom:6px;align-items:center}
-#jarGrowthCard .card-head h2{font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;margin:0}
-#jarGrowthCard .seg{border:1.5px solid #BDB6A5;border-radius:6px;background:none}
-#jarGrowthCard .seg button{border-radius:4px;font-family:inherit;font-weight:700}
-#jarGrowthCard .seg button[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1}
-#jarGrowthCard .fx-hint,#jarGrowthCard .hist-month,#jarGrowthCard .hist-row{font-family:inherit}
-#jarGrowthCard .hist-month{border-bottom:1.5px dashed #BDB6A5}
-#jarGrowthCard .hist-row{border-top:1px dashed #D9D3C6}
+#jarGrowthCard::before,#yieldCard::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
+#jarGrowthCard .card-head,#yieldCard .card-head{border-bottom:1.5px dashed #BDB6A5;padding-bottom:10px;margin-bottom:6px;align-items:center}
+#jarGrowthCard .card-head h2,#yieldCard .card-head h2{font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;margin:0}
+#jarGrowthCard .seg,#yieldCard .seg{border:1.5px solid #BDB6A5;border-radius:6px;background:none}
+#jarGrowthCard .seg button,#yieldCard .seg button{border-radius:4px;font-family:inherit;font-weight:700}
+#jarGrowthCard .seg button[aria-pressed="true"],#yieldCard .seg button[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1}
+#jarGrowthCard .fx-hint,#jarGrowthCard .hist-month,#jarGrowthCard .hist-row,#yieldCard .fx-hint,#yieldCard .hist-month,#yieldCard .hist-row{font-family:inherit}
+#jarGrowthCard .hist-month,#yieldCard .hist-month{border-bottom:1.5px dashed #BDB6A5}
+#jarGrowthCard .hist-row,#yieldCard .hist-row{border-top:1px dashed #D9D3C6}
 #jarGrowthCard .hist-row .t strong{font-family:inherit;font-weight:700}
 
 /* ===== Scrolls nativos: finitos y del color de la app, y nunca scroll de costado ===== */
@@ -1593,8 +1596,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <section class="recy-stage" id="stageJars" aria-label="Tus ahorros"></section>
     <button type="button" class="quick-btn sp-open" id="spOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-piggy"/></svg></span><span><strong>¿Cuánto puedo ahorrar?</strong><small>Este mes y los que vienen, según tu tarjeta</small></span></button>
     <div id="jarList"></div>
-    <section class="card" id="yieldCard" style="margin-top:16px">
-      <div class="card-head"><h2>Plata que rinde</h2><button type="button" class="small-btn" id="yAdd">+ Agregar</button></div>
+    <section class="card" id="yieldCard">
+      <div class="card-head"><h2>Plata que rinde</h2><button type="button" class="small-btn" id="yAdd">+ AGREGAR</button></div>
       <div id="yieldList"></div>
     </section>
     <section class="card" id="jarGrowthCard">
@@ -2208,7 +2211,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.1915";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
