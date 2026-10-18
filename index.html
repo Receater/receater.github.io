@@ -268,6 +268,10 @@ input[type="date"],input[type="time"],input[type="month"],input[type="datetime-l
 input::-webkit-date-and-time-value{text-align:left;margin:0;min-height:1.2em}
 input::-webkit-datetime-edit{padding:0}
 .sheet,.jar-glass,.onb-scroll,.dlg{overflow-x:hidden}
+/* Con una hoja o un diálogo abierto, lo de atrás no se mueve */
+html:has(.sheet.open),html:has(.dlg-bg),html:has(.onb:not([hidden])){overflow:hidden;overscroll-behavior:none}
+html:has(.sheet.open) body,html:has(.dlg-bg) body{overflow:hidden}
+.sheet{overscroll-behavior:contain}
 .person{grid-template-columns:minmax(0,1fr) 92px auto 28px}
 .split-row{grid-template-columns:minmax(0,1fr) auto auto}
 .split-row > span:first-child{overflow-wrap:anywhere}
@@ -2170,7 +2174,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-17.2130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-17.2140";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2178,6 +2182,9 @@ const BUILD = "2026-10-17.2130";/* Pinta de verde cada ✓ que aparezca en la ap
   let q = false; const sched = () => { if (q) return; q = true; requestAnimationFrame(() => { q = false; run(document.body); }); };
   new MutationObserver(sched).observe(document.body, { childList: true, subtree: true, characterData: true }); sched();
 })();
+/* En celus y tablets no ponemos el cursor solo al abrir: el teclado aparece y el navegador mueve la pantalla. Lo tocás vos. */
+const isTouchUI = () => { try { return matchMedia("(pointer: coarse)").matches || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); } catch { return false; } };
+function autoFocus(el){ if (!el || isTouchUI()) return; try { el.focus({ preventScroll: true }); } catch { el.focus(); } }
 const ico = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const icoTxt = (n, t) => { const f = document.createElement("span"); f.innerHTML = ico(n); f.append(" " + t); return f; };
 /* ---------- Diálogos propios (en vez de los del navegador) ---------- */
@@ -2194,7 +2201,7 @@ function uiDialog({ msg, ok = "Aceptar", cancel = null, danger = false }){
     const onKey = e => { if (e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); done(false); } else if (e.key === "Enter"){ e.preventDefault(); done(true); } };
     document.addEventListener("keydown", onKey, true);
     bg.addEventListener("click", e => { if (e.target === bg) done(false); });
-    setTimeout(() => o.focus(), 30);
+    setTimeout(() => autoFocus(o), 30);
   });
 }
 function uiConfirm(msg){
@@ -3369,7 +3376,7 @@ let buy = { cur: "ARS", how: "cash" };
 function openBuy(){
   $("buyName").value = ""; $("buyAmount").value = ""; $("buyCuotas").value = "1";
   buy = { cur: "ARS", how: data.cards[0] ? data.cards[0].id : "cash" };
-  renderBuy(); $("buyBg").classList.add("open"); $("buySheet").classList.add("open"); setTimeout(() => $("buyAmount").focus(), 150);
+  renderBuy(); $("buyBg").classList.add("open"); $("buySheet").classList.add("open"); setTimeout(() => autoFocus($("buyAmount")), 150);
 }
 function closeBuy(){ $("buyBg").classList.remove("open"); $("buySheet").classList.remove("open"); }
 $("buyOpen").onclick = openBuy; $("buyClose").onclick = closeBuy; $("buyBg").onclick = closeBuy;
@@ -3697,7 +3704,7 @@ function setMode(m){
   renderCats();
 }
 document.querySelectorAll("#typeTabs button").forEach(b => b.onclick = () => setMode(b.dataset.type));
-$("cpkToExp").onclick = () => { setMode("expense"); const c = data.cards[0]; if (c && !(method === "card" && cardById(cardId))){ method = "card"; cardId = data.lastCardId && cardById(data.lastCardId) ? data.lastCardId : c.id; } renderMethods(); setTimeout(() => $("amount").focus(), 50); };
+$("cpkToExp").onclick = () => { setMode("expense"); const c = data.cards[0]; if (c && !(method === "card" && cardById(cardId))){ method = "card"; cardId = data.lastCardId && cardById(data.lastCardId) ? data.lastCardId : c.id; } renderMethods(); setTimeout(() => autoFocus($("amount")), 50); };
 
 (() => { const s = $("cuotas"); [1,2,3,4,5,6,9,12,18,24].forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n === 1 ? "1 pago" : `${n} cuotas`; s.append(o); }); })();
 function renderMethods(){
@@ -3815,7 +3822,7 @@ function openSheetForFixed(i){
   openSheet(null);
   $("date").value = toLocalInput(new Date());
   pickFixed(i);
-  setTimeout(() => $("amount").focus(), 150);
+  setTimeout(() => autoFocus($("amount")), 150);
 }
 /* ---------- Préstamos ----------
    Me prestaron: es un ingreso de tipo "prestamo" con loanFrom y dueDate. Queda "a devolver" hasta que cargás
@@ -4181,7 +4188,7 @@ function openCat(c, name){
   setCatColor(c ? c.color : (CAT_SWATCHES.find(x => !used.has(x.toLowerCase())) || CAT_SWATCHES[0]));
   $("catDel").hidden = !c; $("catErr").textContent = "";
   $("catBg").classList.add("open"); $("catSheet").classList.add("open");
-  setTimeout(() => $("catName").focus(), 120);
+  setTimeout(() => autoFocus($("catName")), 120);
 }
 let catAfter = null;   // si se abre desde otra hoja (ej.: el resumen), a quién avisarle la categoría nueva
 function closeCat(){ $("catBg").classList.remove("open","on-top"); $("catSheet").classList.remove("open","on-top"); catFromFix = false; catAfter = null; }
@@ -5333,7 +5340,7 @@ function openSheet(exp){
   $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
   // Arranca arriba de todo: el foco no tiene que hacer bajar la hoja (ni la página)
   $("sheet").scrollTop = 0;
-  setTimeout(() => { const y = window.scrollY; (mode === "fx" ? $("fxUsd") : $("amount")).focus({ preventScroll: true }); $("sheet").scrollTop = 0; window.scrollTo(0, y); }, 120);
+  setTimeout(() => { const y = window.scrollY; autoFocus(mode === "fx" ? $("fxUsd") : $("amount")); $("sheet").scrollTop = 0; window.scrollTo(0, y); }, 120);
 }
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
 
@@ -5648,7 +5655,7 @@ function openCard(card, fromSheet){
   $("cardFixedDay").value = card && card.rule === "fixed" ? card.day : 10;
   $("cardDel").hidden = !card; $("cardErr").textContent = "";
   $("cardBg").classList.add("open"); $("cardSheet").classList.add("open");
-  setTimeout(() => $("cardName").focus(), 120);
+  setTimeout(() => autoFocus($("cardName")), 120);
 }
 function closeCard(){ $("cardBg").classList.remove("open"); $("cardSheet").classList.remove("open"); }
 $("cardCancel").onclick = closeCard; $("cardBg").onclick = closeCard;
@@ -6095,7 +6102,7 @@ async function editDaily(){
   const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
   const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar";
   o.onclick = () => { const v = parseAmount(inp.value); data.dailyBudget = v > 0 ? round2(v) : 0; persist(); close(); render(); if ($("spSheet").classList.contains("open")) renderSavePlan(); };
-  acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => inp.focus(), 50);
+  acts.append(c, o); bg.append(box); document.body.append(bg); setTimeout(() => autoFocus(inp), 50);
 }
 /* Cierre del mes: cómo te fue en un período, en pocas líneas */
 function monthCloseText(y, m){
@@ -6450,7 +6457,7 @@ function stmtControl(card, d, ds){
     cancel.onclick = () => { if (st){ delete data.cardStmt[k]; persist(); } stmtEdit = null; render(); };
     const acts = document.createElement("div"); acts.className = "stmt-acts"; acts.append(cancel, save);
     const h = document.createElement("small"); h.textContent = `¿Cuánto dice el resumen de ${card.name} que vence el ${shortDate(dateOnly(d))}?`;
-    wrap.append(h, row, acts); setTimeout(() => ia.focus(), 50);
+    wrap.append(h, row, acts); setTimeout(() => autoFocus(ia), 50);
     return wrap;
   }
   const b = document.createElement("button"); b.type = "button"; b.className = "linkbtn stmt-btn";
@@ -7220,7 +7227,7 @@ function openFixed(f){
   $("fixShareOn").checked = fixSharePeople.length > 0; $("fixSharePerson").value = ""; renderFixShare();
   $("fixDel").hidden = !f; $("fixErr").textContent = "";
   $("fixBg").classList.add("open"); $("fixSheet").classList.add("open");
-  setTimeout(() => $("fixName").focus(), 120);
+  setTimeout(() => autoFocus($("fixName")), 120);
 }
 function closeFixed(){ $("fixBg").classList.remove("open"); $("fixSheet").classList.remove("open"); }
 $("fixCancel").onclick = closeFixed; $("fixBg").onclick = closeFixed;
@@ -7276,7 +7283,7 @@ function openFixMonth(i){
   $("fmHint").textContent = i.f.how === "card" ? "Solo cambia este mes. Si el precio cambió de acá en adelante, editalo desde el fijo." : "Para los fijos que cambian todos los meses, como la luz.";
   $("fmErr").textContent = "";
   $("fmBg").classList.add("open"); $("fmSheet").classList.add("open");
-  setTimeout(() => $("fmAmount").focus(), 120);
+  setTimeout(() => autoFocus($("fmAmount")), 120);
 }
 function closeFixMonth(){ $("fmBg").classList.remove("open"); $("fmSheet").classList.remove("open"); }
 $("fmCancel").onclick = closeFixMonth; $("fmBg").onclick = closeFixMonth;
@@ -7419,7 +7426,7 @@ function openJar(j, cur){
   document.querySelectorAll("[data-jarcur]").forEach(b => b.disabled = !!j);
   $("jarDel").hidden = !j; $("jarErr").textContent = "";
   $("jarBg").classList.add("open"); $("jarSheet").classList.add("open");
-  setTimeout(() => $("jarName").focus(), 120);
+  setTimeout(() => autoFocus($("jarName")), 120);
 }
 function closeJar(){ $("jarBg").classList.remove("open"); $("jarSheet").classList.remove("open"); }
 $("jarCancel").onclick = closeJar; $("jarBg").onclick = closeJar;
@@ -7466,7 +7473,7 @@ function openJarMove(j, kind){
   $("jmErr").textContent = "";
   $("jmSheet").style.setProperty("--jar-color", j.color || "#1E8A5B");   // la tapa del color del frasco
   $("jmBg").classList.add("open"); $("jmSheet").classList.add("open");
-  setTimeout(() => $("jmAmount").focus(), 120);
+  setTimeout(() => autoFocus($("jmAmount")), 120);
 }
 function closeJarMove(){ $("jmBg").classList.remove("open"); $("jmSheet").classList.remove("open"); }
 $("jmCancel").onclick = closeJarMove; $("jmBg").onclick = closeJarMove;
