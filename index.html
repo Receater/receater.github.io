@@ -1434,24 +1434,27 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 }
 :root[data-theme="dark"] #scene[data-scene="dash"] svg{opacity:.72}
 
-/* ===== Versión de escritorio: mismo contenido, en columnas (a partir de 1100px) ===== */
+/* ===== Versión de escritorio: mismo contenido, en columnas (a partir de 1100px) =====
+   El JS arma .vcol-l / .vcol-r en cada pestaña y .pcol-a / .pcol-b en el diario. En el celu son display:contents (no cambia nada). */
+.vcol-l,.vcol-r,.pcol-a,.pcol-b{display:contents}
 @media (min-width:1100px){
   .wrap{max-width:1240px;padding-left:32px;padding-right:32px}
-  .brand,.main-tabs,.month-nav,.cloud-banner,#aiCard{max-width:720px;margin-left:auto;margin-right:auto}
   .main-tabs{margin-bottom:10px}
-  #viewList:not([hidden]),#viewDash:not([hidden]),#viewFixed:not([hidden]),#viewJars:not([hidden]){display:grid;grid-template-columns:minmax(380px,440px) minmax(0,1fr);column-gap:32px;align-items:start;grid-auto-flow:row dense}
-  #viewList>*,#viewDash>*,#viewFixed>*,#viewJars>*{grid-column:1;min-width:0}
-  #days,#viewDash>.paper,#fixedList,#jarList{grid-column:2 !important;grid-row:1 / span 30}
-  #days>:first-child,#fixedList>:first-child,#jarList>:first-child{margin-top:0}
-  .jar-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-  #viewDash>.paper{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:start}
-  #viewDash>.paper>*{grid-column:1 / -1}
-  #viewDash>.paper>section[data-fold="donut"]{grid-column:1}
-  #viewDash>.paper>section[data-fold="breves"],#viewDash>.paper>section[data-fold="dias"]{grid-column:2}
-  #viewDash>.paper>section[data-fold="tarjetas"]{grid-column:1}
-  #viewDash>.paper>section[data-fold="bars"]{grid-column:2}
+  #viewList:not([hidden]),#viewDash:not([hidden]),#viewFixed:not([hidden]),#viewJars:not([hidden]){display:grid;grid-template-columns:minmax(380px,430px) minmax(0,1fr);column-gap:32px;align-items:start}
+  .vcol-l{display:block;position:sticky;min-width:0}
+  .vcol-r{display:block;min-width:0}
+  .vcol-r>:first-child{margin-top:0}
+  .jar-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  #viewDash .paper{margin-top:0}
+  .paper-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:start}
+  .pcol-a,.pcol-b{display:block;min-width:0}
   .recy-stage{margin-top:0}
-  .fab{left:calc(max(0px, (100vw - 1240px) / 2) + 32px + 210px)}
+  /* Arriba queda una barra fija con el logo, el dólar, Ajustes y "Darle a Recy" (así nunca tapa contenido) */
+  .brand{position:sticky;top:12px;z-index:9}
+  .fab{top:24px;bottom:auto;margin-bottom:0;transform:translateX(-50%) scale(.82);transform-origin:top center}
+  .vcol-l{top:104px;padding-bottom:16px}
+  .fab[data-kind="postit"]{transform:translateX(-50%) scale(.66) rotate(-1deg);top:18px}
+  .sheet{max-width:560px}
 }
 </style>
 </head>
@@ -2194,7 +2197,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.0400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.0445";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6164,6 +6167,20 @@ function renderMonthClose(){
   x.onclick = () => { data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
   box.append(go, x);
 }
+/* Columnas para la versión de escritorio (en el celu los contenedores no cambian nada) */
+(function buildCols(){
+  const wrap = (view, rightSel) => { const v = $(view); if (!v || v.querySelector(".vcol-l")) return;
+    const L = document.createElement("div"), Rt = document.createElement("div"); L.className = "vcol-l"; Rt.className = "vcol-r";
+    const kids = [...v.children], right = kids.filter(k => k.matches(rightSel));
+    kids.forEach(k => (right.includes(k) ? Rt : L).append(k)); v.append(L, Rt); };
+  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList");
+  const paper = document.querySelector("#viewDash .paper"); if (paper && !paper.querySelector(".paper-cols")){
+    const cols = document.createElement("div"); cols.className = "paper-cols"; const A = document.createElement("div"), Bc = document.createElement("div"); A.className = "pcol-a"; Bc.className = "pcol-b";
+    const secs = [...paper.querySelectorAll(":scope > section")];
+    secs.forEach(sec => (["tarjetas","bars"].includes(sec.dataset.fold) ? Bc : A).append(sec));
+    cols.append(A, Bc); const share = $("shareMonth"); paper.insertBefore(cols, share);
+  }
+})();
 /* Secciones del Resumen que se pliegan (se acuerda cuáles cerraste) */
 const FOLD_DEFAULT = { breves: true, bars: true };
 function foldState(){ try { return Object.assign({}, FOLD_DEFAULT, JSON.parse(localStorage.getItem("receater.folds") || "{}")); } catch { return { ...FOLD_DEFAULT }; } }
