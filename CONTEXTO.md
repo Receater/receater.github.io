@@ -209,6 +209,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - **Importar movimientos de Mercado Pago o del banco**: subiendo el archivo exportado. Postergado por ahora.
 - **Reconexión de Drive sin cartel**: necesita un servidor mínimo para el refresh token (por ejemplo, un Cloudflare Worker). Postergado.
 - **Cuenta compartida**: descartada por ahora.
+- **Plata que rinde (billeteras con interés diario)**: marcar dónde está la plata del día a día (Mercado Pago, Ualá, Naranja X…) con su TNA, estimar lo que rinde por día como ingreso chico y cruzarlo con la inflación. También aplicable a frascos guardados en apps. A definir con Tomas.
+- **Asistente de IA para aprender y ahorrar**: chat con Gemini (key del usuario) para pedir consejos con los datos propios del usuario, más una sección educativa sobre inversiones (acciones, CEDEARs, FCI, plazo fijo, bonos) explicadas sin tecnicismos: riesgo, horizonte, diversificación. Siempre como educación, no como recomendación de compra. A definir con Tomas.
 - **Probar en iPhone/iPad**: campos de fecha, que no se mueva la pantalla al abrir hojas, avisos, compartir la imagen del mes y la reconexión con Google desde la guía.
 - **Google Cloud (lo hace Tomas)**: cargar los links de privacidad y términos y el mail de soporte en la pantalla de consentimiento, y agregar el dominio de Despensa como origen autorizado.
 - **Verificación de la app en Google**: para sacar el aviso de "app no verificada". Requiere cargar privacidad y términos en la pantalla de consentimiento.
