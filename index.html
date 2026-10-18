@@ -1433,6 +1433,26 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   :root:not([data-theme="light"]) #scene[data-scene="dash"] svg{opacity:.72}
 }
 :root[data-theme="dark"] #scene[data-scene="dash"] svg{opacity:.72}
+
+/* ===== Versión de escritorio: mismo contenido, en columnas (a partir de 1100px) ===== */
+@media (min-width:1100px){
+  .wrap{max-width:1240px;padding-left:32px;padding-right:32px}
+  .brand,.main-tabs,.month-nav,.cloud-banner,#aiCard{max-width:720px;margin-left:auto;margin-right:auto}
+  .main-tabs{margin-bottom:10px}
+  #viewList:not([hidden]),#viewDash:not([hidden]),#viewFixed:not([hidden]),#viewJars:not([hidden]){display:grid;grid-template-columns:minmax(380px,440px) minmax(0,1fr);column-gap:32px;align-items:start;grid-auto-flow:row dense}
+  #viewList>*,#viewDash>*,#viewFixed>*,#viewJars>*{grid-column:1;min-width:0}
+  #days,#viewDash>.paper,#fixedList,#jarList{grid-column:2 !important;grid-row:1 / span 30}
+  #days>:first-child,#fixedList>:first-child,#jarList>:first-child{margin-top:0}
+  .jar-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  #viewDash>.paper{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:start}
+  #viewDash>.paper>*{grid-column:1 / -1}
+  #viewDash>.paper>section[data-fold="donut"]{grid-column:1}
+  #viewDash>.paper>section[data-fold="breves"],#viewDash>.paper>section[data-fold="dias"]{grid-column:2}
+  #viewDash>.paper>section[data-fold="tarjetas"]{grid-column:1}
+  #viewDash>.paper>section[data-fold="bars"]{grid-column:2}
+  .recy-stage{margin-top:0}
+  .fab{left:calc(max(0px, (100vw - 1240px) / 2) + 32px + 210px)}
+}
 </style>
 </head>
 <body>
@@ -2174,7 +2194,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-17.2140";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.0400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6946,7 +6966,8 @@ function layoutScene(){
   const vw = window.innerWidth || document.documentElement.clientWidth || 420, vh = sc.clientHeight || window.innerHeight || 800;
   const wide = vw > 560;
   const W = wide ? Math.max(480, Math.round(800 * vw / vh / 40) * 40) : 0;     // ancho del dibujo según la forma de la pantalla
-  const colU = wide ? Math.round(520 * 800 / vh) : 0;                         // ancho de la app en unidades del dibujo
+  const appW = vw >= 1100 ? Math.min(1240, vw - 40) : 520;
+  const colU = wide ? Math.round(appW * 800 / vh) : 0;                         // ancho de la app en unidades del dibujo
   const key = `${sceneOn}|${W}|${colU}`;
   sc.style.setProperty("--pw", "100%"); sc.style.background = ""; sc.dataset.scene = sceneOn || "";
   if (key !== sceneKey){ sceneKey = key; const f = SCENES[sceneOn]; sc.innerHTML = f ? f(W, colU) : ""; }

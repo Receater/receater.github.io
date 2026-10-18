@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 17 de octubre de 2026 (build `2026-10-17.2140`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.0400`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -80,7 +80,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
   - Los ✓ siempre van en verde `#1E7A50`.
 - **Íconos**: **sin emojis en ninguna parte.** Solo Font Awesome Free, estilo solid, como sprite SVG embebido (`<symbol id="i-...">`, helper `ico(name)`). Toman el color y el tamaño del texto donde están.
 - **Modo oscuro**: existe, pero los fondos ilustrados se mantienen claros (paletas fijas por escena).
-- **Responsive**: todo tiene que entrar sin desbordar en 320, 360, 390, 430, 768, 820 y 1024 px. En celus y tablets no se hace auto-focus al abrir hojas, para que el teclado no mueva la pantalla.
+- **Responsive**: todo tiene que entrar sin desbordar en 320, 360, 390, 430, 768, 820, 1024, 1100, 1280 y 1440 px.
+- **Versión de escritorio (≥1100 px)**: mismo contenido en dos columnas. A la izquierda va la pizarra de Recy, los botones y los extras; a la derecha la lista principal (movimientos, el diario de Resumen en 2 columnas, fijos, frascos). El ancho máximo es 1240 px y el botón principal queda abajo de la columna izquierda. En celus y tablets no se hace auto-focus al abrir hojas, para que el teclado no mueva la pantalla.
 - **Textos**: cortos, claros, en voseo rioplatense, sin tono de IA.
 
 ## 4. Datos
@@ -204,10 +205,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 
 ## 8. Pendientes e ideas
 
-- **Versión de escritorio**: mismo contenido y estética, pero aprovechando el ancho (columnas) en vez de scrollear todo.
+- **Pulir la versión de escritorio**: la primera versión en columnas ya está; falta ajustar detalles con el uso.
 - **Importar movimientos de Mercado Pago o del banco**: subiendo el archivo exportado. Postergado por ahora.
 - **Reconexión de Drive sin cartel**: necesita un servidor mínimo para el refresh token (por ejemplo, un Cloudflare Worker). Postergado.
 - **Cuenta compartida**: descartada por ahora.
+- **Probar en iPhone/iPad**: campos de fecha, que no se mueva la pantalla al abrir hojas, avisos, compartir la imagen del mes y la reconexión con Google desde la guía.
+- **Google Cloud (lo hace Tomas)**: cargar los links de privacidad y términos y el mail de soporte en la pantalla de consentimiento, y agregar el dominio de Despensa como origen autorizado.
 - **Verificación de la app en Google**: para sacar el aviso de "app no verificada". Requiere cargar privacidad y términos en la pantalla de consentimiento.
 
 ## 9. Conexiones con otras apps
