@@ -1036,6 +1036,13 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+.acc-row{gap:10px}.acc-row .y-main{flex:1}.acc-dot{flex:0 0 12px;height:12px;border-radius:50%;align-self:center}
+#accSheet .y-row{font-family:inherit}#accSheet .y-main small{color:#6E6A62}#accSheet .y-val small{color:#1E7A50}#accSheet .y-val small.neg{color:#C0392B}
+.acc-sum{display:flex;gap:10px;margin:0 0 6px;padding:10px 0;border-bottom:1.5px dashed #BDB6A5}
+.acc-sum > div{flex:1;display:flex;flex-direction:column}.acc-sum span{font-size:.76rem;text-transform:uppercase;letter-spacing:.07em;color:#6E6A62;font-weight:700}
+.acc-sum b{font-size:1.35rem}.acc-sum b.up{color:#1E7A50}
+.quick-btn.acc-open{margin:10px 0 4px;width:100%}
+
 #yieldCard .y-row,#yieldCard .small-btn{font-family:inherit}
 #yieldCard .small-btn{background:none;border:1.5px solid #1F1F1F;border-radius:6px;color:#1F1F1F;font-weight:700}
 #yieldCard .y-val small{color:#1E7A50}#yieldCard .y-main small{color:#6E6A62}
@@ -1530,6 +1537,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <p class="bubble" id="bubble" aria-live="polite"></p>
   </section>
 
+  <button type="button" class="quick-btn acc-open" id="accOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-coins"/></svg></span><span><strong>¿Dónde está tu plata?</strong><small id="accOpenSub">Efectivo, banco y billeteras, y cuánto te rinden</small></span></button>
   <div class="search-bar" role="search">
     <span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
     <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
@@ -1777,6 +1785,11 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <div class="chips" id="jarChips"></div>
   </div>
 
+  <div class="field" id="incAccField" hidden>
+    <span class="lbl">¿Dónde entró?</span>
+    <div class="chips" id="incAccChips"></div>
+  </div>
+
   <div class="field" id="methodField">
     <span class="lbl">¿Cómo pagaste?</span>
     <div class="chips" id="methods"></div>
@@ -1875,6 +1888,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
         <div class="opt-extra">El día <select id="cardFixedDay" aria-label="Día en que la pagás"></select></div></div></label>
       <label class="opt"><input type="radio" name="cardRule" value="open"><div><strong>La dejo abierta</strong><span>Las compras quedan pendientes hasta que cargues que pagaste la tarjeta.</span></div></label>
     </div></div>
+  <div class="field" id="cardFromW" hidden><label for="cardFrom">¿De dónde sale la plata para pagarla?</label>
+    <select class="input" id="cardFrom"></select></div>
   <div class="err" id="cardErr"></div>
   <div class="actions">
     <button type="button" class="btn danger" id="cardDel" hidden>Borrar</button>
@@ -2160,6 +2175,15 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     </div>
   </div>
 </div>
+<div class="sheet-bg" id="accBg"></div>
+<div class="sheet notepad" id="accSheet" role="dialog" aria-modal="true" aria-labelledby="accTitle">
+  <h3 id="accTitle">Dónde está tu plata</h3>
+  <div id="accBox"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="accAdd">+ Agregar cuenta</button>
+    <button type="button" class="btn primary" id="accClose">Listo</button>
+  </div>
+</div>
 <div class="sheet-bg" id="spBg"></div>
 <div class="sheet" id="spSheet" role="dialog" aria-modal="true" aria-labelledby="spTitle">
   <h3 id="spTitle">Cuánto podés ahorrar</h3>
@@ -2211,7 +2235,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.1915";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.2000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2760,6 +2784,10 @@ if (!Array.isArray(data.jars)) data.jars = [];
 if (!Array.isArray(data.jarMoves)) data.jarMoves = [];
 /* data.yields: dónde rinde la plata { id, name, kind:"fund"|"rate", fund (nombre exacto en ArgentinaDatos), units, vcp0, tna (%), amount, start:"YYYY-MM-DD" } */
 if (!Array.isArray(data.yields)) data.yields = [];
+/* data.accounts: dónde está la plata en pesos { id, prov (id de ACC_PROVS), name, color, main (bool), tna (% a mano, null = automática), anchor:{ amount, date:"YYYY-MM-DD" } }
+   Gastos con débito/transferencia y los ingresos llevan accountId (sin accountId = la principal; efectivo = la cuenta de efectivo).
+   Las tarjetas de crédito se pagan desde card.payFrom (o la principal). */
+if (!Array.isArray(data.accounts)) data.accounts = [];
 if (!data.lastJar || typeof data.lastJar !== "object") data.lastJar = {};
 const JAR_COLORS = ["#1E8A5B","#2F5BEA","#C9A227","#7A5AC8","#E08A2C","#1FA3B3","#D0485E","#E2689B","#6B7A8A"];
 const JAR_COLOR_NAMES = ["Verde","Azul","Dorado","Violeta","Naranja","Celeste","Rojo","Rosa","Gris"];
@@ -3031,6 +3059,7 @@ window.addEventListener("resize", () => setTimeout(equalizeBoards, 150));
 function fitLeftCol(){ document.querySelectorAll(".vcol-l").forEach(c => { c.classList.remove("stick"); if (innerWidth >= 1100 && c.offsetParent && c.getBoundingClientRect().height <= innerHeight - 120) c.classList.add("stick"); }); }
 window.addEventListener("resize", () => setTimeout(fitLeftCol, 160));
 function render(){
+  queueMicrotask(() => { try { renderAccounts(); } catch {} });
   setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); });
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
@@ -3727,6 +3756,7 @@ function setMode(m){
     : (editing ? "Editar " : "Nuevo ") + (m === "income" ? "ingreso" : "gasto");
   $("splitField").hidden = m !== "expense";
   $("methodField").hidden = m !== "expense";
+  renderIncAcc();
   const tellOk = !editing && (m === "expense" || m === "income");
   $("tellBox").hidden = !tellOk || !aiKey();
   $("aiInvite").hidden = !tellOk || !!aiKey();
@@ -3756,7 +3786,11 @@ function renderMethods(){
     if (color){ const t = document.createElement("span"); t.className = "card-tag"; t.style.background = color; b.append(t); }
     b.append(label); b.onclick = onclick; box.append(b);
   };
-  METHODS.forEach(m => chip(m.name, method === m.id, () => { method = m.id; cardId = null; renderMethods(); }));
+  const accs = bankAccounts();
+  if (accs.length){
+    chip("Efectivo", method === "cash", () => { method = "cash"; cardId = null; renderMethods(); });
+    accs.forEach(a => chip(accProv(a.prov).bank ? `Débito ${a.name}` : a.name, (method === "debit" || method === "transfer") && accIdOf({ method, accountId: accSel }) === a.id, () => { method = "debit"; accSel = a.id; cardId = null; renderMethods(); }, a.color));
+  } else METHODS.forEach(m => chip(m.name, method === m.id, () => { method = m.id; cardId = null; renderMethods(); }));
   data.cards.forEach(c => chip(c.name, method === "card" && cardId === c.id, () => { method = "card"; cardId = c.id; renderMethods(); }, c.color));
   chip("+ Tarjeta", false, () => openCard(null, true));
   $("cardExtra").hidden = method !== "card";
@@ -4732,6 +4766,7 @@ function aiApply(r){
   if (r.fecha && /^\d{4}-\d{2}-\d{2}$/.test(r.fecha)){ $("date").value = r.fecha; $("date").dispatchEvent(new Event("change")); got.push("fecha"); }
   if (r.hora && /^\d{2}:\d{2}$/.test(r.hora)) $("time").value = r.hora;
   if (r.nota) $("note").value = r.nota;
+  if (mode === "income") fields.accountId = data.accounts.length ? (incAccSel || mainAccId()) : null;
   if (mode === "income" && incomeKind === "prestamo"){ if (r.prestamo_de) $("borrowFrom").value = r.prestamo_de; if (r.devolver_el) $("borrowDue").value = r.devolver_el; }
   if (mode === "expense"){
     if (r.categoria && allCats().some(c => c.id === r.categoria)){ category = r.categoria; got.push("categoría"); }
@@ -5364,6 +5399,8 @@ function openSheet(exp){
   fxSet("fxArs", exp && exp.fx ? exp.amount : 0);
   setFxMode("rate");
   $("until").value = exp && exp.until ? exp.until : toLocalInput(new Date(Date.now() + 30*864e5));
+  incAccSel = exp && isIncome(exp) && exp.accountId ? exp.accountId : null;
+  accSel = exp && exp.accountId ? exp.accountId : (data.lastAccId && accById(data.lastAccId) ? data.lastAccId : null);
   if (exp && !isIncome(exp)){ method = exp.method || "cash"; cardId = exp.method === "card" ? exp.cardId : null; }
   else { method = data.lastMethod || "cash"; cardId = method === "card" ? data.lastCardId : null; if (method === "card" && !cardById(cardId)){ method = "cash"; cardId = null; } }
   $("cuotas").value = exp && exp.installments ? exp.installments : 1;
@@ -5552,6 +5589,8 @@ $("sheet").addEventListener("submit", ev => {
     fields.installments = method === "card" ? Number($("cuotas").value) : 1;
     fields.paidInstallments = method === "card" && fields.installments > 1 ? Math.min(fields.installments - 1, Number($("paidCuotas").value) || 0) : 0;
     data.lastMethod = method; data.lastCardId = fields.cardId;
+    fields.accountId = (method === "debit" || method === "transfer") && bankAccounts().length ? accIdOf({ method, accountId: accSel }) : null;
+    if (fields.accountId) data.lastAccId = fields.accountId;
     fields.jarId = !$("jarField").hidden ? jarSel : null;
     const fi = fixSelInst();
     if (fi){
@@ -5696,6 +5735,9 @@ function openCard(card, fromSheet){
   $("cardDueDay").value = card && card.rule === "due" ? card.day : 10;
   $("cardFixedDay").value = card && card.rule === "fixed" ? card.day : 10;
   $("cardDel").hidden = !card; $("cardErr").textContent = "";
+  const ba = bankAccounts(); $("cardFromW").hidden = !ba.length;
+  $("cardFrom").innerHTML = ba.map(a => `<option value="${a.id}">${a.name}${a.main ? " (la principal)" : ""}</option>`).join("");
+  $("cardFrom").value = card && card.payFrom && accById(card.payFrom) ? card.payFrom : (mainAccId() || "");
   $("cardBg").classList.add("open"); $("cardSheet").classList.add("open");
   setTimeout(() => autoFocus($("cardName")), 120);
 }
@@ -5706,7 +5748,8 @@ $("cardSave").onclick = () => {
   if (!name){ $("cardErr").textContent = "Ponele un nombre a la tarjeta."; $("cardName").focus(); return; }
   const rule = (document.querySelector('input[name="cardRule"]:checked') || {}).value || "due";
   const fields = { name, closeDay: Number($("cardClose").value) || null, rule,
-    day: rule === "due" ? Number($("cardDueDay").value) : rule === "fixed" ? Number($("cardFixedDay").value) : null };
+    day: rule === "due" ? Number($("cardDueDay").value) : rule === "fixed" ? Number($("cardFixedDay").value) : null,
+    payFrom: bankAccounts().length ? $("cardFrom").value || null : (editingCard && editingCard.payFrom) || null };
   let card = editingCard;
   if (card) Object.assign(card, fields);
   else { card = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), color: CARD_COLORS[data.cards.length % CARD_COLORS.length], ...fields }; data.cards.push(card); }
@@ -7536,6 +7579,226 @@ function openYield(y){
   paint();
 }
 $("yAdd").onclick = () => openYield(null);
+
+/* ===== Dónde está tu plata: cuentas, billeteras y efectivo, con su saldo estimado y lo que rinden por día =====
+   Las tasas se traen solas cuando hay un dato público (ArgentinaDatos: fondos de las billeteras y rendimientos de cuentas);
+   si no hay, la pone el usuario. Nunca se manda ningún dato del usuario a ningún lado: solo se descargan datos públicos. */
+const ACC_PROVS = [
+  // Billeteras virtuales
+  { id:"mp", name:"Mercado Pago", g:"Billeteras", color:"#00A6E0", fund:/^Mercado Fondo/i },
+  { id:"naranjax", name:"Naranja X", g:"Billeteras", color:"#FE5000" },
+  { id:"uala", name:"Ualá", g:"Billeteras", color:"#3E46E0", fund:/^Ual[aá]|^Ualintec/i },
+  { id:"personalpay", name:"Personal Pay", g:"Billeteras", color:"#00B6E5", fund:/^Delta Pesos - Clase A/i },
+  { id:"prex", name:"Prex", g:"Billeteras", color:"#1F3C88", fund:/^Prex/i },
+  { id:"lemon", name:"Lemon", g:"Billeteras", color:"#00C26E", rend:["lemoncash","ARS"] },
+  { id:"belo", name:"Belo", g:"Billeteras", color:"#7B61FF", rend:["belo","ARGT"] },
+  { id:"ripio", name:"Ripio", g:"Billeteras", color:"#5B2EE5", rend:["ripio","WARS"] },
+  { id:"fiwind", name:"Fiwind", g:"Billeteras", color:"#0A84FF", rend:["fiwind","ARS"] },
+  { id:"letsbit", name:"Letsbit", g:"Billeteras", color:"#2E2E8F", rend:["letsbit","ARS"] },
+  { id:"cocos", name:"Cocos", g:"Billeteras", color:"#2A2A2A", fund:/^Cocos Ahorro - Clase A$/i },
+  { id:"claropay", name:"Claro Pay", g:"Billeteras", color:"#DA291C" },
+  { id:"cuentadni", name:"Cuenta DNI", g:"Billeteras", color:"#00843D", bank:true },
+  { id:"modo", name:"MODO", g:"Billeteras", color:"#1A1A1A", bank:true },
+  { id:"astropay", name:"AstroPay", g:"Billeteras", color:"#2C2C2C" },
+  { id:"buenbit", name:"Buenbit", g:"Billeteras", color:"#2D6BFF" },
+  // Bancos digitales
+  { id:"brubank", name:"Brubank", g:"Bancos digitales", color:"#6B3FE0" },
+  { id:"openbank", name:"Openbank", g:"Bancos digitales", color:"#EC0000" },
+  { id:"reba", name:"Reba", g:"Bancos digitales", color:"#00C2A8" },
+  { id:"bibank", name:"Bibank", g:"Bancos digitales", color:"#0060AA" },
+  { id:"wilobank", name:"Wilobank", g:"Bancos digitales", color:"#00B3A4" },
+  { id:"bancodelsol", name:"Banco del Sol", g:"Bancos digitales", color:"#F5A800" },
+  { id:"bind", name:"BIND (Banco Industrial)", g:"Bancos digitales", color:"#0C4DA2", bank:true },
+  // Bancos
+  { id:"galicia", name:"Galicia", g:"Bancos", color:"#F37021", bank:true },
+  { id:"santander", name:"Santander", g:"Bancos", color:"#EC0000", bank:true },
+  { id:"bbva", name:"BBVA", g:"Bancos", color:"#004481", bank:true },
+  { id:"macro", name:"Macro", g:"Bancos", color:"#00539B", bank:true },
+  { id:"nacion", name:"Banco Nación", g:"Bancos", color:"#00609C", bank:true },
+  { id:"provincia", name:"Banco Provincia", g:"Bancos", color:"#00843D", bank:true },
+  { id:"ciudad", name:"Banco Ciudad", g:"Bancos", color:"#F4B400", bank:true },
+  { id:"icbc", name:"ICBC", g:"Bancos", color:"#C4161C", bank:true },
+  { id:"patagonia", name:"Patagonia", g:"Bancos", color:"#00A3AD", bank:true },
+  { id:"credicoop", name:"Credicoop", g:"Bancos", color:"#00843D", bank:true },
+  { id:"supervielle", name:"Supervielle", g:"Bancos", color:"#C8102E", bank:true },
+  { id:"hipotecario", name:"Hipotecario", g:"Bancos", color:"#F58220", bank:true },
+  { id:"comafi", name:"Comafi", g:"Bancos", color:"#00468B", bank:true },
+  { id:"bancor", name:"Bancor (Córdoba)", g:"Bancos", color:"#003B71", bank:true },
+  { id:"santafe", name:"Banco Santa Fe", g:"Bancos", color:"#E30613", bank:true },
+  { id:"entrerios", name:"Banco Entre Ríos", g:"Bancos", color:"#E30613", bank:true },
+  { id:"sanjuan", name:"Banco San Juan", g:"Bancos", color:"#E30613", bank:true },
+  { id:"chubut", name:"Banco del Chubut", g:"Bancos", color:"#005BAA", bank:true },
+  { id:"neuquen", name:"Banco Provincia del Neuquén", g:"Bancos", color:"#005BAA", bank:true },
+  { id:"lapampa", name:"Banco de La Pampa", g:"Bancos", color:"#00843D", bank:true },
+  { id:"corrientes", name:"Banco de Corrientes", g:"Bancos", color:"#00609C", bank:true },
+  { id:"tucuman", name:"Banco del Tucumán", g:"Bancos", color:"#00539B", bank:true },
+  { id:"columbia", name:"Banco Columbia", g:"Bancos", color:"#E2001A", bank:true },
+  { id:"piano", name:"Banco Piano", g:"Bancos", color:"#1D2E5C", bank:true },
+  { id:"mariva", name:"Banco Mariva", g:"Bancos", color:"#00377B", bank:true },
+  { id:"otro", name:"Otra", g:"Otras", color:"#5B6B82" },
+  { id:"cash", name:"Efectivo", g:"Otras", color:"#7BAE3A", cash:true }
+];
+const accProv = id => ACC_PROVS.find(p => p.id === id) || ACC_PROVS.find(p => p.id === "otro");
+const accById = id => data.accounts.find(a => a.id === id);
+const bankAccounts = () => data.accounts.filter(a => !accProv(a.prov).cash);
+const cashAcc = () => data.accounts.find(a => accProv(a.prov).cash);
+const mainAccId = () => (bankAccounts().find(a => a.main) || bankAccounts()[0] || {}).id || null;
+let accSel = null, incAccSel = null;
+/* A qué cuenta va un gasto o ingreso (los viejos, sin cuenta, van a la principal; efectivo a la de efectivo) */
+function accIdOf(e){
+  if (e.accountId && accById(e.accountId)) return e.accountId;
+  if (!isIncome(e) && e.method === "cash") return (cashAcc() || {}).id || null;
+  return mainAccId();
+}
+/* Tasas públicas: rendimientos de cuentas (ArgentinaDatos) + los fondos de las billeteras (los mismos que "Plata que rinde") */
+let rendCache = null;
+try { rendCache = JSON.parse(localStorage.getItem("receater.rend") || "null"); } catch {}
+function loadRend(){
+  const today = new Date().toISOString().slice(0, 10);
+  if (rendCache && rendCache.day === today) return Promise.resolve(rendCache);
+  return fetch("https://api.argentinadatos.com/v1/finanzas/rendimientos").then(r => r.ok ? r.json() : null).catch(() => null).then(j => {
+    if (Array.isArray(j)){ const m = {}; j.forEach(x => (x.rendimientos || []).forEach(r => { if (r.fecha >= new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10)) m[x.entidad + "|" + r.moneda] = r.apy; }));
+      rendCache = { day: today, m }; try { localStorage.setItem("receater.rend", JSON.stringify(rendCache)); } catch {} }
+    return rendCache;
+  });
+}
+/* La tasa automática de un proveedor, si hay dato público: { tna, src } */
+function autoRate(p){
+  if (p.fund && fciCache){
+    const names = Object.keys(fciCache.funds).filter(n => p.fund.test(n)).sort((a, b) => /Clase A/.test(b) - /Clase A/.test(a));
+    for (const n of names){ const t = fundTna(fciCache.funds[n]); if (t != null && t > 0) return { tna: t, src: `fondo ${n}` }; }
+  }
+  if (p.rend && rendCache){ const apy = rendCache.m[p.rend.join("|")]; if (apy > 0) return { tna: (Math.pow(1 + apy / 100, 1 / 365) - 1) * 365 * 100, src: "dato público de " + p.name }; }
+  return null;
+}
+function accRate(a){
+  const p = accProv(a.prov);
+  if (a.tna != null && a.tna !== "") return { tna: +a.tna, src: "la pusiste vos" };
+  if (p.cash) return { tna: 0, src: "" };
+  return autoRate(p) || { tna: 0, src: p.bank ? "caja de ahorro" : "sin dato público", missing: !p.bank };
+}
+/* Movimientos de plata de cada cuenta, día por día (gastos, cuotas de tarjeta el día que se pagan, ingresos) */
+function accFlows(){
+  const f = {}; const add = (id, d, v) => { if (!id) return; const k = id + "|" + d; f[k] = (f[k] || 0) + v; };
+  data.expenses.forEach(e => { if (isIncome(e) || e.currency !== "ARS" || e.paidBy || (e.method === "card" && cardById(e.cardId))) return; add(accIdOf(e), e.date.slice(0, 10), -e.amount); });
+  entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount); });
+  data.incomes.forEach(e => { if (e.currency !== "ARS") return; add(accIdOf(e), e.date.slice(0, 10), e.amount); });
+  return f;
+}
+/* Saldo de hoy y lo que rindió, desde el último "tengo $X" */
+function accStatus(a, flows){
+  flows = flows || accFlows();
+  const r = accRate(a), daily = r.tna / 100 / 365, today = new Date(), iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  if (!a.anchor) return { known: false, rate: r };
+  const mk = iso(today).slice(0, 7);
+  let bal = a.anchor.amount, earned = 0, month = 0, d = new Date(a.anchor.date + "T12:00");
+  // el día del ancla ya incluye sus movimientos (el usuario dijo cuánto tenía ese día)
+  for (let guard = 0; guard < 4000; guard++){
+    d.setDate(d.getDate() + 1); if (d > today) break;
+    const k = iso(d); bal += flows[a.id + "|" + k] || 0;
+    if (bal > 0 && daily){ const i = bal * daily; bal += i; earned += i; if (k.slice(0, 7) === mk) month += i; }
+  }
+  return { known: true, bal, earned, month, perDay: bal > 0 ? bal * daily : 0, rate: r };
+}
+function accRateTxt(r){ return r.tna ? `${r.tna.toFixed(1).replace(".", ",")}% anual` : "no rinde"; }
+function renderAccounts(){
+  const box = $("accBox"); if (!box) return; box.innerHTML = "";
+  const sub = $("accOpenSub");
+  if (!data.accounts.length){
+    box.innerHTML = '<p class="fx-hint">Contale a Recy dónde tenés la plata (efectivo, tu banco, Mercado Pago, Naranja X…) y cuánto hay en cada lugar. Después se va actualizando sola con lo que cargás, y si la cuenta rinde, Recy suma los intereses de cada día.</p>';
+    if (sub) sub.textContent = "Efectivo, banco y billeteras, y cuánto te rinden"; return;
+  }
+  const flows = accFlows(); let tot = 0, totM = 0, totD = 0, unknown = 0;
+  data.accounts.slice().sort((a, b) => (b.main - a.main) || (accProv(a.prov).cash - accProv(b.prov).cash)).forEach(a => {
+    const st = accStatus(a, flows), p = accProv(a.prov);
+    const row = document.createElement("button"); row.type = "button"; row.className = "y-row acc-row";
+    row.innerHTML = `<span class="acc-dot"></span><span class="y-main"><strong></strong><small></small></span><span class="y-val"><b></b><small></small></span>`;
+    row.querySelector(".acc-dot").style.background = a.color || p.color;
+    row.querySelector("strong").textContent = a.name + (a.main ? " · principal" : "");
+    row.querySelector(".y-main small").textContent = p.cash ? "En la mano" : accRateTxt(st.rate) + (st.rate.src && st.rate.tna ? ` · ${st.rate.src}` : "") + (st.rate.missing ? " · tocá para poner la tasa" : "");
+    if (st.known){ tot += st.bal; totM += st.month; totD += st.perDay;
+      row.querySelector("b").textContent = f0ARS(st.bal);
+      row.querySelector(".y-val small").textContent = st.perDay ? `+ ${fmtARS.format(st.perDay)} por día\n${f0ARS(st.month)} este mes` : "";
+      if (st.bal < 0) row.querySelector(".y-val small").classList.add("neg");
+    } else { unknown++; row.querySelector("b").textContent = "¿?"; row.querySelector(".y-val small").textContent = "Decime cuánto hay"; }
+    row.onclick = () => openAccount(a);
+    box.append(row);
+  });
+  const sum = document.createElement("div"); sum.className = "acc-sum";
+  sum.innerHTML = `<div><span>En total</span><b></b></div>` + (totM || totD ? `<div><span>Te rindió este mes</span><b class="up"></b></div>` : "");
+  sum.querySelector("b").textContent = f0ARS(tot); if (totM || totD) sum.querySelector(".up").textContent = `≈ ${f0ARS(totM)}`;
+  box.prepend(sum);
+  const hint = document.createElement("p"); hint.className = "fx-hint"; hint.style.margin = "10px 0 0";
+  hint.textContent = (unknown ? "Para las que dicen ¿?, tocalas y poné cuánto tenés hoy. " : "") + "Los saldos se calculan con lo que cargás. Si no coincide con tu app, tocá la cuenta y poné el número real. Los intereses son una estimación.";
+  box.append(hint);
+  if (sub) sub.textContent = unknown === data.accounts.length ? "Decime cuánto tenés en cada lugar" : `${f0ARS(tot)} en total` + (totD ? ` · rinde ≈ ${f0ARS(totD)} por día` : "");
+}
+function openAccount(a){
+  const isNew = !a; a = a ? { ...a } : { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), prov: "", name: "", tna: null };
+  const groups = [...new Set(ACC_PROVS.map(p => p.g))];
+  const opts = groups.map(g => `<optgroup label="${g}">` + ACC_PROVS.filter(p => p.g === g).map(p => `<option value="${p.id}">${p.name}</option>`).join("") + "</optgroup>").join("");
+  const st = !isNew ? accStatus(a) : null;
+  const box = miniDialog(`<p><b>${isNew ? "Nueva cuenta" : a.name}</b></p>
+    <label class="fx-hint" for="acProv">¿Dónde?</label><select class="input" id="acProv"><option value="">Elegí…</option>${opts}</select>
+    <div id="acNameW" hidden><label class="fx-hint" for="acName">Nombre</label><input class="input" id="acName" autocomplete="off"></div>
+    <label class="fx-hint" for="acAmt" style="display:block;margin-top:10px">¿Cuánto tenés hoy?</label><input class="input" id="acAmt" inputmode="decimal" autocomplete="off" placeholder="Ej: $ 250.000">
+    <div id="acRateW" style="margin-top:10px"><p class="fx-hint" id="acRateTxt" style="margin:0 0 6px"></p>
+      <label class="switch" id="acManW"><input type="checkbox" id="acMan"> Poner la tasa a mano</label>
+      <input class="input" id="acTna" inputmode="decimal" placeholder="Tasa anual (TNA %), ej: 30" hidden style="margin-top:6px"></div>
+    <label class="switch" id="acMainW" style="margin-top:10px"><input type="checkbox" id="acMain"> Es donde cobro y pago con débito (la principal)</label>
+    <p id="acErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p>
+    ${isNew ? "" : '<button type="button" class="linkbtn" id="acDel" style="margin-top:8px;color:#C0392B">Borrar esta cuenta</button>'}`,
+    b => {
+      const err = t => { b.querySelector("#acErr").textContent = t; return false; };
+      const prov = b.querySelector("#acProv").value; if (!prov) return err("Elegí dónde está la plata.");
+      const p = accProv(prov), raw = b.querySelector("#acAmt").value.trim(), amt = parseAmount(raw);
+      a.prov = prov; a.name = (prov === "otro" ? b.querySelector("#acName").value.trim() : "") || p.name; a.color = p.color;
+      if (raw !== "" && !(amt >= 0)) return err("Poné cuánto tenés (puede ser 0).");
+      if (raw !== ""){ const t = new Date(); a.anchor = { amount: round2(amt), date: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}` }; }
+      a.tna = b.querySelector("#acMan").checked ? (parseAmount(b.querySelector("#acTna").value) || 0) : null;
+      if (p.cash){ a.tna = null; a.main = false; if (data.accounts.some(x => x.id !== a.id && accProv(x.prov).cash)) return err("Ya tenés el efectivo cargado."); }
+      else a.main = b.querySelector("#acMain").checked || !bankAccounts().some(x => x.id !== a.id);
+      if (a.main) data.accounts.forEach(x => { if (x.id !== a.id) x.main = false; });
+      const i = data.accounts.findIndex(x => x.id === a.id); if (i >= 0) data.accounts[i] = a; else data.accounts.push(a);
+      persist(); renderAccounts(); if (typeof renderMethods === "function") renderMethods();
+    });
+  const sel = box.querySelector("#acProv"), man = box.querySelector("#acMan"), tna = box.querySelector("#acTna"), txt = box.querySelector("#acRateTxt");
+  const paint = () => {
+    const p = sel.value ? accProv(sel.value) : null;
+    box.querySelector("#acNameW").hidden = !p || p.id !== "otro";
+    box.querySelector("#acRateW").hidden = !p || p.cash; box.querySelector("#acMainW").hidden = !p || p.cash;
+    tna.hidden = !man.checked;
+    if (!p || p.cash){ txt.textContent = ""; return; }
+    const ar = autoRate(p);
+    txt.textContent = man.checked ? "Fijate la tasa en tu app y ponela acá." : ar ? `Rinde ≈ ${accRateTxt(ar)} (${ar.src}). Se actualiza sola todos los días.`
+      : p.bank ? "Las cajas de ahorro de los bancos casi nunca rinden. Si la tuya sí, poné la tasa a mano." : (fciCache || rendCache) ? "No encontré un dato público de cuánto rinde. Si rinde, poné la tasa a mano (la ves en la app)." : "Buscando cuánto rinde…";
+  };
+  sel.onchange = paint; man.onchange = () => { paint(); if (man.checked) tna.focus(); };
+  if (!isNew){
+    sel.value = a.prov; if (a.prov === "otro") box.querySelector("#acName").value = a.name;
+    if (a.tna != null){ man.checked = true; tna.value = String(a.tna); }
+    box.querySelector("#acMain").checked = !!a.main;
+    if (st && st.known) box.querySelector("#acAmt").placeholder = `Ahora calculo ${f0ARS(st.bal)}. Poné el número real si no coincide`;
+    box.querySelector("#acDel").onclick = () => uiConfirm(`¿Borrar ${a.name}? Los gastos que cargaste no se borran.`).then(ok => { if (!ok) return;
+      data.accounts = data.accounts.filter(x => x.id !== a.id); if (!data.accounts.some(x => x.main) && bankAccounts()[0]) bankAccounts()[0].main = true;
+      persist(); renderAccounts(); box.parentElement.remove(); });
+  } else box.querySelector("#acMain").checked = !bankAccounts().length;
+  paint(); Promise.all([loadFci(), loadRend()]).then(paint);
+}
+function renderIncAcc(){
+  const f = $("incAccField"); if (!f) return;
+  f.hidden = mode !== "income" || !data.accounts.length;
+  if (f.hidden) return;
+  if (!incAccSel || !accById(incAccSel)) incAccSel = editing && isIncome(editing) ? accIdOf(editing) : mainAccId() || data.accounts[0].id;
+  const box = $("incAccChips"); box.innerHTML = "";
+  data.accounts.forEach(a => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(incAccSel === a.id));
+    const t = document.createElement("span"); t.className = "card-tag"; t.style.background = a.color || accProv(a.prov).color; b.append(t, a.name);
+    b.onclick = () => { incAccSel = a.id; renderIncAcc(); }; box.append(b); });
+}
+function openAccounts(){ renderAccounts(); $("accBg").classList.add("open"); $("accSheet").classList.add("open"); $("accSheet").scrollTop = 0;
+  if (data.accounts.length) Promise.all([loadFci(), loadRend()]).then(renderAccounts); }
+function closeAccounts(){ $("accBg").classList.remove("open"); $("accSheet").classList.remove("open"); }
+$("accOpen").onclick = openAccounts; $("accClose").onclick = closeAccounts; $("accBg").onclick = closeAccounts; $("accAdd").onclick = () => openAccount(null);
 /* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
 function renderJarHistory(r){
   updateFab();

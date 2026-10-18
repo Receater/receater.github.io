@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.1915`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2000`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -57,6 +57,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - **Ajustes** (engranaje): cuenta de Google, cuándo cobrás, Recy inteligente (key de Gemini), avisos y recordatorio, personas, categorías, topes, exportar/importar, guía de inicio, privacidad y términos.
 
 ## 3. Diseño (respetar)
+
+- **REGLA DE TOMAS: privacidad y términos siempre al día.** Cada vez que un cambio toque qué datos se usan, a qué servicio se conecta la app o qué se calcula, evaluar si `privacidad.html` y `terminos.html` necesitan agregarlo y actualizarlos en el mismo commit. La app nunca manda datos del usuario a servicios de terceros (salvo Google Drive y Gemini con su propia key, ya declarados); a los servicios públicos solo se les piden datos.
 
 - **REGLA DE TOMAS: todo lo nuevo va con la interfaz de la app.** Nunca una tarjeta blanca "normal", un formulario genérico o un diálogo del navegador. Antes de agregar algo, copiá el estilo de lo que ya existe en esa pestaña (libreta con espiral como el Historial, post-it, ticket, frasco, `miniDialog`). Ejemplo: "Plata que rinde" usa las mismas reglas que `#jarGrowthCard`.
 
@@ -204,6 +206,15 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
   - Las pizarras miden lo mismo en todas las tabs.
   - En touch no hay auto-focus.
 - **Guía de inicio**: con "Atrás" y "Saltear" en cada paso. "No tengo día fijo" va como opción separada.
+
+## 7a. Dónde está tu plata (cuentas)
+
+- Botón "¿Dónde está tu plata?" debajo de la pizarra de Movimientos (la pizarra no cambia). Abre la libreta `#accSheet` con cada cuenta, su saldo estimado, lo que rinde por día y en el mes, y el total.
+- `data.accounts`: `{ id, prov, name, color, main, tna (null = automática), anchor:{amount, date} }`. `ACC_PROVS` lista billeteras, bancos digitales, bancos y efectivo de Argentina (con color).
+- Al cargar un gasto, los chips de pago son: Efectivo, una por cuenta ("Débito Galicia", "Mercado Pago"…) y las tarjetas. No se pregunta de nuevo de dónde salió la plata. Se guarda `accountId`. Ingresos: "¿Dónde entró?" (por defecto la principal). Tarjetas de crédito: `card.payFrom` (de qué cuenta se pagan; por defecto la principal). Gastos viejos sin cuenta: débito/transferencia → principal, efectivo → efectivo.
+- Saldo: desde el último "¿Cuánto tenés hoy?" (`anchor`) se suman ingresos y se restan gastos y cuotas de tarjeta el día que se pagan; si la cuenta rinde, se suma el interés de cada día (compuesto diario, solo con saldo positivo).
+- Tasa automática cuando hay dato público: fondos de las billeteras (ArgentinaDatos FCI, por nombre: Mercado Fondo, Ualá, Delta Pesos para Personal Pay, Cocos Ahorro, Prex) y `/v1/finanzas/rendimientos` (Lemon, Belo, Ripio, Fiwind, Letsbit; APY → TNA). Naranja X, Brubank y otras cuentas remuneradas no tienen dato público: la tasa se pone a mano. Bancos: caja de ahorro sin interés salvo que se ponga a mano. Los nombres de fondo de cada billetera no están confirmados; si no aparece, cae a manual.
+- Solo pesos por ahora (los dólares siguen en los frascos).
 
 ## 7b. Plata que rinde
 
