@@ -1036,6 +1036,12 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+.mp-row{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px dashed #D9D3C6;cursor:pointer}
+.mp-row.off{opacity:.5}.mp-row input[type=checkbox]{margin-top:4px;flex:0 0 auto;width:18px;height:18px}
+.mp-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.mp-mid strong{font-weight:700;overflow-wrap:anywhere}.mp-mid small{color:#6E6A62;font-size:.8rem}
+.mp-cat{margin-top:4px;padding:4px 2px !important;font-size:.85rem}
+.mp-amt{white-space:nowrap;color:#C9374B}.mp-amt.in{color:#1E7A50}
+
 .pay-to{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;margin:0 0 4px;border-top:1px dashed #D9D3C6;font-size:.85rem}
 .pay-to .pt-l{min-width:0;overflow-wrap:anywhere;color:#5A5650}
 .pay-to .pt-b{flex:0 0 auto;text-decoration:none;white-space:nowrap}
@@ -2253,10 +2259,19 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 <button type="button" class="go-top" id="goTop" aria-label="Volver arriba" hidden><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
+<div class="sheet-bg" id="mpBg"></div>
+<div class="sheet notepad" id="mpSheet" role="dialog" aria-modal="true" aria-labelledby="mpTitle">
+  <h3 id="mpTitle">Resumen de Mercado Pago</h3>
+  <div id="mpBox"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="mpCancel">Cancelar</button>
+    <button type="button" class="btn primary" id="mpGo">Sumar</button>
+  </div>
+</div>
 <div class="sheet-bg" id="accBg"></div>
 <div class="sheet notepad" id="accSheet" role="dialog" aria-modal="true" aria-labelledby="accTitle">
   <h3 id="accTitle">Dónde está tu plata</h3>
-  <div class="acc-acts"><button type="button" class="small-btn" id="accMove">Pasé plata de una cuenta a otra</button><button type="button" class="small-btn" id="accFix">Actualizar saldos</button></div>
+  <div class="acc-acts"><button type="button" class="small-btn" id="accMove">Pasé plata de una cuenta a otra</button><button type="button" class="small-btn" id="accFix">Actualizar saldos</button><button type="button" class="small-btn" id="accMp">Importar resumen de Mercado Pago (PDF)</button></div>
   <div id="accBox"></div>
   <div class="actions">
     <button type="button" class="btn ghost" id="accAdd">+ Agregar cuenta</button>
@@ -2314,7 +2329,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-19.2000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-19.2030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -8394,6 +8409,138 @@ document.querySelector(".brand .logo").addEventListener("click", () => { if (lea
 (function(){ const b = $("goTop"); const upd = () => { b.hidden = window.scrollY < 700; };
   window.addEventListener("scroll", upd, { passive: true }); upd();
   b.onclick = () => window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); })();
+
+/* ===== Importar el resumen de cuenta de Mercado Pago (PDF) =====
+   Se lee en el dispositivo con pdf.js (nada se manda a ningún lado). Cada movimiento tiene un "ID de la operación":
+   se usa de ancla para armar el renglón (la descripción puede ocupar 2 líneas, arriba y abajo de la fecha). */
+async function mpParse(file){
+  const L = await loadPdfJs(), doc = await L.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const rows = []; let owner = "", isMP = false;
+  for (let n = 1; n <= doc.numPages; n++){
+    const page = await doc.getPage(n), tc = await page.getTextContent();
+    const its = tc.items.filter(it => it.str && it.str.trim()).map(it => ({ x: it.transform[4], y: it.transform[5], w: it.width || 0, t: it.str.trim() }));
+    const all = its.map(i => i.t).join(" ");
+    if (/RESUMEN DE TENENCIAS EN D[ÓO]LARES/i.test(all) && !/RESUMEN DE CUENTA EN PESOS/i.test(all)) continue;   // la parte de dólares no tiene movimientos de pesos
+    if (/mercado ?pago|Mercado Libre S\.R\.L/i.test(all)) isMP = true;
+    if (!owner){ const h = its.findIndex(i => /RESUMEN DE CUENTA EN PESOS/i.test(i.t)); if (h >= 0 && its[h + 1]) owner = its[h + 1].t; }
+    const ids = its.filter(i => /^\d{9,15}$/.test(i.t));
+    ids.forEach((idI, k) => {
+      const near = its.filter(i => Math.abs(i.y - idI.y) < 3);
+      const date = near.find(i => /^\d{2}-\d{2}-\d{4}$/.test(i.t));
+      const money = near.filter(i => /^\$\s?-?[\d.]+,\d{2}$/.test(i.t) && i.x > idI.x).sort((a, b) => a.x - b.x);
+      if (!date || !money.length) return;
+      // descripción: lo que está entre la fecha y el ID, hasta la mitad de la distancia con los renglones vecinos
+      const yUp = k > 0 ? (ids[k - 1].y + idI.y) / 2 : idI.y + 20, yDn = k < ids.length - 1 ? (ids[k + 1].y + idI.y) / 2 : idI.y - 20;
+      const desc = its.filter(i => i.x > date.x + 20 && i.x < idI.x - 2 && i.y < yUp && i.y > yDn && !/^ID de la|^operaci[oó]n$|^Descripci[oó]n$|^DETALLE DE MOVIMIENTOS|^Fecha$|^Valor$|^Saldo$/i.test(i.t))
+        .sort((a, b) => b.y - a.y || a.x - b.x).map(i => i.t).join(" ").replace(/\s+/g, " ").trim();
+      const [d, m, y] = date.t.split("-");
+      const val = parseFloat(money[0].t.replace(/[$\s.]/g, "").replace(",", "."));
+      rows.push({ id: idI.t, date: `${y}-${m}-${d}`, desc, amount: val });
+    });
+  }
+  return { rows, owner, isMP };
+}
+/* Decide qué es cada movimiento */
+function mpClassify(rows, owner){
+  const normN = t => norm(String(t || "")).replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+  const me = normN(owner).split(" ").filter(w => w.length > 2);
+  const isMe = name => { const w = normN(name).split(" "); return me.length >= 2 && me.filter(x => w.includes(x)).length >= 2; };
+  const byId = {}; rows.forEach(r => (byId[r.id] = byId[r.id] || []).push(r));
+  const out = [], rend = {};
+  rows.forEach(r => {
+    const d = r.desc, abs = Math.abs(r.amount);
+    let m;
+    if (/^Rendimientos/i.test(d)){ const k = r.date.slice(0, 7); (rend[k] = rend[k] || { sum: 0, date: r.date }).sum += r.amount; rend[k].date = r.date; return; }
+    if (/^Ingreso de dinero/i.test(d)){
+      // Plata que entró a Mercado Pago desde tu banco (si sale enseguida con el mismo ID, es un pago hecho desde el banco a través de MP)
+      out.push({ ...r, kind: "move_in", label: "Cargaste plata desde tu banco", on: true }); return; }
+    if ((m = d.match(/^Transferencia enviada\s*(.*)$/i))){
+      const who = m[1].trim();
+      if (isMe(who)) out.push({ ...r, kind: "move_out", who, label: `Te pasaste plata a otra cuenta tuya`, on: true });
+      else out.push({ ...r, kind: "expense", who, label: `Transferencia a ${who || "alguien"}`, cat: "otros", on: true });
+      return; }
+    if ((m = d.match(/^Transferencia recibida\s*(.*)$/i))){
+      const who = m[1].trim();
+      if (isMe(who)) out.push({ ...r, kind: "move_in", who, label: "Te pasaste plata de otra cuenta tuya", on: true });
+      else out.push({ ...r, kind: "income", who, label: `Te transfirió ${who || "alguien"}`, on: true });
+      return; }
+    if ((m = d.match(/^Pago(?: con QR)?\s*(.*)$/i))){ const who = m[1].trim(); out.push({ ...r, kind: "expense", who, label: who || d, cat: learnedCat({ detalle: who, comercio: who }) || guessCat(who) || "otros", on: true }); return; }
+    if (r.amount < 0) out.push({ ...r, kind: "expense", who: d, label: d, cat: /cr[eé]dito|deuda|inter[eé]s/i.test(d) ? (allCats().some(c => c.id === "intereses") ? "intereses" : "otros") : "otros", on: true });
+    else out.push({ ...r, kind: "income", who: d, label: d, on: true });
+  });
+  Object.entries(rend).forEach(([k, v]) => { if (v.sum > 0) out.push({ id: "rend-" + k, date: v.date, desc: "Rendimientos", amount: round2(v.sum), kind: "income", label: `Rendimientos de ${monthName(+k.slice(0, 4), +k.slice(5) - 1)} (todos juntos)`, rend: true, on: true }); });
+  // ¿Ya está cargado? Mismo día y mismo monto en pesos
+  out.forEach(o => {
+    const abs = Math.abs(o.amount), day = o.date;
+    const pool = o.kind === "income" ? data.incomes : o.kind === "expense" ? data.expenses : [];
+    o.dup = pool.some(e => e.currency === "ARS" && e.date.slice(0, 10) === day && Math.abs((e.paidBy ? e.paidBy.total : e.amount) - abs) < 0.6) || [...data.expenses, ...data.incomes].some(e => e.mpId === o.id) || (data.accMoves || []).some(x => x.mpId === o.id);
+    if (o.dup) o.on = false;
+  });
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+let mpRows = [], mpFileName = "";
+function mpAccount(){ let a = data.accounts.find(x => x.prov === "mp"); return a || null; }
+function openMpImport(){
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/pdf,.pdf";
+  inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    $("mpBox").innerHTML = '<p class="fx-hint">Leyendo el resumen…</p>'; $("mpBg").classList.add("open"); $("mpSheet").classList.add("open");
+    try {
+      const { rows, owner, isMP } = await mpParse(f);
+      if (!rows.length){ $("mpBox").innerHTML = '<p class="fx-hint">No encontré movimientos en este PDF. ¿Es el "Resumen de cuenta" de Mercado Pago? Si es otro banco, todavía no lo sé leer.</p>'; return; }
+      mpRows = mpClassify(rows, owner); mpFileName = f.name; renderMpImport(isMP);
+    } catch (e) { $("mpBox").innerHTML = '<p class="fx-hint">No pude leer el PDF. Probá de nuevo o con otro archivo.</p>'; }
+  };
+  inp.click();
+}
+function renderMpImport(isMP){
+  const box = $("mpBox"); box.innerHTML = "";
+  const n = mpRows.filter(r => r.on).length, dups = mpRows.filter(r => r.dup).length;
+  const head = document.createElement("p"); head.className = "fx-hint"; head.style.margin = "0 0 8px";
+  head.textContent = `Encontré ${mpRows.length} movimientos.` + (dups ? ` ${dups} ya los tenías cargados (los dejé destildados).` : "") + " Revisá y destildá lo que no quieras sumar.";
+  box.append(head);
+  const kinds = { expense: "Gasto", income: "Ingreso", move_in: "Entre tus cuentas", move_out: "Entre tus cuentas" };
+  const cats = allCats().filter(c => !c.hidden || c.id === "intereses");
+  mpRows.forEach((r, i) => {
+    const row = document.createElement("label"); row.className = "mp-row" + (r.on ? "" : " off");
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = r.on; cb.onchange = () => { r.on = cb.checked; row.classList.toggle("off", !r.on); mpFoot(); };
+    const mid = document.createElement("span"); mid.className = "mp-mid";
+    const t = document.createElement("strong"); t.textContent = r.label;
+    const s = document.createElement("small"); s.textContent = `${shortDate(dateOnly(r.date))} · ${kinds[r.kind]}${r.dup ? " · ya cargado" : ""}`;
+    mid.append(t, s);
+    if (r.kind === "expense"){
+      const sel = document.createElement("select"); sel.className = "input mp-cat"; sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join(""); sel.value = r.cat;
+      sel.onclick = e => e.stopPropagation(); sel.onchange = () => { r.cat = sel.value; }; mid.append(sel);
+    }
+    const a = document.createElement("b"); a.className = "mp-amt" + (r.amount < 0 ? "" : " in"); a.textContent = (r.amount < 0 ? "− " : "+ ") + fmtARS.format(Math.abs(r.amount));
+    row.append(cb, mid, a); box.append(row);
+  });
+  const ft = document.createElement("p"); ft.className = "fx-hint"; ft.id = "mpFoot"; ft.style.margin = "10px 0 0"; box.append(ft); mpFoot();
+}
+function mpFoot(){
+  const n = mpRows.filter(r => r.on).length; $("mpGo").textContent = n ? `Sumar ${n}` : "Nada"; $("mpGo").disabled = !n;
+  const f = $("mpFoot"); if (f) f.textContent = mpAccount() ? `Se cargan en tu cuenta de ${mpAccount().name}.` : `Voy a crear tu cuenta "Mercado Pago" en "¿Dónde está tu plata?" para guardarlos ahí.`;
+}
+function mpImport(){
+  let acc = mpAccount();
+  if (!acc){ acc = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), prov: "mp", name: "Mercado Pago", color: accProv("mp").color, tna: null }; if (!bankAccounts().length) acc.main = true; data.accounts.push(acc); }
+  const main = mainAccId() !== acc.id ? mainAccId() : (bankAccounts().find(a => a.id !== acc.id) || {}).id;
+  const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+  let nE = 0, nI = 0, nM = 0;
+  mpRows.filter(r => r.on).forEach(r => {
+    const date = r.date + "T12:00", abs = round2(Math.abs(r.amount));
+    if (r.kind === "expense"){ data.expenses.push({ id: uid(), source: "mp", mpId: r.id, amount: abs, currency: "ARS", category: r.cat || "otros", date, note: r.label, method: "transfer", accountId: acc.id, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false });
+      if (r.who) learnCat(r.who, r.who, r.cat); nE++; }
+    else if (r.kind === "income"){ data.incomes.push({ id: uid(), type: "income", source: "mp", mpId: r.id, amount: abs, currency: "ARS", category: "otro_ing", date, note: r.label, accountId: acc.id }); nI++; }
+    else if (main){ data.accMoves.push({ id: uid(), mpId: r.id, from: r.kind === "move_in" ? main : acc.id, to: r.kind === "move_in" ? acc.id : main, amount: abs, date: r.date }); nM++; }
+  });
+  persist(); closeMpImport(); render();
+  uiDialog({ msg: `Listo: sumé ${nE} ${nE === 1 ? "gasto" : "gastos"} y ${nI} ${nI === 1 ? "ingreso" : "ingresos"}` + (nM ? `, y ${nM} ${nM === 1 ? "pase" : "pases"} de plata entre tus cuentas.` : ".") + " Si el saldo de Mercado Pago no coincide, corregilo en \"¿Dónde está tu plata?\"." });
+}
+function closeMpImport(){ $("mpBg").classList.remove("open"); $("mpSheet").classList.remove("open"); }
+$("mpGo").onclick = mpImport; $("mpCancel").onclick = closeMpImport; $("mpBg").onclick = closeMpImport;
+$("accMp").onclick = () => { closeAccounts(); openMpImport(); };
+
 /* Pasar plata entre cuentas (transferencia propia, sacar del cajero, cargar la billetera) */
 function openAccMove(){
   if (data.accounts.length < 2){ uiDialog({ msg: "Primero agregá al menos dos lugares (por ejemplo, tu banco y el efectivo)." }); return; }

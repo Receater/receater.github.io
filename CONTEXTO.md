@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.2000`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.2030`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -222,6 +222,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
 
+## 7f. Importar resumen de Mercado Pago (PDF)
+
+- Botón en la libreta "¿Dónde está tu plata?": "Importar resumen de Mercado Pago (PDF)". Se lee en el dispositivo con pdf.js (`mpParse`): cada renglón se arma alrededor del "ID de la operación" (la descripción puede ir en 2 líneas). La parte "Resumen de tenencias en dólares" se saltea.
+- `mpClassify`: "Rendimientos" → un solo ingreso por mes; "Ingreso de dinero" → pase banco → MP (`accMoves`); "Transferencia enviada/recibida" a vos mismo (nombre del titular del resumen) → pase entre cuentas; a otros → gasto / ingreso; "Pago …" / "Pago con QR …" → gasto con categoría sugerida (aprendida o por palabras); "Débito por deuda Créditos…" → Intereses. Lo ya cargado (mismo día y monto, o mismo `mpId`) viene destildado.
+- Pantalla de revisión (`#mpSheet`): tildar/destildar y cambiar categoría; al sumar se guardan con `source:"mp"`, `mpId` y la cuenta Mercado Pago (se crea si no existe). Pendiente: resumen de Galicia y otros bancos.
+
 ## 7e. Categorías editables
 
 - Todas las categorías se pueden editar (nombre y color), también las que vienen con la app: "Editar categorías" en la carga de un gasto, o "Editar esta categoría" en la hoja de un fijo. Las de la app guardan el cambio en `data.catEdits` `{ id: { name, color } }` (no se borran); las propias (`data.customCats`) se pueden borrar (sus gastos y fijos pasan a Otros).
@@ -256,7 +262,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - **Separar `index.html` en archivos** (propuesto, a confirmar con Tomas): CSS y JS en archivos aparte con `?v=BUILD` para el caché.
 
 - **Pulir la versión de escritorio**: la primera versión en columnas ya está; falta ajustar detalles con el uso.
-- **Importar movimientos de Mercado Pago o del banco**: subiendo el archivo exportado. Postergado por ahora.
+- **Importar movimientos del banco** (Galicia y otros): Mercado Pago ya está; falta un resumen de ejemplo de cada banco.
 - **Reconexión de Drive sin cartel**: necesita un servidor mínimo para el refresh token (por ejemplo, un Cloudflare Worker). Postergado.
 - **Cuenta compartida**: descartada por ahora.
 - **Asistente de IA para aprender y ahorrar**: chat con Gemini (key del usuario) para pedir consejos con los datos propios del usuario, más una sección educativa sobre inversiones (acciones, CEDEARs, FCI, plazo fijo, bonos) explicadas sin tecnicismos: riesgo, horizonte, diversificación. Siempre como educación, no como recomendación de compra. A definir con Tomas.
