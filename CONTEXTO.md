@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2315`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2320`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -214,7 +214,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Al cargar un gasto, los chips de pago son: Efectivo, una por cuenta ("Débito Galicia", "Mercado Pago"…) y las tarjetas. No se pregunta de nuevo de dónde salió la plata. Se guarda `accountId`. Ingresos: "¿Dónde entró?" (por defecto la principal). Tarjetas de crédito: `card.payFrom` (de qué cuenta se pagan; por defecto la principal). Gastos viejos sin cuenta: débito/transferencia → principal, efectivo → efectivo.
 - Saldo: desde el último "¿Cuánto tenés hoy?" (`anchor`) se suman ingresos y se restan gastos y cuotas de tarjeta el día que se pagan; si la cuenta rinde, se suma el interés de cada día (compuesto diario, solo con saldo positivo).
 - Tasa automática cuando hay dato público: fondos de las billeteras (ArgentinaDatos FCI, por nombre: Mercado Fondo, Ualá, Delta Pesos para Personal Pay, Cocos Ahorro, Prex) y `/v1/finanzas/rendimientos` (Lemon, Belo, Ripio, Fiwind, Letsbit; APY → TNA). Naranja X, Brubank y otras cuentas remuneradas no tienen dato público: la tasa se pone a mano. Bancos: caja de ahorro sin interés salvo que se ponga a mano. Los nombres de fondo de cada billetera no están confirmados; si no aparece, cae a manual.
-- **Lápiz en la pizarra** (Movimientos, mes actual, cuando dice "Te queda"): `openFixLeft()` pregunta cuánto te queda de verdad (con atajo "Usar lo de mis cuentas") y carga la diferencia como gasto/ingreso sin anotar (`adjust: true`) en la cuenta elegida. Si la suma de las cuentas no coincide con "Te queda", la pizarra lo avisa.
+- **Lápiz en la pizarra** (Movimientos, mes actual, cuando dice "Te queda"): `openFixLeft()` pregunta cuánto te queda de verdad (con atajo "Usar lo de mis cuentas") y carga la diferencia como gasto/ingreso sin anotar (`adjust: true`, sin cuenta: no pregunta de dónde salió ni toca las cuentas; tiene que funcionar aunque el usuario no cargue cuentas). El lápiz va al final del renglón del monto, del mismo color que el número. Si la suma de las cuentas no coincide con "Te queda", la pizarra lo avisa.
 - **Lápiz en la pizarra de Ahorros** (vista total): `openFixJars()` corrige todos los frascos juntos con movimientos `kind:"adjust"`. Fijos y Resumen no llevan lápiz.
 - Botón "volver arriba" (`#goTop`, estilo libreta, abajo a la derecha) aparece al bajar más de 700 px; se oculta con hojas o diálogos abiertos.
 - Los gastos/ingresos `adjust` no mueven los saldos de las cuentas (solo hacen cerrar la pizarra con la realidad).

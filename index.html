@@ -1050,8 +1050,10 @@ html:has(.sheet.open) .go-top,html:has(.dlg-bg) .go-top{opacity:0;pointer-events
 .acc-sum > div{flex:1;display:flex;flex-direction:column}.acc-sum span{font-size:.76rem;text-transform:uppercase;letter-spacing:.07em;color:#6E6A62;font-weight:700}
 .acc-sum b{font-size:1.35rem}.acc-sum b.up{color:#1E7A50}
 .lcd-row{display:flex;align-items:center;gap:8px;min-width:0}.lcd-row .lcd-big{min-width:0}
-.lcd-edit{flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:1.5px solid currentColor;background:rgba(255,255,255,.6);color:var(--muted,#6E6A62);display:grid;place-items:center;cursor:pointer;padding:0}
-.lcd-edit .ic{width:16px;height:16px}
+.lcd-row{justify-content:space-between}
+.lcd-edit{flex:0 0 auto;margin-left:auto;width:40px;height:40px;border:0;background:none;display:grid;place-items:center;cursor:pointer;padding:0;opacity:.85;filter:drop-shadow(0 0 6px rgba(156,240,200,.45))}
+.lcd-edit:hover{opacity:1}
+.lcd-edit .ic{width:22px;height:22px;fill:currentColor}
 .acc-acts{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.acc-acts .small-btn{flex:1 1 auto}
 .quick-btn.acc-open{margin:10px 0 4px;width:100%}
 
@@ -2248,7 +2250,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.2315";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.2320";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3112,6 +3114,7 @@ function render(){
     boardMismatch = at != null && Math.abs(at - left) >= Math.max(1000, Math.abs(left) * 0.01) ? at : null;
     big.textContent = fmtARS.format(Math.abs(left));
     big.classList.toggle("neg", left < 0);
+    requestAnimationFrame(() => { $("leftEdit").style.color = getComputedStyle(big).color; });
     meter.hidden = false;
     meter.classList.toggle("over", left < 0);
     meter.firstElementChild.style.width = Math.min(100, spentA/incA*100) + "%";
@@ -6727,7 +6730,7 @@ function renderStage(id, c){
   const big = el.querySelector(".lcd-big"); big.textContent = c.big; big.classList.toggle("neg", !!c.neg);
   if (c.edit){ const row = document.createElement("div"); row.className = "lcd-row"; big.replaceWith(row); row.append(big);
     const b = document.createElement("button"); b.type = "button"; b.className = "lcd-edit"; b.setAttribute("aria-label", c.editLabel || "Corregir");
-    b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>'; b.onclick = ev => { ev.stopPropagation(); c.edit(); }; row.append(b); }
+    b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>'; requestAnimationFrame(() => { b.style.color = getComputedStyle(big).color; }); b.onclick = ev => { ev.stopPropagation(); c.edit(); }; row.append(b); }
   if (c.bar != null){ const l = el.querySelector(".leds"); l.hidden = false; l.classList.toggle("over", !!c.over); l.firstElementChild.style.width = Math.max(0, Math.min(100, c.bar * 100)) + "%"; }
   setBoardLines(el.querySelector(".lcd-meta"), (c.lines || []).filter(Boolean));
   el.querySelector(".recy").innerHTML = recySVG(c.mood || "happy");
@@ -7861,22 +7864,19 @@ function addAdjust(diff, accId, what){
 function openFixLeft(){
   if (boardLeft == null) return;
   const at = accTotal();
-  const accOpts = data.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
   const box = miniDialog(`<p><b>¿Cuánto te queda de verdad?</b></p>
     <p class="fx-hint" style="margin:0 0 8px">Yo calculo ${f0ARS(boardLeft)} con lo que cargaste.${at != null ? ` En tus cuentas figura ${f0ARS(at)}.` : ""}</p>
     ${at != null ? '<button type="button" class="linkbtn" id="flUseAcc" style="margin:0 0 8px">Usar lo de mis cuentas</button>' : ""}
     <input class="input" id="flAmt" inputmode="decimal" autocomplete="off" placeholder="Ej: $ 250.000">
-    ${data.accounts.length ? `<label class="fx-hint" for="flAcc" style="display:block;margin-top:10px">¿De dónde salió o entró la diferencia?</label><select class="input" id="flAcc">${accOpts}</select>` : ""}
-    <p class="fx-hint" style="margin:8px 0 0">La diferencia queda cargada como gasto (o ingreso) sin anotar, así todo cierra con tu plata real.</p>
+    <p class="fx-hint" style="margin:8px 0 0">La diferencia queda como un gasto (o ingreso) sin anotar, así la pizarra muestra tu plata real. No toca tus cuentas.</p>
     <p id="flErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p>`,
     b => {
       const v = parseAmount(b.querySelector("#flAmt").value);
       if (!(v >= 0) || b.querySelector("#flAmt").value.trim() === ""){ b.querySelector("#flErr").textContent = "Poné cuánto tenés."; return false; }
       const diff = round2(v - boardLeft); if (Math.abs(diff) < 1) return;
-      addAdjust(diff, b.querySelector("#flAcc") ? b.querySelector("#flAcc").value : null, "ajuste de lo que te queda");
+      addAdjust(diff, null, "ajuste de lo que te queda");
       persist(); render();
     });
-  const acc = box.querySelector("#flAcc"); if (acc) acc.value = mainAccId() || data.accounts[0].id;
   const u = box.querySelector("#flUseAcc"); if (u) u.onclick = () => { box.querySelector("#flAmt").value = fmtARS.format(Math.max(0, Math.round(at))).replace(/[^\d.,]/g, ""); };
 }
 /* Ahorros: corregir todos los frascos juntos (queda como "Ajuste de valor" de cada frasco) */
