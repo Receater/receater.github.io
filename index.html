@@ -1041,6 +1041,8 @@ body{overflow-x:clip;max-width:100%}
 .acc-sum{display:flex;gap:10px;margin:0 0 6px;padding:10px 0;border-bottom:1.5px dashed #BDB6A5}
 .acc-sum > div{flex:1;display:flex;flex-direction:column}.acc-sum span{font-size:.76rem;text-transform:uppercase;letter-spacing:.07em;color:#6E6A62;font-weight:700}
 .acc-sum b{font-size:1.35rem}.acc-sum b.up{color:#1E7A50}
+#recyHero .board{cursor:pointer}
+.acc-acts{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}.acc-acts .small-btn{flex:1 1 auto}
 .quick-btn.acc-open{margin:10px 0 4px;width:100%}
 
 #yieldCard .y-row,#yieldCard .small-btn{font-family:inherit}
@@ -1466,11 +1468,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   .paper-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px;align-items:start}
   .pcol-a,.pcol-b{display:block;min-width:0}
   .recy-stage{margin-top:0}
-  /* Arriba queda una barra fija con el logo, el dólar, Ajustes y "Darle a Recy" (así nunca tapa contenido) */
+  /* Arriba queda una barra fija con el logo, el dólar y Ajustes; "Darle a Recy" queda abajo, igual que en el celu */
   .brand{position:sticky;top:12px;z-index:9}
-  .fab{top:24px;bottom:auto;margin-bottom:0;transform:translateX(-50%) scale(.82);transform-origin:top center}
   .vcol-l{top:104px;padding-bottom:16px}
-  .fab[data-kind="postit"]{transform:translateX(-50%) scale(.66) rotate(-1deg);top:18px}
+  .vcol-r{padding-bottom:120px}
   .sheet{max-width:560px}
 }
 </style>
@@ -2178,6 +2179,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 <div class="sheet-bg" id="accBg"></div>
 <div class="sheet notepad" id="accSheet" role="dialog" aria-modal="true" aria-labelledby="accTitle">
   <h3 id="accTitle">Dónde está tu plata</h3>
+  <div class="acc-acts"><button type="button" class="small-btn" id="accMove">Pasé plata de una cuenta a otra</button><button type="button" class="small-btn" id="accFix">Actualizar saldos</button></div>
   <div id="accBox"></div>
   <div class="actions">
     <button type="button" class="btn ghost" id="accAdd">+ Agregar cuenta</button>
@@ -2235,7 +2237,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.2000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.2200";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2788,6 +2790,8 @@ if (!Array.isArray(data.yields)) data.yields = [];
    Gastos con débito/transferencia y los ingresos llevan accountId (sin accountId = la principal; efectivo = la cuenta de efectivo).
    Las tarjetas de crédito se pagan desde card.payFrom (o la principal). */
 if (!Array.isArray(data.accounts)) data.accounts = [];
+/* data.accMoves: plata que pasaste de una cuenta a otra (ej: sacar del cajero = banco → efectivo) { id, from, to, amount, date:"YYYY-MM-DD" } */
+if (!Array.isArray(data.accMoves)) data.accMoves = [];
 if (!data.lastJar || typeof data.lastJar !== "object") data.lastJar = {};
 const JAR_COLORS = ["#1E8A5B","#2F5BEA","#C9A227","#7A5AC8","#E08A2C","#1FA3B3","#D0485E","#E2689B","#6B7A8A"];
 const JAR_COLOR_NAMES = ["Verde","Azul","Dorado","Violeta","Naranja","Celeste","Rojo","Rosa","Gris"];
@@ -7683,6 +7687,7 @@ function accFlows(){
   data.expenses.forEach(e => { if (isIncome(e) || e.currency !== "ARS" || e.paidBy || (e.method === "card" && cardById(e.cardId))) return; add(accIdOf(e), e.date.slice(0, 10), -e.amount); });
   entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount); });
   data.incomes.forEach(e => { if (e.currency !== "ARS") return; add(accIdOf(e), e.date.slice(0, 10), e.amount); });
+  data.accMoves.forEach(m => { add(m.from, m.date, -m.amount); add(m.to, m.date, m.amount); });
   return f;
 }
 /* Saldo de hoy y lo que rindió, desde el último "tengo $X" */
@@ -7799,6 +7804,46 @@ function openAccounts(){ renderAccounts(); $("accBg").classList.add("open"); $("
   if (data.accounts.length) Promise.all([loadFci(), loadRend()]).then(renderAccounts); }
 function closeAccounts(){ $("accBg").classList.remove("open"); $("accSheet").classList.remove("open"); }
 $("accOpen").onclick = openAccounts; $("accClose").onclick = closeAccounts; $("accBg").onclick = closeAccounts; $("accAdd").onclick = () => openAccount(null);
+
+/* Pasar plata entre cuentas (transferencia propia, sacar del cajero, cargar la billetera) */
+function openAccMove(){
+  if (data.accounts.length < 2){ uiDialog({ msg: "Primero agregá al menos dos lugares (por ejemplo, tu banco y el efectivo)." }); return; }
+  const opt = data.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join(""), t = new Date();
+  const today = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+  const box = miniDialog(`<p><b>Pasé plata</b></p>
+    <label class="fx-hint" for="amFrom">De</label><select class="input" id="amFrom">${opt}</select>
+    <label class="fx-hint" for="amTo" style="display:block;margin-top:8px">A</label><select class="input" id="amTo">${opt}</select>
+    <label class="fx-hint" for="amAmt" style="display:block;margin-top:8px">¿Cuánto?</label><input class="input" id="amAmt" inputmode="decimal" autocomplete="off" placeholder="Ej: $ 50.000">
+    <label class="fx-hint" for="amDate" style="display:block;margin-top:8px">¿Cuándo?</label><input class="input" id="amDate" type="date" value="${today}" max="${today}">
+    <p class="fx-hint" style="margin:8px 0 0">Sacar del cajero es pasar del banco al efectivo. Esto no es un gasto: solo cambia dónde está la plata.</p>
+    <p id="amErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p>`,
+    b => {
+      const from = b.querySelector("#amFrom").value, to = b.querySelector("#amTo").value, amt = parseAmount(b.querySelector("#amAmt").value), d = b.querySelector("#amDate").value || today;
+      const err = x => { b.querySelector("#amErr").textContent = x; return false; };
+      if (from === to) return err("Elegí dos lugares distintos.");
+      if (!(amt > 0)) return err("Poné cuánto pasaste.");
+      data.accMoves.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), from, to, amount: round2(amt), date: d });
+      persist(); renderAccounts();
+    });
+  const fr = box.querySelector("#amFrom"), to = box.querySelector("#amTo");
+  fr.value = mainAccId() || data.accounts[0].id; to.value = (data.accounts.find(a => a.id !== fr.value) || {}).id;
+}
+/* Actualizar todos los saldos de una vez, con lo que dice cada app */
+function openAccFix(){
+  if (!data.accounts.length){ openAccount(null); return; }
+  const flows = accFlows();
+  const box = miniDialog(`<p><b>¿Cuánto tenés hoy en cada lugar?</b></p><p class="fx-hint" style="margin:0 0 8px">Dejá vacío lo que esté bien.</p>` +
+    data.accounts.map(a => { const st = accStatus(a, flows); return `<label class="fx-hint" for="af_${a.id}" style="display:block;margin-top:8px">${a.name}</label><input class="input" id="af_${a.id}" data-acc="${a.id}" inputmode="decimal" autocomplete="off" placeholder="${st.known ? "Ahora: " + f0ARS(st.bal) : "¿Cuánto hay?"}">`; }).join(""),
+    b => {
+      const t = new Date(), d = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+      b.querySelectorAll("[data-acc]").forEach(i => { if (i.value.trim() === "") return; const v = parseAmount(i.value), a = accById(i.dataset.acc); if (a && v >= 0) a.anchor = { amount: round2(v), date: d }; });
+      persist(); renderAccounts();
+    });
+  return box;
+}
+$("accMove").onclick = openAccMove;
+/* Tocar la pizarra abre dónde está tu plata */
+document.querySelector("#recyHero .board").addEventListener("click", openAccounts); $("accFix").onclick = openAccFix;
 /* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
 function renderJarHistory(r){
   updateFab();
