@@ -1053,6 +1053,7 @@ body.learn-mode .main-tabs,body.learn-mode #monthNav,body.learn-mode .fab{displa
 .ln-lesson .ln-h{font-family:inherit;font-size:1.25rem;margin:8px 0 4px}
 .ln-back{font-family:inherit;margin-bottom:6px}
 .ln-fig{margin:14px 0 0;padding:10px;border:1.5px dashed #BDB6A5;border-radius:6px;background:#FFFEFB}.ln-fig svg{width:100%;height:auto;display:block;font-family:"Courier Prime","Courier New",monospace;fill:#1F1F1F}
+.ln-disc .ic{position:absolute;left:14px;top:13px;width:20px;height:20px;fill:#C9374B}
 .ln-mine .linkbtn{margin-top:6px;font-family:inherit}
 .ln-lesson .btn{font-family:inherit;border-radius:6px}
 .ln-lesson .chip{font-family:inherit;border-radius:6px}
@@ -1076,7 +1077,7 @@ body.learn-mode .main-tabs,body.learn-mode #monthNav,body.learn-mode .fab{displa
 .ln-quiz .chip.ok{border-color:#1E7A50;background:#E3F3EA}.ln-quiz .chip.bad{border-color:#C9374B;background:#FBE7EA}
 .ln-fb{font-weight:700}
 .ln-acts{margin-top:16px;display:flex}
-.ln-disc{margin:18px 0 24px;padding:12px 14px;background:#FBF8F1;color:#1F1F1F;border:1.5px dashed #BDB6A5;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.88rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.12)}
+.ln-disc{margin:18px 0 24px;padding:12px 14px 12px 44px;position:relative;background:#FDECEE;color:#9E1C2E;font-weight:700;border:2px dashed #C9374B;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.88rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 
 .mk-info{display:inline-grid;place-items:center;vertical-align:-3px;width:22px;height:22px;border:0;background:none;padding:0;cursor:pointer;color:inherit;opacity:.85}
 .mk-info .ic{width:16px;height:16px;fill:currentColor}
@@ -2305,7 +2306,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-19.1000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-19.1100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -8049,8 +8050,67 @@ const LEARN = [
       mine: () => { if (!data.cards.length) return null; let a = 0; data.cards.forEach(c => { a += pendingFor(c).ars; }); return a > 0 ? { t: `Hoy tenés ${f0ARS(a)} de cuotas o compras de tarjeta todavía sin pagar.`, go: "dash", label: "Ver tus tarjetas en el Diario" } : null; },
       q: { t: "¿Qué pasa si pagás solo el mínimo de la tarjeta?", o: ["Nada, es lo normal", "Te cobran intereses muy altos sobre el resto", "El banco te hace un descuento"], a: 1 } }
   ]},
-  { id: "c2", title: "Gastar menos sin sufrir", sub: "Próximamente", soon: true, lessons: [] },
-  { id: "c3", title: "Inflación y tasas", sub: "Próximamente", soon: true, lessons: [] },
+  { id: "c2", title: "Gastar menos sin sufrir", sub: "Pequeños cambios que suman", lessons: [
+    { id: "hormiga", title: "Los gastos hormiga", min: 3,
+      body: `<p>Son los gastos chiquitos de todos los días: el café, la gaseosa, el kiosco, el delivery "porque no tengo ganas". Uno solo no pesa. <b>Todos juntos, a fin de mes, pesan un montón.</b></p>
+        <p>Ejemplo: $3.000 por día en "cositas" son unos $90.000 por mes y más de un millón por año.</p>
+        <p>No se trata de prohibirte todo. Se trata de <b>elegir</b>: si el café de la mañana te hace feliz, dejalo; si comprás algo solo por costumbre, ahí está el ahorro.</p>
+        <p>Un truco: mirá en el Diario de Recy la categoría que más te sorprende y proponete bajarla un poco el mes que viene. Solo una por vez.</p>`,
+      take: "Lo chico, repetido, es grande. No prohibas todo: elegí qué vale la pena.",
+      mine: () => { const [y, m] = periodOf(new Date()); const small = data.expenses.filter(e => !isIncome(e) && e.currency === "ARS" && inPeriod(e, y, m) && e.amount < 8000);
+        const t = small.reduce((s2, e) => s2 + e.amount, 0); return small.length >= 3 ? { t: `Este mes tenés ${small.length} gastos de menos de $8.000 que suman ${f0ARS(t)}.`, go: "list", label: "Ver tus movimientos" } : null; },
+      q: { t: "¿Qué conviene hacer con los gastos hormiga?", o: ["Eliminarlos todos", "Elegir cuáles valen la pena y bajar los que hacés por costumbre", "No mirarlos"], a: 1 } },
+    { id: "suscripciones", title: "Suscripciones que te olvidaste", min: 2,
+      body: `<p>Streaming, música, apps, gimnasio, nubes de fotos... Se pagan solas todos los meses y por eso <b>nos olvidamos de que existen</b>.</p>
+        <p>Una vez cada tanto, hacé la prueba: listá todas tus suscripciones y preguntate de cada una "¿la usé este mes?". Si la respuesta es no, cancelala. Si algún día la extrañás, la volvés a contratar.</p>
+        <p>Ojo con las que se cobran en dólares con la tarjeta: además del precio, se suman impuestos y percepciones, y suben cuando sube el dólar.</p>`,
+      take: "Revisá tus suscripciones cada tanto. La que no usaste este mes, afuera.",
+      mine: () => { const subs = data.fixed.filter(f => f.category === "suscripciones" && (!f.end || f.end >= monthKey(new Date().getFullYear(), new Date().getMonth())));
+        return subs.length ? { t: `Tenés ${subs.length} ${subs.length === 1 ? "suscripción cargada" : "suscripciones cargadas"} en Fijos: ${subs.map(f => f.name).join(", ")}.`, go: "fixed", label: "Revisarlas en Fijos" } : null; },
+      q: { t: "¿Cuándo conviene cancelar una suscripción?", o: ["Nunca, por las dudas", "Cuando no la usaste en el mes", "Solo si sube de precio"], a: 1 } },
+    { id: "cuotas", title: "Comprar en cuotas: cuándo sí y cuándo no", min: 3,
+      body: `<p>Con inflación, <b>las cuotas sin interés</b> suelen convenir: pagás lo mismo, pero la cuota de dentro de seis meses "vale menos" que hoy. Si además el precio en cuotas es igual al de contado, mejor.</p>
+        <p>Pero hay tres trampas:</p>
+        <ul><li><b>"Sin interés" con precio inflado:</b> compará con el precio de contado o con descuento por transferencia. A veces el contado es mucho más barato.</li>
+        <li><b>Cuotas con interés:</b> casi nunca convienen para cosas que no necesitás.</li>
+        <li><b>La bola de cuotas:</b> cada compra en cuotas parece chiquita, pero se suman y te comen el sueldo de los próximos meses.</li></ul>
+        <p>Antes de comprar, usá "¿Me lo puedo comprar?" en el Diario de Recy: te muestra cómo quedan los próximos meses con esa cuota.</p>`,
+      take: "Cuotas sin interés: sí, si el precio es el mismo y la cuota entra cómoda los próximos meses.",
+      mine: () => { if (!data.cards.length) return null; const n = data.expenses.filter(e => isCardExp(e) && (e.installments || 1) > 1).length;
+        return n ? { t: `Tenés ${n} ${n === 1 ? "compra" : "compras"} en cuotas cargadas.`, go: "dash", label: "Ver tus cuotas en el Diario" } : null; },
+      q: { t: "¿Cuándo es más probable que convengan las cuotas?", o: ["Sin interés y al mismo precio que de contado", "Con interés alto", "Siempre, sin importar el precio"], a: 0 } },
+    { id: "48horas", title: "La regla de las 48 horas", min: 2,
+      body: `<p>Muchas compras se hacen por impulso: una oferta, un aviso, un mal día. Una regla simple: <b>si algo no es urgente y cuesta más de lo que gastás en un día normal, esperá 48 horas</b>.</p>
+        <p>Si a los dos días lo seguís queriendo, compralo tranquilo. Si ya no te importa, te ahorraste la plata y el arrepentimiento.</p>
+        <p>Funciona todavía mejor si lo anotás: "quiero esto, lo reviso el jueves".</p>`,
+      take: "Compra grande y no urgente: esperá dos días. Si lo seguís queriendo, adelante.",
+      q: { t: "¿Para qué sirve esperar 48 horas antes de una compra?", o: ["Para que baje el precio", "Para saber si de verdad lo querés o era un impulso", "Para pagar con otra tarjeta"], a: 1 } }
+  ]},
+  { id: "c3", title: "Inflación y tasas", sub: "Por qué la plata quieta pierde", lessons: [
+    { id: "inflacion", title: "Qué es la inflación, en simple", min: 3,
+      body: `<p>La inflación es cuando <b>los precios suben</b> en general. Con la misma plata comprás menos cosas que antes.</p>
+        <p>Si tenés $100.000 guardados en un cajón y la inflación del año es 30%, al año siguiente esos $100.000 compran lo que antes comprabas con unos $77.000. <b>No perdiste billetes, perdiste poder de compra.</b></p>
+        <p>Por eso en Argentina la plata quieta en pesos casi siempre pierde. La idea no es hacerse rico: es <b>que tu plata no se achique</b>. Para eso, que rinda al menos lo mismo que la inflación.</p>
+        <p>La inflación oficial la publica el INDEC todos los meses. Receater la usa para mostrarte si tus frascos le ganan o pierden.</p>`,
+      take: "La plata quieta en pesos se achica. La meta mínima: que rinda lo mismo que la inflación.",
+      mine: () => data.jars.some(j => j.currency === "ARS") ? { t: "Abrí un frasco en pesos: te dice si le ganó o le perdió a la inflación desde que ahorrás.", go: "jars", label: "Ir a Ahorros" } : null,
+      q: { t: "Si la inflación es 30% y tu plata está quieta, ¿qué pasa?", o: ["Tenés la misma plata y comprás lo mismo", "Tenés los mismos billetes pero comprás menos", "Tenés más plata"], a: 1 } },
+    { id: "tnatea", title: "TNA, TEA y TEM sin dolor de cabeza", min: 4,
+      body: `<p>Cuando te ofrecen un rendimiento, te tiran siglas. Las tres que importan:</p>
+        <ul><li><b>TNA</b> (tasa nominal anual): la tasa "de vidriera", por año. Para saber cuánto ganás en un mes, dividís por 12. Una TNA de 30% es 2,5% por mes, más o menos.</li>
+        <li><b>TEM</b> (tasa efectiva mensual): lo que ganás en un mes, ya calculado.</li>
+        <li><b>TEA</b> (tasa efectiva anual): lo que ganás en un año <b>si reinvertís</b> los intereses. Siempre es un poco más alta que la TNA, porque los intereses también generan intereses.</li></ul>
+        <p>Para comparar dos opciones, compará <b>la misma sigla</b>: TNA con TNA, o TEA con TEA. Y comparala con la inflación del mismo período.</p>
+        <p>En las tarjetas de crédito pasa lo mismo pero al revés: miran el <b>CFT</b> (costo financiero total), que suma intereses, impuestos y gastos. Es el número que de verdad pagás.</p>`,
+      take: "Compará siempre la misma sigla. TNA ÷ 12 ≈ lo que ganás por mes. En créditos, mirá el CFT.",
+      q: { t: "Una billetera paga 36% TNA. ¿Cuánto ganás por mes, más o menos?", o: ["36%", "3%", "0,36%"], a: 1 } },
+    { id: "compuesto", title: "El interés compuesto, tu mejor amigo", min: 3,
+      body: `<p>El interés compuesto es cuando <b>los intereses también ganan intereses</b>. En las billeteras pasa solo: lo que ganaste ayer, hoy ya rinde.</p>
+        <p>Al principio la diferencia es chiquita. Con el tiempo se nota cada vez más: por eso empezar temprano, aunque sea con poco, le gana a empezar tarde con más.</p>
+        <p>También funciona en contra: en una deuda de tarjeta, los intereses se suman a la deuda y generan más intereses. Por eso conviene pagar las deudas caras primero.</p>`,
+      take: "El tiempo multiplica: empezá a ahorrar temprano, aunque sea poco, y pagá primero las deudas caras.",
+      q: { t: "¿Qué tiene de especial el interés compuesto?", o: ["Los intereses también generan intereses", "Es un impuesto", "Solo existe en dólares"], a: 0 } }
+  ]},
   { id: "c4", title: "Dónde poner la plata", sub: "De menos a más riesgo", lessons: [
     { id: "triangulo", title: "Riesgo, plazo y disponibilidad", min: 3,
       body: `<p>Antes de elegir dónde poner la plata, hay tres preguntas:</p>
@@ -8101,12 +8161,85 @@ const LEARN = [
         <li><b>No pongas todo en una sola empresa.</b> Repartir en muchas (o comprar un CEDEAR de un índice, que trae cientos juntas) baja muchísimo el riesgo de perder todo.</li>
         <li>No hace falta mirarlas todos los días. De hecho, conviene no hacerlo.</li>
         <li>Primero el fondo de emergencia, después acciones.</li></ul>
-        <p>Pronto viene un capítulo entero sobre acciones: dónde se compran, cómo abrir una cuenta y cómo empezar con poco.</p>`,
+        <p>En el capítulo 5, "Acciones desde cero", está todo: dónde se compran, cómo abrir una cuenta y cómo empezar con poco.</p>`,
       take: "Acciones: solo con plata para dentro de años, repartida en muchas empresas, y sin mirarlas a diario.",
       q: { t: "¿Qué baja más el riesgo de perder todo con acciones?", o: ["Comprar una sola empresa que te guste", "Repartir en muchas empresas", "Mirarlas todo el día"], a: 1 } }
   ]},
-  { id: "c5", title: "Acciones desde cero", sub: "Próximamente", soon: true, lessons: [] },
-  { id: "c6", title: "Impuestos y cosas raras", sub: "Próximamente", soon: true, lessons: [] }
+  { id: "c5", title: "Acciones desde cero", sub: "Para el que nunca compró una", lessons: [
+    { id: "accion", title: "Qué es una acción y por qué sube y baja", min: 4,
+      body: `<p>Una empresa grande está dividida en millones de partecitas. Cada una es una <b>acción</b>. Si comprás una, sos dueño de un pedacito chiquito de la empresa.</p>
+        <p>El precio lo deciden los que compran y venden todos los días. Si la gente cree que a la empresa le va a ir bien, quiere comprar y el precio sube. Si hay malas noticias (o miedo en general), muchos venden y el precio baja.</p>
+        <p>Algunas empresas además reparten parte de sus ganancias entre los dueños: eso se llama <b>dividendo</b>.</p>
+        <p>Lo importante: <b>el precio de mañana nadie lo sabe</b>. Ni el de la tele, ni el de YouTube, ni tu primo. A largo plazo, las buenas empresas tienden a valer más, pero en el camino hay subidas y bajadas fuertes.</p>`,
+      take: "Una acción es un pedacito de una empresa. El precio de mañana no lo sabe nadie.",
+      q: { t: "¿Qué estás comprando cuando comprás una acción?", o: ["Un préstamo a la empresa", "Un pedacito de la empresa", "Un producto de la empresa"], a: 1 } },
+    { id: "broker", title: "Dónde se compran: el broker", min: 3,
+      body: `<p>Las acciones no se compran en el banco como un plazo fijo (aunque algunos bancos tienen su propia sección de inversiones). Se compran a través de un <b>broker</b>: una empresa autorizada que hace de intermediaria entre vos y la bolsa.</p>
+        <p>En Argentina se llaman <b>ALyC</b> (agentes de liquidación y compensación) y los controla la <b>CNV</b> (Comisión Nacional de Valores). Antes de abrir una cuenta en cualquier lado, fijate que esté registrada en la página de la CNV.</p>
+        <p>Abrir la cuenta es gratis y se hace desde el celu: DNI, selfie, CUIT/CUIL y una cuenta bancaria a tu nombre. Después pasás plata desde tu banco o billetera a la cuenta del broker.</p>
+        <p>Lo que cuesta: cada compra y venta tiene una <b>comisión</b> (un porcentaje chico) más derechos de mercado. Compará comisiones antes de elegir; con montos chicos, pesan.</p>`,
+      take: "Se compran por un broker (ALyC) registrado en la CNV. Abrir la cuenta es gratis; cada operación cobra comisión.",
+      q: { t: "¿Qué tenés que chequear antes de abrir una cuenta en un broker?", o: ["Que tenga linda publicidad", "Que esté registrado en la CNV", "Que te prometa ganancias"], a: 1 } },
+    { id: "comprar", title: "Cómo es comprar, paso a paso", min: 4,
+      body: `<p>Así es, en general, en cualquier app de broker:</p>
+        <ul><li><b>1.</b> Pasás plata a tu cuenta del broker (transferencia desde tu banco o billetera).</li>
+        <li><b>2.</b> Buscás la acción o CEDEAR por su sigla (por ejemplo, la de una empresa o la de un índice).</li>
+        <li><b>3.</b> Elegís cuánto querés comprar. Te muestra el precio y la comisión.</li>
+        <li><b>4.</b> Elegís el <b>plazo de liquidación</b>: "contado inmediato" (hoy) o "24 horas". Para empezar, da igual.</li>
+        <li><b>5.</b> Confirmás. La acción aparece en tu "cartera".</li></ul>
+        <p>Para vender es lo mismo al revés: vendés y la plata queda en la cuenta del broker; de ahí la transferís a tu banco.</p>
+        <p>Consejo para la primera vez: <b>empezá con un monto chico</b>, que no te duela, solo para aprender cómo funciona. Equivocarse con poca plata es la mejor clase.</p>`,
+      take: "Plata al broker → buscás la sigla → comprás → queda en tu cartera. La primera vez, con poco.",
+      q: { t: "¿Con cuánto conviene arrancar la primera vez?", o: ["Con todos tus ahorros", "Con un monto chico, para aprender", "Con plata prestada"], a: 1 } },
+    { id: "diversificar", title: "No poner todos los huevos en la misma canasta", min: 3,
+      body: `<p>Si ponés toda tu plata en una sola empresa y a esa empresa le va mal, perdés mucho. Si la repartís en muchas, que a una le vaya mal casi no se nota. Eso es <b>diversificar</b>.</p>
+        <p>La forma más fácil de diversificar con poca plata: comprar algo que ya trae muchas empresas adentro, como un <b>CEDEAR de un índice</b> (un paquete que replica, por ejemplo, a las 500 empresas más grandes de Estados Unidos) o un <b>fondo común de inversión</b> de acciones.</p>
+        <p>También se diversifica en el tiempo: en vez de poner todo un día, poner un poco todos los meses. Así no dependés de haber "acertado" el día.</p>`,
+      take: "Repartí: muchas empresas (un índice o un fondo) y un poco cada mes. Así es muy difícil perder todo.",
+      q: { t: "¿Cuál es la forma más fácil de diversificar con poca plata?", o: ["Comprar una sola empresa conocida", "Comprar algo que ya trae muchas empresas, como un índice", "Comprar y vender todos los días"], a: 1 } },
+    { id: "miedo", title: "Miedo, paciencia y no mirar todos los días", min: 3,
+      body: `<p>El miedo a perder es normal y sano. Lo que hace perder plata de verdad suele ser <b>vender por miedo</b> justo cuando todo bajó.</p>
+        <p>Algunas reglas que ayudan:</p>
+        <ul><li>Solo plata que <b>no vas a necesitar en 5 años o más</b>. El fondo de emergencia, nunca en acciones.</li>
+        <li><b>No mires todos los días.</b> Una vez por mes alcanza. Mirar seguido solo da ansiedad.</li>
+        <li>Si todo baja 20%, no es el fin del mundo: pasó muchas veces y, con buenas empresas y diversificado, se recuperó con el tiempo. Pero <b>no hay garantías</b>.</li>
+        <li>Decidí antes cuánto te banca perder en papel sin dormir mal. Esa es tu medida.</li></ul>`,
+      take: "Solo plata para dentro de años, mirá una vez por mes y no vendas por miedo cuando todo baja.",
+      q: { t: "Tus acciones bajaron 20% en un mes. ¿Qué suele ser lo peor que podés hacer?", o: ["Vender todo por miedo", "Esperar, si era plata para dentro de años", "No mirar por un tiempo"], a: 0 } },
+    { id: "estafas", title: "Cómo darte cuenta de una estafa", min: 3,
+      body: `<p>Donde hay plata, hay estafadores. Las señales de alarma más comunes:</p>
+        <ul><li><b>Te prometen ganancias seguras o altísimas</b> ("duplicás en un mes", "30% mensual garantizado").</li>
+        <li><b>Te apuran:</b> "es solo por hoy", "quedan pocos lugares".</li>
+        <li><b>Te piden que traigas a otros</b> para ganar más (esquema piramidal o Ponzi).</li>
+        <li>Te escriben por WhatsApp, Instagram o Telegram que no conocés, a veces usando la cara de un famoso.</li>
+        <li>No están registrados en la CNV o te piden transferir a una cuenta de una persona.</li></ul>
+        <p>Regla de oro: <b>si suena demasiado bueno para ser verdad, es mentira</b>. Nadie serio te garantiza ganancias en inversiones.</p>`,
+      take: "Ganancia garantizada, apuro, traer amigos o un desconocido por WhatsApp: es estafa.",
+      q: { t: "Te escriben por WhatsApp ofreciendo 20% mensual garantizado. ¿Qué es?", o: ["Una gran oportunidad", "Casi seguro una estafa", "Un plazo fijo"], a: 1 } }
+  ]},
+  { id: "c6", title: "Impuestos y cosas raras", sub: "Lo que aparece en el resumen y nadie explica", lessons: [
+    { id: "tarjetadolar", title: "Comprar en dólares con la tarjeta", min: 3,
+      body: `<p>Cuando pagás algo en el exterior o en dólares con la tarjeta (Netflix, Spotify, una compra online, un viaje), no pagás solo el precio en dólares.</p>
+        <p>Además del dólar oficial, se suman <b>percepciones</b> de impuestos (de Ganancias y, según la provincia, de Ingresos Brutos). Por eso el "dólar tarjeta" sale bastante más caro que el oficial.</p>
+        <p>Las percepciones de Ganancias no son plata perdida del todo: si pagás Ganancias o Bienes Personales, se pueden descontar; si no, en algunos casos se pueden pedir de vuelta a ARCA (la ex AFIP). Es un trámite.</p>
+        <p>Algunos bancos y tarjetas te dejan pagar el resumen en dólares con dólares que ya tenés: así te evitás las percepciones.</p>
+        <p>Ojo: los porcentajes y las reglas cambian seguido. Chequeá en la página de ARCA o en tu banco antes de decidir.</p>`,
+      take: "Pagar en dólares con tarjeta cuesta más que el oficial por las percepciones. Las reglas cambian seguido.",
+      q: { t: "¿Por qué el \"dólar tarjeta\" es más caro que el oficial?", o: ["Por las percepciones de impuestos", "Porque lo cobra la empresa de afuera", "No es más caro"], a: 0 } },
+    { id: "monotributo", title: "Monotributo, en simple", min: 3,
+      body: `<p>Si trabajás por tu cuenta (freelance, changas, un emprendimiento), para facturar legalmente te inscribís en el <b>Monotributo</b>: un régimen simplificado de ARCA.</p>
+        <p>Pagás <b>una cuota fija por mes</b> que incluye tres cosas: el impuesto, la jubilación y la obra social. El monto depende de la <b>categoría</b>, que se define por cuánto facturás por año (y otros datos como el alquiler del local).</p>
+        <p>Dos veces por año hay que revisar si seguís en la misma categoría (la <b>recategorización</b>). Si facturás más del tope de la categoría más alta, pasás al régimen general, que es más complejo.</p>
+        <p>Para empezar: con tu clave fiscal en la página de ARCA te inscribís en unos minutos. Si tenés dudas, un contador te lo deja armado por poco.</p>`,
+      take: "Monotributo: una cuota fija por mes (impuesto + jubilación + obra social) según cuánto facturás.",
+      q: { t: "¿Qué incluye la cuota del monotributo?", o: ["Solo el impuesto", "Impuesto, jubilación y obra social", "Nada, es gratis"], a: 1 } },
+    { id: "ganancias", title: "Ganancias y Bienes Personales", min: 3,
+      body: `<p><b>Ganancias</b> es el impuesto sobre lo que ganás. Si sos empleado en relación de dependencia y tu sueldo pasa un mínimo, te lo descuentan directamente del recibo. Algunos gastos (alquiler, prepaga, empleada doméstica, entre otros) se pueden deducir cargándolos en ARCA, y eso baja lo que te retienen.</p>
+        <p><b>Bienes Personales</b> es un impuesto anual sobre lo que <b>tenés</b> (ahorros, autos, propiedades) a fin de año, solo si el total supera un mínimo bastante alto. La mayoría de la gente no llega.</p>
+        <p>Los mínimos y las alícuotas cambian casi todos los años. Si estás cerca de alguno, vale la pena una consulta con un contador.</p>`,
+      take: "Ganancias es sobre lo que ganás; Bienes Personales, sobre lo que tenés. Los mínimos cambian todos los años.",
+      q: { t: "¿Sobre qué se paga Bienes Personales?", o: ["Sobre lo que ganás por mes", "Sobre lo que tenés a fin de año, si supera un mínimo", "Sobre cada compra"], a: 1 } }
+  ]}
 ];
 /* Dibujitos simples de algunas lecciones (mismos colores de la libreta) */
 const LEARN_FIG = {
@@ -8146,7 +8279,7 @@ function learnGo(where){ exitLearn(); if (where === "accounts"){ setTab("list");
 function renderLearn(){
   const all = LEARN.flatMap(c => c.lessons), done = learnDone(), tot = learnTotal(), nextL = all.find(l => !data.learned[l.id]);
   renderStage("stageLearn", { label: "Tu progreso", big: `${done} de ${tot}`, bar: done / tot,
-    lines: [done ? `Lecciones leídas: ${done}` : "Empezá por la primera, son cortitas", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!", "Pronto: acciones desde cero"],
+    lines: [done ? `Lecciones leídas: ${done}` : "Empezá por la primera, son cortitas", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!", `${LEARN.length} capítulos`],
     mood: done === tot ? "full" : "happy", line: done ? "¡Vas bien! Una lección por día y listo." : "Vení que te explico todo sin vueltas." });
   const nx = $("learnNext"); nx.innerHTML = "";
   if (!learnCur && nextL){ nx.hidden = false;
@@ -8166,7 +8299,7 @@ function renderLearn(){
       box.append(sec);
     });
     const disc = document.createElement("p"); disc.className = "ln-disc";
-    disc.textContent = "Esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.";
+    disc.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-warning"/></svg><span>Ojo: esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.</span>';
     box.append(disc); return;
   }
   const i = all.findIndex(l => l.id === learnCur), l = all[i], ch = LEARN.find(c => c.lessons.includes(l));
@@ -8190,6 +8323,8 @@ function renderLearn(){
         fb.textContent = ok ? "¡Bien! ✓" : "Casi. La correcta está marcada en verde."; }; q.append(b); });
     q.append(fb); art.append(q);
   }
+  if (ch.id === "c4" || ch.id === "c5"){ const d = document.createElement("p"); d.className = "ln-disc"; d.style.margin = "14px 0 0";
+    d.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-warning"/></svg><span>Ojo: esto es educación, no una recomendación de inversión. Decidí según tu situación.</span>'; art.append(d); }
   const acts = document.createElement("div"); acts.className = "ln-acts"; const next = all[i + 1];
   const done2 = document.createElement("button"); done2.type = "button"; done2.className = "btn primary";
   done2.textContent = next ? "Leída · siguiente" : "Leída · volver a las lecciones";
