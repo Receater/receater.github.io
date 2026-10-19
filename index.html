@@ -1076,7 +1076,7 @@ body.learn-mode .main-tabs,body.learn-mode #monthNav,body.learn-mode .fab{displa
 .ln-quiz .chip.ok{border-color:#1E7A50;background:#E3F3EA}.ln-quiz .chip.bad{border-color:#C9374B;background:#FBE7EA}
 .ln-fb{font-weight:700}
 .ln-acts{margin-top:16px;display:flex}
-.ln-disc{margin-top:18px;border-top:1.5px dashed #BDB6A5;padding-top:10px}
+.ln-disc{margin:18px 0 24px;padding:12px 14px;background:#FBF8F1;color:#1F1F1F;border:1.5px dashed #BDB6A5;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.88rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 
 .mk-info{display:inline-grid;place-items:center;vertical-align:-3px;width:22px;height:22px;border:0;background:none;padding:0;cursor:pointer;color:inherit;opacity:.85}
 .mk-info .ic{width:16px;height:16px;fill:currentColor}
@@ -2305,7 +2305,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-19.0700";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-19.1000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7127,12 +7127,13 @@ const SCENES = {
   learn: (W, colU) => {
     const wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
     const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(130, s / 2) : 95, rz = wide ? WW - Math.max(130, s / 2) : 325;
-    const books = (x, base, n) => { let o = "", cx = x; const cs = ["#C9374B","#2F5BEA","#1E7A50","#F4C24E","#7A5AC8","#E08A2C","#5B6B82"];
-      for (let i = 0; i < n; i++){ const w = 10 + Math.floor(R() * 8), h = 46 + Math.floor(R() * 22), c = cs[Math.floor(R() * cs.length)];
+    const books = (x, base, maxW) => { let o = "", cx = x; const lim = x + maxW; const cs = ["#C9374B","#2F5BEA","#1E7A50","#F4C24E","#7A5AC8","#E08A2C","#5B6B82"];
+      for (let i = 0; i < 60; i++){ const w = 10 + Math.floor(R() * 8), h = 46 + Math.floor(R() * 20), c = cs[Math.floor(R() * cs.length)];
+        if (cx + w + 12 > lim) break;
         if (R() < .12){ o += `<rect x="${cx + 4}" y="${base - h + 6}" width="${w}" height="${h - 6}" rx="1" fill="${c}" transform="rotate(12 ${cx + 4} ${base})"/>`; cx += w + 10; continue; }
         o += `<rect x="${cx}" y="${base - h}" width="${w}" height="${h}" rx="1.5" fill="${c}"/><rect x="${cx + 2}" y="${base - h + 8}" width="${w - 4}" height="3" fill="#fff" opacity=".45"/>`; cx += w + 1; } return o; };
     const shelf = (x, w) => { let o = `<rect x="${x - 8}" y="150" width="${w + 16}" height="420" fill="#7A5638"/>`;
-      for (let y = 230; y <= 550; y += 80){ o += `<rect x="${x}" y="${y - 72}" width="${w}" height="72" fill="#5E4129"/>`; o += books(x + 6, y, Math.floor(w / 14)); o += `<rect x="${x - 8}" y="${y}" width="${w + 16}" height="8" fill="#8E6845"/>`; }
+      for (let y = 230; y <= 550; y += 80){ o += `<rect x="${x}" y="${y - 72}" width="${w}" height="72" fill="#5E4129"/>`; o += books(x + 6, y, w - 12); o += `<rect x="${x - 8}" y="${y}" width="${w + 16}" height="8" fill="#8E6845"/>`; }
       return o; };
     const win = (cx) => { let b = ""; for (let i = 0; i < 6; i++){ const bw = 18 + R() * 16, bh = 30 + R() * 60, bx = cx - 70 + i * 24; b += `<rect x="${bx}" y="${300 - bh}" width="${bw}" height="${bh}" fill="${["#A9B8C8","#C2CCD6","#97A8BA"][i % 3]}"/>`; }
       return `<rect x="${cx - 86}" y="120" width="172" height="196" rx="4" fill="#8E6845"/><rect x="${cx - 76}" y="130" width="152" height="176" fill="#D6E9FA"/>${b}<circle cx="${cx + 40}" cy="164" r="14" fill="#F4C24E" opacity=".8"/>
@@ -7148,11 +7149,11 @@ const SCENES = {
     const plant = (cx) => `<path d="M${cx - 18} 800 l4 -56 h28 l4 56z" fill="#C97B62"/><g fill="#76C29B"><ellipse cx="${cx - 16}" cy="720" rx="12" ry="28" transform="rotate(-25 ${cx - 16} 720)"/><ellipse cx="${cx + 16}" cy="716" rx="12" ry="30" transform="rotate(25 ${cx + 16} 716)"/><ellipse cx="${cx}" cy="700" rx="11" ry="34"/></g>`;
     let wain = ""; for (let x = 10; x < WW; x += 90) wain += `<rect x="${x}" y="606" width="74" height="150" rx="3" fill="none" stroke="#C9B48F" stroke-width="3"/>`;
     let stripes = ""; for (let x = 0; x < WW; x += 36) stripes += `<rect x="${x}" y="0" width="18" height="580" fill="#E6DBC6" opacity=".55"/>`;
-    const left = wide ? `${shelf(lz - 110, 220)}` : `${shelf(10, 150)}`;
+    const left = wide ? `${shelf(lz - 110, 220)}` : `${shelf(38, 150)}`;
     const right = wide ? `${win(rz)}${chart(rz, 420)}` : `${win(rz - 10)}${chart(rz - 10, 420)}`;
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#EFE6D6"/>${stripes}
       <rect y="580" width="${WW}" height="220" fill="#D9C29A"/><rect y="580" width="${WW}" height="12" fill="#B4844F"/>${wain}<rect y="770" width="${WW}" height="30" fill="#8E6845"/>
-      ${left}${right}${wide ? desk(rz) + plant(lz + 150) : plant(380)}</svg>`;
+      ${left}${right}${wide ? desk(rz) + plant(lz + 150) : plant(320)}</svg>`;
   }
 };
 let sceneOn = null, sceneKey = "";
@@ -8164,7 +8165,7 @@ function renderLearn(){
         b.onclick = () => { learnCur = l.id; renderLearn(); window.scrollTo({ top: 0 }); }; sec.append(b); });
       box.append(sec);
     });
-    const disc = document.createElement("p"); disc.className = "fx-hint ln-disc";
+    const disc = document.createElement("p"); disc.className = "ln-disc";
     disc.textContent = "Esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.";
     box.append(disc); return;
   }
