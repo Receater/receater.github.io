@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2310`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2315`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -216,6 +216,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Tasa automática cuando hay dato público: fondos de las billeteras (ArgentinaDatos FCI, por nombre: Mercado Fondo, Ualá, Delta Pesos para Personal Pay, Cocos Ahorro, Prex) y `/v1/finanzas/rendimientos` (Lemon, Belo, Ripio, Fiwind, Letsbit; APY → TNA). Naranja X, Brubank y otras cuentas remuneradas no tienen dato público: la tasa se pone a mano. Bancos: caja de ahorro sin interés salvo que se ponga a mano. Los nombres de fondo de cada billetera no están confirmados; si no aparece, cae a manual.
 - **Lápiz en la pizarra** (Movimientos, mes actual, cuando dice "Te queda"): `openFixLeft()` pregunta cuánto te queda de verdad (con atajo "Usar lo de mis cuentas") y carga la diferencia como gasto/ingreso sin anotar (`adjust: true`) en la cuenta elegida. Si la suma de las cuentas no coincide con "Te queda", la pizarra lo avisa.
 - **Lápiz en la pizarra de Ahorros** (vista total): `openFixJars()` corrige todos los frascos juntos con movimientos `kind:"adjust"`. Fijos y Resumen no llevan lápiz.
+- Botón "volver arriba" (`#goTop`, estilo libreta, abajo a la derecha) aparece al bajar más de 700 px; se oculta con hojas o diálogos abiertos.
 - Los gastos/ingresos `adjust` no mueven los saldos de las cuentas (solo hacen cerrar la pizarra con la realidad).
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
