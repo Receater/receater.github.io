@@ -1036,16 +1036,35 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+body.learn-mode .main-tabs,body.learn-mode #monthNav,body.learn-mode .fab{display:none !important}
+.learn-btn{text-decoration:none}
+/* Escuelita: tarjetas de libreta, igual que el Historial de Ahorros */
+#learnNext,.ln-chap,.ln-lesson{position:relative;margin:28px 0 18px;padding:24px 18px 16px;background:#FBF8F1;color:#1F1F1F;border:0;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3;--ink:#1F1F1F;--muted:#6E6A62;--line:#D9D3C6;color-scheme:light}
+#learnNext::before,.ln-chap::before,.ln-lesson::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
+#learnNext .card-head,.ln-chap .card-head,.ln-lesson .card-head{border-bottom:1.5px dashed #BDB6A5;padding-bottom:10px;margin-bottom:6px;align-items:center;display:flex;justify-content:space-between;gap:10px}
+#learnNext h2,.ln-chap h2,.ln-lesson h2{font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase;margin:0;display:flex;flex-direction:column}
+.ln-chap h2 small,.ln-lesson h2 small{font-size:.7rem;color:#6E6A62;letter-spacing:.12em}
+.ln-chap .fx-hint,#learnNext .fx-hint,.ln-lesson .fx-hint{font-family:inherit}
+.ln-cnt,.ln-soon{font-size:.8rem;font-weight:700;color:#1E7A50;white-space:nowrap}.ln-soon{color:#6E6A62}
+.ln-chap.soon{opacity:.7}
+.ln-nt{font-weight:700;font-size:1.05rem;margin:6px 0 4px}
+#learnNext .small-btn{font-family:inherit;border-radius:6px}
+.ln-lesson .ln-h{font-family:inherit;font-size:1.25rem;margin:8px 0 4px}
+.ln-back{font-family:inherit;margin-bottom:6px}
+.ln-fig{margin:14px 0 0;padding:10px;border:1.5px dashed #BDB6A5;border-radius:6px;background:#FFFEFB}.ln-fig svg{width:100%;height:auto;display:block;font-family:"Courier Prime","Courier New",monospace;fill:#1F1F1F}
+.ln-mine .linkbtn{margin-top:6px;font-family:inherit}
+.ln-lesson .btn{font-family:inherit;border-radius:6px}
+.ln-lesson .chip{font-family:inherit;border-radius:6px}
+#viewLearn .recy-stage{margin-top:6px}
+@media (min-width:1100px){#viewLearn .vcol-r>.ln-chap:first-child,#viewLearn .vcol-r>.ln-lesson:first-child{margin-top:12px}}
+
 .learn-btn{margin-left:auto;display:flex;align-items:center;gap:6px;border:1px dashed #C2AE7F;background:rgba(255,255,255,.55);color:#1B2430;border-radius:10px;padding:6px 10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
 .learn-btn .ic{width:18px;height:18px;fill:currentColor}
 .learn-btn + .usd-pill{margin-left:0}
 @media (max-width:420px){.learn-btn span{display:none}.learn-btn{padding:7px 9px}}
-.learn-sheet{max-height:92vh}
-.ln-head{display:flex;align-items:center;gap:10px;border-bottom:1.5px dashed #BDB6A5;padding-bottom:10px;margin-bottom:10px}
-.ln-head h3{flex:1;margin:0;text-align:center}
 .ln-intro p{margin:0 0 8px;line-height:1.5}
 .ln-prog{height:8px;border-radius:4px;background:#EAE3D3;overflow:hidden}.ln-prog span{display:block;height:100%;background:#1E7A50}
-.ln-chap{margin-top:18px}.ln-chap h4{margin:0;font-size:1rem;display:flex;flex-direction:column}.ln-chap h4 span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#6E6A62}
 .ln-chap.soon{opacity:.55}.ln-chap .fx-hint{margin:2px 0 6px}
 .ln-item{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:#FFFEFB;border:1.5px dashed #BDB6A5;border-radius:6px;padding:12px;margin-top:8px;font:inherit;color:inherit;cursor:pointer}
 .ln-item .ln-m{font-size:.8rem;color:#6E6A62;white-space:nowrap}.ln-item.done .ln-m{color:#1E7A50}
@@ -1484,7 +1503,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 /* Resumen: la ciudad siempre de día, también en modo oscuro */
 #scene[data-scene="fixed"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
 /* Todos los fondos con la misma intensidad que Resumen (apagados, para que se lea la app) */
-#scene[data-scene="fixed"] svg,#scene[data-scene="list"] svg,#scene[data-scene="jars"] svg{opacity:.55;filter:saturate(.8)}
+#scene[data-scene="fixed"] svg,#scene[data-scene="list"] svg,#scene[data-scene="jars"] svg,#scene[data-scene="learn"] svg{opacity:.55;filter:saturate(.8)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #scene[data-scene] svg{opacity:.7} }
 :root[data-theme="dark"] #scene[data-scene] svg{opacity:.7}
 #scene[data-scene="dash"]{--sc-1:#F7F2E8;--sc-2:#EADFCB;--sc-3:#B8A78C;--sc-wood:#D7AE7E;--sc-wood2:#B4844F;--sc-warm:#F4C24E;--sc-red:#EE8A73;--sc-green:#76C29B;--sc-blue:#8DB4E6;--sc-sky:#D6E9FA}
@@ -1499,7 +1518,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 @media (min-width:1100px){
   .wrap{max-width:1240px;padding-left:32px;padding-right:32px}
   .main-tabs{margin-bottom:10px}
-  #viewList:not([hidden]),#viewDash:not([hidden]),#viewFixed:not([hidden]),#viewJars:not([hidden]){display:grid;grid-template-columns:minmax(380px,430px) minmax(0,1fr);column-gap:32px;align-items:start}
+  #viewList:not([hidden]),#viewDash:not([hidden]),#viewFixed:not([hidden]),#viewJars:not([hidden]),#viewLearn:not([hidden]){display:grid;grid-template-columns:minmax(380px,430px) minmax(0,1fr);column-gap:32px;align-items:start}
   .vcol-l{display:block;position:static;min-width:0}
   .vcol-l.stick{position:sticky}
   .vcol-r{display:block;min-width:0}
@@ -1527,7 +1546,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <span class="logo">Rec<span>eater</span></span>
       <span class="hello" id="hello" hidden></span>
     </div>
-    <button type="button" class="learn-btn" id="learnBtn" aria-label="La escuelita de Recy: aprender de finanzas"><svg class="ic" aria-hidden="true"><use href="#i-grad"/></svg><span>Aprender</span></button>
+    <button type="button" class="learn-btn" id="learnBtn" aria-label="Aprender de finanzas"><svg class="ic" aria-hidden="true"><use href="#i-grad"/></svg><span>Aprender</span></button>
     <button type="button" class="usd-pill" id="usdPill" hidden aria-label="Cotización del dólar"></button>
     <button type="button" class="icon-btn gear" id="setBtn" aria-label="Ajustes">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
@@ -1641,6 +1660,12 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <section class="recy-stage" id="stageFixed" aria-label="Fijos del período"></section>
     <div id="fixedList"></div>
     <button type="button" class="small-btn" id="newFixed" hidden>+ Nuevo gasto fijo</button>
+  </div>
+
+  <div id="viewLearn" hidden>
+    <section class="recy-stage" id="stageLearn" aria-label="Tu progreso"></section>
+    <section class="card ln-next" id="learnNext"></section>
+    <div id="learnMain"></div>
   </div>
 
   <div id="viewJars" hidden>
@@ -2219,11 +2244,6 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
 </div>
 <button type="button" class="go-top" id="goTop" aria-label="Volver arriba" hidden><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
-<div class="sheet-bg" id="learnBg"></div>
-<div class="sheet notepad learn-sheet" id="learnSheet" role="dialog" aria-modal="true" aria-labelledby="learnTitle">
-  <div class="ln-head"><button type="button" class="linkbtn" id="learnBack" hidden>‹ Índice</button><h3 id="learnTitle">La escuelita de Recy</h3><button type="button" class="small-btn primary" id="learnClose">Cerrar</button></div>
-  <div id="learnBox"></div>
-</div>
 <div class="sheet-bg" id="accBg"></div>
 <div class="sheet notepad" id="accSheet" role="dialog" aria-modal="true" aria-labelledby="accTitle">
   <h3 id="accTitle">Dónde está tu plata</h3>
@@ -2285,7 +2305,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-19.0600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-19.0700";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3111,6 +3131,7 @@ window.addEventListener("resize", () => setTimeout(equalizeBoards, 150));
 function fitLeftCol(){ document.querySelectorAll(".vcol-l").forEach(c => { c.classList.remove("stick"); if (innerWidth >= 1100 && c.offsetParent && c.getBoundingClientRect().height <= innerHeight - 120) c.classList.add("stick"); }); }
 window.addEventListener("resize", () => setTimeout(fitLeftCol, 160));
 function render(){
+  if (learnOn){ setScene("learn"); return; }
   queueMicrotask(() => { try { renderAccounts(); } catch {} });
   setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); });
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
@@ -6293,7 +6314,7 @@ function renderMonthClose(){
     const L = document.createElement("div"), Rt = document.createElement("div"); L.className = "vcol-l"; Rt.className = "vcol-r";
     const kids = [...v.children], right = kids.filter(k => k.matches(rightSel));
     kids.forEach(k => (right.includes(k) ? Rt : L).append(k)); v.append(L, Rt); };
-  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList, #yieldCard");
+  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList, #yieldCard"); wrap("viewLearn", "#learnMain");
   const paper = document.querySelector("#viewDash .paper"); if (paper && !paper.querySelector(".paper-cols")){
     const cols = document.createElement("div"); cols.className = "paper-cols"; const A = document.createElement("div"), Bc = document.createElement("div"); A.className = "pcol-a"; Bc.className = "pcol-b";
     const secs = [...paper.querySelectorAll(":scope > section")];
@@ -7101,6 +7122,37 @@ const SCENES = {
     let posts = ""; for (let x = -6; x < WW + 10; x += 210) posts += `<rect x="${x}" y="0" width="16" height="800" fill="#3E2E24"/><rect x="${x + 12}" y="0" width="4" height="800" fill="#000" opacity=".15"/>`;
     let planks = ""; for (let x = 0; x < WW; x += 42) planks += `<rect x="${x}" y="0" width="2" height="800" fill="#2F231B" opacity=".35"/>`;
     return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#46352A"/>${planks}<rect width="${WW}" height="800" fill="#000" opacity=".06"/>${sh}${posts}<rect width="${WW}" height="40" fill="#3E2E24"/><rect y="36" width="${WW}" height="8" fill="#5E4636"/></svg>`;
+  },
+  // Escuelita: un estudio tranquilo. Pared con boiserie, ventana con la ciudad, cuadro con un gráfico, biblioteca, escritorio con lámpara, libros y planta
+  learn: (W, colU) => {
+    const wide = W > 0, WW = wide ? W : 420, R = sceneRng(11);
+    const s = wide ? Math.max(0, (WW - colU) / 2) : 0, lz = wide ? Math.max(130, s / 2) : 95, rz = wide ? WW - Math.max(130, s / 2) : 325;
+    const books = (x, base, n) => { let o = "", cx = x; const cs = ["#C9374B","#2F5BEA","#1E7A50","#F4C24E","#7A5AC8","#E08A2C","#5B6B82"];
+      for (let i = 0; i < n; i++){ const w = 10 + Math.floor(R() * 8), h = 46 + Math.floor(R() * 22), c = cs[Math.floor(R() * cs.length)];
+        if (R() < .12){ o += `<rect x="${cx + 4}" y="${base - h + 6}" width="${w}" height="${h - 6}" rx="1" fill="${c}" transform="rotate(12 ${cx + 4} ${base})"/>`; cx += w + 10; continue; }
+        o += `<rect x="${cx}" y="${base - h}" width="${w}" height="${h}" rx="1.5" fill="${c}"/><rect x="${cx + 2}" y="${base - h + 8}" width="${w - 4}" height="3" fill="#fff" opacity=".45"/>`; cx += w + 1; } return o; };
+    const shelf = (x, w) => { let o = `<rect x="${x - 8}" y="150" width="${w + 16}" height="420" fill="#7A5638"/>`;
+      for (let y = 230; y <= 550; y += 80){ o += `<rect x="${x}" y="${y - 72}" width="${w}" height="72" fill="#5E4129"/>`; o += books(x + 6, y, Math.floor(w / 14)); o += `<rect x="${x - 8}" y="${y}" width="${w + 16}" height="8" fill="#8E6845"/>`; }
+      return o; };
+    const win = (cx) => { let b = ""; for (let i = 0; i < 6; i++){ const bw = 18 + R() * 16, bh = 30 + R() * 60, bx = cx - 70 + i * 24; b += `<rect x="${bx}" y="${300 - bh}" width="${bw}" height="${bh}" fill="${["#A9B8C8","#C2CCD6","#97A8BA"][i % 3]}"/>`; }
+      return `<rect x="${cx - 86}" y="120" width="172" height="196" rx="4" fill="#8E6845"/><rect x="${cx - 76}" y="130" width="152" height="176" fill="#D6E9FA"/>${b}<circle cx="${cx + 40}" cy="164" r="14" fill="#F4C24E" opacity=".8"/>
+        <rect x="${cx - 3}" y="130" width="6" height="176" fill="#8E6845"/><rect x="${cx - 76}" y="214" width="152" height="6" fill="#8E6845"/><rect x="${cx - 96}" y="312" width="192" height="12" rx="3" fill="#7A5638"/>`; };
+    const chart = (cx, cy) => `<rect x="${cx - 62}" y="${cy - 46}" width="124" height="92" rx="3" fill="#7A5638"/><rect x="${cx - 54}" y="${cy - 38}" width="108" height="76" fill="#FBF8F1"/>
+      <polyline points="${cx - 44},${cy + 26} ${cx - 24},${cy + 10} ${cx - 6},${cy + 16} ${cx + 14},${cy - 6} ${cx + 30},${cy} ${cx + 44},${cy - 24}" fill="none" stroke="#1E7A50" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="${cx - 46}" y1="${cy + 30}" x2="${cx + 46}" y2="${cy + 30}" stroke="#BDB6A5" stroke-width="2"/>`;
+    const desk = (cx) => `<rect x="${cx - 120}" y="640" width="240" height="18" rx="3" fill="#8E6845"/><rect x="${cx - 110}" y="658" width="14" height="142" fill="#6E4D33"/><rect x="${cx + 96}" y="658" width="14" height="142" fill="#6E4D33"/>
+      <rect x="${cx - 96}" y="658" width="80" height="60" fill="#7A5638"/><rect x="${cx - 62}" y="684" width="14" height="4" rx="2" fill="#D7AE7E"/>
+      <path d="M${cx + 60} 640 v-70 l-34 -30" stroke="#3E3A36" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M${cx + 4} 532 l40 -16 l12 30 z" fill="#2F5BEA"/><ellipse cx="${cx + 60}" cy="640" rx="22" ry="5" fill="#3E3A36"/>
+      <rect x="${cx - 70}" y="618" width="58" height="10" fill="#C9374B"/><rect x="${cx - 66}" y="608" width="52" height="10" fill="#1E7A50"/><rect x="${cx - 72}" y="628" width="62" height="12" fill="#F4C24E"/>
+      <rect x="${cx - 2}" y="612" width="24" height="28" rx="4" fill="#FBF8F1" stroke="#BDB6A5" stroke-width="2"/><path d="M${cx + 22} 618 q10 4 0 14" stroke="#BDB6A5" stroke-width="3" fill="none"/>`;
+    const plant = (cx) => `<path d="M${cx - 18} 800 l4 -56 h28 l4 56z" fill="#C97B62"/><g fill="#76C29B"><ellipse cx="${cx - 16}" cy="720" rx="12" ry="28" transform="rotate(-25 ${cx - 16} 720)"/><ellipse cx="${cx + 16}" cy="716" rx="12" ry="30" transform="rotate(25 ${cx + 16} 716)"/><ellipse cx="${cx}" cy="700" rx="11" ry="34"/></g>`;
+    let wain = ""; for (let x = 10; x < WW; x += 90) wain += `<rect x="${x}" y="606" width="74" height="150" rx="3" fill="none" stroke="#C9B48F" stroke-width="3"/>`;
+    let stripes = ""; for (let x = 0; x < WW; x += 36) stripes += `<rect x="${x}" y="0" width="18" height="580" fill="#E6DBC6" opacity=".55"/>`;
+    const left = wide ? `${shelf(lz - 110, 220)}` : `${shelf(10, 150)}`;
+    const right = wide ? `${win(rz)}${chart(rz, 420)}` : `${win(rz - 10)}${chart(rz - 10, 420)}`;
+    return `<svg viewBox="0 0 ${WW} 800" preserveAspectRatio="xMidYMax slice"><rect width="${WW}" height="800" fill="#EFE6D6"/>${stripes}
+      <rect y="580" width="${WW}" height="220" fill="#D9C29A"/><rect y="580" width="${WW}" height="12" fill="#B4844F"/>${wain}<rect y="770" width="${WW}" height="30" fill="#8E6845"/>
+      ${left}${right}${wide ? desk(rz) + plant(lz + 150) : plant(380)}</svg>`;
   }
 };
 let sceneOn = null, sceneKey = "";
@@ -7963,7 +8015,7 @@ const LEARN = [
         <p>Anotar no es para retarte. Es para tener <b>un mapa</b>: no podés decidir a dónde ir si no sabés dónde estás parado.</p>
         <p>No hace falta que sea perfecto. Con anotar lo grande y tener una idea de lo chico ya alcanza para tomar mejores decisiones. Si un día te olvidás, no pasa nada: corregís el saldo y seguís.</p>`,
       take: "Anotar te da un mapa. No tiene que ser perfecto, tiene que ser constante.",
-      mine: () => { const n = data.expenses.length; return n ? `Ya cargaste ${n} ${n === 1 ? "gasto" : "gastos"}. Mirá el Diario de Recy: ahí está tu mapa del mes.` : null; },
+      mine: () => { const n = data.expenses.length; return n ? { t: `Ya cargaste ${n} ${n === 1 ? "gasto" : "gastos"}. En el Diario de Recy está tu mapa del mes.`, go: "dash", label: "Ir al Diario de Recy" } : { t: "Todavía no cargaste gastos. Probá con el último que hiciste.", go: "list", label: "Ir a Movimientos" }; },
       q: { t: "¿Para qué sirve anotar los gastos?", o: ["Para sentirte culpable", "Para saber en qué se va la plata y decidir mejor", "Para que el banco te dé más crédito"], a: 1 } },
     { id: "separar", title: "Separar la plata en tres partes", min: 3,
       body: `<p>Una forma simple de ordenarte: apenas cobrás, pensá tu plata en <b>tres partes</b>.</p>
@@ -7975,7 +8027,7 @@ const LEARN = [
       take: "Apartá el ahorro apenas cobrás, no al final del mes.",
       mine: () => { const fx = data.fixed.filter(f => f.currency === "ARS" && (!f.end || f.end >= monthKey(new Date().getFullYear(), new Date().getMonth()))).reduce((a, f) => a + (+f.amount || 0), 0);
         const sal = typeof lastSalaryARS === "function" ? lastSalaryARS() : 0;
-        return fx && sal ? `Tus fijos en pesos son unos ${f0ARS(fx)} por mes: el ${Math.round(fx / sal * 100)}% de tu último sueldo.` : fx ? `Tus fijos en pesos suman unos ${f0ARS(fx)} por mes.` : null; },
+        const t = fx && sal ? `Tus fijos en pesos son unos ${f0ARS(fx)} por mes: el ${Math.round(fx / sal * 100)}% de tu último sueldo.` : fx ? `Tus fijos en pesos suman unos ${f0ARS(fx)} por mes.` : null; return t && { t, go: "fixed", label: "Ver tus fijos" }; },
       q: { t: "¿Cuándo conviene apartar la plata del ahorro?", o: ["Apenas cobrás", "A fin de mes, con lo que sobre", "Cuando haya una oferta"], a: 0 } },
     { id: "emergencia", title: "El fondo de emergencia", min: 3,
       body: `<p>Es plata guardada <b>solo para imprevistos</b>: se rompe la heladera, te quedás sin laburo, una urgencia médica. No es para vacaciones ni para el celu nuevo.</p>
@@ -7985,7 +8037,7 @@ const LEARN = [
       take: "Primero el colchón (3 a 6 meses de fijos, a mano y rindiendo); después, invertir.",
       mine: () => { const fx = data.fixed.filter(f => f.currency === "ARS").reduce((a, f) => a + (+f.amount || 0), 0); if (!fx) return null;
         let have = 0; try { const at = accTotal(); if (at != null) have = at; } catch {}
-        return have > 0 ? `Tus fijos son ${f0ARS(fx)} por mes. Con lo que tenés en tus cuentas (${f0ARS(have)}) cubrirías unos ${(have / fx).toFixed(1).replace(".", ",")} meses.` : `Con tus fijos, 3 meses de colchón serían ${f0ARS(fx * 3)}.`; },
+        return { t: have > 0 ? `Tus fijos son ${f0ARS(fx)} por mes. Con lo que tenés en tus cuentas (${f0ARS(have)}) cubrirías unos ${(have / fx).toFixed(1).replace(".", ",")} meses.` : `Con tus fijos, 3 meses de colchón serían ${f0ARS(fx * 3)}.`, go: "accounts", label: "Ver dónde está tu plata" }; },
       q: { t: "¿Dónde conviene tener el fondo de emergencia?", o: ["En acciones, para que crezca más", "En algo que puedas sacar enseguida y que rinda", "Debajo del colchón, en pesos"], a: 1 } },
     { id: "tarjeta", title: "La tarjeta de crédito, sin miedo", min: 3,
       body: `<p>La tarjeta no es plata extra: es plata que <b>ya gastaste</b> y vas a pagar después.</p>
@@ -7993,7 +8045,7 @@ const LEARN = [
         <p><b>Las cuotas sin interés</b> pueden convenir: con inflación, las cuotas "pierden valor" con el tiempo. Pero ojo: suman. Diez cuotas chiquitas de cosas distintas te comen el sueldo de los próximos meses.</p>
         <p>Por eso Receater te muestra las cuotas que vienen y cuánto podés ahorrar según tu tarjeta. Antes de comprar en cuotas, mirá "¿Me lo puedo comprar?".</p>`,
       take: "Pagá el total del resumen; las cuotas sin interés sirven, pero sumalas antes de comprar.",
-      mine: () => { if (!data.cards.length) return null; let a = 0; data.cards.forEach(c => { a += pendingFor(c).ars; }); return a > 0 ? `Hoy tenés ${f0ARS(a)} de cuotas o compras de tarjeta todavía sin pagar.` : null; },
+      mine: () => { if (!data.cards.length) return null; let a = 0; data.cards.forEach(c => { a += pendingFor(c).ars; }); return a > 0 ? { t: `Hoy tenés ${f0ARS(a)} de cuotas o compras de tarjeta todavía sin pagar.`, go: "dash", label: "Ver tus tarjetas en el Diario" } : null; },
       q: { t: "¿Qué pasa si pagás solo el mínimo de la tarjeta?", o: ["Nada, es lo normal", "Te cobran intereses muy altos sobre el resto", "El banco te hace un descuento"], a: 1 } }
   ]},
   { id: "c2", title: "Gastar menos sin sufrir", sub: "Próximamente", soon: true, lessons: [] },
@@ -8014,8 +8066,8 @@ const LEARN = [
         <p>Ideal para: el fondo de emergencia y la plata del día a día.</p>`,
       take: "Plata del día a día y fondo de emergencia: que rindan, aunque sea poco, y que estén a mano.",
       mine: () => { try { const fl = accFlows(), idle = data.accounts.filter(a => !accProv(a.prov).cash).map(a => ({ a, st: accStatus(a, fl) })).filter(x => x.st.known && x.st.bal > 0 && !x.st.rate.tna);
-          if (!idle.length) return data.accounts.length ? "Tus cuentas ya rinden algo. Bien ahí." : "Cargá dónde tenés la plata en \"¿Dónde está tu plata?\" y te digo cuánto podría rendirte.";
-          const tot = idle.reduce((s, x) => s + x.st.bal, 0); return `Tenés ${f0ARS(tot)} en ${idle.map(x => x.a.name).join(" y ")} que no rinden. Con una TNA de 25% serían unos ${f0ARS(tot * 0.25 / 12)} por mes.`; } catch { return null; } },
+          if (!idle.length) return data.accounts.length ? { t: "Tus cuentas ya rinden algo. Bien ahí.", go: "accounts", label: "Ver tus cuentas" } : { t: "Cargá dónde tenés la plata y te digo cuánto podría rendirte.", go: "accounts", label: "Cargar mis cuentas" };
+          const tot = idle.reduce((s, x) => s + x.st.bal, 0); return { t: `Tenés ${f0ARS(tot)} en ${idle.map(x => x.a.name).join(" y ")} que no rinden. Con una TNA de 25% serían unos ${f0ARS(tot * 0.25 / 12)} por mes.`, go: "accounts", label: "Ver tus cuentas" }; } catch { return null; } },
       q: { t: "Una billetera paga 30% TNA. ¿Qué significa?", o: ["Ganás 30% por mes", "Ganás alrededor de 30% en un año, repartido día a día", "Ganás 30% el primer día"], a: 1 } },
     { id: "plazofijo", title: "Plazo fijo y plazo fijo UVA", min: 3,
       body: `<p><b>Plazo fijo tradicional</b>: le prestás plata al banco por un tiempo (mínimo 30 días) y te devuelve lo que pusiste más un interés que sabés <b>desde el primer día</b>. No la podés sacar antes.</p>
@@ -8055,37 +8107,79 @@ const LEARN = [
   { id: "c5", title: "Acciones desde cero", sub: "Próximamente", soon: true, lessons: [] },
   { id: "c6", title: "Impuestos y cosas raras", sub: "Próximamente", soon: true, lessons: [] }
 ];
-let learnCur = null;
+/* Dibujitos simples de algunas lecciones (mismos colores de la libreta) */
+const LEARN_FIG = {
+  separar: () => { const fx = data.fixed.filter(f => f.currency === "ARS").reduce((a, f) => a + (+f.amount || 0), 0), sal = typeof lastSalaryARS === "function" ? lastSalaryARS() : 0;
+    const p1 = fx && sal && fx < sal ? Math.max(.2, Math.min(.75, fx / sal)) : .5, p3 = .2, p2 = Math.max(.05, 1 - p1 - p3), W = 300;
+    const seg = (x, w, c, l) => `<rect x="${x}" y="40" width="${w}" height="34" fill="${c}"/><text x="${x + w / 2}" y="95" text-anchor="middle" font-size="12">${l}</text><text x="${x + w / 2}" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${Math.round(w / W * 100)}%</text>`;
+    return `<svg viewBox="0 0 320 110" role="img" aria-label="Tu sueldo en tres partes"><text x="10" y="24" font-size="13" font-weight="700">Tu sueldo, en tres partes${fx && sal ? " (con tus fijos)" : ""}</text><g transform="translate(10 0)">${seg(0, W * p1, "#C9374B", "fijos")}${seg(W * p1, W * p2, "#2F5BEA", "día a día")}${seg(W * (p1 + p2), W * p3, "#1E7A50", "ahorro")}</g></svg>`; },
+  emergencia: () => `<svg viewBox="0 0 320 120" role="img" aria-label="Frasco de emergencia"><text x="10" y="22" font-size="13" font-weight="700">El colchón, mes a mes</text>
+    ${[1,2,3,4,5,6].map((m, i) => `<g transform="translate(${18 + i * 50} 34)"><rect x="4" y="0" width="28" height="8" rx="2" fill="#B4844F"/><rect x="0" y="8" width="36" height="52" rx="9" fill="#FFFEFB" stroke="#1F1F1F" stroke-width="1.5"/><rect x="3" y="${60 - 49 * m / 6}" width="30" height="${49 * m / 6 - 3}" rx="6" fill="${m >= 3 ? "#1E7A50" : "#F4C24E"}"/><text x="18" y="76" text-anchor="middle" font-size="11">${m} ${m === 1 ? "mes" : "meses"}</text></g>`).join("")}
+    <text x="10" y="116" font-size="11" fill="#6E6A62">Desde 3 meses de fijos ya estás bastante cubierto.</text></svg>`,
+  tarjeta: () => { const pts = []; let d = 100; for (let m = 0; m <= 12; m++){ pts.push([30 + m * 22, 100 - Math.min(80, (d - 100) * .9)]); d = d * 1.08 - 5; }
+    return `<svg viewBox="0 0 320 130" role="img" aria-label="Deuda pagando el mínimo"><text x="10" y="20" font-size="13" font-weight="700">Pagando solo el mínimo, la deuda casi no baja</text>
+    <line x1="30" y1="100" x2="300" y2="100" stroke="#BDB6A5"/><polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="#C9374B" stroke-width="3"/>
+    <polyline points="30,40 52,100" fill="none" stroke="#1E7A50" stroke-width="3"/><text x="58" y="56" font-size="11" fill="#1E7A50">pagando el total</text><text x="200" y="${pts[12][1] - 8}" font-size="11" fill="#C9374B">pagando el mínimo</text>
+    <text x="30" y="118" font-size="10" fill="#6E6A62">mes 1</text><text x="282" y="118" font-size="10" fill="#6E6A62">mes 12</text></svg>`; },
+  triangulo: () => `<svg viewBox="0 0 320 150" role="img" aria-label="Rendimiento, seguridad y disponibilidad"><polygon points="160,18 40,128 280,128" fill="#FFFEFB" stroke="#1F1F1F" stroke-width="2"/>
+    <circle cx="160" cy="18" r="7" fill="#1E7A50"/><circle cx="40" cy="128" r="7" fill="#2F5BEA"/><circle cx="280" cy="128" r="7" fill="#F4C24E"/>
+    <text x="172" y="22" font-size="12" font-weight="700">rinde mucho</text><text x="16" y="147" font-size="12" font-weight="700">es seguro</text><text x="220" y="147" font-size="12" font-weight="700">la sacás ya</text>
+    <text x="160" y="96" text-anchor="middle" font-size="11" fill="#6E6A62">elegís dos,</text><text x="160" y="110" text-anchor="middle" font-size="11" fill="#6E6A62">nunca las tres</text></svg>`,
+  billeteras: () => { const P = 100000, r = .3, pts = []; for (let m = 0; m <= 12; m++) pts.push([30 + m * 22, 110 - (P * Math.pow(1 + r / 365, m * 30.4) - P) / 350]);
+    const end = P * Math.pow(1 + r / 365, 365) - P;
+    return `<svg viewBox="0 0 320 130" role="img" aria-label="Cómo crece la plata en una billetera"><text x="10" y="20" font-size="13" font-weight="700">$ 100.000 al 30% TNA, un año</text>
+    <line x1="30" y1="110" x2="300" y2="110" stroke="#BDB6A5"/><polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="#1E7A50" stroke-width="3"/>
+    <polyline points="30,110 294,110" fill="none" stroke="#C9374B" stroke-width="2" stroke-dasharray="5 4"/><text x="200" y="104" font-size="11" fill="#C9374B">quieta: $ 0</text>
+    <text x="150" y="${pts[12][1] + 4}" font-size="11" fill="#1E7A50">rindiendo: + ${f0ARS(end)}</text></svg>`; },
+  acciones: () => { const R = sceneRng ? sceneRng(9) : Math.random; let a = 60, b = 60; const A = [], B = [];
+    for (let i = 0; i <= 40; i++){ A.push([30 + i * 6.7, 110 - a]); B.push([30 + i * 6.7, 110 - b]); a = Math.max(8, a + (R() - .46) * 16); b = Math.max(8, b + (R() - .44) * 5); }
+    return `<svg viewBox="0 0 320 130" role="img" aria-label="Una empresa sola contra muchas"><text x="10" y="18" font-size="13" font-weight="700">Una sola empresa vs. muchas juntas</text>
+    <polyline points="${A.map(p => p.join(",")).join(" ")}" fill="none" stroke="#C9374B" stroke-width="2"/><polyline points="${B.map(p => p.join(",")).join(" ")}" fill="none" stroke="#2F5BEA" stroke-width="3"/>
+    <text x="30" y="126" font-size="11" fill="#C9374B">una sola: sube y baja fuerte</text><text x="190" y="126" font-size="11" fill="#2F5BEA">muchas: más tranqui</text></svg>`; }
+};
+var learnCur = null, learnOn = false;
 function learnDone(){ return LEARN.flatMap(c => c.lessons).filter(l => data.learned[l.id]).length; }
 function learnTotal(){ return LEARN.flatMap(c => c.lessons).length; }
+/* Ir de la escuelita a una parte de la app (los links de "En tu caso") */
+function learnGo(where){ exitLearn(); if (where === "accounts"){ setTab("list"); setTimeout(openAccounts, 60); } else setTab(where); window.scrollTo({ top: 0 }); }
 function renderLearn(){
-  const box = $("learnBox"); box.innerHTML = ""; $("learnSheet").scrollTop = 0;
+  const all = LEARN.flatMap(c => c.lessons), done = learnDone(), tot = learnTotal(), nextL = all.find(l => !data.learned[l.id]);
+  renderStage("stageLearn", { label: "Tu progreso", big: `${done} de ${tot}`, bar: done / tot,
+    lines: [done ? `Lecciones leídas: ${done}` : "Empezá por la primera, son cortitas", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!", "Pronto: acciones desde cero"],
+    mood: done === tot ? "full" : "happy", line: done ? "¡Vas bien! Una lección por día y listo." : "Vení que te explico todo sin vueltas." });
+  const nx = $("learnNext"); nx.innerHTML = "";
+  if (!learnCur && nextL){ nx.hidden = false;
+    nx.innerHTML = `<div class="card-head"><h2>Para hoy</h2></div><p class="ln-nt"></p><p class="fx-hint" style="margin:0 0 10px"></p><button type="button" class="small-btn primary">Leer ahora · ${nextL.min} min</button>`;
+    nx.querySelector(".ln-nt").textContent = nextL.title; nx.querySelector(".fx-hint").textContent = nextL.take;
+    nx.querySelector("button").onclick = () => { learnCur = nextL.id; renderLearn(); window.scrollTo({ top: 0 }); };
+  } else nx.hidden = true;
+  const box = $("learnMain"); box.innerHTML = "";
   if (!learnCur){
-    $("learnTitle").textContent = "La escuelita de Recy";
-    $("learnBack").hidden = true;
-    const intro = document.createElement("div"); intro.className = "ln-intro";
-    intro.innerHTML = `<p>Lecciones cortas para entender tu plata, pensadas para alguien que nunca leyó nada de finanzas. Cada una te lleva 2 o 3 minutos.</p>
-      <div class="ln-prog"><span style="width:${Math.round(learnDone() / learnTotal() * 100)}%"></span></div><p class="fx-hint" style="margin:4px 0 0">${learnDone()} de ${learnTotal()} lecciones leídas</p>`;
-    box.append(intro);
     LEARN.forEach((c, ci) => {
       const sec = document.createElement("section"); sec.className = "ln-chap" + (c.soon ? " soon" : "");
-      sec.innerHTML = `<h4><span>Capítulo ${ci + 1}</span>${c.title}</h4><p class="fx-hint">${c.sub}</p>`;
+      const n = c.lessons.filter(l => data.learned[l.id]).length;
+      sec.innerHTML = `<div class="card-head"><h2><small>Capítulo ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
       c.lessons.forEach(l => { const b = document.createElement("button"); b.type = "button"; b.className = "ln-item" + (data.learned[l.id] ? " done" : "");
         b.innerHTML = `<span class="ln-t"></span><span class="ln-m">${data.learned[l.id] ? "✓ leída" : l.min + " min"}</span>`; b.querySelector(".ln-t").textContent = l.title;
-        b.onclick = () => { learnCur = l.id; renderLearn(); }; sec.append(b); });
+        b.onclick = () => { learnCur = l.id; renderLearn(); window.scrollTo({ top: 0 }); }; sec.append(b); });
       box.append(sec);
     });
     const disc = document.createElement("p"); disc.className = "fx-hint ln-disc";
     disc.textContent = "Esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.";
     box.append(disc); return;
   }
-  const all = LEARN.flatMap(c => c.lessons), i = all.findIndex(l => l.id === learnCur), l = all[i];
-  $("learnTitle").textContent = l.title; $("learnBack").hidden = false;
+  const i = all.findIndex(l => l.id === learnCur), l = all[i], ch = LEARN.find(c => c.lessons.includes(l));
   const art = document.createElement("article"); art.className = "ln-lesson";
-  art.innerHTML = l.body + `<div class="ln-take"><b>Lo que te llevás</b><p></p></div>`;
-  art.querySelector(".ln-take p").textContent = l.take;
+  art.innerHTML = `<button type="button" class="linkbtn ln-back">‹ Todas las lecciones</button><div class="card-head"><h2><small>${ch.title} · ${l.min} min</small></h2></div><h3 class="ln-h"></h3>` + l.body;
+  art.querySelector(".ln-h").textContent = l.title;
+  art.querySelector(".ln-back").onclick = () => { learnCur = null; renderLearn(); window.scrollTo({ top: 0 }); };
+  if (LEARN_FIG[l.id]){ const f = document.createElement("figure"); f.className = "ln-fig"; try { f.innerHTML = LEARN_FIG[l.id](); art.append(f); } catch {} }
+  const take = document.createElement("div"); take.className = "ln-take"; take.innerHTML = "<b>Lo que te llevás</b><p></p>"; take.querySelector("p").textContent = l.take; art.append(take);
   let mine = null; try { mine = l.mine && l.mine(); } catch {}
-  if (mine){ const m = document.createElement("div"); m.className = "ln-mine"; m.innerHTML = "<b>En tu caso</b><p></p>"; m.querySelector("p").textContent = mine; art.append(m); }
+  if (typeof mine === "string") mine = { t: mine };
+  if (mine && mine.t){ const m = document.createElement("div"); m.className = "ln-mine"; m.innerHTML = "<b>En tu caso</b><p></p>"; m.querySelector("p").textContent = mine.t;
+    if (mine.go){ const a = document.createElement("button"); a.type = "button"; a.className = "linkbtn"; a.textContent = (mine.label || "Ir") + " ›"; a.onclick = () => learnGo(mine.go); m.append(a); }
+    art.append(m); }
   if (l.q){
     const q = document.createElement("div"); q.className = "ln-quiz"; q.innerHTML = `<b>Preguntita</b><p></p>`; q.querySelector("p").textContent = l.q.t;
     const fb = document.createElement("p"); fb.className = "ln-fb";
@@ -8095,18 +8189,24 @@ function renderLearn(){
         fb.textContent = ok ? "¡Bien! ✓" : "Casi. La correcta está marcada en verde."; }; q.append(b); });
     q.append(fb); art.append(q);
   }
-  const acts = document.createElement("div"); acts.className = "ln-acts";
-  const next = all[i + 1];
-  const done = document.createElement("button"); done.type = "button"; done.className = "btn primary";
-  done.textContent = next ? "Leída · siguiente" : "Leída · volver al índice";
-  done.onclick = () => { data.learned[l.id] = new Date().toISOString().slice(0, 10); persist(); learnCur = next ? next.id : null; renderLearn(); };
-  acts.append(done); art.append(acts);
-  box.append(art);
+  const acts = document.createElement("div"); acts.className = "ln-acts"; const next = all[i + 1];
+  const done2 = document.createElement("button"); done2.type = "button"; done2.className = "btn primary";
+  done2.textContent = next ? "Leída · siguiente" : "Leída · volver a las lecciones";
+  done2.onclick = () => { data.learned[l.id] = new Date().toISOString().slice(0, 10); persist(); learnCur = next ? next.id : null; renderLearn(); window.scrollTo({ top: 0 }); };
+  acts.append(done2); art.append(acts); box.append(art);
 }
-function openLearn(){ learnCur = null; renderLearn(); $("learnBg").classList.add("open"); $("learnSheet").classList.add("open"); }
-function closeLearn(){ $("learnBg").classList.remove("open"); $("learnSheet").classList.remove("open"); }
-$("learnBtn").onclick = openLearn; $("learnClose").onclick = closeLearn; $("learnBg").onclick = closeLearn;
-$("learnBack").onclick = () => { learnCur = null; renderLearn(); };
+/* Modo escuelita: se va todo lo de los gastos (pestañas, mes, botón de cargar) y queda solo aprender */
+function enterLearn(){ learnOn = true; learnCur = null; document.body.classList.add("learn-mode");
+  ["viewList","viewDash","viewJars","viewFixed"].forEach(id => $(id).hidden = true); $("viewLearn").hidden = false;
+  const b = $("learnBtn"); b.querySelector("span").textContent = "Volver a mis gastos"; b.querySelector("use").setAttribute("href", "#i-coins"); b.setAttribute("aria-label", "Volver a mis gastos");
+  setScene("learn"); renderLearn(); window.scrollTo({ top: 0 }); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); }); }
+function exitLearn(){ if (!learnOn) return; learnOn = false; document.body.classList.remove("learn-mode"); $("viewLearn").hidden = true;
+  const b = $("learnBtn"); b.querySelector("span").textContent = "Aprender"; b.querySelector("use").setAttribute("href", "#i-grad"); b.setAttribute("aria-label", "Aprender de finanzas");
+  setTab(tab); }
+$("learnBtn").onclick = () => learnOn ? exitLearn() : enterLearn();
+document.querySelector(".brand .logo").style.cursor = "pointer";
+document.querySelector(".brand .logo").addEventListener("click", () => { if (learnOn) exitLearn(); else window.scrollTo({ top: 0, behavior: "smooth" }); });
+
 
 /* Botón para volver arriba: aparece cuando bajaste bastante */
 (function(){ const b = $("goTop"); const upd = () => { b.hidden = window.scrollY < 700; };

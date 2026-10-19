@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.0600`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.0700`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -224,10 +224,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 
 ## 7c. La escuelita de Recy
 
-- Botón "Aprender" (gorro de egresado) en la barra de arriba, a la izquierda del dólar. Abre `#learnSheet` (libreta): índice por capítulos con progreso, y cada lección con texto simple, "Lo que te llevás", "En tu caso" (cálculo con los datos del usuario, opcional), una preguntita y "Leída · siguiente".
+- Es **otra sección**, separada de los gastos. El botón "Aprender" (gorro) de la barra de arriba, a la izquierda del dólar, entra al **modo escuelita** (`enterLearn`): se ocultan las pestañas, el mes y "Darle a Recy", y se muestra `#viewLearn` con su propio fondo (escena `learn`: un estudio con biblioteca, ventana, cuadro con gráfico, escritorio). El botón pasa a "Volver a mis gastos"; tocar el logo también vuelve (`exitLearn`). `render()` no hace nada mientras `learnOn`.
+- Dashboard: pizarra con Recy y el progreso, tarjeta "Para hoy" (próxima lección) y capítulos como libretas con espiral (mismo estilo que el Historial). En compu, dos columnas como el resto.
+- Lección: dentro de la página (no en una hoja): texto, dibujito (`LEARN_FIG`: tres partes del sueldo con tus fijos, frascos del colchón, deuda pagando el mínimo, triángulo, crecimiento al 30% TNA, una empresa vs. muchas), "Lo que te llevás", "En tu caso" con link a la parte de la app (`learnGo`: dash, list, fixed, accounts), preguntita y "Leída · siguiente".
 - Contenido en `LEARN` (JS). Progreso en `data.learned` `{ idLeccion: "YYYY-MM-DD" }`.
-- Hecho: capítulo 1 (Ordenar la plata: anotar, separar en tres, fondo de emergencia, tarjeta) y capítulo 4 (Dónde poner la plata: riesgo/plazo/disponibilidad, billeteras y money market, plazo fijo y UVA, dólar, bonos y letras, acciones y CEDEARs).
-- Siempre educación, nunca "comprá esto"; aviso al pie y sección en `terminos.html`. Pensado para alguien que no sabe nada: sin tecnicismos sin explicar.
+- Hecho: capítulo 1 (Ordenar la plata) y capítulo 4 (Dónde poner la plata). Los demás figuran como "pronto".
+- Siempre educación, nunca "comprá esto"; aviso al pie y sección en `terminos.html`. Pensado para alguien que no sabe nada.
 
 ## 7b. Plata que rinde
 
