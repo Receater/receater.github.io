@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-18.2335`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.0600`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -222,6 +222,13 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
 
+## 7c. La escuelita de Recy
+
+- Botón "Aprender" (gorro de egresado) en la barra de arriba, a la izquierda del dólar. Abre `#learnSheet` (libreta): índice por capítulos con progreso, y cada lección con texto simple, "Lo que te llevás", "En tu caso" (cálculo con los datos del usuario, opcional), una preguntita y "Leída · siguiente".
+- Contenido en `LEARN` (JS). Progreso en `data.learned` `{ idLeccion: "YYYY-MM-DD" }`.
+- Hecho: capítulo 1 (Ordenar la plata: anotar, separar en tres, fondo de emergencia, tarjeta) y capítulo 4 (Dónde poner la plata: riesgo/plazo/disponibilidad, billeteras y money market, plazo fijo y UVA, dólar, bonos y letras, acciones y CEDEARs).
+- Siempre educación, nunca "comprá esto"; aviso al pie y sección en `terminos.html`. Pensado para alguien que no sabe nada: sin tecnicismos sin explicar.
+
 ## 7b. Plata que rinde
 
 - Libreta "Plata que rinde" (mismo estilo que el Historial) en Ahorros (después de los frascos; en escritorio, columna derecha). Guarda `data.yields`: `{ id, kind:"fund"|"rate", name, amount, start, fund, units, vcp0, usd, tna, cur }`.
@@ -231,6 +238,10 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Falta confirmar en el navegador real que ArgentinaDatos responda (CORS); si falla, se ofrece "Cuenta con tasa".
 
 ## 8. Pendientes e ideas
+
+- **Escuelita, próximos pasos**: capítulos 2 (Gastar menos sin sufrir), 3 (Inflación y tasas: TNA/TEA, comparar), 5 (Acciones desde cero: qué es un broker, cómo abrir cuenta, cómo comprar, diversificar, estafas) y 6 (Impuestos: monotributo, Ganancias, percepciones con tarjeta en dólares). Después: glosario tocable y "No entendí, explicámelo de otra forma" / preguntar con Gemini.
+- **Recy dibujado por Tomas (lo hace él)**: guía y plantilla en `recy/` (`recy-guia.png`, `recy-plantilla-1024.png`). 10 emociones + 8 animaciones = 50 PNG de 1024×1024 transparentes, patitas en y=872, centrado en x=512. Cuando Tomas pase los PNG: achicarlos, armar tiras (sprites WebP) por animación y reemplazar `recySVG()`.
+- **Separar `index.html` en archivos** (propuesto, a confirmar con Tomas): CSS y JS en archivos aparte con `?v=BUILD` para el caché.
 
 - **Pulir la versión de escritorio**: la primera versión en columnas ya está; falta ajustar detalles con el uso.
 - **Importar movimientos de Mercado Pago o del banco**: subiendo el archivo exportado. Postergado por ahora.
