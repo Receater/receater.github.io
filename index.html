@@ -2237,7 +2237,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-18.2200";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-18.2230";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7759,6 +7759,8 @@ function openAccount(a){
       const p = accProv(prov), raw = b.querySelector("#acAmt").value.trim(), amt = parseAmount(raw);
       a.prov = prov; a.name = (prov === "otro" ? b.querySelector("#acName").value.trim() : "") || p.name; a.color = p.color;
       if (raw !== "" && !(amt >= 0)) return err("Poné cuánto tenés (puede ser 0).");
+      let diff = null;
+      if (raw !== "" && !isNew && st && st.known) diff = round2(amt) - st.bal;
       if (raw !== ""){ const t = new Date(); a.anchor = { amount: round2(amt), date: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}` }; }
       a.tna = b.querySelector("#acMan").checked ? (parseAmount(b.querySelector("#acTna").value) || 0) : null;
       if (p.cash){ a.tna = null; a.main = false; if (data.accounts.some(x => x.id !== a.id && accProv(x.prov).cash)) return err("Ya tenés el efectivo cargado."); }
@@ -7766,6 +7768,7 @@ function openAccount(a){
       if (a.main) data.accounts.forEach(x => { if (x.id !== a.id) x.main = false; });
       const i = data.accounts.findIndex(x => x.id === a.id); if (i >= 0) data.accounts[i] = a; else data.accounts.push(a);
       persist(); renderAccounts(); if (typeof renderMethods === "function") renderMethods();
+      if (diff != null) setTimeout(() => reconcileDiffs([{ acc: a, diff }]), 50);
     });
   const sel = box.querySelector("#acProv"), man = box.querySelector("#acMan"), tna = box.querySelector("#acTna"), txt = box.querySelector("#acRateTxt");
   const paint = () => {
@@ -7805,6 +7808,27 @@ function openAccounts(){ renderAccounts(); $("accBg").classList.add("open"); $("
 function closeAccounts(){ $("accBg").classList.remove("open"); $("accSheet").classList.remove("open"); }
 $("accOpen").onclick = openAccounts; $("accClose").onclick = closeAccounts; $("accBg").onclick = closeAccounts; $("accAdd").onclick = () => openAccount(null);
 
+
+/* Cuando el saldo real no coincide con el calculado: ofrecer cargar la diferencia como gasto o ingreso "sin anotar",
+   así también cierran la pizarra y el resumen (si no, solo se corrige el saldo) */
+function reconcileDiffs(diffs){
+  const iso = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`; };
+  const tot = round2(diffs.reduce((a, d) => a + d.diff, 0));
+  if (Math.abs(tot) < 1) return;
+  const lost = tot < 0, where = diffs.filter(d => Math.abs(d.diff) >= 1).map(d => d.acc.name).join(", ");
+  uiDialog({ msg: lost ? `Tenés ${f0ARS(-tot)} menos de lo que calculé (${where}). Seguro hay algún gasto que no cargaste. ¿Lo agrego como "Gasto sin anotar" para que la pizarra también cierre?`
+                       : `Tenés ${f0ARS(tot)} más de lo que calculé (${where}). ¿Lo agrego como "Ingreso sin anotar" para que la pizarra también cierre?`,
+    ok: "Sí, agregalo", cancel: "No, solo corregí el saldo" }).then(ok => {
+    if (!ok) return;
+    const t = new Date(), date = `${iso()}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+    diffs.filter(d => Math.abs(d.diff) >= 1).forEach(d => {
+      const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), cash = accProv(d.acc.prov).cash;
+      if (d.diff < 0) data.expenses.push({ id, source: "manual", amount: round2(-d.diff), currency: "ARS", category: "otros", date, note: "Gasto sin anotar (ajuste de saldo)", method: cash ? "cash" : "debit", accountId: d.acc.id, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false, adjust: true });
+      else data.incomes.push({ id, type: "income", amount: round2(d.diff), currency: "ARS", category: "otro_ing", date, note: "Ingreso sin anotar (ajuste de saldo)", accountId: d.acc.id, adjust: true });
+    });
+    persist(); render(); renderAccounts();
+  });
+}
 /* Pasar plata entre cuentas (transferencia propia, sacar del cajero, cargar la billetera) */
 function openAccMove(){
   if (data.accounts.length < 2){ uiDialog({ msg: "Primero agregá al menos dos lugares (por ejemplo, tu banco y el efectivo)." }); return; }
@@ -7836,8 +7860,10 @@ function openAccFix(){
     data.accounts.map(a => { const st = accStatus(a, flows); return `<label class="fx-hint" for="af_${a.id}" style="display:block;margin-top:8px">${a.name}</label><input class="input" id="af_${a.id}" data-acc="${a.id}" inputmode="decimal" autocomplete="off" placeholder="${st.known ? "Ahora: " + f0ARS(st.bal) : "¿Cuánto hay?"}">`; }).join(""),
     b => {
       const t = new Date(), d = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-      b.querySelectorAll("[data-acc]").forEach(i => { if (i.value.trim() === "") return; const v = parseAmount(i.value), a = accById(i.dataset.acc); if (a && v >= 0) a.anchor = { amount: round2(v), date: d }; });
-      persist(); renderAccounts();
+      const diffs = [];
+      b.querySelectorAll("[data-acc]").forEach(i => { if (i.value.trim() === "") return; const v = parseAmount(i.value), a = accById(i.dataset.acc); if (!a || !(v >= 0)) return;
+        const st = accStatus(a, flows); if (st.known) diffs.push({ acc: a, diff: round2(v) - st.bal }); a.anchor = { amount: round2(v), date: d }; });
+      persist(); renderAccounts(); setTimeout(() => reconcileDiffs(diffs), 50);
     });
   return box;
 }
