@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.1100`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-19.1930`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -222,13 +222,18 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
 
+## 7d. Datos para pagar un fijo
+
+- Cada fijo puede guardar `payTo` (link de pago, alias o CBU/CVU) y `payWho` (a nombre de quién, ej: Mamá). Se carga en la hoja del fijo ("Datos para pagarlo").
+- En el calendario de fijos pendientes y al abrir un fijo en la pestaña Fijos aparece un renglón con "Abrir link ›" (si empieza con http/www o tiene una barra) o "Copiar" (alias/CBU). Ojo: los alias llevan puntos, por eso no se toman como link.
+
 ## 7c. La escuelita de Recy
 
 - Es **otra sección**, separada de los gastos. El botón "Aprender" (gorro) de la barra de arriba, a la izquierda del dólar, entra al **modo escuelita** (`enterLearn`): se ocultan las pestañas, el mes y "Darle a Recy", y se muestra `#viewLearn` con su propio fondo (escena `learn`: un estudio con biblioteca, ventana, cuadro con gráfico, escritorio). El botón pasa a "Volver a mis gastos"; tocar el logo también vuelve (`exitLearn`). `render()` no hace nada mientras `learnOn`.
 - Dashboard: pizarra con Recy y el progreso, tarjeta "Para hoy" (próxima lección) y capítulos como libretas con espiral (mismo estilo que el Historial). En compu, dos columnas como el resto.
 - Lección: dentro de la página (no en una hoja): texto, dibujito (`LEARN_FIG`: tres partes del sueldo con tus fijos, frascos del colchón, deuda pagando el mínimo, triángulo, crecimiento al 30% TNA, una empresa vs. muchas), "Lo que te llevás", "En tu caso" con link a la parte de la app (`learnGo`: dash, list, fixed, accounts), preguntita y "Leída · siguiente".
 - Contenido en `LEARN` (JS). Progreso en `data.learned` `{ idLeccion: "YYYY-MM-DD" }`.
-- Hechos los 6 capítulos (26 lecciones): 1 Ordenar la plata · 2 Gastar menos sin sufrir · 3 Inflación y tasas · 4 Dónde poner la plata · 5 Acciones desde cero (broker/ALyC/CNV, cómo comprar, diversificar, miedo, estafas) · 6 Impuestos (dólar tarjeta y percepciones, monotributo, Ganancias y Bienes Personales; siempre aclarando que las reglas cambian y a chequear en ARCA). El aviso de "no es recomendación" va en rojo con ícono de alerta, al pie del índice y en cada lección de los capítulos 4 y 5.
+- Hechos los 6 capítulos (27 lecciones): 1 Ordenar la plata · 2 Gastar menos sin sufrir (arranca con "Darte gustos también es parte del plan": tono sano, sin culpa) · 3 Inflación y tasas · 4 Dónde poner la plata · 5 Acciones desde cero (broker/ALyC/CNV, cómo comprar, diversificar, miedo, estafas) · 6 Impuestos (dólar tarjeta y percepciones, monotributo, Ganancias y Bienes Personales; siempre aclarando que las reglas cambian y a chequear en ARCA). El aviso de "no es recomendación" va en rojo con ícono de alerta, al pie del índice y en cada lección de los capítulos 4 y 5.
 - Siempre educación, nunca "comprá esto"; aviso al pie y sección en `terminos.html`. Pensado para alguien que no sabe nada.
 
 ## 7b. Plata que rinde

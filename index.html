@@ -1036,6 +1036,10 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+.pay-to{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;margin:0 0 4px;border-top:1px dashed #D9D3C6;font-size:.85rem}
+.pay-to .pt-l{min-width:0;overflow-wrap:anywhere;color:#5A5650}
+.pay-to .pt-b{flex:0 0 auto;text-decoration:none;white-space:nowrap}
+
 body.learn-mode .main-tabs,body.learn-mode #monthNav,body.learn-mode .fab{display:none !important}
 .learn-btn{text-decoration:none}
 /* Escuelita: tarjetas de libreta, igual que el Historial de Ahorros */
@@ -2007,6 +2011,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
       <label class="opt"><input type="radio" name="fixHow" value="card"><div><strong>Con tarjeta</strong><span>Se suma solo a la tarjeta cada mes y queda pagado cuando pagás la tarjeta.</span>
         <div class="opt-extra">Tarjeta <select id="fixCard" aria-label="Tarjeta"></select></div></div></label>
     </div></div>
+  <div class="field"><label for="fixPayTo">Datos para pagarlo (opcional)</label>
+    <input class="input" id="fixPayTo" placeholder="Link de pago, alias o CBU" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input class="input" id="fixPayWho" placeholder="A nombre de (ej: Mamá, Lic. Pérez)" autocomplete="off" style="margin-top:8px">
+    <div class="fx-hint">Así lo tenés a mano: si es un link, lo abrís con un toque; si es un alias o CBU, lo copiás.</div></div>
   <div class="err" id="fixErr"></div>
   <div class="actions">
     <button type="button" class="btn danger" id="fixDel" hidden>Ya no lo pago</button>
@@ -2306,7 +2314,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-19.1100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-19.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3399,6 +3407,24 @@ function fixSessActs(i){
   box.append(btn("Editar", "", () => openFixed(i.f)));
   return box;
 }
+/* Datos para pagar un fijo: link (se abre) o alias/CBU (se copia) */
+/* Ojo: los alias (ej: mama.expensas.mp) también llevan puntos; es link solo si empieza con http/www o tiene una barra */
+function payToLink(v){ if (/^https?:\/\//i.test(v)) return v; if (/^www\./i.test(v) || /^[\w-]+(\.[\w-]+)+\/\S*$/.test(v)) return "https://" + v; return null; }
+function copyText(t){ if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select();
+  try { document.execCommand("copy"); } catch {} ta.remove(); return Promise.resolve(); }
+function payToEl(f){
+  if (!f.payTo) return null;
+  const w = document.createElement("div"); w.className = "pay-to";
+  const link = payToLink(f.payTo), isNum = /^\d[\d\s-]{15,}$/.test(f.payTo);
+  const lbl = document.createElement("span"); lbl.className = "pt-l";
+  lbl.textContent = (link ? "Link de pago" : isNum ? "CBU/CVU" : "Alias") + (f.payWho ? ` · ${f.payWho}` : "") + (link ? "" : `: ${f.payTo}`);
+  const b = document.createElement(link ? "a" : "button"); b.className = "small-btn pt-b";
+  if (link){ b.href = link; b.target = "_blank"; b.rel = "noopener"; b.textContent = "Abrir link ›"; }
+  else { b.type = "button"; b.textContent = "Copiar"; b.onclick = ev => { ev.stopPropagation(); copyText(f.payTo).then(() => { b.textContent = "Copiado ✓"; setTimeout(() => b.textContent = "Copiar", 1600); }); }; }
+  b.addEventListener("click", ev => ev.stopPropagation());
+  w.append(lbl, b); return w;
+}
 function renderFixedPend(){
   const box = $("fixedPend"); box.innerHTML = "";
   const owesIn = i => fixShared(i.f) && i.f.shares.some(p => !fixSharePaid(i.f, i.key, p.name));
@@ -3451,6 +3477,7 @@ function renderFixedPend(){
       done ? setTab("fixed") : card ? setTab("fixed") : openSheetForFixed(i);
     };
     paper.append(b);
+    if (!done){ const pt = payToEl(i.f); if (pt) paper.append(pt); }
     if (mOpen) paper.append(fixSessActs(i));
     if (fixShared(i.f)) i.f.shares.forEach(p => {
       const paid = fixSharePaid(i.f, i.key, p.name);
@@ -7348,6 +7375,7 @@ function renderFixed(){
         const pe = fixPayOf(i); if (pe) btn("Ver pago", "", () => openSheet(pe));
         btn("Editar", "", () => openFixed(i.f));
         t.append(acts);
+        const pt = payToEl(i.f); if (pt) t.append(pt);
       }
       if (fixShared(i.f)){
         const sh = document.createElement("div"); sh.className = "fx-shares";
@@ -7444,6 +7472,7 @@ function openFixed(f){
   if (f && f.cardId) cards.value = f.cardId;
   fixSharePeople = f && fixShared(f) ? f.shares.map(p => ({ ...p })) : []; fixShareManual = !!(f && fixShared(f));
   $("fixShareOn").checked = fixSharePeople.length > 0; $("fixSharePerson").value = ""; renderFixShare();
+  $("fixPayTo").value = f && f.payTo ? f.payTo : ""; $("fixPayWho").value = f && f.payWho ? f.payWho : "";
   $("fixDel").hidden = !f; $("fixErr").textContent = "";
   $("fixBg").classList.add("open"); $("fixSheet").classList.add("open");
   setTimeout(() => autoFocus($("fixName")), 120);
@@ -7462,16 +7491,17 @@ $("fixSave").onclick = async () => {
   const key = monthKey(...periodOf(new Date()));
   const shares = $("fixShareOn").checked ? fixSharePeople.filter(p => p.share > 0).map(p => ({ name: p.name, share: p.share })) : [];
   if ($("fixShareOn").checked && !shares.length){ $("fixErr").textContent = "Agregá con quién lo compartís y cuánto le toca, o sacá la opción de compartir."; return; }
+  const payTo = $("fixPayTo").value.trim(), payWho = $("fixPayWho").value.trim();
   let f = editingFix;
   if (f){
     if (amount !== fixAmountFor(f, key)){ f.history = (f.history || []).filter(h => h.from !== key); f.history.push({ from:key, amount }); }
     Object.assign(f, { name, category:$("fixCat").value, currency:fixCur, day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, amount, shares: shares,
-      perSession, weekday: perSession ? Number($("fixWeekday").value) : null });
+      perSession, weekday: perSession ? Number($("fixWeekday").value) : null, payTo: payTo || null, payWho: payWho || null });
   } else {
     f = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, category:$("fixCat").value, currency:fixCur, amount,
       day:Number($("fixDay").value), how, cardId: how === "card" ? $("fixCard").value : null, start:key, end:null,
       perSession, weekday: perSession ? Number($("fixWeekday").value) : null, sessAdj:{},
-      history: amount ? [{ from:key, amount }] : [], monthAmounts:{}, shares: shares, sharePaid:{} };
+      history: amount ? [{ from:key, amount }] : [], monthAmounts:{}, shares: shares, sharePaid:{}, payTo: payTo || null, payWho: payWho || null };
     data.fixed.push(f);
     if (how === "card"){
       // ¿Lo venías pagando? Si sí, se estima también en los pagos de tarjeta de antes; si es nuevo, arranca desde este mes
@@ -8051,10 +8081,20 @@ const LEARN = [
       q: { t: "¿Qué pasa si pagás solo el mínimo de la tarjeta?", o: ["Nada, es lo normal", "Te cobran intereses muy altos sobre el resto", "El banco te hace un descuento"], a: 1 } }
   ]},
   { id: "c2", title: "Gastar menos sin sufrir", sub: "Pequeños cambios que suman", lessons: [
+    { id: "gustos", title: "Darte gustos también es parte del plan", min: 3,
+      body: `<p>Antes de hablar de gastar menos, algo importante: <b>ordenar la plata no es castigarte</b>. Un plan que no deja lugar para disfrutar dura dos semanas y después se abandona.</p>
+        <p>Pedirte un delivery cada tanto, salir un fin de semana y gastar más de lo que "te da por día", comprarte algo que tenías ganas: <b>está bien</b>. Es sano. La plata también está para vivir.</p>
+        <p>La diferencia está en hacerlo <b>a propósito</b> y no por inercia:</p>
+        <ul><li>¿Un día te pasás del "por día"? Tranqui: los días siguientes se reacomodan solos. Receater recalcula todo.</li>
+        <li>Si podés, reservá una parte del mes para gustos sin culpa. Lo que está planeado no es un desliz.</li>
+        <li>Si un mes se te fue la mano, no pasa nada. No te retes: mirá qué pasó, aprendé algo y seguí. Un mes no arruina nada.</li></ul>
+        <p>La meta no es gastar lo menos posible: es que la plata vaya a lo que de verdad te importa.</p>`,
+      take: "Darse gustos es sano. Lo importante es elegirlos, no gastar lo mínimo. Un mal día o un mal mes no arruinan nada.",
+      q: { t: "Un sábado gastaste más de lo que te daba por día. ¿Qué conviene hacer?", o: ["Retarte y no gastar nada por una semana", "Nada grave: disfrutalo y los próximos días se reacomodan", "Dejar de anotar"], a: 1 } },
     { id: "hormiga", title: "Los gastos hormiga", min: 3,
       body: `<p>Son los gastos chiquitos de todos los días: el café, la gaseosa, el kiosco, el delivery "porque no tengo ganas". Uno solo no pesa. <b>Todos juntos, a fin de mes, pesan un montón.</b></p>
         <p>Ejemplo: $3.000 por día en "cositas" son unos $90.000 por mes y más de un millón por año.</p>
-        <p>No se trata de prohibirte todo. Se trata de <b>elegir</b>: si el café de la mañana te hace feliz, dejalo; si comprás algo solo por costumbre, ahí está el ahorro.</p>
+        <p>No se trata de prohibirte todo ni de sentirte culpable. Se trata de <b>elegir</b>: si el café de la mañana te hace feliz, dejalo, es plata bien usada. Si comprás algo solo por costumbre y ni lo disfrutás, ahí está el ahorro.</p>
         <p>Un truco: mirá en el Diario de Recy la categoría que más te sorprende y proponete bajarla un poco el mes que viene. Solo una por vez.</p>`,
       take: "Lo chico, repetido, es grande. No prohibas todo: elegí qué vale la pena.",
       mine: () => { const [y, m] = periodOf(new Date()); const small = data.expenses.filter(e => !isIncome(e) && e.currency === "ARS" && inPeriod(e, y, m) && e.amount < 8000);
@@ -8074,7 +8114,7 @@ const LEARN = [
         <ul><li><b>"Sin interés" con precio inflado:</b> compará con el precio de contado o con descuento por transferencia. A veces el contado es mucho más barato.</li>
         <li><b>Cuotas con interés:</b> casi nunca convienen para cosas que no necesitás.</li>
         <li><b>La bola de cuotas:</b> cada compra en cuotas parece chiquita, pero se suman y te comen el sueldo de los próximos meses.</li></ul>
-        <p>Antes de comprar, usá "¿Me lo puedo comprar?" en el Diario de Recy: te muestra cómo quedan los próximos meses con esa cuota.</p>`,
+        <p>Y si es algo que querés de verdad y entra en tu mes, compralo y disfrutalo. Antes, usá "¿Me lo puedo comprar?" en el Diario de Recy: te muestra cómo quedan los próximos meses con esa cuota.</p>`,
       take: "Cuotas sin interés: sí, si el precio es el mismo y la cuota entra cómoda los próximos meses.",
       mine: () => { if (!data.cards.length) return null; const n = data.expenses.filter(e => isCardExp(e) && (e.installments || 1) > 1).length;
         return n ? { t: `Tenés ${n} ${n === 1 ? "compra" : "compras"} en cuotas cargadas.`, go: "dash", label: "Ver tus cuotas en el Diario" } : null; },
