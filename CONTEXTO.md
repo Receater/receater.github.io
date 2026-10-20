@@ -268,6 +268,11 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 
 ## 8. Pendientes e ideas
 
+- **Notas de Tome (feedback de un amigo) sobre la escuelita** — para hacer después:
+  - Al terminar la guía de inicio, ver de entrada "0 de 27" en grande espanta: se lee como 27 tareas obligatorias ("como un formulario de 27 preguntas: da paja").
+  - Presentarlo más digerible: agrupar en temas (5 o 6 como máximo) y mostrar el progreso por tema ("0 de 6"); adentro de cada tema puede haber las lecciones que sean.
+  - Dejar claro que es opcional: presentarlo como una "side quest" disponible si querés, no necesaria para usar la app, pero muy recomendada.
+
 - **Escuelita, próximos pasos**: glosario tocable y "No entendí, explicámelo de otra forma" / preguntar con Gemini. Revisar cada tanto los datos de impuestos (cambian).
 - **Recy dibujado por Tomas (lo hace él)**: guía y plantilla en `recy/` (`recy-guia.png`, `recy-plantilla-1024.png`). 10 emociones + 8 animaciones = 50 PNG de 1024×1024 transparentes, patitas en y=872, centrado en x=512. Diseño nuevo de Tomas: Recy con lentes, boca con borde violeta oscuro (paleta violeta); sin brazo a la vista (solo lo saca en saludo, festejo y señalar); el papelito no es parte de Recy: va solo en Comer 1-3 y además suelto como `recy_papel.png` (y `recy_tiritas.png`). Tutorial completo en el doc "Cómo animar a Recy en Procreate" (claude.ai). Cuando Tomas pase los PNG: achicarlos, armar tiras (sprites WebP) por animación y reemplazar `recySVG()`.
 - **Separar `index.html` en archivos** (propuesto, a confirmar con Tomas): CSS y JS en archivos aparte con `?v=BUILD` para el caché.
