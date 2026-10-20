@@ -1036,6 +1036,7 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+.onb-lang{margin:0 0 12px;max-width:260px}
 .pb-ed .ic{width:15px;height:15px}
 .mp-row{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px dashed #D9D3C6;cursor:pointer}
 .mp-row.off{opacity:.5}.mp-row input[type=checkbox]{margin-top:4px;flex:0 0 auto;width:18px;height:18px}
@@ -2163,6 +2164,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
     <button type="button" class="set-row as-btn" id="setAi"><div><strong>Recy inteligente</strong><span id="setAiTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setNotif"><div><strong>Avisos en el celular</strong><span id="setNotifTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setRemind" hidden><div><strong>Recordatorio para cargar gastos</strong><span id="setRemindTxt"></span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setLang"><div><strong>Idioma / Language</strong><span id="setLangTxt">Español · English</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setPpl"><div><strong>Personas</strong><span>Con quién dividís gastos o te prestás plata.</span></div><span class="chev2">›</span></button>
   </div>
   <div class="set-group">
@@ -2330,7 +2332,10 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 </div>
 
 <script>
-const BUILD = "2026-10-20.1330";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
+  return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
+function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
+const BUILD = "2026-10-20.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4201,6 +4206,13 @@ function pbEdit(r){
         if (r.t === "split"){ r.p.share = round2(v); if (r.e.loan) r.e.amount = round2(v); } else r.s.amount = round2(v);
         persist(); render(); renderPersonBal(); });
     return box;
+  }
+  if (r.t === "loan"){
+    // Plata que te prestó: se corrige el ingreso (el préstamo) y con eso lo que le debés
+    miniDialog(`<p><b>¿Cuánto te prestó ${pb.name}?</b></p><input class="input" inputmode="decimal" autocomplete="off" value="${String(r.i.amount).replace(".", ",")}"><p id="pbeErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p>`,
+      b => { const v = parseAmount(b.querySelector("input").value); if (!(v > 0)){ b.querySelector("#pbeErr").textContent = "Poné un monto mayor a cero."; return false; }
+        r.i.amount = round2(v); persist(); render(); renderPersonBal(); });
+    return;
   }
   // El resto (lo pagó otra persona, préstamo, fijo compartido): se abre donde se cargó
   closePersonBal();
@@ -6175,6 +6187,9 @@ function renderOnb(){
   $("onbNext").textContent = st === "hola" ? "Empezar" : st === "listo" ? "¡A usarla!" : "Siguiente";
   $("onbNext").disabled = false;
   if (st === "hola"){
+    const lg = document.createElement("div"); lg.className = "seg onb-lang"; lg.setAttribute("role", "group"); lg.setAttribute("aria-label", "Idioma / Language");
+    [["es", "Español"], ["en", "English"]].forEach(([k, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.setAttribute("aria-pressed", String(LANG === k)); b.onclick = () => { if (LANG !== k) setLang(k); }; lg.append(b); });
+    B.append(lg);
     T("¡Hola! Soy Recy");
     P("Te ayudo a saber en qué se te va la plata y cuánto podés ahorrar.");
     P("En un minuto te muestro cómo funciona y cargamos lo básico juntos. Todo se puede cambiar después.");
@@ -6312,6 +6327,8 @@ function onbSave(){
 }
 $("onbNext").onclick = () => { if (ONB_STEPS[onbStep] === "listo"){ closeOnb(); return; } if (onbSave() === false) return; onbStep++; renderOnb(); };
 $("onbBack").onclick = () => { if (onbStep > 0){ onbStep--; renderOnb(); } };
+$("setLang").onclick = () => { const box = miniDialog('<p><b>Idioma / Language</b></p><div class="seg" role="group"><button type="button" data-l="es">Español</button><button type="button" data-l="en">English</button></div><p class="fx-hint" style="margin:8px 0 0">In English, the lessons and the legal pages are still in Spanish for now.</p>', () => {});
+  box.querySelectorAll("[data-l]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.l === LANG)); b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); }; }); };
 $("onbSkip").onclick = () => { if (ONB_STEPS[onbStep] === "hola"){ closeOnb(); return; } onbStep++; renderOnb(); };
 $("setOnb").onclick = () => { closeSettings(); openOnb(); };
 setTimeout(() => {
@@ -8381,6 +8398,7 @@ function renderLearn(){
         b.onclick = () => { learnCur = l.id; renderLearn(); window.scrollTo({ top: 0 }); }; sec.append(b); });
       box.append(sec);
     });
+    if (LANG === "en"){ const nt = document.createElement("p"); nt.className = "ln-disc"; nt.style.cssText = "background:#FBF8F1;color:#1F1F1F;border-color:#BDB6A5"; nt.textContent = "The lessons are only in Spanish for now, and some are about Argentina."; box.prepend(nt); }
     const disc = document.createElement("p"); disc.className = "ln-disc";
     disc.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-warning"/></svg><span>Ojo: esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.</span>';
     box.append(disc); return;
@@ -9180,6 +9198,683 @@ async function checkNewVersion(){
 }
 checkNewVersion();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
+
+const I18N_DICT = `Gasto por mes, últimos 6 meses	Spending per month, last 6 months
+Comprar en cuotas: cuándo sí y cuándo no	Buying in installments: when yes and when no
+Por qué anotar lo que gastás	Why track what you spend
+Así Recy entiende lo que le contás con tus palabras y lee las fotos de tus tickets. Usa la IA gratis de Google, con tu propia cuenta. Se hace	That way Recy understands what you tell it in your own words and reads your receipt photos. It uses Google's free AI, with your own account. It takes
+Se abre una página de Google. Si te pide aceptar condiciones, aceptá. Después tocá el botón azul	A Google page opens. If it asks you to accept terms, accept. Then tap the blue button
+Sin Recy inteligente puedo leer el PDF del banco, pero no adivino las categorías (te las pregunto todas). Activándolo (gratis) también lee fotos y sugiere categorías.	Without Smart Recy I can read the bank PDF, but I can't guess categories (I'll ask you all of them). Turning it on (free) also reads photos and suggests categories.
+Subí el PDF del resumen (o fotos de cada hoja). Recy lee cada compra, se fija cuáles ya cargaste y te pregunta las que no sabe de qué son.	Upload the statement PDF (or photos of each page). Recy reads each purchase, checks which ones you already logged and asks about the ones it doesn't know.
+Enter the most you want to spend per month in each category (in pesos). Recy warns you at 80% and when you go over. Leave empty for no limit.	Enter the most you want to spend per month in each category (in pesos). Recy warns you at 80% and when you go over. Leave empty for no limit.
+"Create API key"	"Create API key"
++ AGREGAR	+ ADD
++ Agregar cuenta	+ Add account
++ Agregar producto	+ Add item
++ Categoría	+ Category
++ Detallar productos	+ List items
++ Frasco	+ Jar
++ Nueva categoría	+ New category
++ Nuevo frasco	+ New jar
++ Nuevo gasto fijo	+ New fixed expense
++ Tarjeta	+ Card
+, eligiendo la tarjeta y las cuotas.	, choosing the card and installments.
+A nombre de (ej: Mamá, Lic. Pérez)	Account holder (e.g. Mom, Dr. Smith)
+A quién le prestaste	Who you lent to
+Acciones desde cero	Stocks from scratch
+Acciones y CEDEARs: la idea general	Stocks and CEDEARs: the big picture
+Activar	Turn on
+Activar Recy	Turn on Recy
+Activá Recy inteligente	Turn on Smart Recy
+Actualizar saldos	Update balances
+Actualizar valor	Update value
+Agregar	Add
+Agregar tarjeta	Add card
+Ahora no	Not now
+Ahorrado	Saved
+Ahorrar en dólares	Saving in dollars
+Ahorro	Savings
+Ahorros	Savings
+Ajustes	Settings
+Al entrar aceptás los	By signing in you accept the
+Al vencimiento	On the due date
+Anotar	Save
+Anotar te da un mapa. No tiene que ser perfecto, tiene que ser constante.	Tracking gives you a map. It doesn't have to be perfect, it has to be consistent.
+Apagados · tocá para prenderlos. Te aviso vencimientos, el cobro y si te olvidaste de cargar.	Off · tap to turn on. I'll remind you of due dates, payday and if you forgot to log something.
+Aparte de lo que ves en pesos	Besides what you see in pesos
+Aprender	Learn
+Aprender de finanzas	Learn about money
+Arriba poné el total que pagó. Vos le debés tu parte, y si esa persona ya te debía algo, se descuenta.	Put the total they paid above. You owe them your share, and if they already owed you something, it's discounted.
+Así lo tenés a mano: si es un link, lo abrís con un toque; si es un alias o CBU, lo copiás.	Keep it handy: if it's a link, open it with one tap; if it's an alias or account number, copy it.
+Avisos en el celular	Phone notifications
+Azul	Blue
+Año	Year
+Año 1	Year 1
+Billeteras que rinden y fondos money market	Wallets that pay interest and money market funds
+Bonos y letras, sin vueltas	Bonds and bills, plain and simple
+Borrar	Delete
+Borrar la búsqueda	Clear search
+Borrar movimiento	Delete entry
+Borrar todo lo de este dispositivo	Delete everything on this device
+Borrar esta cuenta	Delete this account
+Buscar categoría	Search category
+Buscar en tus movimientos	Search your entries
+Buscar: Starbucks, Delfi, cine, 15000…	Search: Starbucks, cinema, 15000…
+Buscá: Fima, Cocos, Mercado…	Search: Fima, Cocos, Mercado…
+Cada vez que cargás un sueldo te preguntamos hasta cuándo te tiene que durar.	Every time you log a paycheck we ask how long it has to last.
+Cambiar	Change
+Cambiar topes por categoría	Change category limits
+Cambió el precio	The price changed
+Cancelar	Cancel
+Cantidad de cuotas	Number of installments
+Cargar gasto	Log expense
+Cargá con tus palabras o con foto del ticket.	Log it in your own words or with a photo of the receipt.
+Cargá un par de semanas de gastos y te muestro qué días gastás más.	Log a couple of weeks of expenses and I'll show you which days you spend the most.
+Casa y servicios	Home and bills
+Categoría	Category
+Celeste	Light blue
+Cerrar	Close
+Cobrás el día 1	You get paid on the 1st
+Color	Color
+Color del frasco	Jar color
+Comida afuera	Eating out
+Completar	Fill in
+Completá algo y te muestro cómo te quedaría cada mes.	Fill something in and I'll show you how each month would look.
+Completá dos datos y el tercero se calcula solo.	Fill in two and the third is calculated.
+Compra de dólares	Dollar purchase
+Comprar en cuotas: cuándo sí y cuándo no	Buying in installments: when yes and when no
+Comprar en dólares con la tarjeta	Paying in dollars with your card
+Con quién compartís el fijo	Who you share this fixed expense with
+Con quién dividís	Who you split with
+Con quién dividís gastos o te prestás plata.	People you split expenses or lend money with.
+Con tarjeta	By card
+Conectando con tu Drive…	Connecting to your Drive…
+Contale a Recy qué gastaste	Tell Recy what you spent
+Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede	Tell Recy: yesterday I went to the movies, spent 50,000 and half is Fede's
+Contale lo que gastaste con tus palabras o sacale una foto al ticket. Para eso necesita que lo actives una vez.	Tell it what you spent in your own words or take a photo of the receipt. You need to turn it on once.
+Contale lo que gastaste con tus palabras o sacale una foto al ticket. Se activa en un minuto.	Tell it what you spent in your own words or take a photo of the receipt. It takes a minute to turn on.
+Corregir cuánto hay en los frascos	Fix how much is in the jars
+Corregir cuánto te queda	Fix how much you have left
+Corregir este monto	Fix this amount
+Cotización	Exchange rate
+Cotización del dólar	Dollar rate
+Cuando cambie lo que tenés (pusiste o sacaste plata), actualizá este número con lo que diga tu app.	When what you have changes (you added or took money), update this number with what your app says.
+Cuando cobro	When I get paid
+Cuenta	Account
+Cuenta como gasto hasta que te lo devuelva.	Counts as an expense until they pay you back.
+Cuenta con tasa	Account with a rate
+Cuentas con amigos	Money with friends
+Cuotas	Installments
+Cuotas que vienen	Upcoming installments
+Cuotas que ya pagaste	Installments already paid
+Cuándo cobrás	When you get paid
+Cuánto	How much
+Cuánto pagaste	How much you paid
+Cuánto podés ahorrar	How much you can save
+Cuánto sale en total	Total price
+Código de Google Gemini	Google Gemini key
+Cómo darte cuenta de una estafa	How to spot a scam
+Cómo es comprar, paso a paso	How buying works, step by step
+Cómo funciona Receater y cargar lo básico.	How Receater works and setting up the basics.
+Cómo lo pagás	How you pay it
+Darle a Recy	Feed Recy
+Darte gustos también es parte del plan	Treating yourself is part of the plan
+Datos del mes	Month facts
+Datos para pagarlo (opcional)	Payment details (optional)
+De lo que cobraste	Of what you got paid
+De menos a más riesgo	From less to more risk
+Decime cuánto hay	Tell me how much
+Desactivar	Turn off
+Descargar	Download
+Desde que empezaste a usar Receater.	Since you started using Receater.
+Desplegar todas las secciones	Expand all sections
+Diciembre	December
+Dividir en partes iguales	Split equally
+Domingo	Sunday
+Donde más gastás	Where you spend most
+Dorado	Gold
+Débito automático	Automatic debit
+Día	Day
+Día de cierre	Closing day
+Día de cobro	Payday
+Día de vencimiento	Due day
+Día del mes que se paga	Day of the month it's paid
+Día en que la pagás	Day you pay it
+Dólares	Dollars
+Dólares que compraste	Dollars you bought
+Dónde está tu plata	Where your money is
+Dónde poner la plata	Where to put your money
+Dónde se compran: el broker	Where to buy them: the broker
+EN CUOTAS	IN INSTALLMENTS
+EN TARJETA	ON CARD
+Economía personal	Personal finance
+Editar	Edit
+Editar categorías	Edit categories
+Editar esta categoría	Edit this category
+Editar gasto fijo	Edit fixed expense
+Editar tarjeta	Edit card
+Editar categoría	Edit category
+Efectivo	Cash
+Efectivo / débito	Cash / debit
+Efectivo, transferencia o débito. Queda pendiente hasta que lo cargás.	Cash, transfer or debit. It stays pending until you log it.
+Ej: $ 250.000	E.g. $ 250,000
+Ej: 1.500	E.g. 1,500
+Ej: 30	E.g. 30
+Ej: 50.000	E.g. 50,000
+Ej: 600.000	E.g. 600,000
+Ej: Alquiler, Netflix, Taller de dibujo	E.g. Rent, Netflix, Art class
+Ej: Dólares, Plazo fijo, Viaje	E.g. Dollars, Deposit, Trip
+Ej: Mamá	E.g. Mom
+Ej: Mascotas, Taller, Regalos	E.g. Pets, Classes, Gifts
+Ej: Naranja X	E.g. My wallet
+Ej: Visa Galicia	E.g. Visa Galicia
+Ej: ahorro, viaje…	E.g. savings, trip…
+Ej: me devolvió una parte	E.g. paid me back part of it
+Ej: me sobró del mes	E.g. left over from the month
+Ej: nafta, cumple de Juli…	E.g. gas, Juli's birthday…
+Ej: sueldo de septiembre	E.g. September paycheck
+Ej: zapatillas, celular	E.g. sneakers, phone
+Ej: ¿cuánto gasté en Starbucks este año?	E.g. how much did I spend at Starbucks this year?
+El Diario de Recy	Recy's Daily
+El día	The day
+El fondo de emergencia	The emergency fund
+El interés compuesto, tu mejor amigo	Compound interest, your best friend
+El mes que estás viendo	The month you're viewing
+El último día hábil	The last business day
+Elegir el resumen	Choose the statement
+Elegir mes, año o día	Choose month, year or day
+Elegí una fecha	Pick a date
+Elegí…	Choose…
+Empezar	Start
+Empezá por la primera, son cortitas	Start with the first one, they're short
+En dólares	In dollars
+En la mano	In hand
+En qué se te va	Where it goes
+En qué se te va el sueldo	Where your paycheck goes
+En total	In total
+En un minuto te muestro cómo funciona y cargamos lo básico juntos. Todo se puede cambiar después.	In a minute I'll show you how it works and we'll set up the basics together. You can change everything later.
+Enero	January
+Entrar con Google	Sign in with Google
+Entrá con Google para guardar tus datos en tu Drive y verlos desde cualquier celu o compu.	Sign in with Google to save your data in your Drive and see it on any phone or computer.
+Entrá con Google para guardar tus datos en tu Drive.	Sign in with Google to save your data in your Drive.
+Ese mes te aparece como un gasto a devolver.	That month it shows up as an expense to pay back.
+Este año	This year
+Este mes y los que vienen, según tu tarjeta	This month and the next ones, based on your card
+Esto no cuenta como gasto del mes. Si la plata sale de tu sueldo, mejor cargala como gasto con categoría Ahorro.	This doesn't count as a monthly expense. If the money comes from your paycheck, log it as an expense with the Savings category.
+Exportar a Excel	Export to Excel
+Exportar backup	Export backup
+Falta la cotización.	The exchange rate is missing.
+Fecha	Date
+Fijos	Fixed
+Fijos del mes	Fixed expenses this month
+Fijos del período	Fixed expenses this period
+Fijos sin tarjeta	Fixed expenses without card
+Fijos vs. sueldo	Fixed vs. paycheck
+Fondo	Fund
+Fondo común	Mutual fund
+Frasco	Jar
+Ganancias y Bienes Personales	Income tax and wealth tax
+Gastado en dólares	Spent in dollars
+Gastar menos sin sufrir	Spending less without suffering
+Gastaste	You spent
+Gasto	Expense
+Gasto más grande	Biggest expense
+Gasto por mes, últimos 6 meses	Spending per month, last 6 months
+Gastos de los últimos 6 meses	Spending in the last 6 months
+Gastos varios del mes	Everyday spending this month
+Gris	Gray
+Guardar	Save
+Guardar el mes como imagen	Save the month as an image
+Guardar pago	Save payment
+Historial	History
+Historial de dólares	Dollar history
+Historial de pesos	Peso history
+Hora	Time
+Importar backup	Import backup
+Importar resumen de Mercado Pago (PDF)	Import Mercado Pago statement (PDF)
+Impuestos y cosas raras	Taxes and weird stuff
+Inflación y tasas	Inflation and rates
+Ingreso	Income
+Ir a Google	Go to Google
+Ir a hoy	Go to today
+Jueves	Thursday
+La dejo abierta	I leave it open
+La diferencia queda como un gasto (o ingreso) sin anotar, así la pizarra muestra tu plata real. No toca tus cuentas.	The difference is saved as an unlogged expense (or income), so the board shows your real money. It doesn't touch your accounts.
+La pagás el día que te llega el sueldo.	You pay it the day your paycheck arrives.
+La regla de las 48 horas	The 48-hour rule
+La tarjeta de crédito, sin miedo	Credit cards, without fear
+Las compras hasta ese día entran en el próximo pago. Si no lo sabés, cada compra va al pago siguiente.	Purchases up to that day go into the next payment. If you don't know, each purchase goes to the following payment.
+Las compras quedan pendientes hasta que cargues que pagaste la tarjeta.	Purchases stay pending until you log that you paid the card.
+Las personas con las que dividís gastos o te prestás plata. Aparecen como sugerencia al cargar.	People you split expenses or lend money with. They show up as suggestions when logging.
+Las reglas de la app, en corto.	The app's rules, in short.
+Le di	I gave
+Le presté plata a alguien	I lent money to someone
+Link de pago, alias o CBU	Payment link, alias or account number
+Listo	Done
+Lo básico para dormir tranquilo	The basics to sleep well
+Lo de siempre	The usual
+Lo pago yo	I pay it myself
+Lo pago yo y lo comparto	I pay it and share it
+Lo pagué yo y lo dividimos	I paid and we split it
+Lo pagó otra persona	Someone else paid
+Lo que aparece en el resumen y nadie explica	What shows up on the statement and nobody explains
+Lo que cargues queda en tu celu (y en tu Drive si querés). Nadie más lo ve.	What you log stays on your phone (and in your Drive if you want). Nobody else sees it.
+Lo que cobrás a fin de mes es para bancar el mes siguiente.	What you get paid at the end of the month covers the next month.
+Lo que pagaste en dólares	What you paid in dollars
+Lo que pagaste en pesos	What you paid in pesos
+Lo que te quedaría si no comprás nada más con tarjeta.	What you'd have left if you don't buy anything else by card.
+Los gastos hormiga	Small everyday leaks
+Los próximos meses	The next months
+Lunes	Monday
+Martes	Tuesday
+Me dio	Gave me
+Me pagó todo	Paid me everything
+Mes	Month
+Mes anterior	Previous month
+Mes en que querés llegar a la meta	Month you want to reach the goal
+Mes siguiente	Next month
+Meta (opcional)	Goal (optional)
+Miedo, paciencia y no mirar todos los días	Fear, patience and not checking every day
+Mirá los próximos meses	See the next months
+Mitad y mitad	Half and half
+Miércoles	Wednesday
+Moneda	Currency
+Moneda del fijo	Currency of the fixed expense
+Moneda del frasco	Jar currency
+Monotributo, en simple	Monotributo, simply put
+Monto	Amount
+Monto de este mes	This month's amount
+Monto por mes	Amount per month
+Movimientos	Entries
+Movimientos, categorías, tarjetas, fijos y ahorros.	Entries, categories, cards, fixed expenses and savings.
+Naranja	Orange
+No poner todos los huevos en la misma canasta	Don't put all your eggs in one basket
+No pude traer el dólar de hoy. Poné la cotización a mano.	I couldn't get today's dollar rate. Enter it manually.
+No pude traer la lista de fondos. Probá más tarde o usá «Cuenta con tasa».	I couldn't get the list of funds. Try later or use «Account with a rate».
+No sé o cambia cada mes	I don't know or it changes every month
+No tenías en septiembre	You had none in September
+Nombre	Name
+Nombre de la persona	Person's name
+Nota	Note
+Nota (opcional)	Note (optional)
+Noviembre	November
+Nueva categoría	New category
+Nueva cuenta	New account
+Nueva tarjeta	New card
+Nuevo frasco	New jar
+Nuevo gasto	New expense
+Nuevo gasto fijo	New fixed expense
+Nuevo ingreso	New income
+O anotá una parte	Or log part of it
+Ojo, tenés un fijo vencido.	Heads up, you have an overdue fixed expense.
+Ojo: esto es educación financiera general, no una recomendación de inversión. Antes de invertir, informate y decidí según tu situación.	Note: this is general financial education, not investment advice. Before investing, do your research and decide based on your situation.
+Ojo: esto es educación, no una recomendación de inversión. Decidí según tu situación.	Note: this is education, not investment advice. Decide based on your situation.
+Ordenar la plata	Getting your money in order
+Otra	Other
+Otro color	Other color
+Otro ingreso	Other income
+Otros	Other
+Pagar	Pay
+Pago parcial	Partial payment
+Pagué la tarjeta	I paid the card
+Pagué tarjeta	Card paid
+Pagué una tarjeta	I paid a card
+Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez).	To answer you I need you to turn on Smart Recy (it's free, done once).
+Para el que nunca compró una	For people who never bought one
+Para hoy	For today
+Para las que dicen ¿?, tocalas y poné cuánto tenés hoy. Los saldos se calculan con lo que cargás. Si no coincide con tu app, tocá la cuenta y poné el número real. Los intereses son una estimación.	For the ones showing ¿?, tap them and enter how much you have today. Balances are calculated from what you log. If it doesn't match your app, tap the account and enter the real number. Interest is an estimate.
+Pasé plata de una cuenta a otra	I moved money between accounts
+Pedile a Google tu código	Ask Google for your key
+Pegar código	Paste key
+Pegá el código de Google	Paste the Google key
+Pequeños cambios que suman	Small changes that add up
+Personas	People
+Pesos	Pesos
+Plata que rinde	Money that earns
+Plazo fijo y plazo fijo UVA	Fixed-term deposits (regular and inflation-linked)
+Podés dictarlo con el micrófono del teclado.	You can dictate it with the keyboard microphone.
+Poner la tasa a mano	Enter the rate manually
+Ponerme una meta de ahorro por mes	Set a monthly savings goal
+Poné cuándo creés que vas a volver a cobrar.	Enter when you think you'll get paid again.
+Poné cuánto querés gastar como máximo por mes en cada categoría (en pesos). Recy te avisa cuando vas por el 80% y cuando te pasás. Dejalo vacío para no tener tope.	Enter the most you want to spend per month in each category (in pesos). Recy warns you at 80% and when you go over. Leave empty for no limit.
+Por ejemplo, todos los 5. El sueldo cuenta desde ese día hasta el anterior del mes que viene.	For example, every 5th. The paycheck counts from that day until the day before next month.
+Por qué anotar lo que gastás	Why track what you spend
+Por qué la plata quieta pierde	Why idle money loses value
+Preguntale a Recy	Ask Recy
+Preguntar	Ask
+Prendido	On
+Privacidad	Privacy
+Probar y guardar	Test and save
+Productos del ticket	Receipt items
+Promedio por día	Daily average
+Préstamo	Loan
+Queda "a debitar" hasta que confirmes que te lo debitaron.	It stays "to be debited" until you confirm it was debited.
+Quién pagó	Who paid
+Qué datos usa Receater y dónde se guardan.	What data Receater uses and where it's stored.
+Qué días gastás más	Which days you spend most
+Qué es (opcional)	What it is (optional)
+Qué es la inflación, en simple	What inflation is, simply put
+Qué es una acción y por qué sube y baja	What a stock is and why it goes up and down
+Qué pasó con el monto	What happened with the amount
+Qué período exportar	Period to export
+Recordatorio para cargar gastos	Reminder to log expenses
+Recy contesta con tus datos usando Gemini (lo que activaste en Recy inteligente). Los números los calcula con lo que tenés cargado.	Recy answers with your data using Gemini (what you turned on in Smart Recy). Numbers are calculated from what you've logged.
+Recy está leyendo…	Recy is reading…
+Recy inteligente	Smart Recy
+Recy inteligente activado	Smart Recy is on
+Recy lo prueba y queda listo.	Recy tests it and it's ready.
+Recy puede cargar por vos.	Recy can log it for you.
+Recy, corresponsal en tu billetera. Impreso con tus tickets triturados.	Recy, correspondent in your wallet. Printed on your shredded receipts.
+Reemplaza lo que tenés por un backup.	Replaces what you have with a backup.
+Reparto de los fijos por categoría	Fixed expenses by category
+Reparto por categoría	By category
+Resumen	Summary
+Resumen de Mercado Pago	Mercado Pago statement
+Resumen de la tarjeta	Card statement
+Resumen de todo el mes	Whole month summary
+Resumen del período	Period summary
+Riesgo, plazo y disponibilidad	Risk, time and access
+Rojo	Red
+Ropa	Clothes
+Rosa	Pink
+Sacar	Withdraw
+Sacar foto	Take photo
+Sacar foto del ticket	Take a photo of the receipt
+Salidas	Going out
+Saltear	Skip
+Salud	Health
+Se paga por sesión (terapia, clases…)	Paid per session (therapy, classes…)
+Se suma como saldo inicial, sin tocar tus gastos del mes.	Added as a starting balance, without touching your monthly expenses.
+Se suma solo a la tarjeta cada mes y queda pagado cuando pagás la tarjeta.	It's added to the card every month and marked paid when you pay the card.
+Separar la plata en tres partes	Splitting your money in three
+Si compro algo en cuotas (precio total)…	If I buy something in installments (total price)…
+Si gasto menos por mes…	If I spend less per month…
+Si ponés una fecha, te digo cuánto poner por mes para llegar.	If you set a date, I'll tell you how much to put in each month to get there.
+Si te devolvió una parte o te prestó plata, ponelo acá.	If they paid back part or lent you money, enter it here.
+Siguiente	Next
+Simular cambios	Simulate changes
+Sin día fijo	No fixed day
+Sin entrar	Without signing in
+Sin entrar con Google	Without signing in with Google
+Sin frasco	No jar
+Sin tope	No limit
+Sobre tus gastos	About your expenses
+Solo aparece si no entraste con Google.	Only shows if you didn't sign in with Google.
+Subir imagen	Upload image
+Subir una imagen del ticket	Upload a receipt image
+Sueldo	Paycheck
+Sumar	Add
+Sumaste	You added
+Super	Groceries
+Super se lleva la mayor parte.	Groceries take the biggest share.
+Suscripciones	Subscriptions
+Suscripciones que te olvidaste	Subscriptions you forgot about
+Sábado	Saturday
+TNA, TEA y TEM sin dolor de cabeza	Interest rates without a headache
+Tarjeta	Card
+Tarjeta que pagás este mes	Card you pay this month
+Tarjetas	Cards
+Tasa anual (TNA %)	Annual rate (%)
+Tasa anual (TNA %), ej: 30	Annual rate (%), e.g. 30
+Te ayudo a saber en qué se te va la plata y cuánto podés ahorrar.	I help you know where your money goes and how much you can save.
+Te pasaste	You went over
+Te queda	You have left
+Te queda libre	Free to spend
+Te rindió este mes	Earned this month
+Te salieron	It cost you
+Tipo	Type
+Tipo de movimiento	Entry type
+Tocá un día para ver solo lo de ese día. Los puntitos marcan los días con movimientos.	Tap a day to see only that day. Dots mark days with entries.
+Tocá una categoría para ver sus fijos.	Tap a category to see its fixed expenses.
+Tocá una categoría para ver sus gastos.	Tap a category to see its expenses.
+Todo	All
+Todo lo ahorrado hasta hoy	Everything saved so far
+Todo lo que cargaste hasta hoy, mes por mes.	Everything you logged so far, month by month.
+Topes por categoría	Category limits
+Total	Total
+Total del pago	Payment total
+Trabajo y software	Work and software
+Trabajos extra	Side jobs
+Transporte	Transport
+Tu cuenta	Your account
+Tu parte	Your share
+Tu pregunta para Recy	Your question for Recy
+Tu progreso	Your progress
+Tu sueldo	Your paycheck
+Tus ahorros	Your savings
+Tus datos	Your data
+Términos	Terms
+Términos de uso	Terms of use
+Un archivo con todo, para guardarlo donde quieras.	A file with everything, to keep wherever you want.
+Un archivo con una hoja para cada cosa: movimientos, gastos por categoría y mes, tarjetas, fijos y ahorros.	A file with one sheet for each thing: entries, spending by category and month, cards, fixed expenses and savings.
+Un día fijo del mes	A fixed day of the month
+Un segundito.	One second.
+Uy, nos pasamos este mes.	Oops, we went over this month.
+VENCIDO	OVERDUE
+Vacío si cambia	Empty if it changes
+Vence el día	Due on
+Vencido	Overdue
+Vení que te explico todo sin vueltas.	Come, I'll explain everything plainly.
+Ver la guía de inicio	See the getting-started guide
+Ver todo el mes	See the whole month
+Ver todos	See all
+Verde	Green
+Violeta	Purple
+Volver a mis gastos	Back to my expenses
+Volver arriba	Back to top
+Volvé acá y pegalo	Come back here and paste it
+Ya la conozco	I already know it
+Ya no lo pago	I don't pay it anymore
+alquiler, servicios…	rent, bills…
+cuánto se llevan y en qué	how much they take and on what
+de tu sueldo	of your paycheck
+en 1 pago	in 1 payment
+en lo que va del mes	so far this month
+lo que gastás por mes, según lo que cargaste	what you spend per month, based on what you logged
+lo que todavía te falta pagar	what you still have to pay
+no rinde	no interest
+tocá un mes para ver el detalle	tap a month for details
+una sola vez	just once
+y copiá el código que aparece.	and copy the key that shows up.
+y la	and the
+¡Hola! Soy Recy	Hi! I'm Recy
+· a las 21, si ese día no cargaste nada	· at 9 pm, if you didn't log anything that day
+· ¿ya la pagaste?	· did you pay it?
+¿A quién?	Who to?
+¿A qué frasco va?	Which jar does it go to?
+¿Compraste algo con tarjeta? Va en	Bought something by card? It goes in
+¿Con quién?	With whom?
+¿Cuándo la pagás?	When do you pay it?
+¿Cuándo lo devolvés?	When do you pay it back?
+¿Cuánto gasté en delivery este mes?	How much did I spend on delivery this month?
+¿Cuánto puedo ahorrar?	How much can I save?
+¿Cuánto te queda de verdad?	How much do you really have left?
+¿Cuánto tenés hoy?	How much do you have today?
+¿Cómo cobrás?	How do you get paid?
+¿Cómo pagaste?	How did you pay?
+¿Cómo se paga?	How is it paid?
+¿De dónde sale este número?	Where does this number come from?
+¿De dónde sale la plata para pagarla?	Where does the money to pay it come from?
+¿Dónde entró?	Where did it go in?
+¿Dónde está tu plata?	Where's your money?
+¿Dónde rinde tu plata?	Where does your money earn?
+¿Dónde?	Where?
+¿En qué gasté más este mes?	What did I spend the most on this month?
+¿Es un gasto fijo?	Is it a fixed expense?
+¿Hasta cuándo te tiene que durar?	How long does it need to last?
+¿Me lo puedo comprar?	Can I afford it?
+¿No se pegó? Escribilo o pegalo acá	Didn't paste? Type or paste it here
+¿Para cuándo? (opcional)	By when? (optional)
+¿Querés que Recy cargue por vos?	Want Recy to log for you?
+¿Quién pagó?	Who paid?
+¿Quién te prestó?	Who lent it to you?
+¿Qué día tenés la sesión?	What day is your session?
+¿Qué dólar compraste?	Which dollar rate did you buy at?
+¿Qué dólar te cobraron?	Which dollar rate were you charged?
+¿Qué tarjeta pagaste?	Which card did you pay?
+¿Tenés plata en una billetera o en un fondo común (Mercado Pago, Ualá, Fima…)? Cargala acá y Recy te dice cuánto te va rindiendo por día.	Do you have money in a wallet or a mutual fund? Add it here and Recy tells you how much it earns per day.
+¿Ya tenés algo ahorrado acá? (opcional)	Already have something saved here? (optional)
+¿Ya tenés el resumen? Poné el total	Got the statement? Enter the total
+← Atrás	← Back
+Gasto sin anotar	Unlogged expense
+Ingreso sin anotar	Unlogged income
+Entendido	Got it
+Aceptar	OK
+Sí, agregalo	Yes, add it
+No, solo corregí el saldo	No, just fix the balance
+Usar lo de mis cuentas	Use my accounts' total
+Ir al Diario de Recy ›	Go to Recy's Daily ›
+Ver tus fijos ›	See your fixed expenses ›
+Ver dónde está tu plata ›	See where your money is ›
+Ver tus cuentas ›	See your accounts ›
+Ver tus movimientos ›	See your entries ›
+Leída · siguiente	Read · next
+Leída · volver a las lecciones	Read · back to lessons
+‹ Todas las lecciones	‹ All lessons
+Lo que te llevás	Takeaway
+En tu caso	In your case
+Preguntita	Quick question
+pronto	soon
+Abrir link ›	Open link ›
+Copiar	Copy
+Copiado ✓	Copied ✓
+Link de pago	Payment link
+Alias	Alias
+Por pagar	To pay
+A debitar	To be debited
+Confirmar	Confirm
+Pagado	Paid
+En tarjeta	On card
+Sin monto	No amount
+Falta el monto	Amount missing
+Confirmá el débito	Confirm the debit
+Idioma	Language`;
+
+/* ===== Idioma (español / inglés) =====
+   La app está escrita en español. En inglés, una capa traduce lo que se ve en pantalla (textos, placeholders, etiquetas)
+   con un diccionario exacto (I18N_EN) y patrones para frases con números (I18N_EN_P). Lo que no está traducido queda en español.
+   Las lecciones de la escuelita y los términos/privacidad siguen en español por ahora. */
+const I18N_MON = { ene:"Jan", feb:"Feb", mar:"Mar", abr:"Apr", may:"May", jun:"Jun", jul:"Jul", ago:"Aug", sept:"Sep", sep:"Sep", oct:"Oct", nov:"Nov", dic:"Dec" };
+const I18N_MONL = { enero:"January", febrero:"February", marzo:"March", abril:"April", mayo:"May", junio:"June", julio:"July", agosto:"August", septiembre:"September", octubre:"October", noviembre:"November", diciembre:"December" };
+const I18N_DAY = { lunes:"Monday", martes:"Tuesday", "miércoles":"Wednesday", jueves:"Thursday", viernes:"Friday", "sábado":"Saturday", domingo:"Sunday" };
+const trMonths = t => t.replace(/\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/gi, m => { const e = I18N_MONL[m.toLowerCase()]; return m[0] === m[0].toUpperCase() ? e : e; })
+  .replace(/\b(lunes|martes|miércoles|jueves|viernes|sábado|domingo)\b/gi, d => I18N_DAY[d.toLowerCase()])
+  .replace(/\b(\d{1,2}) (ene|feb|mar|abr|may|jun|jul|ago|sept|sep|oct|nov|dic)\b/g, (_, n, m) => `${I18N_MON[m]} ${n}`)
+  .replace(/\b(\d{1,2}) de ([A-Z][a-z]+) de (\d{4})\b/g, "$2 $1, $3").replace(/\b([A-Z][a-z]+) de (\d{4})\b/g, "$1 $2");
+const I18N_EN_P = [
+  [/^Gastaste (.+)$/, "You spent $1"],
+  [/^Fijos por pagar (.+)$/, "Fixed to pay $1"],
+  [/^Fijos por pagar: (.+)\. Libre: (.+)$/, "Fixed to pay: $1. Free: $2"],
+  [/^Te deben (.+)$/, "Owed to you: $1"],
+  [/^Debés (.+)$/, "You owe $1"],
+  [/^A devolver (.+)$/, "To pay back $1"],
+  [/^Te da para (.+) por día(.*)$/, "You can spend $1 per day$2"],
+  [/^Hoy te quedan (.+)$/, "Left for today: $1"],
+  [/^Hoy te pasaste por (.+)$/, "Today you went over by $1"],
+  [/^(.+): te pasaste del tope por (.+)$/, "$1: over the limit by $2"],
+  [/^Te pasaste (.+) del tope de (.+)$/, "You went over the $2 limit by $1"],
+  [/^Te pasaste (.+)$/, "You went over by $1"],
+  [/^(\d+) cuotas$/, "$1 installments"],
+  [/^en (\d+) cuotas$/, "in $1 installments"],
+  [/^El (\d+)$/, "On the $1"],
+  [/^Capítulo (\d+)$/, "Chapter $1"],
+  [/^(\d+) min$/, "$1 min"],
+  [/^(\d+) de (\d+)$/, "$1 of $2"],
+  [/^(\d+) capítulos$/, "$1 chapters"],
+  [/^Lecciones leídas: (\d+)$/, "Lessons read: $1"],
+  [/^Sigue: (.+)$/, "Next: $1"],
+  [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
+  [/^(\d+)% del sueldo$/, "$1% of paycheck"],
+  [/^(\d+)% de tus gastos$/, "$1% of your spending"],
+  [/^(\d+) (gasto|gastos)$/, (m, n, w) => `${n} ${w === "gasto" ? "expense" : "expenses"}`],
+  [/^(\d+) (fijo|fijos)$/, (m, n, w) => `${n} fixed`],
+  [/^(\d+) (frasco|frascos)$/, (m, n, w) => `${n} ${w === "frasco" ? "jar" : "jars"}`],
+  [/^(\d+) (pago|pagos)$/, (m, n, w) => `${n} ${w === "pago" ? "payment" : "payments"}`],
+  [/^Pagaste (\d+) de (\d+) fijos$/, "You paid $1 of $2 fixed expenses"],
+  [/^Vence el (.+)$/, "Due $1"], [/^vence el (.+)$/, "due $1"], [/^Venció el (.+)$/, "Was due $1"],
+  [/^Va al pago del (.+?)\.(.*)$/, (m, d, r) => `Goes to the ${d} payment.${r.replace("Te resta recién cuando se paga.", "It counts when it's paid.")}`],
+  [/^Editar (.+)$/, "Edit $1"],
+  [/^(.+) te debe$/, "$1 owes you"], [/^Le debés a (.+)$/, "You owe $1"], [/^(.+) me dio$/, "$1 gave me"], [/^Le di a (.+)$/, "I gave $1"], [/^(.+) me pagó todo$/, "$1 paid me everything"],
+  [/^Sacar a (.+)$/, "Remove $1"], [/^Sumar a (.+)$/, "Add to $1"],
+  [/^Meta: (.+) · te faltan (.+)$/, "Goal: $1 · $2 to go"],
+  [/^(\d+)% de (.+)$/, "$1% of $2"],
+  [/^Tope de (.+)$/, "$1 limit"],
+  [/^Cobrás el día (\d+)(.*)$/, "You get paid on day $1$2"],
+  [/^Versión (.+)$/, "Version $1"],
+  [/^Hoy, (.+)$/, "Today, $1"],
+  [/^Y (.+) en dólares$/, "And $1 in dollars"],
+  [/^En tus cuentas hay (.+): no coincide, tocá el lápiz$/, "Your accounts have $1: doesn't match, tap the pencil"],
+  [/^\+ (.+) por día$/, "+ $1 per day"],
+  [/^(.+) anual · (.+)$/, "$1 per year · $2"],
+  [/^Débito (.+)$/, "Debit $1"],
+  [/^Sumar (\d+)$/, "Add $1"],
+  [/^Resumen de (.+)$/, "$1 statement"],
+  [/^Compartido, te deben (.+)$/, "Shared, owed to you $1"],
+  [/^Yo calculo (.+) con lo que cargaste\.(.*)$/, (m, a, r) => `I calculate ${a} from what you logged.` + r.replace(/ En tus cuentas figura (.+)\./, " Your accounts show $1.")],
+  [/^Fijos · (.+)$/, "Fixed · $1"],
+  [/^Economía personal · (.+)$/, "Personal finance · $1"],
+  [/^Edición (.+)$/, "$1 edition"],
+  [/^Es el (\d+)% de lo que cobraste$/, "That's $1% of what you got paid"],
+  [/^Donde más: (.+), (.+) \((\d+)% de tu sueldo\)$/, "Where most goes: $1, $2 ($3% of your paycheck)"],
+  [/^(\d+)% en gastos$/, "$1% on spending"],
+  [/^(.+) de (.+) cobrados$/, "$1 of $2 paid to you"],
+  [/^de (.+)$/, "of $1"],
+  [/^con (.+)$/, "with $1"],
+  [/^(.+) por dólar$/, "$1 per dollar"],
+  [/^(\d+) cosas? en cuenta$/, "$1 thing(s) counted"],
+  [/^Pago de tarjeta, (\d+) compras?$/, "Card payment, $1 purchase(s)"],
+  [/^En (.+), va al pago del (.+)$/, "On $1, goes to the $2 payment"],
+  [/^En (.+) te quedan para ahorrar$/, "In $1 you have left to save"],
+  [/^Fijos en (.+), en total$/, "Fixed in $1, in total"],
+  [/^¿Gasté más o menos que en (.+)\?$/, "Did I spend more or less than in $1?"],
+  [/^Te falta poco para (.+)\.$/, "Almost there for $1."],
+  [/^Separar (.+) ahora en:$/, "Set aside $1 now in:"],
+  [/^Subir el resumen de (.+), el que vence el (.+)$/, "Upload the $1 statement, due $2"],
+  [/^Los (.+) en dólares no están sumados \(sin cotización\)$/, "The $1 in dollars aren't added (no exchange rate)"],
+  [/^(.+) · la pusiste vos$/, "$1 · set by you"],
+  [/^Para llegar en (.+) tenés que poner unos (.+) por mes \((\d+) meses\)\.$/, "To get there by $1 you need to put in about $2 per month ($3 months)."],
+  [/^Después de (.+) se te liberan (.+) por mes \(termina (.+)\)\.$/, "After $1 you free up $2 per month ($3 ends)."],
+  [/^Además compraste (.+) con tarjeta en este período\. Eso aparece en el mes en que se paga\.$/, "You also bought $1 by card this period. It shows up in the month it's paid."],
+  [/^Tenés (.+) sin pagar en esta tarjeta\.(.*)$/, "You have $1 unpaid on this card. This payment covers those purchases. If you paid more, the difference is saved as \"Unlogged\"."],
+  [/^(.+) Este sueldo cuenta para (.+)\.$/, "$1 This paycheck counts for $2."],
+  [/^En qué se te va (.+): (.+)$/, "Where $1 goes: $2"],
+  [/^(\$.+) de (\$.+)$/, "$1 of $2"],
+  [/^(.+) en total · rinde ≈ (.+) por día$/, "$1 in total · earns ≈ $2 per day"],
+  [/^(.+) en total$/, "$1 in total"],
+  [/^(.+) este mes$/, "$1 this month"]
+];
+const I18N_EN = new Map();
+function i18nTr(t){
+  if (LANG !== "en" || !t) return t;
+  if (t.includes("\n") && t.trim().includes("\n")) return t.split("\n").map(i18nTr).join("\n");
+  const k = t.trim(); if (!k) return t;
+  let r = I18N_EN.get(k);
+  if (r == null) for (const [re, rep] of I18N_EN_P){ if (re.test(k)){
+    r = typeof rep === "string" ? k.replace(re, (...g) => rep.replace(/\$(\d)/g, (_, i) => { const x = g[+i] || ""; return I18N_EN.get(x) || x; })) : k.replace(re, rep); break; } }
+  if (r == null){ const m = trMonths(k); if (m !== k) r = m; }
+  if (r == null) return t;
+  r = trMonths(r).replace(/(\$ [\d.,]+) y (US\$)/g, "$1 and $2");
+  return t.replace(k, r);
+}
+function i18nApply(root){
+  if (LANG !== "en") return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())){ const p = n.parentElement; if (!p || p.closest("script,style,.ln-lesson .no-tr")) continue; const v = n.nodeValue, t = i18nTr(v); if (t !== v) n.nodeValue = t; }
+  (root.querySelectorAll ? root : document).querySelectorAll("[placeholder],[aria-label],[title]").forEach(e => ["placeholder", "aria-label", "title"].forEach(a => { const v = e.getAttribute(a); if (v){ const t = i18nTr(v); if (t !== v) e.setAttribute(a, t); } }));
+}
+if (LANG === "en"){
+  document.documentElement.lang = "en";
+  I18N_DICT.split("\n").forEach(l => { const i = l.indexOf("\t"); if (i > 0) I18N_EN.set(l.slice(0, i), l.slice(i + 1)); });
+  let busy = false;
+  const mo = new MutationObserver(ms => { if (busy) return; busy = true;
+    try { ms.forEach(m => { if (m.type === "characterData"){ const t = i18nTr(m.target.nodeValue); if (t !== m.target.nodeValue) m.target.nodeValue = t; }
+      else if (m.type === "attributes"){ const v = m.target.getAttribute(m.attributeName); if (v){ const t = i18nTr(v); if (t !== v) m.target.setAttribute(m.attributeName, t); } }
+      else m.addedNodes.forEach(nd => { if (nd.nodeType === 3){ const t = i18nTr(nd.nodeValue); if (t !== nd.nodeValue) nd.nodeValue = t; } else if (nd.nodeType === 1) i18nApply(nd); }); }); }
+    finally { busy = false; } });
+  i18nApply(document.body);
+  mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["placeholder", "aria-label", "title"] });
+}
+
 </script>
 </body>
 </html>

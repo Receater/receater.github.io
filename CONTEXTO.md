@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-20.1330`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-20.1930`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -222,9 +222,16 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
 
+## 7h. Idioma (español / inglés)
+
+- `LANG` sale de `localStorage["receater.lang"]`; si no hay, del idioma del navegador (es* → español, el resto → inglés). Se cambia en Ajustes ("Idioma / Language") y en el primer paso de la guía de inicio; al cambiar, recarga.
+- La app sigue escrita en español. En inglés, una capa al final del script traduce lo que aparece en pantalla con un `MutationObserver`: diccionario exacto `I18N_DICT` (texto ES⇥EN por renglón) y patrones `I18N_EN_P` para frases con números (los grupos capturados también se traducen si están en el diccionario); meses y días se traducen solos.
+- **Regla al agregar textos nuevos:** sumar su traducción a `I18N_DICT` (o un patrón). Lo que no está, queda en español.
+- No traducido todavía: lecciones de la escuelita (en inglés se avisa), `terminos.html` y `privacidad.html`, mensajes de la IA. Los montos siguen con formato argentino ($ 1.500,00).
+
 ## 7g. Corregir lo que te debe una persona
 
-- En la hoja de una persona (cuánto te debe / le debés), cada renglón tiene un lápiz (`pbEdit`): en gastos divididos y préstamos que hiciste se corrige ahí mismo la parte de esa persona (no puede pasar el total del gasto, salvo en préstamos); en pagos que anotaste ("Te dio"/"Le diste") se corrige el monto; lo demás (lo pagó otra persona, te prestó, fijo compartido) abre el gasto, ingreso o fijo donde se cargó.
+- En la hoja de una persona (cuánto te debe / le debés), cada renglón tiene un lápiz (`pbEdit`): en gastos divididos, préstamos que hiciste (cambia también el monto del gasto) y préstamos que te hicieron (cambia el ingreso) se corrige ahí mismo la parte de esa persona (no puede pasar el total del gasto, salvo en préstamos); en pagos que anotaste ("Te dio"/"Le diste") se corrige el monto; lo demás (lo pagó otra persona, te prestó, fijo compartido) abre el gasto, ingreso o fijo donde se cargó.
 
 ## 7f. Importar resumen de Mercado Pago (PDF)
 
