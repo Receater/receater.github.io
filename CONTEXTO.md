@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-20.1930`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-21.0130`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -222,6 +222,11 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En la libreta: "Pasé plata de una cuenta a otra" (`data.accMoves`: `{ id, from, to, amount, date }`; ej: cajero = banco → efectivo; no es gasto) y "Actualizar saldos" (todas las cuentas juntas; vacío = no cambia). Si el saldo real no coincide con el calculado, `reconcileDiffs` ofrece cargar la diferencia como "Gasto sin anotar" (categoría otros) o "Ingreso sin anotar" (`adjust: true`, con su `accountId`, el día de hoy; no se descuenta dos veces porque el ancla es de hoy), así cierra también la pizarra.
 - Solo pesos por ahora (los dólares siguen en los frascos).
 
+## 7i. Recorrido por la app y escuelita opcional (notas de Tome)
+
+- **Recorrido (walkthrough)** en vez de pantallas de texto: velo gris con un "agujero" que hace foco en una parte real de la app y un globito con una explicación corta; Siguiente / Atrás / Saltear recorrido. Pasos en `TOUR` (pizarra, Darle a Recy, las 4 pestañas, el mes, ¿Dónde está tu plata?, Aprender, Ajustes); cambia de pestaña solo. Arranca al terminar la guía de inicio y desde Ajustes → "Recorrido por la app". Se sacó de la guía el paso de texto "Cómo funciona".
+- **Escuelita como extra opcional:** la pizarra dice "Extra opcional" y el progreso es por tema ("0 de 6 temas", no "0 de 27 lecciones"), con "No hace falta para usar la app". Los capítulos se llaman "Tema N"; la tarjeta "Para hoy" pasó a "Si tenés 2 minutos".
+
 ## 7h. Idioma (español / inglés)
 
 - `LANG` sale de `localStorage["receater.lang"]`; si no hay, del idioma del navegador (es* → español, el resto → inglés). Se cambia en Ajustes ("Idioma / Language") y en el primer paso de la guía de inicio; al cambiar, recarga.
@@ -268,11 +273,6 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 
 ## 8. Pendientes e ideas
 
-- **Notas de Tome (feedback de un amigo) sobre la escuelita** — para hacer después:
-  - Al terminar la guía de inicio, ver de entrada "0 de 27" en grande espanta: se lee como 27 tareas obligatorias ("como un formulario de 27 preguntas: da paja").
-  - Presentarlo más digerible: agrupar en temas (5 o 6 como máximo) y mostrar el progreso por tema ("0 de 6"); adentro de cada tema puede haber las lecciones que sean.
-  - Dejar claro que es opcional: presentarlo como una "side quest" disponible si querés, no necesaria para usar la app, pero muy recomendada.
-  - **Guía de inicio como walkthrough, no como bloques de texto:** en vez de pantallas con listas de cosas para leer, un overlay gris semitransparente sobre la app real (que se vea la interfaz) que te va llevando a cada parte: hace foco en un elemento (ej: "Darle a Recy"), muestra un globito que explica solo eso y "Siguiente" te lleva al próximo lugar de la app. Explicar solo lo necesario de cada parte, de forma didáctica, llevándote de la mano por toda la app.
 
 - **Escuelita, próximos pasos**: glosario tocable y "No entendí, explicámelo de otra forma" / preguntar con Gemini. Revisar cada tanto los datos de impuestos (cambian).
 - **Recy dibujado por Tomas (lo hace él)**: guía y plantilla en `recy/` (`recy-guia.png`, `recy-plantilla-1024.png`). 10 emociones + 8 animaciones = 50 PNG de 1024×1024 transparentes, patitas en y=872, centrado en x=512. Diseño nuevo de Tomas: Recy con lentes, boca con borde violeta oscuro (paleta violeta); sin brazo a la vista (solo lo saca en saludo, festejo y señalar); el papelito no es parte de Recy: va solo en Comer 1-3 y además suelto como `recy_papel.png` (y `recy_tiritas.png`). Tutorial completo en el doc "Cómo animar a Recy en Procreate" (claude.ai). Cuando Tomas pase los PNG: achicarlos, armar tiras (sprites WebP) por animación y reemplazar `recySVG()`.

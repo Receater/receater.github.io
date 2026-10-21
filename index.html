@@ -1036,6 +1036,16 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+#tourBox{position:fixed;inset:0;z-index:200;pointer-events:auto}
+#tourBox[hidden]{display:none}
+.tour-hole{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(20,22,28,.62);transition:all .3s ease;pointer-events:none;outline:3px solid #F4C24E;outline-offset:2px}
+.tour-tip{position:fixed;background:#FBF8F1;color:#1F1F1F;border-radius:8px;padding:14px 16px 12px;box-shadow:0 8px 24px rgba(0,0,0,.3);font-family:"Courier Prime","Courier New",ui-monospace,monospace;transition:top .3s ease,left .3s ease}
+.tour-n{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#6E6A62;margin-bottom:2px}
+.tour-t{font-size:1.05rem}.tour-b{margin:6px 0 12px;line-height:1.45;font-size:.95rem}
+.tour-acts{display:flex;gap:8px;align-items:center}.tour-acts .small-btn{font-family:inherit;border-radius:6px}.tour-skip{font-family:inherit;font-size:.82rem}
+@media (prefers-reduced-motion:reduce){.tour-hole,.tour-tip{transition:none}}
+body.touring .go-top{display:none}
+
 .onb-lang{margin:0 0 12px;max-width:260px}
 .pb-ed .ic{width:15px;height:15px}
 .mp-row{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px dashed #D9D3C6;cursor:pointer}
@@ -2177,7 +2187,8 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
   </div>
   <div class="set-group">
     <a class="set-row as-btn" href="privacidad.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Privacidad</strong><span>Qué datos usa Receater y dónde se guardan.</span></div><span class="chev2">›</span></a>
-    <button type="button" class="set-row as-btn" id="setOnb"><div><strong>Ver la guía de inicio</strong><span>Cómo funciona Receater y cargar lo básico.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setTour"><div><strong>Recorrido por la app</strong><span>Te muestro para qué sirve cada parte, con la app de fondo.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setOnb"><div><strong>Ver la guía de inicio</strong><span>Cargar lo básico: cobro, fijos y tarjetas.</span></div><span class="chev2">›</span></button>
     <a class="set-row as-btn" href="terminos.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Términos de uso</strong><span>Las reglas de la app, en corto.</span></div><span class="chev2">›</span></a>
   </div>
   <p class="fx-hint" id="setVer" style="text-align:center;margin-top:20px"></p>
@@ -2335,7 +2346,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-20.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-21.0130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6170,7 +6181,7 @@ function renderSavePlan(){
 const ONB_KEY = "receater.onb";
 let onbStep = 0, onbFix = [], onbCards = [], onbRule = null, onbDrive = null;
 const ONB_FIX = [["Alquiler","casa"],["Expensas","casa"],["Luz","casa"],["Gas","casa"],["Internet","casa"],["Celular","casa"],["Netflix","suscripciones"],["Spotify","suscripciones"],["Gimnasio","salud"],["Prepaga","salud"]];
-const ONB_STEPS = ["hola", "como", "sueldo", "diario", "fijos", "tarjeta", "drive", "listo"];
+const ONB_STEPS = ["hola", "sueldo", "diario", "fijos", "tarjeta", "drive", "listo"];
 const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
 function openOnb(){ onbStep = 0; onbFix = data.fixed.filter(f => f.onb).map(f => ({ name: f.name, category: f.category, amount: String(f.amount), day: String(f.day) })); onbCards = [{ name: "", close: "", due: "" }]; onbRule = data.payRule || null; onbDrive = null; $("onb").hidden = false; renderOnb(); }
 function closeOnb(){ $("onb").hidden = true; try { localStorage.setItem(ONB_KEY, "1"); } catch {} render(); }
@@ -6325,12 +6336,13 @@ function onbSave(){
   }
   return true;
 }
-$("onbNext").onclick = () => { if (ONB_STEPS[onbStep] === "listo"){ closeOnb(); return; } if (onbSave() === false) return; onbStep++; renderOnb(); };
+$("onbNext").onclick = () => { if (ONB_STEPS[onbStep] === "listo"){ closeOnb(); setTimeout(startTour, 350); return; } if (onbSave() === false) return; onbStep++; renderOnb(); };
 $("onbBack").onclick = () => { if (onbStep > 0){ onbStep--; renderOnb(); } };
 $("setLang").onclick = () => { const box = miniDialog('<p><b>Idioma / Language</b></p><div class="seg" role="group"><button type="button" data-l="es">Español</button><button type="button" data-l="en">English</button></div><p class="fx-hint" style="margin:8px 0 0">In English, the lessons and the legal pages are still in Spanish for now.</p>', () => {});
   box.querySelectorAll("[data-l]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.l === LANG)); b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); }; }); };
 $("onbSkip").onclick = () => { if (ONB_STEPS[onbStep] === "hola"){ closeOnb(); return; } onbStep++; renderOnb(); };
 $("setOnb").onclick = () => { closeSettings(); openOnb(); };
+$("setTour").onclick = () => { closeSettings(); setTimeout(startTour, 300); };
 setTimeout(() => {
   let seen = false; try { seen = !!localStorage.getItem(ONB_KEY); } catch {}
   const empty = !data.expenses.length && !data.incomes.length && !data.fixed.length && !data.cards.length;
@@ -8378,12 +8390,13 @@ function learnTotal(){ return LEARN.flatMap(c => c.lessons).length; }
 function learnGo(where){ exitLearn(); if (where === "accounts"){ setTab("list"); setTimeout(openAccounts, 60); } else setTab(where); window.scrollTo({ top: 0 }); }
 function renderLearn(){
   const all = LEARN.flatMap(c => c.lessons), done = learnDone(), tot = learnTotal(), nextL = all.find(l => !data.learned[l.id]);
-  renderStage("stageLearn", { label: "Tu progreso", big: `${done} de ${tot}`, bar: done / tot,
-    lines: [done ? `Lecciones leídas: ${done}` : "Empezá por la primera, son cortitas", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!", `${LEARN.length} capítulos`],
+  const topicsDone = LEARN.filter(c => c.lessons.length && c.lessons.every(l => data.learned[l.id])).length;
+  renderStage("stageLearn", { label: "Extra opcional", big: `${topicsDone} de ${LEARN.length} temas`, bar: done / tot,
+    lines: ["No hace falta para usar la app", "Pero te ayuda un montón a entender tu plata", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!"],
     mood: done === tot ? "full" : "happy", line: done ? "¡Vas bien! Una lección por día y listo." : "Vení que te explico todo sin vueltas." });
   const nx = $("learnNext"); nx.innerHTML = "";
   if (!learnCur && nextL){ nx.hidden = false;
-    nx.innerHTML = `<div class="card-head"><h2>Para hoy</h2></div><p class="ln-nt"></p><p class="fx-hint" style="margin:0 0 10px"></p><button type="button" class="small-btn primary">Leer ahora · ${nextL.min} min</button>`;
+    nx.innerHTML = `<div class="card-head"><h2>Si tenés 2 minutos</h2></div><p class="ln-nt"></p><p class="fx-hint" style="margin:0 0 10px"></p><button type="button" class="small-btn primary">Leer ahora · ${nextL.min} min</button>`;
     nx.querySelector(".ln-nt").textContent = nextL.title; nx.querySelector(".fx-hint").textContent = nextL.take;
     nx.querySelector("button").onclick = () => { learnCur = nextL.id; renderLearn(); window.scrollTo({ top: 0 }); };
   } else nx.hidden = true;
@@ -8392,7 +8405,7 @@ function renderLearn(){
     LEARN.forEach((c, ci) => {
       const sec = document.createElement("section"); sec.className = "ln-chap" + (c.soon ? " soon" : "");
       const n = c.lessons.filter(l => data.learned[l.id]).length;
-      sec.innerHTML = `<div class="card-head"><h2><small>Capítulo ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
+      sec.innerHTML = `<div class="card-head"><h2><small>Tema ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
       c.lessons.forEach(l => { const b = document.createElement("button"); b.type = "button"; b.className = "ln-item" + (data.learned[l.id] ? " done" : "");
         b.innerHTML = `<span class="ln-t"></span><span class="ln-m">${data.learned[l.id] ? "✓ leída" : l.min + " min"}</span>`; b.querySelector(".ln-t").textContent = l.title;
         b.onclick = () => { learnCur = l.id; renderLearn(); window.scrollTo({ top: 0 }); }; sec.append(b); });
@@ -8444,6 +8457,49 @@ $("learnBtn").onclick = () => learnOn ? exitLearn() : enterLearn();
 document.querySelector(".brand .logo").style.cursor = "pointer";
 document.querySelector(".brand .logo").addEventListener("click", () => { if (learnOn) exitLearn(); else window.scrollTo({ top: 0, behavior: "smooth" }); });
 
+
+
+/* ===== Recorrido por la app (walkthrough): un velo gris con foco en una parte de la app y un globito que explica solo eso ===== */
+const TOUR = [
+  { sel: "#recyHero .board", tab: "list", t: "La pizarra de Recy", b: "Acá ves cuánto te queda del mes y cuánto podés gastar por día. Si no coincide con tu plata real, tocá el lápiz." },
+  { sel: "#openAdd", tab: "list", t: "Darle a Recy", b: "Con este botón cargás cada gasto o ingreso: escribiendo, con una foto del ticket o a mano." },
+  { sel: "#tabList", tab: "list", t: "Movimientos", b: "Todo lo que cargaste, día por día. Arriba, los fijos que te faltan pagar." },
+  { sel: "#tabDash", tab: "dash", t: "Resumen", b: "El Diario de Recy: en qué se te va la plata, tus tarjetas y cómo vas contra otros meses." },
+  { sel: "#tabFixed", tab: "fixed", t: "Fijos", b: "Alquiler, servicios, suscripciones: lo que pagás todos los meses. Recy te avisa qué falta pagar." },
+  { sel: "#tabJars", tab: "jars", t: "Ahorros", b: "Tus frascos: cada ahorro en su lugar, en pesos o en dólares, con metas si querés." },
+  { sel: "#monthNav", tab: "list", t: "El mes", b: "Cambiá de mes con las flechas. Tocando el nombre elegís un mes, un año o un día." },
+  { sel: "#accOpen", tab: "list", t: "¿Dónde está tu plata?", b: "Efectivo, banco y billeteras, con lo que te rinde cada una. Opcional, pero muy útil." },
+  { sel: "#learnBtn", tab: "list", t: "Aprender", b: "Lecciones cortas de plata, cuando tengas ganas. Es opcional: la app funciona igual." },
+  { sel: "#setBtn", tab: "list", t: "Ajustes", b: "Tu cobro, tarjetas, idioma, avisos y backup. Y este recorrido, si lo querés ver de nuevo." }
+];
+let tourI = -1;
+function startTour(){ tourI = 0; if (!$("tourBox")){ const d = document.createElement("div"); d.id = "tourBox"; d.innerHTML = '<div class="tour-hole"></div><div class="tour-tip" role="dialog" aria-live="polite"><div class="tour-n"></div><strong class="tour-t"></strong><p class="tour-b"></p><div class="tour-acts"><button type="button" class="linkbtn tour-skip">Saltear recorrido</button><span style="flex:1"></span><button type="button" class="small-btn tour-back">Atrás</button><button type="button" class="small-btn primary tour-next">Siguiente</button></div></div>'; document.body.append(d);
+  d.querySelector(".tour-skip").onclick = endTour; d.querySelector(".tour-back").onclick = () => { if (tourI > 0){ tourI--; showTour(); } }; d.querySelector(".tour-next").onclick = () => { tourI++; tourI >= TOUR.length ? endTour() : showTour(); };
+  window.addEventListener("resize", () => tourI >= 0 && placeTour()); window.addEventListener("scroll", () => tourI >= 0 && placeTour(), { passive: true }); }
+  $("tourBox").hidden = false; document.body.classList.add("touring"); showTour(); }
+function endTour(){ tourI = -1; if ($("tourBox")) $("tourBox").hidden = true; document.body.classList.remove("touring"); try { localStorage.setItem("receater.tour", "1"); } catch {} setTab("list"); window.scrollTo({ top: 0 }); }
+function showTour(){
+  const st = TOUR[tourI]; if (learnOn) exitLearn(); if (tab !== st.tab) setTab(st.tab);
+  const box = $("tourBox");
+  box.querySelector(".tour-n").textContent = `${tourI + 1} de ${TOUR.length}`;
+  box.querySelector(".tour-t").textContent = st.t; box.querySelector(".tour-b").textContent = st.b;
+  box.querySelector(".tour-back").hidden = tourI === 0;
+  box.querySelector(".tour-next").textContent = tourI === TOUR.length - 1 ? "¡Listo!" : "Siguiente";
+  const el = document.querySelector(st.sel);
+  if (el){ const r = el.getBoundingClientRect(); if (r.top < 70 || r.bottom > innerHeight - 160) window.scrollTo({ top: Math.max(0, scrollY + r.top - innerHeight / 3) }); }
+  requestAnimationFrame(() => requestAnimationFrame(placeTour));
+}
+function placeTour(){
+  const st = TOUR[tourI]; if (!st) return; const el = document.querySelector(st.sel), box = $("tourBox"), hole = box.querySelector(".tour-hole"), tip = box.querySelector(".tour-tip");
+  if (!el){ hole.style.cssText = "left:50%;top:40%;width:0;height:0"; return; }
+  const r = el.getBoundingClientRect(), pad = 8;
+  hole.style.cssText = `left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px`;
+  const tw = Math.min(340, innerWidth - 32); tip.style.width = tw + "px";
+  const left = Math.max(16, Math.min(innerWidth - tw - 16, r.left + r.width / 2 - tw / 2));
+  const below = r.bottom + pad + 14, th = tip.offsetHeight || 160;
+  const top = below + th < innerHeight - 10 ? below : Math.max(10, r.top - pad - 14 - th);
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
 
 /* Botón para volver arriba: aparece cuando bajaste bastante */
 (function(){ const b = $("goTop"); const upd = () => { b.hidden = window.scrollY < 700; };
@@ -9199,7 +9255,29 @@ async function checkNewVersion(){
 checkNewVersion();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 
-const I18N_DICT = `Gasto por mes, últimos 6 meses	Spending per month, last 6 months
+const I18N_DICT = `La pizarra de Recy	Recy's board
+Acá ves cuánto te queda del mes y cuánto podés gastar por día. Si no coincide con tu plata real, tocá el lápiz.	Here you see how much you have left this month and how much you can spend per day. If it doesn't match your real money, tap the pencil.
+Con este botón cargás cada gasto o ingreso: escribiendo, con una foto del ticket o a mano.	With this button you log every expense or income: typing, with a receipt photo or by hand.
+Todo lo que cargaste, día por día. Arriba, los fijos que te faltan pagar.	Everything you logged, day by day. On top, the fixed expenses you still have to pay.
+El Diario de Recy: en qué se te va la plata, tus tarjetas y cómo vas contra otros meses.	Recy's Daily: where your money goes, your cards and how you compare with other months.
+Alquiler, servicios, suscripciones: lo que pagás todos los meses. Recy te avisa qué falta pagar.	Rent, bills, subscriptions: what you pay every month. Recy tells you what's left to pay.
+Tus frascos: cada ahorro en su lugar, en pesos o en dólares, con metas si querés.	Your jars: each saving in its place, in pesos or dollars, with goals if you want.
+El mes	The month
+Cambiá de mes con las flechas. Tocando el nombre elegís un mes, un año o un día.	Change the month with the arrows. Tap the name to pick a month, a year or a day.
+Efectivo, banco y billeteras, con lo que te rinde cada una. Opcional, pero muy útil.	Cash, bank and wallets, with what each one earns. Optional, but very useful.
+Lecciones cortas de plata, cuando tengas ganas. Es opcional: la app funciona igual.	Short money lessons, whenever you feel like it. It's optional: the app works the same.
+Tu cobro, tarjetas, idioma, avisos y backup. Y este recorrido, si lo querés ver de nuevo.	Your payday, cards, language, notifications and backup. And this tour, if you want to see it again.
+Saltear recorrido	Skip tour
+Atrás	Back
+¡Listo!	Done!
+Recorrido por la app	App tour
+Te muestro para qué sirve cada parte, con la app de fondo.	I show you what each part does, with the app in the background.
+Cargar lo básico: cobro, fijos y tarjetas.	Set up the basics: payday, fixed expenses and cards.
+Extra opcional	Optional extra
+No hace falta para usar la app	You don't need it to use the app
+Pero te ayuda un montón a entender tu plata	But it helps a lot to understand your money
+Si tenés 2 minutos	If you have 2 minutes
+Gasto por mes, últimos 6 meses	Spending per month, last 6 months
 Comprar en cuotas: cuándo sí y cuándo no	Buying in installments: when yes and when no
 Por qué anotar lo que gastás	Why track what you spend
 Así Recy entiende lo que le contás con tus palabras y lee las fotos de tus tickets. Usa la IA gratis de Google, con tu propia cuenta. Se hace	That way Recy understands what you tell it in your own words and reads your receipt photos. It uses Google's free AI, with your own account. It takes
@@ -9778,6 +9856,8 @@ const I18N_EN_P = [
   [/^en (\d+) cuotas$/, "in $1 installments"],
   [/^El (\d+)$/, "On the $1"],
   [/^Capítulo (\d+)$/, "Chapter $1"],
+  [/^Tema (\d+)$/, "Topic $1"],
+  [/^(\d+) de (\d+) temas$/, "$1 of $2 topics"],
   [/^(\d+) min$/, "$1 min"],
   [/^(\d+) de (\d+)$/, "$1 of $2"],
   [/^(\d+) capítulos$/, "$1 chapters"],
