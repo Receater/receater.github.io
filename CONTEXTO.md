@@ -287,6 +287,11 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Ajustes a mano van después de `/*DARK-END*/` (fondos ilustrados con brightness, outline del header).
 - Links de pago (`.pay-to a`) no se ponen violetas al visitarlos.
 
+### 7l. Ahorros como estantería
+- `.jar-shelf`: grilla de madera; cada frasco (`.jar-slot`) ocupa un lugar y tiene su tabla abajo. 2 columnas en celu, 3 en tablet, auto en escritorio.
+- El líquido es el progreso; una etiqueta de papel pegada (`.js-label`) muestra nombre, saldo, ≈ pesos, % de la meta y lo que entró en el mes. Click → `openJarDetail`.
+- `fillShelf` completa la última fila con lugares vacíos para que el estante quede parejo (se recalcula al cambiar el tamaño).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.

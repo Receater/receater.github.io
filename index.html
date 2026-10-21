@@ -1654,6 +1654,26 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 }
 @media (min-width:1100px) and (max-width:1299px){.brand .learn-btn span{display:none}.brand .learn-btn{padding:0 12px}
 }
+
+/* ===== Ahorros: estantería con frascos. Cada frasco ocupa un lugar del estante ===== */
+.jar-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0;row-gap:0;margin-top:12px;padding:10px 12px 0;border-radius:6px 6px 0 0;
+  background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.08)),#8A5F3A;border:10px solid #6B4528;border-bottom:0;box-shadow:inset 0 6px 14px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.2)}
+@media (min-width:700px){.jar-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1100px){.jar-shelf{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+.jar-slot{position:relative;display:flex;justify-content:center;align-items:flex-end;min-width:0;padding:14px 6px 16px;margin:0;border:0;background:none;cursor:pointer;font:inherit;color:#1F1F1F}
+.jar-slot::after{content:"";position:absolute;left:-12px;right:-12px;bottom:0;height:16px;background:linear-gradient(180deg,#C08A55,#A06C3E 40%,#7A4E2A);box-shadow:0 5px 6px rgba(0,0,0,.35);z-index:0}
+.jar-slot.js-empty{cursor:default;min-height:60px}
+.js-jar{position:relative;z-index:1;width:min(100%,170px);transition:transform .15s}
+.jar-slot:hover .js-jar{transform:translateY(-3px)}
+.js-jar svg{display:block;width:100%;height:auto;overflow:visible}
+.js-label .jar-bal,.js-label div{text-align:center}
+.js-label{position:absolute;left:6%;right:6%;top:42%;transform:translateY(-50%) rotate(-1.5deg);background:#FBF8F1;border:1.5px dashed #BDB6A5;border-radius:3px;padding:6px 5px;text-align:center;
+  font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 2px 4px rgba(0,0,0,.18);line-height:1.25;min-width:0}
+.js-label .jar-name{font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.js-label .jar-bal{font-family:inherit;font-weight:700;font-size:.86rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.js-label .jar-bal.usd{color:#1E7A50}
+.js-label .jar-sub,.js-label .jar-ars,.js-label .jar-delta{font-size:.7rem;color:#6E6A62;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.js-label .jar-delta{color:#1E7A50;font-weight:700}.js-label .jar-delta.neg{color:#C9374B}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -1974,6 +1994,14 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .opt:has(input:checked){border:1.5px solid #CCCCCC !important;box-shadow:2px 3px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .dlg .input,:root[data-theme="dark"] .dlg select.input{border-bottom:1.5px solid #CCCCCC !important}
 :root[data-theme="dark"] .dlg .input:focus,:root[data-theme="dark"] .dlg select.input:focus{border-color:#CCCCCC !important}
+:root[data-theme="dark"] .jar-shelf{background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.08)),#7C5431 !important;border:10px solid #603C21 !important}
+:root[data-theme="dark"] .jar-slot{color:#CCCCCC !important}
+:root[data-theme="dark"] .jar-slot::after{background:linear-gradient(180deg,#AD7A49,#905F34 40%,#6D4423) !important}
+:root[data-theme="dark"] .js-label{background:#1D1C19 !important;border:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .js-label .jar-bal.usd{color:#55A57B !important}
+:root[data-theme="dark"] .js-label .jar-sub,:root[data-theme="dark"] .js-label .jar-ars,:root[data-theme="dark"] .js-label .jar-delta{color:#817E78 !important}
+:root[data-theme="dark"] .js-label .jar-delta{color:#55A57B !important}
+:root[data-theme="dark"] .js-label .jar-delta.neg{color:#E85D69 !important}
 /*DARK-END*/
 /* Fondos ilustrados en oscuro: más apagados */
 :root[data-theme="dark"] #scene{filter:brightness(.34) saturate(.7)}
@@ -2772,7 +2800,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-21.1745";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-21.1810";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -8098,6 +8126,15 @@ function jarSVG(color, level, full){
     ${full ? `<path d="M64 2 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#F3C64B"/>` : ""}
   </svg>`;
 }
+// Completa la última fila del estante con lugares vacíos, así la madera llega de punta a punta
+function fillShelf(grid){
+  if (!grid || !grid.isConnected) return;
+  grid.querySelectorAll(".js-empty").forEach(x => x.remove());
+  const n = grid.children.length; if (!n) return;
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
+  for (let i = n % cols ? cols - (n % cols) : 0; i > 0; i--){ const e = document.createElement("div"); e.className = "jar-slot js-empty"; e.setAttribute("aria-hidden", "true"); grid.append(e); }
+}
+window.addEventListener("resize", () => fillShelf(document.querySelector(".jar-shelf")));
 function renderJars(){
   if (!jarCurPicked){
     // Si no elegiste moneda, se muestra la que tuvo movimientos en este período (dólares primero si hubo de las dos)
@@ -8113,27 +8150,27 @@ function renderJars(){
     list.innerHTML = '<div class="empty"><strong>Todavía no tenés frascos</strong>Creá uno para cada ahorro: dólares, plazo fijo, un viaje. Lo que cargues como Ahorro o compra de dólares se va sumando solo.</div>';
   }
   if (data.jars.length && !jars.length) list.innerHTML = '<div class="empty"><strong>Todavía no tenías ahorros</strong>En ese período no había nada ahorrado.</div>';
-  const grid = document.createElement("div"); grid.className = "jar-grid"; list.append(grid);
+  const grid = document.createElement("div"); grid.className = "jar-grid jar-shelf"; list.append(grid);
   const maxBal = cur => Math.max(1, ...jars.filter(j => j.currency === cur).map(j => jarBalanceAt(j, r.to)));
   jars.forEach(j => {
     const bal = jarBalanceAt(j, r.to), balNow = jarBalance(j), delta = isTotal ? 0 : jarNetIn(j, r), money2 = n => j.currency === "USD" ? fmtUSD.format(n) : fmtARS.format(n), open = openJars.has(j.id);
     const level = j.goal ? Math.min(1, Math.max(0, bal / j.goal)) : Math.min(1, Math.max(0, bal / maxBal(j.currency))) * 0.85;
-    const tile = document.createElement("button"); tile.type = "button"; tile.className = "jar-tile"; tile.setAttribute("aria-expanded", String(open));
+    // Frasco en la estantería: el líquido es el progreso y la etiqueta pegada tiene los datos
+    const tile = document.createElement("button"); tile.type = "button"; tile.className = "jar-slot"; tile.setAttribute("aria-expanded", String(open));
     tile.setAttribute("aria-label", `${j.name}: ${money2(bal)}${j.goal ? `, meta ${money2(j.goal)}` : ""}`);
-    tile.innerHTML = jarSVG(j.color, level, j.goal && bal >= j.goal);
+    const art = document.createElement("div"); art.className = "js-jar"; art.innerHTML = jarSVG(j.color, level, j.goal && bal >= j.goal);
+    const lab = document.createElement("div"); lab.className = "js-label";
     const nm = document.createElement("div"); nm.className = "jar-name"; nm.textContent = j.name;
     const bb = document.createElement("div"); bb.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); bb.textContent = money2(bal);
     const sb = document.createElement("div"); sb.className = "jar-sub";
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
-    tile.append(nm, bb);
-    if (j.goal){ const m = document.createElement("div"); m.className = "meter jar-meter"; const sp = document.createElement("span");
-      sp.style.width = Math.round(level * 100) + "%"; sp.style.background = j.color; m.append(sp); tile.append(m); }
-    tile.append(sb);
-    if (delta){ const dl = document.createElement("div"); dl.className = "jar-delta" + (delta < 0 ? " neg" : "");
-      dl.textContent = (delta > 0 ? "+ " : "− ") + money2(Math.abs(delta)) + (jarScope.mode === "day" ? " ese día" : " en el mes"); tile.append(dl); }
-    // En dólares: cuánto son en pesos hoy
+    lab.append(nm, bb);
     const rq = jarUsdRate();
-    if (j.currency === "USD" && rq && bal > 0){ const pz = document.createElement("div"); pz.className = "jar-ars"; pz.textContent = `≈ ${f0ARS(bal * rq.venta)}`; tile.insertBefore(pz, sb); }
+    if (j.currency === "USD" && rq && bal > 0){ const pz = document.createElement("div"); pz.className = "jar-ars"; pz.textContent = `≈ ${f0ARS(bal * rq.venta)}`; lab.append(pz); }
+    lab.append(sb);
+    if (delta){ const dl = document.createElement("div"); dl.className = "jar-delta" + (delta < 0 ? " neg" : "");
+      dl.textContent = (delta > 0 ? "+ " : "− ") + money2(Math.abs(delta)) + (jarScope.mode === "day" ? " ese día" : " en el mes"); lab.append(dl); }
+    art.append(lab); tile.append(art);
     tile.onclick = () => openJarDetail(j.id);
     grid.append(tile);
   });
@@ -8146,6 +8183,7 @@ function renderJars(){
       list.append(p);
     }
   }
+  fillShelf(grid);
   renderJarHistory(r);
   renderYields();
   if (jdOpen) renderJarDetail();
