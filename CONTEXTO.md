@@ -277,6 +277,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - En escritorio (≥1100px) el header es fijo y de ancho completo, con las pestañas adentro (un IIFE las mueve según `matchMedia`). En celu queda igual.
 - Botón de ayuda (?) en el header (`openHelp`): Recorrido, Configurar la app, Aprender.
 - Flujo de primera vez: bienvenida → recorrido (`startTour`) → al terminar, `offerSetup` pregunta "¿Configuramos la app juntos?" (localStorage `receater.setup`).
+- Header de escritorio pegado al techo (top 0): logo a la izquierda, pestañas centradas (absolutas), botones a la derecha; igual en Aprender. Entre 1100 y 1299px "Aprender" queda sólo con ícono.
+- REGLA: nada con cara de default. `.set-row` son filas punteadas tipo libreta con ícono; radios y checks propios (tilde verde); inputs de diálogos y del frasco subrayados como libreta; el frasco usa Courier.
 - Configuración (`openSetup`): 4 preguntas con contador, todo salteable; los fijos no piden monto y la tarjeta sólo pide nombre (día 10 por defecto).
 
 ## 8. Pendientes e ideas
