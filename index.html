@@ -3961,11 +3961,6 @@ function openAsk(){
   const people = knownPeople().slice(0, 1);
   ["¿En qué gasté más este mes?", `¿Gasté más o menos que en ${prev}?`, people[0] ? `¿Cuánto me debe ${people[0]}?` : "¿Cuánto me queda por día?", "¿Cuánto gasté en delivery este mes?"].forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = () => { $("askQ").value = t; askGo(); }; sug.append(b); });
-Tema	Theme
-Automático	Automatic
-Claro	Light
-Oscuro	Dark
-Automático sigue lo que tenga tu celu o compu.	Automatic follows your phone or computer setting.
   if (!aiKey()){ askMsg("recy", "Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez)."); const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy"; a.onclick = () => { closeAsk(); openAi(); }; $("askLog").append(a); }
   $("askBg").classList.add("open"); $("askSheet").classList.add("open");
 }
@@ -10106,6 +10101,11 @@ Pago parcial	Partial payment
 Pagué la tarjeta	I paid the card
 Pagué tarjeta	Card paid
 Pagué una tarjeta	I paid a card
+Tema	Theme
+Automático	Automatic
+Claro	Light
+Oscuro	Dark
+Automático sigue lo que tenga tu celu o compu.	Automatic follows your phone or computer setting.
 Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez).	To answer you I need you to turn on Smart Recy (it's free, done once).
 Para el que nunca compró una	For people who never bought one
 Para hoy	For today
