@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-21.1400`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-21.1430`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -225,6 +225,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 ## 7i. Recorrido por la app y escuelita opcional (notas de Tome)
 
 - **Recorrido (walkthrough)** en vez de pantallas de texto: velo gris con un "agujero" que hace foco en una parte real de la app y un globito con una explicación corta; Siguiente / Atrás / Saltear recorrido. Pasos en `TOUR` (pizarra, Darle a Recy, las 4 pestañas, el mes, ¿Dónde está tu plata?, Aprender, Ajustes); cambia de pestaña solo. Arranca al terminar la guía de inicio y desde Ajustes → "Recorrido por la app". Se sacó de la guía el paso de texto "Cómo funciona".
+- **Escuelita en escritorio:** los temas van en 2 columnas y a la izquierda hay un índice "Temas" con el progreso de cada uno (clic = va al tema). En el celu ese índice no aparece.
+- **Estados vacíos** ("Recy tiene hambre", "Todavía no tenés frascos"…): hoja de libreta con espiral y Recy con hambre.
 - **Escuelita como extra opcional:** la pizarra dice "Extra opcional" y el progreso es por tema ("0 de 6 temas", no "0 de 27 lecciones"), con "No hace falta para usar la app". Los capítulos se llaman "Tema N"; la tarjeta "Para hoy" pasó a "Si tenés 2 minutos".
 
 ## 7h. Idioma (español / inglés)
