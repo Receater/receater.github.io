@@ -281,6 +281,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - REGLA: nada con cara de default. `.set-row` son filas punteadas tipo libreta con ícono; radios y checks propios (tilde verde); inputs de diálogos y del frasco subrayados como libreta; el frasco usa Courier.
 - Configuración (`openSetup`): 4 preguntas con contador, todo salteable; los fijos no piden monto y la tarjeta sólo pide nombre (día 10 por defecto).
 
+### 7k. Modo oscuro
+- Ajustes → Tema: Automático / Claro / Oscuro (localStorage `receater.theme`). Un script en el `<head>` pone `data-theme` en `<html>` antes de pintar.
+- El CSS oscuro se GENERA: `python3 tools/gen-dark.py` lee todo el CSS y escribe entre `/*DARK-START*/` y `/*DARK-END*/` la versión oscura de cada regla con colores (OKLab: papel → oscuro, tinta → clara, botones negros → gris levantado, madera y colores vivos quedan, texto blanco queda). CORRER DESPUÉS DE TOCAR ESTILOS.
+- Ajustes a mano van después de `/*DARK-END*/` (fondos ilustrados con brightness, outline del header).
+- Links de pago (`.pay-to a`) no se ponen violetas al visitarlos.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
