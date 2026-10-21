@@ -1,6 +1,6 @@
 # CONTEXTO — Receater
 
-**Última actualización:** 18 de octubre de 2026 (build `2026-10-21.0130`)
+**Última actualización:** 18 de octubre de 2026 (build `2026-10-21.1400`)
 
 Este archivo explica Receater para quien no estuvo en las charlas donde se armó. Cada vez que se cambie algo de la app, se actualiza acá en el mismo commit.
 
@@ -272,6 +272,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Falta confirmar en el navegador real que ArgentinaDatos responda (CORS); si falla, se ofrece "Cuenta con tasa".
 
 ## 8. Pendientes e ideas
+
+- **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
 
 
 - **Escuelita, próximos pasos**: glosario tocable y "No entendí, explicámelo de otra forma" / preguntar con Gemini. Revisar cada tanto los datos de impuestos (cambian).

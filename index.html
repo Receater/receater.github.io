@@ -1036,6 +1036,25 @@ main.wrap{position:relative;z-index:1}
 /* El scroll siempre ocupa su lugar: así nada se corre cuando aparece */
 html{overflow-y:scroll;scrollbar-gutter:stable}
 body{overflow-x:clip;max-width:100%}
+/* Pantallas muy angostas (≤360 px): que nada se pise */
+.legend li > :nth-child(2),.cal-info strong,.cal-info .s2,.fp-row .n{min-width:0;overflow-wrap:break-word}
+/* Celu angosto: en los fijos pendientes, el monto y "Pagar" van abajo del nombre (así el nombre tiene lugar) */
+@media (max-width:360px){
+  .cal-row{grid-template-columns:auto minmax(0,1fr) !important}
+  .cal-right{grid-column:2;display:flex !important;flex-wrap:wrap;min-width:0;align-items:center;justify-content:flex-start;gap:10px}
+}
+@media (max-width:360px){
+  .main-tabs button{padding:0 2px}
+  .main-tabs #tabList{font-size:.5rem;letter-spacing:-.03em}
+  .main-tabs #tabDash,.main-tabs #tabJars,.main-tabs #tabFixed{font-size:.76rem}
+  .cal-right .amt{font-size:.88rem}
+  .clip .cal-top{padding-right:96px !important}
+  #loanPend .fp-row{grid-template-columns:minmax(0,1fr) auto}
+  #loanPend .fp-row > :last-child{grid-column:1 / -1;justify-self:end}
+  .lcd-big{font-size:clamp(1.7rem,9vw,2.4rem) !important}
+}
+
+.seg button{white-space:normal;line-height:1.2;min-width:0;overflow-wrap:anywhere}
 #tourBox{position:fixed;inset:0;z-index:200;pointer-events:auto}
 #tourBox[hidden]{display:none}
 .tour-hole{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(20,22,28,.62);transition:all .3s ease;pointer-events:none;outline:3px solid #F4C24E;outline-offset:2px}
@@ -2346,7 +2365,7 @@ body:has(.conn:not([hidden])) .upd-bar{top:calc(88px + env(safe-area-inset-top,0
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-21.0130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-21.1400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3995,7 +4014,8 @@ function updateFixField(){
     b.setAttribute("aria-pressed", String(!!on));
     b.append(i.f.name);
     const st = document.createElement("span"); st.className = "st";
-    st.textContent = i.expected ? money(round2(i.expected - i.paid), i.currency) : (i.state === "todebit" ? "a debitar" : "");
+    const left = i.expected ? round2(i.expected - i.paid) : 0;
+    st.textContent = i.expected ? (left > 0.004 ? money(left, i.currency) : "pagado ✓") : (i.state === "todebit" ? "a debitar" : "");
     b.append(st);
     b.onclick = () => { if (on){ fixSel = null; updateFixField(); return; } pickFixed(i); };
     box.append(b);
@@ -9255,7 +9275,10 @@ async function checkNewVersion(){
 checkNewVersion();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewVersion(); });
 
-const I18N_DICT = `La pizarra de Recy	Recy's board
+const I18N_DICT = `pagado ✓	paid ✓
+Pagué de más esta vez	I paid extra this time
+a debitar	to be debited
+La pizarra de Recy	Recy's board
 Acá ves cuánto te queda del mes y cuánto podés gastar por día. Si no coincide con tu plata real, tocá el lápiz.	Here you see how much you have left this month and how much you can spend per day. If it doesn't match your real money, tap the pencil.
 Con este botón cargás cada gasto o ingreso: escribiendo, con una foto del ticket o a mano.	With this button you log every expense or income: typing, with a receipt photo or by hand.
 Todo lo que cargaste, día por día. Arriba, los fijos que te faltan pagar.	Everything you logged, day by day. On top, the fixed expenses you still have to pay.
