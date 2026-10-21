@@ -273,6 +273,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - "¿Cuánto tenés hoy?" reinicia el cálculo con el monto real de la app. Es estimación; no se suma a gastos ni ingresos todavía.
 - Falta confirmar en el navegador real que ArgentinaDatos responda (CORS); si falla, se ofrece "Cuenta con tasa".
 
+### 7j. Header de escritorio, ayuda y configuración más liviana
+- En escritorio (≥1100px) el header es fijo y de ancho completo, con las pestañas adentro (un IIFE las mueve según `matchMedia`). En celu queda igual.
+- Botón de ayuda (?) en el header (`openHelp`): Recorrido, Configurar la app, Aprender.
+- Flujo de primera vez: bienvenida → recorrido (`startTour`) → al terminar, `offerSetup` pregunta "¿Configuramos la app juntos?" (localStorage `receater.setup`).
+- Configuración (`openSetup`): 4 preguntas con contador, todo salteable; los fijos no piden monto y la tarjeta sólo pide nombre (día 10 por defecto).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
