@@ -284,12 +284,14 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 ### 7k. Modo oscuro
 - Ajustes → Tema: Automático / Claro / Oscuro (localStorage `receater.theme`). Un script en el `<head>` pone `data-theme` en `<html>` antes de pintar.
 - El CSS oscuro se GENERA: `python3 tools/gen-dark.py` lee todo el CSS y escribe entre `/*DARK-START*/` y `/*DARK-END*/` la versión oscura de cada regla con colores (OKLab: papel → oscuro, tinta → clara, botones negros → gris levantado, madera y colores vivos quedan, texto blanco queda). CORRER DESPUÉS DE TOCAR ESTILOS.
+- Modo claro = como se veía antes (fondo ilustrado sobre fondo oscuro, svg al 70%). No aclarar el modo claro.
+- Tema: diálogo con filas Automático/Claro/Oscuro y tilde verde (`.theme-dlg`).
 - Ajustes a mano van después de `/*DARK-END*/` (fondos ilustrados con brightness, outline del header).
 - Links de pago (`.pay-to a`) no se ponen violetas al visitarlos.
 
 ### 7l. Ahorros como estantería
-- `.jar-shelf`: grilla de madera; cada frasco (`.jar-slot`) ocupa un lugar y tiene su tabla abajo. 2 columnas en celu, 3 en tablet, auto en escritorio.
-- El líquido es el progreso; una etiqueta de papel pegada (`.js-label`) muestra nombre, saldo, ≈ pesos, % de la meta y lo que entró en el mes. Click → `openJarDetail`.
+- `.jar-shelf`: estantería de cubos; la madera es el fondo de la grilla (el gap son las paredes) y cada frasco (`.jar-slot`) es un cubo. 2 columnas en celu, 3 en tablet, auto en escritorio.
+- El líquido es el progreso; una plaquita abajo (`.js-label`, tapa apenas la base del frasco) muestra nombre, saldo, ≈ pesos, % de la meta y lo que entró en el mes. Click → `openJarDetail`.
 - `fillShelf` completa la última fila con lugares vacíos para que el estante quede parejo (se recalcula al cambiar el tamaño).
 
 ## 8. Pendientes e ideas
