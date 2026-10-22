@@ -298,7 +298,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Cada movimiento guarda `at` (hora de carga; lo viejo quedó en 0). El "tengo $X" (`anchor`) también guarda `at`.
 - Del día del "tengo $X" solo se suma lo cargado DESPUÉS de decirlo (antes se ignoraba todo ese día, y lo que cargabas más tarde ese mismo día no bajaba el saldo).
 - Al actualizar saldos, pasar plata o editar una cuenta se re-dibuja todo (pizarra incluida).
-- "Te da para $X por día" usa la plata real de las cuentas cuando todas tienen saldo; si alguna dice ¿?, usa lo que calcula con lo cargado.
+- Si todas las cuentas tienen saldo, la pizarra usa la plata real: "Te queda" = cuentas − fijos por pagar − tarjeta que vence antes de cobrar − lo que tenés que devolver. Primera línea: "En tus cuentas $X". El lápiz abre "actualizar saldos". El "por día" sale de ese número.
+- Si alguna cuenta dice ¿?, todo sigue como antes (cobraste − gastaste).
 - Drive: si cambiás algo mientras se está subiendo, se vuelve a subir al terminar (antes ese cambio quedaba sin subir).
 - Header en celu: el logo no se tapa; "Aprender" solo ícono ≤600px, botones de 40px ≤420px, cotización oculta ≤375px.
 

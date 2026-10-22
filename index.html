@@ -2828,7 +2828,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-22.0930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-22.1610";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3688,14 +3688,18 @@ function render(){
   const big = $("totalArs"), meter = $("meter"), lines = [];
   if (bIncA > 0){
     const incA = bIncA, spentA = bSpentA, savA = bSavA, gastoA = bGastoA;
-    const left = incA - spentA;
-    const fixP = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
-    let realNow = null; try { realNow = isCurrentPeriod(viewYear, viewMonth) ? accTotal() : null; } catch {}
-    const free = (realNow != null ? realNow : left) - fixP;
+    const calcLeft = incA - spentA, cur = isCurrentPeriod(viewYear, viewMonth);
+    const fixP = cur ? fixedPendingARS(viewYear, viewMonth) : 0;
+    let realNow = null; try { realNow = cur ? accTotal() : null; } catch {}
+    // Con las cuentas al día, "te queda" es la plata real menos lo que todavía tenés que pagar (fijos y tarjeta hasta que cobres)
+    const periodEnd = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth + 1), now = new Date();
+    const cardP = realNow != null ? round2(allEnts.filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) <= periodEnd).reduce((a, x) => a + x.amount, 0)) : 0;
+    const left = realNow != null ? round2(realNow - fixP - cardP) : calcLeft;
+    const free = realNow != null ? left : calcLeft - fixP;
+    boardReal = realNow != null; boardRealNow = realNow; boardRealLeft = realNow != null ? left : null;
     $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
-    boardLeft = isCurrentPeriod(viewYear, viewMonth) ? left : null; $("leftEdit").hidden = boardLeft == null;
-    let at = null; try { at = boardLeft != null ? accTotal() : null; } catch {}
-    boardMismatch = at != null && Math.abs(at - left) >= Math.max(1000, Math.abs(left) * 0.01) ? at : null;
+    boardLeft = cur ? calcLeft : null; $("leftEdit").hidden = !cur;
+    boardMismatch = null;
     big.textContent = fmtARS.format(Math.abs(left));
     big.classList.toggle("neg", left < 0);
     requestAnimationFrame(() => { $("leftEdit").style.color = getComputedStyle(big).color; });
@@ -3713,9 +3717,11 @@ function render(){
       const daysLeft = Math.max(1, Math.ceil((payDate(viewYear, viewMonth+1) - new Date()) / 864e5));
       lines.push(`Te da para ${fmtARS.format(free/daysLeft)} por día ${isCalendar() ? "hasta fin de mes" : "hasta que cobres"}`);
     }
-    if (fixP > 0) lines.splice(1, 0, `Fijos por pagar: ${fmtARS.format(fixP)}. Libre: ${fmtARS.format(free)}`);
+    if (realNow != null){ const parts = [`En tus cuentas ${fmtARS.format(realNow)}`]; if (fixP > 0) parts.push(`fijos por pagar ${fmtARS.format(fixP)}`); if (cardP > 0) parts.push(`tarjeta ${fmtARS.format(cardP)}`);
+      lines.splice(1, 0, parts.join(" − ")); }
+    else if (fixP > 0) lines.splice(1, 0, `Fijos por pagar: ${fmtARS.format(fixP)}. Libre: ${fmtARS.format(free)}`);
   } else {
-    $("bigLabel").textContent = "Gastaste"; boardLeft = null; boardMismatch = null; $("leftEdit").hidden = true;
+    $("bigLabel").textContent = "Gastaste"; boardLeft = null; boardMismatch = null; boardReal = false; boardRealLeft = null; $("leftEdit").hidden = true;
     big.textContent = fmtARS.format(gastoA);
     big.classList.remove("neg");
     meter.hidden = true;
@@ -3744,8 +3750,15 @@ function render(){
   const owedScreen = balS.filter(x => x.ARS > 0).reduce((a,x) => a + x.ARS, 0), oweScreen = balS.filter(x => x.ARS < 0).reduce((a,x) => a - x.ARS, 0);
   if (owedScreen > 0.5) screen.push(`Te deben ${fmtARS.format(owedScreen)}`);
   if (oweScreen > 0.5) screen.push(`Debés ${fmtARS.format(oweScreen)}`);
+  if (boardReal && bIncA > 0){
+    // Con las cuentas al día: también se descuenta lo que tenés que devolver
+    const realLeft = round2(boardRealLeft - repayScreen);
+    $("bigLabel").textContent = realLeft >= 0 ? "Te queda" : "Te pasaste";
+    big.textContent = fmtARS.format(Math.abs(realLeft)); big.classList.toggle("neg", realLeft < 0);
+    screen.unshift(`En tus cuentas ${fmtARS.format(boardRealNow)}`);
+  }
   if (bIncA > 0 && isCurrentPeriod(viewYear, viewMonth)){
-    const freeD = bIncA - bSpentA - fixScreen - repayScreen;
+    const freeD = boardReal ? round2(boardRealLeft - repayScreen) : bIncA - bSpentA - fixScreen - repayScreen;
     const untilD = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth+1);
     const days = Math.ceil((untilD - new Date()) / 864e5);
     // El "por día" de hoy se calcula con lo que tenías al empezar el día, así no cambia mientras cargás gastos
@@ -8545,7 +8558,7 @@ function openAccount(a){
     if (st && st.known) box.querySelector("#acAmt").placeholder = `Ahora calculo ${f0ARS(st.bal)}. Poné el número real si no coincide`;
     box.querySelector("#acDel").onclick = () => uiConfirm(`¿Borrar ${a.name}? Los gastos que cargaste no se borran.`).then(ok => { if (!ok) return;
       data.accounts = data.accounts.filter(x => x.id !== a.id); if (!data.accounts.some(x => x.main) && bankAccounts()[0]) bankAccounts()[0].main = true;
-      persist(); renderAccounts(); box.parentElement.remove(); });
+      persist(); render(); renderAccounts(); box.parentElement.remove(); });
   } else box.querySelector("#acMain").checked = !bankAccounts().length;
   paint(); Promise.all([loadFci(), loadRend()]).then(paint);
 }
@@ -8587,7 +8600,7 @@ function reconcileDiffs(diffs){
 }
 
 /* ===== Corregir los números de la pizarra cuando no coinciden con la realidad ===== */
-var boardLeft = null, boardMismatch = null;
+var boardLeft = null, boardMismatch = null, boardReal = false, boardRealNow = null, boardRealLeft = null;
 function accTotal(){ if (!data.accounts.length) return null; const fl = accFlows(); let t = 0; for (const a of data.accounts){ const st = accStatus(a, fl); if (!st.known) return null; t += st.bal; } return round2(t); }
 function nowLocal(){ const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`; }
 function addAdjust(diff, accId, what){
@@ -9232,7 +9245,7 @@ function openAccFix(){
 }
 $("accMove").onclick = openAccMove;
 /* Tocar la pizarra abre dónde está tu plata */
-$("leftEdit").onclick = e => { e.stopPropagation(); openFixLeft(); }; $("accFix").onclick = openAccFix;
+$("leftEdit").onclick = e => { e.stopPropagation(); if (boardReal) openAccFix(); else openFixLeft(); }; $("accFix").onclick = openAccFix;
 /* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
 function renderJarHistory(r){
   updateFab();
@@ -10437,6 +10450,10 @@ const I18N_EN_P = [
   [/^Gastaste (.+)$/, "You spent $1"],
   [/^Fijos por pagar (.+)$/, "Fixed to pay $1"],
   [/^Fijos por pagar: (.+)\. Libre: (.+)$/, "Fixed to pay: $1. Free: $2"],
+  [/^En tus cuentas (.+?) − fijos por pagar (.+?) − tarjeta (.+)$/, "In your accounts $1 − fixed to pay $2 − card $3"],
+  [/^En tus cuentas (.+?) − fijos por pagar (.+)$/, "In your accounts $1 − fixed to pay $2"],
+  [/^En tus cuentas (.+?) − tarjeta (.+)$/, "In your accounts $1 − card $2"],
+  [/^En tus cuentas (.+)$/, "In your accounts $1"],
   [/^Te deben (.+)$/, "Owed to you: $1"],
   [/^Debés (.+)$/, "You owe $1"],
   [/^A devolver (.+)$/, "To pay back $1"],
