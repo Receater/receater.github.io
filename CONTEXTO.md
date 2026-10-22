@@ -294,6 +294,14 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - El líquido es el progreso; una plaquita abajo (`.js-label`, tapa apenas la base del frasco) muestra nombre, saldo, ≈ pesos, % de la meta y lo que entró en el mes. Click → `openJarDetail`.
 - `fillShelf` completa la última fila con lugares vacíos para que el estante quede parejo (se recalcula al cambiar el tamaño).
 
+### 7m. Cuentas: saldos que no se pierden
+- Cada movimiento guarda `at` (hora de carga; lo viejo quedó en 0). El "tengo $X" (`anchor`) también guarda `at`.
+- Del día del "tengo $X" solo se suma lo cargado DESPUÉS de decirlo (antes se ignoraba todo ese día, y lo que cargabas más tarde ese mismo día no bajaba el saldo).
+- Al actualizar saldos, pasar plata o editar una cuenta se re-dibuja todo (pizarra incluida).
+- "Te da para $X por día" usa la plata real de las cuentas cuando todas tienen saldo; si alguna dice ¿?, usa lo que calcula con lo cargado.
+- Drive: si cambiás algo mientras se está subiendo, se vuelve a subir al terminar (antes ese cambio quedaba sin subir).
+- Header en celu: el logo no se tapa; "Aprender" solo ícono ≤600px, botones de 40px ≤420px, cotización oculta ≤375px.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.

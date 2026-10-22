@@ -1681,6 +1681,17 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .js-label .jar-bal.usd{color:#1E6B45}
 .js-label .jar-sub,.js-label .jar-ars,.js-label .jar-delta{font-size:.66rem;color:#5E4E2A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .js-label .jar-delta{color:#1E6B45;font-weight:700}.js-label .jar-delta.neg{color:#A8323F}
+/* Header en celu: el logo nunca queda tapado; los botones se achican antes */
+@media (max-width:1099px){
+  .brand{gap:6px}
+  .brand-left{flex:1 1 auto;min-width:5.6em}
+  .brand .logo{white-space:nowrap}
+  .brand .hello{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand .learn-btn,.brand .usd-pill,.brand .icon-btn{flex:none}
+}
+@media (max-width:600px){.brand .learn-btn span{display:none}.brand .learn-btn{padding:7px 9px}}
+@media (max-width:420px){.brand .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px}.brand{padding-left:14px !important}}
+@media (max-width:375px){.brand .usd-pill{display:none !important}}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2817,7 +2828,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-21.1930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-22.0930";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2894,6 +2905,8 @@ const store = {
 let data = store.load();
 if (!Array.isArray(data.expenses)) data = {expenses:[]};
 if (!Array.isArray(data.incomes)) data.incomes = [];
+/* Hora de carga de cada movimiento: lo que ya existía queda en 0, lo nuevo se marca al guardar */
+[data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = 0; }));
 const INCOME_KINDS = [
   {id:"sueldo",    name:"Sueldo",         color:"var(--accent)"},
   {id:"extra",     name:"Trabajos extra", color:"var(--accent)"},
@@ -3677,7 +3690,8 @@ function render(){
     const incA = bIncA, spentA = bSpentA, savA = bSavA, gastoA = bGastoA;
     const left = incA - spentA;
     const fixP = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
-    const free = left - fixP;
+    let realNow = null; try { realNow = isCurrentPeriod(viewYear, viewMonth) ? accTotal() : null; } catch {}
+    const free = (realNow != null ? realNow : left) - fixP;
     $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
     boardLeft = isCurrentPeriod(viewYear, viewMonth) ? left : null; $("leftEdit").hidden = boardLeft == null;
     let at = null; try { at = boardLeft != null ? accTotal() : null; } catch {}
@@ -6066,6 +6080,7 @@ function openSheet(exp){
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
 
 function persist(){
+  const now = Date.now(); [data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = now; }));
   if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
   scheduleAlertsSoon();
 }
@@ -8421,11 +8436,12 @@ function accRate(a){
 }
 /* Movimientos de plata de cada cuenta, día por día (gastos, cuotas de tarjeta el día que se pagan, ingresos) */
 function accFlows(){
-  const f = {}; const add = (id, d, v) => { if (!id) return; const k = id + "|" + d; f[k] = (f[k] || 0) + v; };
-  data.expenses.forEach(e => { if (isIncome(e) || e.adjust || e.currency !== "ARS" || e.paidBy || (e.method === "card" && cardById(e.cardId))) return; add(accIdOf(e), e.date.slice(0, 10), -e.amount); });
-  entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount); });
-  data.incomes.forEach(e => { if (e.currency !== "ARS" || e.adjust) return; add(accIdOf(e), e.date.slice(0, 10), e.amount); });
-  data.accMoves.forEach(m => { add(m.from, m.date, -m.amount); add(m.to, m.date, m.amount); });
+  // por cuenta y día: total, y la lista con la hora en que se cargó cada cosa (para el día del "tengo $X")
+  const f = {}; const add = (id, d, v, at) => { if (!id) return; const k = id + "|" + d; (f[k] = f[k] || { sum: 0, its: [] }); f[k].sum += v; f[k].its.push([at || 0, v]); };
+  data.expenses.forEach(e => { if (isIncome(e) || e.adjust || e.currency !== "ARS" || e.paidBy || (e.method === "card" && cardById(e.cardId))) return; add(accIdOf(e), e.date.slice(0, 10), -e.amount, e.at); });
+  entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount, (x.src || x).at); });
+  data.incomes.forEach(e => { if (e.currency !== "ARS" || e.adjust) return; add(accIdOf(e), e.date.slice(0, 10), e.amount, e.at); });
+  data.accMoves.forEach(m => { add(m.from, m.date, -m.amount, m.at); add(m.to, m.date, m.amount, m.at); });
   return f;
 }
 /* Saldo de hoy y lo que rindió, desde el último "tengo $X" */
@@ -8435,10 +8451,12 @@ function accStatus(a, flows){
   if (!a.anchor) return { known: false, rate: r };
   const mk = iso(today).slice(0, 7);
   let bal = a.anchor.amount, earned = 0, month = 0, d = new Date(a.anchor.date + "T12:00");
-  // el día del ancla ya incluye sus movimientos (el usuario dijo cuánto tenía ese día)
+  // del día del "tengo $X" solo cuenta lo que cargaste después de decirlo (lo anterior ya estaba en ese número)
+  const day0 = flows[a.id + "|" + a.anchor.date];
+  if (day0 && a.anchor.at) day0.its.forEach(([at, v]) => { if (at > a.anchor.at) bal += v; });
   for (let guard = 0; guard < 4000; guard++){
     d.setDate(d.getDate() + 1); if (d > today) break;
-    const k = iso(d); bal += flows[a.id + "|" + k] || 0;
+    const k = iso(d), fl = flows[a.id + "|" + k]; bal += fl ? fl.sum : 0;
     if (bal > 0 && daily){ const i = bal * daily; bal += i; earned += i; if (k.slice(0, 7) === mk) month += i; }
   }
   return { known: true, bal, earned, month, perDay: bal > 0 ? bal * daily : 0, rate: r };
@@ -8499,13 +8517,13 @@ function openAccount(a){
       if (raw !== "" && !(amt >= 0)) return err("Poné cuánto tenés (puede ser 0).");
       let diff = null;
       if (raw !== "" && !isNew && st && st.known) diff = round2(amt) - st.bal;
-      if (raw !== ""){ const t = new Date(); a.anchor = { amount: round2(amt), date: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}` }; }
+      if (raw !== ""){ const t = new Date(); a.anchor = { amount: round2(amt), date: `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`, at: Date.now() }; }
       a.tna = b.querySelector("#acMan").checked ? (parseAmount(b.querySelector("#acTna").value) || 0) : null;
       if (p.cash){ a.tna = null; a.main = false; if (data.accounts.some(x => x.id !== a.id && accProv(x.prov).cash)) return err("Ya tenés el efectivo cargado."); }
       else a.main = b.querySelector("#acMain").checked || !bankAccounts().some(x => x.id !== a.id);
       if (a.main) data.accounts.forEach(x => { if (x.id !== a.id) x.main = false; });
       const i = data.accounts.findIndex(x => x.id === a.id); if (i >= 0) data.accounts[i] = a; else data.accounts.push(a);
-      persist(); renderAccounts(); if (typeof renderMethods === "function") renderMethods();
+      persist(); render(); renderAccounts(); if (typeof renderMethods === "function") renderMethods();
       if (diff != null) setTimeout(() => reconcileDiffs([{ acc: a, diff }]), 50);
     });
   const sel = box.querySelector("#acProv"), man = box.querySelector("#acMan"), tna = box.querySelector("#acTna"), txt = box.querySelector("#acRateTxt");
@@ -9192,7 +9210,7 @@ function openAccMove(){
       if (from === to) return err("Elegí dos lugares distintos.");
       if (!(amt > 0)) return err("Poné cuánto pasaste.");
       data.accMoves.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), from, to, amount: round2(amt), date: d });
-      persist(); renderAccounts();
+      persist(); render(); renderAccounts();
     });
   const fr = box.querySelector("#amFrom"), to = box.querySelector("#amTo");
   fr.value = mainAccId() || data.accounts[0].id; to.value = (data.accounts.find(a => a.id !== fr.value) || {}).id;
@@ -9207,8 +9225,8 @@ function openAccFix(){
       const t = new Date(), d = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
       const diffs = [];
       b.querySelectorAll("[data-acc]").forEach(i => { if (i.value.trim() === "") return; const v = parseAmount(i.value), a = accById(i.dataset.acc); if (!a || !(v >= 0)) return;
-        const st = accStatus(a, flows); if (st.known) diffs.push({ acc: a, diff: round2(v) - st.bal }); a.anchor = { amount: round2(v), date: d }; });
-      persist(); renderAccounts(); setTimeout(() => reconcileDiffs(diffs), 50);
+        const st = accStatus(a, flows); if (st.known) diffs.push({ acc: a, diff: round2(v) - st.bal }); a.anchor = { amount: round2(v), date: d, at: Date.now() }; });
+      persist(); render(); renderAccounts(); setTimeout(() => reconcileDiffs(diffs), 50);
     });
   return box;
 }
@@ -9429,15 +9447,18 @@ window.cloud = (() => {
       { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${b}` }, body });
     return (await r.json()).id;
   }
+  let again = false;
   async function upload(){
-    if (!ready || busy) return;
-    busy = true; status("Guardando…");
+    if (!ready) return;
+    if (busy){ again = true; return; }   // si cambiaste algo mientras subía, se sube de nuevo al terminar
+    busy = true; again = false; status("Guardando…");
     try {
       await api(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
         { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       status("En tu Drive ✓", "ok");
     } catch (e) { status(e.message === "expired" ? "Se renueva al tocar" : "Sin sincronizar", e.message === "expired" ? "ok" : "warn"); }
     busy = false;
+    if (again){ again = false; upload(); }
   }
   async function sync(){
     status("Conectando…");
