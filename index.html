@@ -1283,7 +1283,10 @@ html:has(.sheet.open) .go-top,html:has(.dlg-bg) .go-top{opacity:0;pointer-events
     linear-gradient(90deg,rgba(255,255,255,.65),rgba(255,255,255,0) 15%,rgba(255,255,255,0) 85%,rgba(255,255,255,.55)),
     linear-gradient(180deg,color-mix(in srgb,var(--jar-color) 7%,#fff),color-mix(in srgb,var(--jar-color) 18%,#fff));
   box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--jt) 65%,transparent),inset 0 10px 18px -8px rgba(255,255,255,.95)}
-.jar-glass .sheet-head{background:color-mix(in srgb,color-mix(in srgb,var(--jar-color) 8%,#fff) 94%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1.5px solid color-mix(in srgb,var(--jt) 45%,transparent);padding-top:14px}
+.jar-glass .sheet-head{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px;background:
+    linear-gradient(90deg,transparent 4.5%,rgba(255,255,255,.85) 4.5% 7%,transparent 7% 8.8%,rgba(255,255,255,.5) 8.8% 9.8%,transparent 9.8%),
+    linear-gradient(90deg,rgba(255,255,255,.65),rgba(255,255,255,0) 15%,rgba(255,255,255,0) 85%,rgba(255,255,255,.55)),
+    color-mix(in srgb,var(--jar-color) 8%,#fff);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1.5px solid color-mix(in srgb,var(--jt) 45%,transparent);padding-top:14px}
 .jar-glass .grab{background:color-mix(in srgb,var(--jt) 60%,transparent)}
 .jar-glass .input,.jar-glass select.input{background-color:rgba(255,255,255,.7);border:1px solid color-mix(in srgb,var(--jt) 70%,transparent)}
 .jar-glass .input:focus,.jar-glass select.input:focus{border-color:var(--accent)}
@@ -1674,12 +1677,14 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 #catSwatches .swatch.in-use{position:relative}
 #catSwatches .swatch.in-use::after{content:"";position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#FBF8F1;border:1.5px solid #6E6A62}
 /* Movimientos: filtro por categoría y total del día */
-.lf-wrap{position:relative;margin:0 0 12px}
+.lf-wrap{position:relative;margin:0 0 12px;padding:7px 8px 1px;background:#FBF8F1;border:1.5px dashed #BDB6A5;border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,.12)}
 .list-filter{display:flex;flex-wrap:nowrap;gap:6px;padding:2px 2px 6px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
 .list-filter::-webkit-scrollbar{display:none}
-.lf-arr{position:absolute;top:0;z-index:2;width:34px;height:34px;border-radius:50%;border:1.5px solid #1F1F1F;background:#FBF8F1;color:#1F1F1F;font-size:1.2rem;font-weight:700;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
+.lf-arr{position:absolute;top:2px;bottom:2px;z-index:2;width:44px;border:0;padding:0;color:#1F1F1F;font-size:1.5rem;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center}
 .lf-arr[hidden]{display:none}
-#lfL{left:-6px}#lfR{right:-6px}
+#lfL{left:2px;justify-content:flex-start;padding-left:2px;background:linear-gradient(90deg,#FBF8F1 30%,rgba(251,248,241,0))}
+#lfR{right:2px;justify-content:flex-end;padding-right:2px;background:linear-gradient(-90deg,#FBF8F1 30%,rgba(251,248,241,0))}
+.lf-arr:hover{color:#2F5BEA}
 .list-filter::-webkit-scrollbar{display:none}
 .lf-chip{flex:none;max-width:100%;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;border:1.5px solid #BDB6A5;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}
 .lf-more{border-style:dashed}
@@ -1741,8 +1746,11 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 @media (min-width:1100px){
   #fixedList{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px;align-items:start}
   #fixedList > *{grid-column:1 / -1}
-  #fixedList > .fx-pie{grid-column:1;grid-row:1}
-  #fixedList > .list{grid-column:2;grid-row:1;margin-top:12px}
+  #fixedList > .fx-pie{grid-column:1;grid-row:1;margin-top:0 !important}
+  #fixedList > .list{grid-column:2;grid-row:1;margin-top:0}
+  /* todo lo de la derecha arranca a la misma altura que el calendario */
+  .vcol-r > :first-child{margin-top:0 !important}
+  #jarList > .jar-shelf:first-child{margin-top:0}
 }
 /* Escuelita en compu: índice a la izquierda, un tema por vez a la derecha */
 @media (min-width:1100px){
@@ -1758,10 +1766,43 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .month-nav.mn-side{margin:0 0 18px !important;grid-template-columns:44px minmax(0,1fr) 44px;grid-template-rows:40px auto}
 .month-nav.mn-side #monthTitle{font-size:.95rem}
 .month-nav.mn-side .range{padding:6px 8px 10px !important}
-.month-nav.mn-side::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:7px;background:linear-gradient(-45deg,transparent 4px,#FBF8F1 4px) 0 0/10px 7px repeat-x,linear-gradient(45deg,transparent 4px,#FBF8F1 4px) 0 0/10px 7px repeat-x}
 /* Frascos: el detalle abre siempre a la misma altura; si no entra, scrollea adentro */
 #jdSheet.jarsheet.open{height:min(88vh,820px);height:min(88dvh,820px)}
 #jdSheet.jarsheet .jar-glass{flex:1 1 auto}
+/* Calendario: el día de hoy grande, como una hoja de taco */
+.mn-today{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:6px 0 0;color:#1F1F1F}
+.mn-today b{font-family:var(--display);font-size:2.6rem;line-height:1;font-weight:800}
+.mn-today span{font-size:.9rem;text-transform:capitalize;color:#6E6A62;font-weight:600}
+.month-nav .range{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:8px}
+.month-nav .month-btn .caret{font-size:1.25rem;margin-left:4px;vertical-align:-1px}
+/* Header de compu minimalista: barra fina, blanca y translúcida, botones sin caja */
+@media (min-width:1100px){
+  .brand{background:rgba(255,255,255,.82) !important;-webkit-backdrop-filter:blur(12px) saturate(1.2) !important;backdrop-filter:blur(12px) saturate(1.2) !important;
+    box-shadow:0 1px 0 rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.08) !important;padding-top:6px !important;padding-bottom:6px !important;min-height:0}
+  .brand .logo{font-size:1.15rem}
+  .brand .icon-btn,.brand .learn-btn,.brand .usd-pill{background:transparent !important;border:0 !important;box-shadow:none !important}
+  .brand .icon-btn{width:38px;height:38px;min-width:38px;min-height:38px}
+  .brand .icon-btn:hover,.brand .learn-btn:hover,.brand .usd-pill:hover{background:rgba(0,0,0,.06) !important}
+  .brand .main-tabs{transform:translate(-50%,-46%) scale(.8) !important}
+  .wrap{padding-top:66px !important}
+  .vcol-l{top:74px !important}
+}
+:root[data-theme="dark"] .brand{background:rgba(24,24,24,.82) !important}
+@media (min-width:1100px){:root[data-theme="dark"] .brand .icon-btn:hover,:root[data-theme="dark"] .brand .learn-btn:hover{background:rgba(255,255,255,.08) !important}}
+/* Escuelita en compu: arriba, en una fila, la pizarra, los temas y "si tenés 2 minutos"; abajo, el tema a lo ancho */
+@media (min-width:1100px){
+  #viewLearn:not([hidden]){display:block !important}
+  #viewLearn > .vcol-l{position:static !important;display:grid !important;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.9fr);column-gap:24px;align-items:stretch;padding-bottom:0}
+  #viewLearn > .vcol-l > *{margin-top:0 !important;margin-bottom:0 !important;min-width:0}
+  #viewLearn > .vcol-l > #learnTopics{order:2}
+  #viewLearn > .vcol-l > #learnNext{order:3;align-self:start}
+  #viewLearn > .vcol-l > #learnNext[hidden]{display:none}
+  #viewLearn > .vcol-r{margin-top:28px}
+  #viewLearn .lt-row{padding:6px 2px}
+  #learnMain.ln-one .ln-chap .ln-item{width:calc(33.333% - 6px)}
+  #learnMain.ln-one .ln-chap .ln-item:nth-of-type(2n){margin-right:8px}
+  #learnMain.ln-one .ln-chap .ln-item:nth-of-type(3n){margin-right:0}
+}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2022,7 +2063,9 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .jar-glass{background:linear-gradient(90deg,transparent 4.5%,rgba(24,24,24,0.85) 4.5% 7%,transparent 7% 8.8%,rgba(24,24,24,0.5) 8.8% 9.8%,transparent 9.8%),
     linear-gradient(90deg,rgba(24,24,24,0.65),rgba(24,24,24,0) 15%,rgba(24,24,24,0) 85%,rgba(24,24,24,0.55)),
     linear-gradient(180deg,color-mix(in srgb,var(--jar-color) 7%,#181818),color-mix(in srgb,var(--jar-color) 18%,#181818)) !important;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--jt) 65%,transparent),inset 0 10px 18px -8px rgba(24,24,24,0.95) !important}
-:root[data-theme="dark"] .jar-glass .sheet-head{background:color-mix(in srgb,color-mix(in srgb,var(--jar-color) 8%,#181818) 94%,transparent) !important}
+:root[data-theme="dark"] .jar-glass .sheet-head{background:linear-gradient(90deg,transparent 4.5%,rgba(24,24,24,0.85) 4.5% 7%,transparent 7% 8.8%,rgba(24,24,24,0.5) 8.8% 9.8%,transparent 9.8%),
+    linear-gradient(90deg,rgba(24,24,24,0.65),rgba(24,24,24,0) 15%,rgba(24,24,24,0) 85%,rgba(24,24,24,0.55)),
+    color-mix(in srgb,var(--jar-color) 8%,#181818) !important}
 :root[data-theme="dark"] .jar-glass .input,:root[data-theme="dark"] .jar-glass select.input{background-color:rgba(24,24,24,0.7) !important}
 :root[data-theme="dark"] .jar-glass .seg,:root[data-theme="dark"] .jar-glass .cur{background:rgba(24,24,24,0.55) !important}
 :root[data-theme="dark"] .jar-sw button{border:3px solid #181818 !important}
@@ -2137,7 +2180,11 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .legend li.is-sav{background:rgba(20,109,70,0.07) !important}
 :root[data-theme="dark"] .legend li.is-sav .n{color:#55A57B !important}
 :root[data-theme="dark"] #catSwatches .swatch.in-use::after{background:#1D1C19 !important;border:1.5px solid #817E78 !important}
-:root[data-theme="dark"] .lf-arr{border:1.5px solid #CCCCCC !important;background:#1D1C19 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .lf-wrap{background:#1D1C19 !important;border:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .lf-arr{color:#CCCCCC !important}
+:root[data-theme="dark"] #lfL{background:linear-gradient(90deg,#1D1C19 30%,rgba(29,28,25,0)) !important}
+:root[data-theme="dark"] #lfR{background:linear-gradient(-90deg,#1D1C19 30%,rgba(29,28,25,0)) !important}
+:root[data-theme="dark"] .lf-arr:hover{color:#5487FF !important}
 :root[data-theme="dark"] .lf-chip{border:1.5px solid #3D382D !important;background:#1D1C19 !important;color:#CCCCCC !important}
 :root[data-theme="dark"] .lf-chip[aria-pressed="true"]{background:#3D3D3D !important;border-color:#CCCCCC !important}
 :root[data-theme="dark"] .lf-total{background:#1D1C19 !important;color:#CCCCCC !important}
@@ -2156,7 +2203,9 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .up-m small{color:#817E78 !important}
 :root[data-theme="dark"] .back-today{border:1.5px solid #CCCCCC !important;background:#3D3D3D !important}
 @media (min-width:1100px){:root[data-theme="dark"] .lt-row[aria-current="true"]{background:#27241B !important}}
-:root[data-theme="dark"] .month-nav.mn-side::after{background:linear-gradient(-45deg,transparent 4px,#1D1C19 4px) 0 0/10px 7px repeat-x,linear-gradient(45deg,transparent 4px,#1D1C19 4px) 0 0/10px 7px repeat-x !important}
+:root[data-theme="dark"] .mn-today{color:#CCCCCC !important}
+:root[data-theme="dark"] .mn-today span{color:#817E78 !important}
+@media (min-width:1100px){:root[data-theme="dark"] .brand{background:rgba(24,24,24,0.82) !important}}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2988,7 +3037,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1915";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1430b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3802,6 +3851,9 @@ function renderRange(){
     b.onclick = () => openPay();
     box.append(b);
   }
+  // Hoja de calendario: el día de hoy grande (solo mirando el mes actual)
+  if (isCurrentPeriod(viewYear, viewMonth)){ const t = new Date(), d = document.createElement("div"); d.className = "mn-today";
+    d.innerHTML = `<b>${t.getDate()}</b><span></span>`; d.querySelector("span").textContent = t.toLocaleDateString(LANG === "en" ? "en-US" : "es-AR", { weekday: "long" }); box.prepend(d); }
   // Si estás mirando otro mes, siempre a mano la vuelta al de hoy (un mes que todavía no empezó se ve casi vacío)
   if (!learnOn && !isCurrentPeriod(viewYear, viewMonth)){
     const [ty, tm] = periodOf(new Date()), fut = viewYear * 12 + viewMonth > ty * 12 + tm;
@@ -7019,6 +7071,12 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.9", d: "2026-10-23", t: { es: "Header nuevo y escuelita", en: "New header and school" }, i: [
+    { es: "En compu, header finito y liviano, y la escuelita con la pizarra, los temas y la próxima lección en una fila.", en: "On desktop, a slim light header, and the school with the board, topics and next lesson in one row." },
+    { es: "Al cambiar de pestaña, la página vuelve arriba.", en: "Switching tabs takes you back to the top." },
+    { es: "El calendario muestra el día de hoy grande.", en: "The calendar shows today's date big." },
+    { es: "Las ventanas se cierran arrastrando la barrita para abajo, también con el mouse.", en: "Sheets close by dragging the top bar down, with the mouse too." },
+    { es: "Puntitos más chicos en el ahorro, filtros más prolijos y fijos alineados con el calendario.", en: "Smaller dots on savings, tidier filters, and fixed costs aligned with the calendar." } ] },
   { v: "1.8", d: "2026-10-23", t: { es: "Fijos ordenados", en: "Tidy fixed costs" }, i: [
     { es: "Fijos agrupados: por pagar, en cada tarjeta y ya pagados, con el total de cada grupo.", en: "Fixed costs grouped: to pay, on each card and already paid, with each group's total." },
     { es: "Suscripciones debajo de la pizarra de Fijos.", en: "Subscriptions below the Fixed board." },
@@ -7435,7 +7493,7 @@ async function shareMonthImage(){
   let ang = -Math.PI / 2; const slices = (sav > 0 ? [["ahorro", sav]] : []).concat(Object.entries(byCat(sp)).sort((a2, b2) => b2[1] - a2[1]));
   slices.forEach(([id, v]) => { const da = v / base * Math.PI * 2; let col = catById(id).color; if (/^var\(/.test(col)) col = "#2F5BEA";
     g.strokeStyle = col; g.beginPath(); g.arc(cx, cy, R, ang, ang + Math.max(0.001, da - 0.02)); g.stroke();
-    if (id === "ahorro"){ g.fillStyle = "rgba(255,255,255,.7)"; [[R - 14, 0], [R + 14, 0.06]].forEach(([rr, sh]) => { for (let t = ang + 0.04 + sh; t < ang + da - 0.03; t += 0.12){ g.beginPath(); g.arc(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr, 4.5, 0, Math.PI * 2); g.fill(); } }); }
+    if (id === "ahorro"){ g.fillStyle = "rgba(255,255,255,.7)"; [[R - 19, 0], [R - 7, 0.028], [R + 5, 0], [R + 17, 0.028]].forEach(([rr, sh]) => { for (let t = ang + 0.03 + sh; t < ang + da - 0.02; t += 9 / rr){ g.beginPath(); g.arc(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr, 2.2, 0, Math.PI * 2); g.fill(); } }); }
     ang += da; });
   g.fillStyle = "#1B2430"; g.font = F(34, 800); g.fillText(f0ARS(tot + sav), cx, cy + 4); g.font = F(19, 500); g.fillStyle = "#5A6B76"; g.fillText("gastos + ahorro", cx, cy + 34);
   // A la derecha, los tres números del mes
@@ -7513,8 +7571,8 @@ function renderDash(){
       // Ahorro: rayitas que salen del centro, como las marcas de un reloj
       // Ahorro: puntitos (una textura, para que no parezcan divisiones de categorías)
       if (id === "ahorro"){ const a0 = off / C * 360, a1 = (off + len - gap) / C * 360;
-        [[r - 6.5, 0], [r + 6.5, 3.5]].forEach(([rr, sh]) => { for (let a = a0 + 2 + sh; a < a1 - 1; a += 7){ const t = (a - 90) * Math.PI / 180;
-          svg.append(svgEl("circle", { cx: 100 + Math.cos(t) * rr, cy: 100 + Math.sin(t) * rr, r: 1.9, fill: "rgba(255,255,255,.7)" })); } }); }
+        [[r - 8.5, 0], [r - 3, 1.6], [r + 2.5, 0], [r + 8, 1.6]].forEach(([rr, sh]) => { const st = 3.6 * 78 / rr; for (let a = a0 + 1.5 + sh; a < a1 - 0.8; a += st){ const t = (a - 90) * Math.PI / 180;
+          svg.append(svgEl("circle", { cx: 100 + Math.cos(t) * rr, cy: 100 + Math.sin(t) * rr, r: 0.95, fill: "rgba(255,255,255,.75)" })); } }); }
       off += len;
     });
     const center = document.createElement("div"); center.className = "donut-center";
@@ -8285,6 +8343,8 @@ function setTab(t){
   $("viewList").hidden = t!=="list"; $("viewDash").hidden = t!=="dash"; $("viewJars").hidden = t!=="jars"; $("viewFixed").hidden = t!=="fixed";
   $("monthNav").hidden = false;
   render();
+  // Al cambiar de pestaña, siempre arriba de todo
+  if (prevTab !== t) window.scrollTo(0, 0);
 }
 $("tabJars").onclick = () => setTab("jars");
 $("tabFixed").onclick = () => setTab("fixed");
@@ -10319,21 +10379,22 @@ function buildSheetHeads(){
     sh.prepend(head);
     // deslizar hacia abajo para cerrar
     let y0 = null, dy = 0;
-    // La barra de arriba siempre arrastra, aunque la hoja esté scrolleada o el teclado abierto
-    head.addEventListener("touchstart", e => {
-      if (e.target.closest("button,input,select,textarea,a")) return;
-      y0 = e.touches[0].clientY; dy = 0; sh.style.transition = "none";
-    }, { passive: true });
-    head.addEventListener("touchmove", e => {
-      if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0);
+    // La barra de arriba siempre arrastra (dedo o mouse), aunque la hoja esté scrolleada o el teclado abierto
+    head.style.touchAction = "none"; head.style.cursor = "grab";
+    head.addEventListener("pointerdown", e => {
+      if (e.button > 0 || e.target.closest("button,input,select,textarea,a")) return;
+      y0 = e.clientY; dy = 0; sh.style.transition = "none"; try { head.setPointerCapture(e.pointerId); } catch {}
+    });
+    head.addEventListener("pointermove", e => {
+      if (y0 == null) return; dy = Math.max(0, e.clientY - y0);
       if (dy > 6 && document.activeElement && sh.contains(document.activeElement)) document.activeElement.blur();
-      sh.style.transform = `translateY(${dy}px)`;
-    }, { passive: true });
+      sh.style.transform = sh.dataset.baseTf ? `${sh.dataset.baseTf} translateY(${dy}px)` : `translateY(${dy}px)`;
+    });
     const end = () => {
       if (y0 == null) return; y0 = null; sh.style.transition = ""; sh.style.transform = "";
       if (dy > 80){ const bg = sh.previousElementSibling; if (bg && bg.classList.contains("sheet-bg")) bg.click(); }
     };
-    head.addEventListener("touchend", end); head.addEventListener("touchcancel", end);
+    head.addEventListener("pointerup", end); head.addEventListener("pointercancel", end);
   });
 }
 document.querySelectorAll(".sheet").forEach(sh => { if (!["jarSheet", "jmSheet", "jdSheet"].includes(sh.id)) sh.classList.add("notepad"); });

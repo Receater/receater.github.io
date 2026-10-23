@@ -361,6 +361,15 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Aviso de la escuelita en amarillo (warning), no rojo. Dólar hoy en verde, el select con chevron.
 - REGLA: todo cambio del Resumen se refleja en "Guardar el mes como imagen" (`shareMonthImage`).
 
+### 7v. 1.9
+- `setTab` vuelve arriba (scrollTo 0) al cambiar de pestaña.
+- Hojas: arrastrar la barrita para cerrar usa pointer events (dedo y mouse).
+- Calendario: debajo de la franja roja, el día de hoy grande + día de la semana (`.mn-today`), caret más grande.
+- Compu: header minimalista (blanco translúcido con blur, botones sin caja, pestañas al 80%). Columna derecha arranca a la altura del calendario.
+- Escuelita en compu: fila de arriba con pizarra · temas · "si tenés 2 minutos"; abajo el tema elegido a lo ancho (lecciones en 3 columnas).
+- Detalle del frasco: el brillo del vidrio sigue en la cabecera.
+- Filtros: caja de libreta, flechas con degradé.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
