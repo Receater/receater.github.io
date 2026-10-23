@@ -1698,6 +1698,24 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .news-ok{width:100%;margin-top:16px;border-radius:6px !important;background:#1F1F1F !important;color:#FBF8F1 !important;font-family:inherit}
 .help-btn.has-news{position:relative}
 .help-btn.has-news::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#D0485E;border:2px solid #F5E8C8}
+.card-cmp{font-size:.78rem;font-weight:700;margin:-2px 0 6px;color:var(--muted)}
+.card-cmp.up{color:#C9374B}.card-cmp.down{color:#1E7A50}
+.up-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed #D9D3C6}
+.up-d{display:flex;flex-direction:column;align-items:center;border:1.5px solid #1F1F1F;border-radius:4px;padding:2px 0;line-height:1.05}
+.up-d b{font-size:1.05rem}.up-d small{font-size:.62rem;text-transform:uppercase;color:#C9374B;font-weight:700}
+.up-m{min-width:0}.up-m strong{display:block;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.up-m small{display:block;font-size:.72rem;color:#6E6A62}
+.up-v{font-weight:700;font-size:.88rem;text-align:right;white-space:pre-line;max-width:11em}
+.up-tot{display:flex;justify-content:space-between;padding:12px 0 0;font-weight:700}
+.mc-list{margin:0;padding-left:18px;font-size:.88rem;line-height:1.5}.mc-list li{margin:4px 0}
+.mc-later{width:100%;margin-top:8px;border-radius:6px !important;font-family:inherit}
+/* Fijos: libreta de suscripciones */
+.subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
+.subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
+.sp-head{border-bottom:1.5px dashed #BDB6A5;padding-bottom:8px;margin-bottom:4px}
+.sp-head h2{margin:0;font-family:inherit;font-size:.92rem;letter-spacing:.1em;text-transform:uppercase}.sp-head span{font-size:.78rem;color:#6E6A62}
+.sp-row{display:flex;justify-content:space-between;gap:10px;padding:6px 2px;border-bottom:1px dashed #D9D3C6;font-size:.88rem}
+.sp-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-tot{display:flex;justify-content:space-between;padding:8px 2px 0;font-weight:700}.sp-year b{color:#C9374B}
 /* ===== Ahorros: estantería de cubos. La madera es el fondo y los huecos son los cubos ===== */
 .jar-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;padding:10px;border-radius:6px;
   background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),#9A6B3F;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.25)}
@@ -2068,6 +2086,18 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .news-t{color:#5487FF !important}
 :root[data-theme="dark"] .news-ok{background:#3D3D3D !important}
 :root[data-theme="dark"] .help-btn.has-news::after{background:#BC3D52 !important;border:2px solid #2A2518 !important}
+:root[data-theme="dark"] .card-cmp.up{color:#E85D69 !important}
+:root[data-theme="dark"] .card-cmp.down{color:#55A57B !important}
+:root[data-theme="dark"] .up-row{border-bottom:1px dashed #36332D !important}
+:root[data-theme="dark"] .up-d{border:1.5px solid #CCCCCC !important}
+:root[data-theme="dark"] .up-d small{color:#E85D69 !important}
+:root[data-theme="dark"] .up-m small{color:#817E78 !important}
+:root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
+:root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
+:root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .sp-head span{color:#817E78 !important}
+:root[data-theme="dark"] .sp-row{border-bottom:1px dashed #36332D !important}
+:root[data-theme="dark"] .sp-year b{color:#E85D69 !important}
 :root[data-theme="dark"] .jar-shelf{background:linear-gradient(90deg,rgba(24,24,24,0.06),rgba(0,0,0,.06)),#8A5F35 !important}
 :root[data-theme="dark"] .jar-slot{color:#CCCCCC !important;background:linear-gradient(180deg,#5A3A20,#603C21 70%,#6D4628) !important}
 :root[data-theme="dark"] .js-label{background:linear-gradient(180deg,#302913,#44381A) !important;border:1.5px solid #7C5E25 !important;box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(24,24,24,0.5) !important;color:#D0CAB8 !important}
@@ -2155,6 +2185,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   </section>
 
   <button type="button" class="quick-btn acc-open" id="accOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-coins"/></svg></span><span><strong>¿Dónde está tu plata?</strong><small id="accOpenSub">Efectivo, banco y billeteras, y cuánto te rinden</small></span></button>
+  <button type="button" class="quick-btn acc-open" id="nextOpen" hidden><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><span><strong>Lo que viene</strong><small id="nextOpenSub"></small></span></button>
   <div class="search-bar" role="search">
     <span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
     <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
@@ -2595,6 +2626,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
     <p class="fx-hint" style="margin:6px 0 0">Los que tienen un puntito ya los usa otra categoría. Podés elegirlos igual.</p>
     <label class="custom-color">Otro color <input type="color" id="catColor" value="#2F5BEA"></label>
   </div>
+  <button type="button" class="linkbtn" id="catMerge" hidden>Juntar con otra categoría…</button>
   <div class="err" id="catErr"></div>
   <div class="actions">
     <button type="button" class="btn danger" id="catDel" hidden>Borrar</button>
@@ -2714,6 +2746,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   </div>
   <div class="set-group">
     <div class="set-label">Tus datos</div>
+    <button type="button" class="set-row as-btn" id="bkBtn"><div><strong>Copia de seguridad</strong><span>Bajá un archivo con todos tus datos, o volvé a cargar uno.</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="xlsBtn"><div><strong>Exportar a Excel</strong><span>Movimientos, categorías, tarjetas, fijos y ahorros.</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="exportBtn"><div><strong>Exportar backup</strong><span>Un archivo con todo, para guardarlo donde quieras.</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="importBtn"><div><strong>Importar backup</strong><span>Reemplaza lo que tenés por un backup.</span></div><span class="chev2">›</span></button>
@@ -2840,6 +2873,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 <div class="sheet" id="budSheet" role="dialog" aria-modal="true" aria-labelledby="budTitle">
   <h3 id="budTitle">Topes por categoría</h3>
   <p class="fx-hint">Poné cuánto querés gastar como máximo por mes en cada categoría (en pesos). Recy te avisa cuando vas por el 80% y cuando te pasás. Dejalo vacío para no tener tope.</p>
+  <button type="button" class="small-btn" id="budSuggest">Que Recy los proponga</button>
+  <p class="fx-hint" id="budSugTxt" hidden></p>
   <div id="budList"></div>
   <div class="actions">
     <button type="button" class="btn ghost" id="budCancel">Cancelar</button>
@@ -2884,7 +2919,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1430";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1530";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3727,7 +3762,7 @@ function teQuedaReal(y, m){
 }
 function render(){
   if (learnOn){ setScene("learn"); return; }
-  queueMicrotask(() => { try { renderAccounts(); } catch {} });
+  queueMicrotask(() => { try { renderAccounts(); } catch {} try { renderUpcomingBtn(); } catch {} });
   setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); });
   $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
   renderRange();
@@ -4266,6 +4301,7 @@ function budgetCheck(cat, y, m){
     : `Vas por el ${Math.round(st2.pct * 100)}% de lo que querías gastar en ${catById(cat).name} este mes (${fmtARS.format(st2.spent)} de ${fmtARS.format(st2.cap)}).`), 350);
 }
 function openBudgets(){
+  $("budSugTxt").hidden = true;
   const box = $("budList"); box.innerHTML = ""; const b = data.budgets || {};
   allCats().filter(c => !c.hidden && c.id !== "ahorro").forEach(c => {
     const r = document.createElement("label"); r.className = "bud-row";
@@ -4279,6 +4315,18 @@ function openBudgets(){
 }
 function closeBudgets(){ $("budBg").classList.remove("open"); $("budSheet").classList.remove("open"); }
 $("budCancel").onclick = closeBudgets; $("budBg").onclick = closeBudgets;
+/* Topes sugeridos: tu promedio de los últimos meses completos (hasta 3). Sin meses completos, lo que llevás este mes llevado al mes entero. */
+$("budSuggest").onclick = () => {
+  const avg = {}; let n = 0, y = viewYear, m = viewMonth;
+  for (let k = 0; k < 3; k++){ m--; if (m < 0){ m = 11; y--; } const xs = monthExpenses(y, m, "ARS").filter(e => !isSaving(e)); if (!xs.length) continue; n++; xs.forEach(e => avg[e.category] = (avg[e.category] || 0) + eff(e)); }
+  let how;
+  if (n){ Object.keys(avg).forEach(k => avg[k] /= n); how = `Es tu promedio de ${n === 1 ? "el último mes" : `los últimos ${n} meses`}, redondeado para arriba.`; }
+  else { const a = payDate(viewYear, viewMonth), b = payDate(viewYear, viewMonth + 1), f = Math.min(1, Math.max(0.1, (new Date() - a) / (b - a)));
+    monthExpenses(viewYear, viewMonth, "ARS").filter(e => !isSaving(e)).forEach(e => avg[e.category] = (avg[e.category] || 0) + eff(e) / f);
+    how = "Todavía no tengo meses completos: es lo que llevás este mes, calculado para el mes entero. Ajustalo a gusto."; }
+  let c = 0; $("budList").querySelectorAll("input").forEach(i => { const v = avg[i.dataset.cat]; if (v > 0 && !i.value.trim()){ i.value = String(Math.ceil(v / 5000) * 5000); c++; } });
+  const t = $("budSugTxt"); t.hidden = false; t.textContent = c ? how + " No toqué los que ya tenían tope." : "No encontré gastos para proponer topes.";
+};
 $("budSave").onclick = () => {
   const b = {}; $("budList").querySelectorAll("input").forEach(i => { const v = parseAmount(i.value); if (v > 0) b[i.dataset.cat] = round2(v); });
   data.budgets = b; persist(); closeBudgets(); render();
@@ -5033,7 +5081,7 @@ function openCat(c, name){
   document.querySelectorAll("#catSwatches .swatch").forEach(sw => { const who = allCats().find(x => (!c || x.id !== c.id) && String(x.color).toLowerCase() === sw.dataset.c.toLowerCase());
     sw.classList.toggle("in-use", !!who); sw.title = who ? `Ya la usa ${who.name}` : ""; });
   setCatColor(c ? c.color : (CAT_SWATCHES.find(x => !used.has(x.toLowerCase())) || freeColor(used)));
-  $("catDel").hidden = !c || !!c.builtin; $("catErr").textContent = "";
+  $("catDel").hidden = !c || !!c.builtin; $("catMerge").hidden = !c || !!c.builtin; $("catErr").textContent = "";
   $("catBg").classList.add("open"); $("catSheet").classList.add("open");
   setTimeout(() => autoFocus($("catName")), 120);
 }
@@ -5055,6 +5103,24 @@ $("catSave").onclick = () => {
   if (catFromFix && editingCat) fillFixCats($("fixCat").value);
   catFromFix = false;
   persist(); closeCat(); $("catSearch").value = ""; renderCats(); render();
+};
+/* Juntar dos categorías: todo lo de esta pasa a la otra y esta se borra */
+$("catMerge").onclick = () => {
+  const c = editingCat; if (!c) return;
+  const others = allCats().filter(x => x.id !== c.id && !x.hidden && x.id !== "ahorro");
+  const n = data.expenses.filter(e => e.category === c.id).length;
+  const box = miniDialog(`<p><b>Juntar "${c.name}" con…</b></p><select class="input" id="cmTo">${others.map(x => `<option value="${x.id}">${x.name}</option>`).join("")}</select>
+    <p class="fx-hint" style="margin:8px 0 0">${n ? `Sus ${n} gastos, sus fijos y su tope pasan a la que elijas,` : "Sus fijos y su tope pasan a la que elijas,"} y "${c.name}" se borra.</p>`, b => {
+    const to = b.querySelector("#cmTo").value; if (!to) return false;
+    data.expenses.forEach(e => { if (e.category === c.id) e.category = to; (e.items || []).forEach(i => { if (i.category === c.id) i.category = to; }); });
+    data.fixed.forEach(f => { if (f.category === c.id) f.category = to; });
+    if (data.budgets && data.budgets[c.id]){ data.budgets[to] = (data.budgets[to] || 0) + data.budgets[c.id]; delete data.budgets[c.id]; }
+    if (data.merchantCats) Object.keys(data.merchantCats).forEach(k => { if (data.merchantCats[k] === c.id) data.merchantCats[k] = to; });
+    data.customCats = data.customCats.filter(x => x.id !== c.id);
+    if (category === c.id) category = to;
+    persist(); closeCat(); renderCats(); render();
+  }, "Juntar");
+  return box;
 };
 $("catDel").onclick = async () => {
   const c = editingCat; if (!c) return;
@@ -6632,6 +6698,13 @@ $("paySave").onclick = () => {
 let tab = "list", dashCur = "ARS";
 const monthExpenses = (y,m,cur) => entries().filter(e => inPeriod(e,y,m) && (!cur || e.currency===cur));
 const sum = arr => arr.reduce((s,e) => s + eff(e), 0);
+/* El mes anterior "hasta el mismo día": si estás mirando el mes actual, se corta en la misma cantidad de días, para comparar parejo */
+function prevExpensesFair(y, m, cur){
+  const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1, all = monthExpenses(py, pm, cur);
+  if (!isCurrentPeriod(y, m)) return all;
+  const days = Math.floor((new Date() - payDate(y, m)) / 864e5), cut = new Date(payDate(py, pm).getTime() + (days + 1) * 864e5);
+  return all.filter(e => new Date(e.date) < cut);
+}
 const byCat = arr => { const o = {}; arr.forEach(e => o[e.category] = (o[e.category]||0) + eff(e)); return o; };
 const monthName = (y,m,opt={month:"long"}) => new Date(y,m,1).toLocaleDateString("es-AR",opt);
 const svgEl = (tag, attrs) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
@@ -6690,11 +6763,11 @@ function savedIn(y, m){
 const goalCur = () => data.saveGoalCur === "USD" ? "USD" : "ARS";
 const goalARS = () => !(data.saveGoal > 0) ? 0 : goalCur() === "USD" ? round2(data.saveGoal * (usdRateNow() || 0)) : data.saveGoal;
 const usdTxt = v => { const r = usdRateNow(); return r && v ? `≈ ${fmtUSD.format(Math.round(v / r))}` : ""; };
-function miniDialog(html, onOk){
+function miniDialog(html, onOk, okLabel){
   const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg"; box.innerHTML = html;
   const acts = document.createElement("div"); acts.className = "dlg-acts"; acts.style.marginTop = "14px"; const close = () => bg.remove();
   const c = document.createElement("button"); c.type = "button"; c.className = "btn ghost"; c.textContent = "Cancelar"; c.onclick = close;
-  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = "Guardar"; o.onclick = () => { if (onOk(box) !== false) close(); };
+  const o = document.createElement("button"); o.type = "button"; o.className = "btn primary"; o.textContent = okLabel || "Guardar"; o.onclick = () => { if (onOk(box) !== false) close(); };
   acts.append(c, o); box.append(acts); bg.append(box); bg.onclick = e => { if (e.target === bg) close(); }; document.body.append(bg);
   setTimeout(() => { const i = box.querySelector("input"); if (i) i.focus(); }, 50); return box;
 }
@@ -6805,6 +6878,11 @@ const NEWS = [
     { es: "El ahorro se ve aparte en el Resumen, con rayas en la torta.", en: "Savings show apart in the Summary, striped in the chart." },
     { es: "Movimientos: filtros por categoría y el total de cada día.", en: "Activity: category filters and each day's total." },
     { es: "Categorías nuevas con un color que no use otra; los usados tienen un puntito.", en: "New categories get a color nobody uses; used ones have a dot." },
+    { es: "Comparación con el mes pasado en tarjetas y categorías, hasta el mismo día.", en: "Comparison with last month on cards and categories, up to the same day." },
+    { es: "\"Lo que viene\": todo lo que tenés que pagar hasta que cobres.", en: "\"Coming up\": everything you have to pay until payday." },
+    { es: "Cierre de mes: cómo te fue, y de ahí a separar plata para los frascos.", en: "Month close: how it went, and straight to setting money aside for your jars." },
+    { es: "Topes sugeridos por Recy, juntar categorías y suscripciones por mes y por año.", en: "Caps suggested by Recy, merging categories, and subscriptions per month and year." },
+    { es: "Copia de seguridad: bajá o cargá un archivo con todos tus datos (Ajustes).", en: "Backup: download or load a file with all your data (Settings)." },
     { es: "Textos más claros y novedades como estas, acá.", en: "Clearer texts, and release notes like these, right here." } ] },
   { v: "1.5", d: "2026-10-22", t: { es: "Cuentas que no se desajustan", en: "Accounts that stay right" }, i: [
     { es: "Cuando actualizás un saldo, lo que cargás después ese mismo día ya se descuenta.", en: "After you update a balance, what you add later that day is now taken off." },
@@ -7077,6 +7155,27 @@ function monthCloseText(y, m){
     L.push(over.length ? `Te pasaste en ${over.length} de ${ids.length} topes: ${over.map(id => catById(id).name).join(", ")}.` : `Respetaste todos tus topes.`); }
   return { title: `Cómo te fue en ${monthName(y, m)}`, lines: L, tot };
 }
+/* Cierre de mes: un ticket con cómo te fue, y de ahí a separar plata para los frascos */
+function openMonthClose(py, pm, c, key){
+  const done = () => { data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); try { renderMonthClose(); } catch {} };
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "news-tk"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+  box.innerHTML = `<div class="news-in"><p class="news-h"></p><p class="news-sub"></p><ul class="mc-list"></ul>
+    <button type="button" class="btn primary news-ok" data-m="save">Separar plata para los frascos</button><button type="button" class="btn ghost mc-later" data-m="x">Listo</button></div>`;
+  box.querySelector(".news-h").textContent = `Cerró ${monthName(py, pm)}`; box.querySelector(".news-sub").textContent = c.title;
+  const ul = box.querySelector(".mc-list"); c.lines.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.append(li); });
+  bg.append(box); document.body.append(bg);
+  const close = () => { bg.remove(); done(); }; bg.onclick = e => { if (e.target === bg) close(); };
+  box.querySelector('[data-m="x"]').onclick = close;
+  box.querySelector('[data-m="save"]').onclick = () => { close(); setTab("jars"); setTimeout(() => { try { openSavePlan(); } catch {} }, 300); };
+}
+/* Al abrir la app en un mes nuevo, el cierre del anterior aparece solo una vez */
+setTimeout(() => { try {
+  if (!localStorage.getItem("receater.onb") || document.querySelector(".dlg-bg,.onb.open,.tour-on")) return;
+  const y = viewYear, m = viewMonth; if (!isCurrentPeriod(y, m)) return;
+  const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1, key = monthKey(py, pm);
+  if ((data.closeSeen || {})[key] || (new Date() - payDate(y, m)) > 15 * 864e5) return;
+  const c = monthCloseText(py, pm); if (c.tot) openMonthClose(py, pm, c, key);
+} catch {} }, 1800);
 function renderMonthClose(){
   const box = $("mClose"); box.innerHTML = ""; box.hidden = true;
   if (!isCurrentPeriod(viewYear, viewMonth)) return;
@@ -7087,8 +7186,7 @@ function renderMonthClose(){
   const go = document.createElement("button"); go.type = "button"; go.className = "mclose-go";
   go.innerHTML = `<span aria-hidden="true">${ico("notebook")}</span><span><strong></strong><small>Tocá para ver el cierre del mes</small></span>`;
   go.querySelector("strong").textContent = `Cerró ${monthName(py, pm)}`;
-  go.onclick = async () => { await uiDialog({ msg: c.title + "\n\n" + c.lines.map(t => "• " + t).join("\n"), ok: "Listo" });
-    data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
+  go.onclick = () => openMonthClose(py, pm, c, key);
   const x = document.createElement("button"); x.type = "button"; x.className = "mclose-x"; x.textContent = "×"; x.setAttribute("aria-label", "Ocultar");
   x.onclick = () => { data.closeSeen = data.closeSeen || {}; data.closeSeen[key] = 1; persist(); renderMonthClose(); };
   box.append(go, x);
@@ -7196,7 +7294,8 @@ function renderDash(){
   const list = monthExpenses(viewYear, viewMonth, cur);
   const py = viewMonth===0 ? viewYear-1 : viewYear, pm = viewMonth===0 ? 11 : viewMonth-1;
   const prevName = monthName(py,pm);
-  const prev = byCat(monthExpenses(py, pm, cur));
+  const prevFull = monthExpenses(py, pm, cur), prev = prevFull.length ? byCat(prevExpensesFair(viewYear, viewMonth, cur)) : {};
+  const fairNote = isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : "";
   const cats = byCat(list), total = sum(list);
   const inc = data.incomes.filter(e => inPeriod(e,viewYear,viewMonth) && e.currency===cur).reduce((s,e)=>s+e.amount,0);
   const base = inc > 0 ? Math.max(inc, total) : total;
@@ -7254,9 +7353,9 @@ function renderDash(){
       const d = document.createElement("div"); d.className = "d";
       if (!p) d.textContent = prevHas ? `Nuevo: no tenías en ${prevName}` : "";
       else {
-        const pct = Math.round((v-p)/p*100);
-        d.textContent = pct === 0 ? `Igual que ${prevName}` : `${pct>0?"▲":"▼"} ${Math.abs(pct)}% vs ${prevName}`;
-        if (pct) d.classList.add(pct>0 ? "up" : "down");
+        const dv = round2(v - p), pct = Math.round(dv/p*100);
+        d.textContent = Math.abs(pct) < 1 ? `Igual que en ${prevName}${fairNote}` : `${dv>0?"▲":"▼"} ${money(Math.abs(dv), cur)} ${dv>0?"más":"menos"} que en ${prevName}${fairNote}`;
+        if (Math.abs(pct) >= 1) d.classList.add(dv>0 ? "up" : "down");
       }
       mid.append(n);
       if (isSav){ const hp = document.createElement("div"); hp.className = "help"; hp.textContent = "Sale de tu mes, pero no es un gasto: va a tus frascos."; mid.append(hp); }
@@ -7465,6 +7564,12 @@ function renderCardsDash(list, cur){
     const nmT = document.createElement("span"); nmT.className = "cx-name"; nmT.textContent = card.name; nm.append(tg, nmT);
     const t = document.createElement("span"); t.className = "t"; t.textContent = money(total, cur);
     head.append(nm, t); el.append(head);
+    // Comparación con el mes anterior (hasta el mismo día si es el mes actual)
+    { const pv = prevExpensesFair(viewYear, viewMonth, cur).filter(x => x.cardId === card.id), hadPrev = monthExpenses(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1, cur).some(x => x.cardId === card.id);
+      if (hadPrev){ const dv = round2(total - pv.reduce((a, x) => a + x.amount, 0)), pn = monthName(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1);
+        const cmp = document.createElement("div"); cmp.className = "card-cmp " + (Math.abs(dv) < 1 ? "" : dv > 0 ? "up" : "down");
+        cmp.textContent = Math.abs(dv) < 1 ? `Igual que en ${pn}` : `${dv > 0 ? "▲" : "▼"} ${money(Math.abs(dv), cur)} ${dv > 0 ? "más" : "menos"} que en ${pn}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}`;
+        el.append(cmp); } }
     const next = document.createElement("div"); next.className = "next";
     const info = document.createElement("span");
     if (card.rule === "open"){
@@ -8113,6 +8218,18 @@ function renderFixed(){
   }
   if (!list.length){ box.innerHTML = '<p class="fx-hint">No hay fijos en este mes.</p>'; return; }
   box.append(fixPie());
+  // Suscripciones: todo lo que se renueva solo, por mes y por año
+  { const subs = list.filter(i => i.f.category === "suscripciones" || /suscrip/i.test(catById(i.f.category).name));
+    if (subs.length > 1){
+      const per = i => fixToARS(i.expected || i.paid || 0, i.currency), tot = round2(subs.reduce((a, i) => a + per(i), 0));
+      const sp = document.createElement("section"); sp.className = "subs-pad";
+      sp.innerHTML = `<div class="sp-head"><h2>Suscripciones</h2><span>lo que se renueva solo</span></div><div class="sp-list"></div><div class="sp-tot"><span>Por mes</span><b></b></div><div class="sp-tot sp-year"><span>Por año</span><b></b></div><p class="fx-hint" style="margin:6px 0 0">Las que están en dólares, al dólar de hoy.</p>`;
+      const L = sp.querySelector(".sp-list");
+      subs.slice().sort((a, b) => per(b) - per(a)).forEach(i => { const r = document.createElement("div"); r.className = "sp-row"; const n = document.createElement("span"); n.textContent = i.f.name;
+        const v = document.createElement("b"); v.textContent = i.currency === "USD" ? fmtUSD.format(i.expected || 0) : fmtARS.format(round2(per(i))); r.append(n, v); L.append(r); });
+      sp.querySelector(".sp-tot b").textContent = fmtARS.format(tot); sp.querySelector(".sp-year b").textContent = fmtARS.format(round2(tot * 12));
+      box.append(sp);
+    } }
   // Arriba lo que falta pagar y abajo lo que ya pagaste (cada grupo por fecha de vencimiento)
   const isDone = i => i.state === "paid" || i.state === "cardpaid";
   list.sort((a, b) => (isDone(a) - isDone(b)) || (a.due - b.due));
@@ -8746,6 +8863,38 @@ function renderIncAcc(){
 function openAccounts(){ renderAccounts(); $("accBg").classList.add("open"); $("accSheet").classList.add("open"); $("accSheet").scrollTop = 0;
   if (data.accounts.length) Promise.all([loadFci(), loadRend()]).then(renderAccounts); }
 function closeAccounts(){ $("accBg").classList.remove("open"); $("accSheet").classList.remove("open"); }
+/* ===== Lo que viene: todo lo que tenés que pagar hasta que cobres ===== */
+function upcomingList(){
+  const y = viewYear, m = viewMonth; if (!isCurrentPeriod(y, m)) return null;
+  const cobro = isFree() ? latestCobro() : null, end = cobro ? dateOnly(cobro.until) : payDate(y, m + 1), today = dateOnly(toLocalInput(new Date()));
+  const out = [];
+  fixInstances(y, m).filter(i => i.f.how !== "card" && i.state !== "paid").forEach(i => { const v = Math.max(0, (i.expected || 0) - i.paid); if (v > 0) out.push({ d: i.due, name: i.f.name, sub: i.paid ? "Fijo · te falta una parte" : "Fijo", ars: fixToARS(v, i.currency), usd: 0 }); });
+  const g = {}; entries().filter(x => x.cardId && dateOnly(x.date) >= today && dateOnly(x.date) <= end && !data.cardPayments.some(p => p.cardId === x.cardId && p.date === x.date.slice(0,10))).forEach(x => {
+    const k = x.cardId + "|" + x.date.slice(0,10); const o = g[k] || (g[k] = { d: dateOnly(x.date), name: (cardById(x.cardId) || {}).name || "Tarjeta", sub: "Tarjeta", ars: 0, usd: 0 }); if (x.currency === "USD") o.usd += x.amount; else o.ars += x.amount; });
+  Object.values(g).forEach(o => { if (+o.d >= +end) o.sub = "Tarjeta · se paga con el sueldo nuevo"; out.push(o); });
+  out.sort((a, b) => a.d - b.d);
+  return { end, items: out, total: round2(out.reduce((a, o) => a + o.ars, 0)) };
+}
+function renderUpcomingBtn(){
+  const b = $("nextOpen"); if (!b) return; const u = tab === "list" ? upcomingList() : null;
+  b.hidden = !u || !u.items.length; if (b.hidden) return;
+  $("nextOpenSub").textContent = `${u.items.length} ${u.items.length === 1 ? "pago" : "pagos"} · ${f0ARS(u.total)} hasta el ${shortDate(u.end)}`;
+}
+function openUpcoming(){
+  const u = upcomingList(); if (!u) return;
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "news-tk"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+  const money2 = o => [o.ars && fmtARS.format(round2(o.ars)), o.usd && "+ " + fmtUSD.format(round2(o.usd))].filter(Boolean).join("\n");
+  box.innerHTML = `<div class="news-in"><p class="news-h">Lo que viene</p><p class="news-sub">Lo que tenés que pagar hasta el ${shortDate(u.end)}</p><div class="up-list"></div>
+    <div class="up-tot"><span>Total</span><b>${fmtARS.format(u.total)}</b></div><button type="button" class="btn primary news-ok">Listo</button></div>`;
+  const L = box.querySelector(".up-list");
+  u.items.forEach(o => { const r = document.createElement("div"); r.className = "up-row";
+    r.innerHTML = `<span class="up-d"><b></b><small></small></span><span class="up-m"><strong></strong><small></small></span><span class="up-v"></span>`;
+    r.querySelector(".up-d b").textContent = o.d.getDate(); r.querySelector(".up-d small").textContent = o.d.toLocaleDateString("es-AR", { month: "short" }).replace(".", "");
+    r.querySelector(".up-m strong").textContent = o.name; r.querySelector(".up-m small").textContent = o.sub; r.querySelector(".up-v").textContent = money2(o); L.append(r); });
+  bg.append(box); document.body.append(bg);
+  const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); }; box.querySelector(".news-ok").onclick = close;
+}
+$("nextOpen").onclick = openUpcoming;
 $("accOpen").onclick = openAccounts; $("accClose").onclick = closeAccounts; $("accBg").onclick = closeAccounts; $("accAdd").onclick = () => openAccount(null);
 
 
@@ -9754,6 +9903,35 @@ window.cloud = (() => {
   return { init, connect, schedule(){ clearTimeout(timer); if (ready) timer = setTimeout(upload, 1200); } };
 })();
 
+/* ===== Copia de seguridad: un archivo .json con todo, aparte de Drive ===== */
+$("bkBtn").onclick = () => {
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg help-dlg";
+  box.innerHTML = `<p class="dlg-ttl">Copia de seguridad</p>
+    <button type="button" class="set-row as-btn" data-b="down"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg></span><div><strong>Bajar copia</strong><span>Un archivo con todos tus datos. Guardalo donde quieras.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" data-b="up"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg></span><div><strong>Cargar una copia</strong><span>Reemplaza lo que hay ahora por lo del archivo.</span></div><span class="chev2">›</span></button>
+    <input type="file" accept="application/json,.json" hidden id="bkFile">
+    <div class="dlg-acts" style="margin-top:12px"><button type="button" class="btn ghost" data-b="x">Cerrar</button></div>`;
+  bg.append(box); document.body.append(bg);
+  const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); };
+  box.querySelector('[data-b="x"]').onclick = close;
+  box.querySelector('[data-b="down"]').onclick = () => {
+    const t = new Date(), name = `receater-copia-${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}.json`;
+    const copy = { ...data }; delete copy.aiKey;   // la clave de la IA no viaja en la copia
+    const blob = new Blob([JSON.stringify(copy, null, 1)], { type: "application/json" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); close();
+  };
+  const f = box.querySelector("#bkFile");
+  box.querySelector('[data-b="up"]').onclick = () => f.click();
+  f.onchange = async () => {
+    const file = f.files[0]; if (!file) return;
+    let j = null; try { j = JSON.parse(await file.text()); } catch {}
+    if (!j || !Array.isArray(j.expenses)){ close(); uiDialog({ msg: "Ese archivo no es una copia de Receater." }); return; }
+    close();
+    if (!await uiConfirm(`¿Reemplazar tus datos por los de la copia? Tiene ${j.expenses.length} gastos. Lo que tenés ahora se pierde (si estás con Google, también en tu Drive).`)) return;
+    if (data.aiKey && !j.aiKey) j.aiKey = data.aiKey;
+    j.updatedAt = Date.now(); data = j; persist(); location.reload();
+  };
+};
 /* ---------- Exportar a Excel (SheetJS, se carga solo cuando lo usás) ---------- */
 function loadXLSX(){
   return new Promise((res, rej) => {
@@ -10394,6 +10572,30 @@ Filtrar por categoría	Filter by category
 Novedades	What's new
 Lo nuevo de cada versión.	What's new in each version.
 Lo nuevo de Recy, versión por versión	What's new in Recy, version by version
+Lo que viene	Coming up
+Fijo	Fixed cost
+Fijo · te falta una parte	Fixed cost · part left to pay
+Tarjeta	Card
+Tarjeta · se paga con el sueldo nuevo	Card · paid with the new salary
+Total	Total
+Que Recy los proponga	Let Recy suggest them
+Todavía no tengo meses completos: es lo que llevás este mes, calculado para el mes entero. Ajustalo a gusto. No toqué los que ya tenían tope.	I don't have full months yet: it's what you've spent this month, scaled to the whole month. Adjust as you like. I didn't touch the ones that already had a cap.
+No encontré gastos para proponer topes.	I didn't find expenses to suggest caps.
+Juntar con otra categoría…	Merge with another category…
+Copia de seguridad	Backup
+Bajá un archivo con todos tus datos, o volvé a cargar uno.	Download a file with all your data, or load one back.
+Bajar copia	Download backup
+Un archivo con todos tus datos. Guardalo donde quieras.	A file with all your data. Keep it wherever you like.
+Cargar una copia	Load a backup
+Reemplaza lo que hay ahora por lo del archivo.	Replaces what's here now with the file's data.
+Ese archivo no es una copia de Receater.	That file isn't a Receater backup.
+Suscripciones	Subscriptions
+lo que se renueva solo	what renews on its own
+Por mes	Per month
+Por año	Per year
+Las que están en dólares, al dólar de hoy.	The ones in dollars, at today's rate.
+Separar plata para los frascos	Set money aside for your jars
+Juntar	Merge
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10678,6 +10880,16 @@ const I18N_EN_P = [
   [/^Ya la usa (.+)$/, "Already used by $1"],
   [/^(.+): (.+) en (\d+) gastos?$/, "$1: $2 in $3 expenses"],
   [/^Versión (.+) · lo nuevo de cada versión$/, "Version $1 · what's new in each version"],
+  [/^([▲▼]) (.+) más que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} more than in ${c}${d ? " so far" : ""}`],
+  [/^([▲▼]) (.+) menos que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} less than in ${c}${d ? " so far" : ""}`],
+  [/^Igual que en (.+?)( a esta altura)?$/, (m, c, d) => `Same as in ${c}${d ? " so far" : ""}`],
+  [/^(\d+) pagos? · (.+) hasta el (.+)$/, "$1 payments · $2 until $3"],
+  [/^Lo que tenés que pagar hasta el (.+)$/, "What you have to pay until $1"],
+  [/^Es tu promedio de (el último mes|los últimos (\d) meses), redondeado para arriba\. No toqué los que ya tenían tope\.$/, (m, a, n) => `It's your average for ${n ? "the last " + n + " months" : "the last month"}, rounded up. I didn't touch the ones that already had a cap.`],
+  [/^Juntar "(.+)" con…$/, 'Merge "$1" with…'],
+  [/^Sus (\d+) gastos, sus fijos y su tope pasan a la que elijas, y "(.+)" se borra\.$/, 'Its $1 expenses, fixed costs and cap move to the one you pick, and "$2" is deleted.'],
+  [/^¿Reemplazar tus datos por los de la copia\? Tiene (\d+) gastos\. Lo que tenés ahora se pierde \(si estás con Google, también en tu Drive\)\.$/, "Replace your data with the backup's? It has $1 expenses. What you have now will be lost (in your Drive too, if you're signed in)."],
+  [/^Cerró (.+)$/, "$1 is closed"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

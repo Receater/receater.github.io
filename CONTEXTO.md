@@ -324,6 +324,15 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Si hay una versión que no viste, el (?) tiene un puntito rojo (`receater.newsSeen`). La primera vez que alguien abre la app no se le marca.
 - **REGLA: cada actualización que cambia algo que el usuario ve suma su entrada arriba de todo en `NEWS` (versión nueva, o sumar a la del día), en español y en inglés, con textos cortos de usuario, no técnicos.**
 
+### 7q. Herramientas nuevas (oct 2026)
+- Comparación con el mes anterior (`prevExpensesFair`): en el mes actual se corta el anterior en la misma cantidad de días ("a esta altura"). En categorías del Resumen y debajo del total de cada tarjeta. Sin datos del mes anterior, nada.
+- "Lo que viene" (`upcomingList`/`openUpcoming`): botón en Movimientos debajo de "¿Dónde está tu plata?". Fijos sin pagar + pagos de tarjeta hasta el cobro (lo que vence el día de cobro dice "se paga con el sueldo nuevo"). Ticket con total.
+- Cierre de mes (`openMonthClose`): ticket con cómo te fue + "Separar plata para los frascos" (abre ¿Cuánto puedo ahorrar?). Aparece solo una vez al abrir la app en un período nuevo (hasta 15 días), y desde el aviso del Resumen.
+- Topes: botón "Que Recy los proponga" (promedio de hasta 3 meses completos; si no hay, lo del mes llevado al mes entero; redondea a $5.000; no pisa topes puestos).
+- Categorías propias: "Juntar con otra categoría…" mueve gastos, ítems, fijos, topes y comercios aprendidos, y borra la vieja.
+- Fijos: libreta "Suscripciones" (categoría suscripciones), por mes y por año, dólares al dólar de hoy.
+- Ajustes → Copia de seguridad: bajar .json (sin la clave de IA) o cargar uno (reemplaza todo, con confirmación).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
