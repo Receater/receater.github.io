@@ -333,6 +333,10 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Fijos: libreta "Suscripciones" (categoría suscripciones), por mes y por año, dólares al dólar de hoy.
 - Ajustes → Copia de seguridad: bajar .json (sin la clave de IA) o cargar uno (reemplaza todo, con confirmación).
 
+### 7r. Volver a hoy
+- Mirando un período que no es el actual, debajo del rango aparece "Volver a <mes>" (y "Este mes todavía no empezó" si es futuro). Un mes futuro se ve casi vacío (solo pagos de tarjeta, "Cargá tu sueldo", fijos sin pagar) y se confundía con que se había borrado todo.
+- En Configurar la app, cambiar la regla de cobro cuando ya hay datos pide confirmación.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.

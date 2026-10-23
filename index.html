@@ -1708,6 +1708,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .up-tot{display:flex;justify-content:space-between;padding:12px 0 0;font-weight:700}
 .mc-list{margin:0;padding-left:18px;font-size:.88rem;line-height:1.5}.mc-list li{margin:4px 0}
 .mc-later{width:100%;margin-top:8px;border-radius:6px !important;font-family:inherit}
+.back-today{display:inline-block;margin:6px auto 0;padding:5px 12px;border-radius:99px;border:1.5px solid #1F1F1F;background:#1F1F1F;color:#FBF8F1;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.8rem;cursor:pointer}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2092,6 +2093,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .up-d{border:1.5px solid #CCCCCC !important}
 :root[data-theme="dark"] .up-d small{color:#E85D69 !important}
 :root[data-theme="dark"] .up-m small{color:#817E78 !important}
+:root[data-theme="dark"] .back-today{border:1.5px solid #CCCCCC !important;background:#3D3D3D !important}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2919,7 +2921,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1530";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3727,11 +3729,20 @@ function renderRange(){
     const end = new Date(payDate(viewYear, viewMonth+1) - 864e5);
     txt = `${shortDate(payDate(viewYear, viewMonth))} al ${shortDate(end)}`;
   }
-  if (!txt) return;
-  const b = document.createElement("button"); b.type = "button"; b.className = "range-btn"; b.textContent = txt;
-  b.setAttribute("aria-label", txt + ". Cambiar fecha de cobro");
-  b.onclick = () => openPay();
-  box.append(b);
+  if (txt){
+    const b = document.createElement("button"); b.type = "button"; b.className = "range-btn"; b.textContent = txt;
+    b.setAttribute("aria-label", txt + ". Cambiar fecha de cobro");
+    b.onclick = () => openPay();
+    box.append(b);
+  }
+  // Si estás mirando otro mes, siempre a mano la vuelta al de hoy (un mes que todavía no empezó se ve casi vacío)
+  if (!learnOn && !isCurrentPeriod(viewYear, viewMonth)){
+    const [ty, tm] = periodOf(new Date()), fut = viewYear * 12 + viewMonth > ty * 12 + tm;
+    const g = document.createElement("button"); g.type = "button"; g.className = "back-today";
+    g.textContent = (fut ? "Este mes todavía no empezó · " : "") + `Volver a ${monthName(ty, tm)}`;
+    g.onclick = () => { [viewYear, viewMonth] = periodOf(new Date()); viewDay = null; render(); };
+    box.append(g);
+  }
 }
 let [viewYear, viewMonth] = periodOf(now);
 const $ = id => document.getElementById(id);
@@ -6855,6 +6866,7 @@ function renderSavePlan(){
 }
 /* ---------- Guía de inicio (onboarding): explica la app y carga lo básico ---------- */
 const ONB_KEY = "receater.onb";
+let onbRuleOk = false;
 let onbStep = 0, onbFix = [], onbCards = [], onbRule = null, onbDrive = null;
 const ONB_FIX = [["Alquiler","casa"],["Expensas","casa"],["Luz","casa"],["Gas","casa"],["Internet","casa"],["Celular","casa"],["Netflix","suscripciones"],["Spotify","suscripciones"],["Gimnasio","salud"],["Prepaga","salud"]];
 const ONB_STEPS = ["hola", "sueldo", "fijos", "tarjeta", "drive", "listo"];
@@ -6872,6 +6884,9 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.6.1", d: "2026-10-23", t: { es: "Volver a hoy", en: "Back to today" }, i: [
+    { es: "Si estás mirando otro mes, arriba aparece un botón para volver al de hoy, y avisa si ese mes todavía no empezó.", en: "If you're looking at another month, a button at the top takes you back to today's, and tells you if that month hasn't started." },
+    { es: "Configurar la app ya no cambia tu día de cobro sin preguntarte.", en: "Setting up the app no longer changes your payday without asking." } ] },
   { v: "1.6", d: "2026-10-23", t: { es: "Un solo \"Te queda\"", en: "One single \"You have left\"" }, i: [
     { es: "\"Te queda\" sale de la plata de tus cuentas menos lo que falta pagar, y es el mismo número en toda la app.", en: "\"You have left\" comes from your accounts minus what's still to pay, and it's the same number everywhere." },
     { es: "En el Resumen, cada tarjeta muestra arriba su próximo pago.", en: "In the Summary, each card shows its next payment at the top." },
@@ -7052,6 +7067,9 @@ function onbSave(){
   if (st === "sueldo"){
     const v = parseAmount($("onbSal").value);
     if (!onbRule && v > 0){ $("onbErr").textContent = "Elegí cuándo cobrás (o tocá Saltear)."; return false; }
+    if (onbRule && data.payRule && onbRule !== data.payRule && data.incomes.length && !onbRuleOk){
+      uiConfirm("Esto cambia desde qué día cuenta tu mes, y tus movimientos se reparten distinto entre los meses. ¿Cambiarlo?").then(ok => { if (ok){ onbRuleOk = true; $("onbNext").click(); onbRuleOk = false; } else { onbRule = data.payRule; renderOnb(); } });
+      return false; }
     if (onbRule){ payRule = onbRule; data.payRule = onbRule; delete data.payday; }
     if (v > 0){ const [cy, cm] = periodOf(new Date()), d = isFree() ? new Date() : payDate(cy, cm);
       const prev = data.incomes.find(e => e.category === "sueldo" && e.onb);
@@ -10596,6 +10614,7 @@ Por año	Per year
 Las que están en dólares, al dólar de hoy.	The ones in dollars, at today's rate.
 Separar plata para los frascos	Set money aside for your jars
 Juntar	Merge
+Esto cambia desde qué día cuenta tu mes, y tus movimientos se reparten distinto entre los meses. ¿Cambiarlo?	This changes which day your month starts, and your activity gets split differently across months. Change it?
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10890,6 +10909,7 @@ const I18N_EN_P = [
   [/^Sus (\d+) gastos, sus fijos y su tope pasan a la que elijas, y "(.+)" se borra\.$/, 'Its $1 expenses, fixed costs and cap move to the one you pick, and "$2" is deleted.'],
   [/^¿Reemplazar tus datos por los de la copia\? Tiene (\d+) gastos\. Lo que tenés ahora se pierde \(si estás con Google, también en tu Drive\)\.$/, "Replace your data with the backup's? It has $1 expenses. What you have now will be lost (in your Drive too, if you're signed in)."],
   [/^Cerró (.+)$/, "$1 is closed"],
+  [/^(Este mes todavía no empezó · )?Volver a (.+)$/, (m, a, b) => `${a ? "This month hasn't started yet · " : ""}Back to ${b}`],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
