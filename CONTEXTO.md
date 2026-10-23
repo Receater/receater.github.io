@@ -352,6 +352,15 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Pizarra de Movimientos: "Hoy cierra X" / "Mañana cierra X" arriba, con ⓘ que explica desde cuándo va al resumen siguiente y cuándo se paga.
 - Aviso al celu el día del cierre a las 9:15 ("Hoy cierra X · Lo que compres desde mañana lo pagás el …").
 
+### 7u. 1.8
+- Filtros de Movimientos: una sola fila con flechas ‹ › (`#listFilterW`, `lfArrows`).
+- Compu: `placeMonthNav()` mueve el calendario del mes arriba de la pizarra (columna izquierda de la vista activa), más compacto (`.mn-side`). En el celu vuelve a su lugar.
+- Ahorro en la torta (Resumen e imagen del mes): puntitos blancos, no rayas (las rayas parecían divisiones de categorías).
+- Fijos: grupos "Por pagar" / "En tarjeta · X" (uno por tarjeta, sin repetir la tarjeta en cada ticket) / "Ya pagados", con total. Terapia parcial: "Te falta 1 sesión · pagaste $X", monto que falta "de $total". Suscripciones en `#subsBox`, debajo de la pizarra (columna izquierda en compu). Compu: torta a la izquierda y lista a la derecha.
+- Detalle de frasco (`#jdSheet`): altura fija (88vh, máx 820px), scrollea adentro.
+- Aviso de la escuelita en amarillo (warning), no rojo. Dólar hoy en verde, el select con chevron.
+- REGLA: todo cambio del Resumen se refleja en "Guardar el mes como imagen" (`shareMonthImage`).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
