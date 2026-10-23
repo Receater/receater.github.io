@@ -303,6 +303,16 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Drive: si cambiás algo mientras se está subiendo, se vuelve a subir al terminar (antes ese cambio quedaba sin subir).
 - Header en celu: el logo no se tapa; "Aprender" solo ícono ≤600px, botones de 40px ≤420px, cotización oculta ≤375px.
 
+### 7n. Un solo "Te queda" y textos (revisión oct 2026)
+- `teQuedaReal(y,m)`: cuentas − fijos sin pagar − tarjeta que vence antes de cobrar − a devolver. Lo usan la pizarra de Movimientos, la fila "Te queda" del Resumen y la explicación del "por día". Si alguna cuenta no tiene saldo → null y se usa cobraste − gastaste.
+- Fijos: "Te queda libre" pasó a "Sueldo después de fijos" (mide otra cosa).
+- Resumen: comparación con el mes anterior solo si ese mes tiene datos; si no, nada. Categoría nueva → "Nuevo: no tenías en X".
+- Resumen, tarjetas: en el mes actual, arriba "Próximo pago: $X el 30 oct" (aunque caiga en el mes siguiente). "Ver las N compras del resumen".
+- Cuentas: "Rinde por día ≈ $X" + "Este mes te rindió ≈ $Y".
+- Ajustes manuales se llaman "Ajuste de saldo" (se migran los viejos al cargar).
+- Préstamo ya devuelto: muestra lo que prestaste, no "$ 0 de $ X".
+- Cartel de Google más compacto; al tocar "Ahora no" avisa que se puede entrar desde Ajustes. Idioma: cualquier idioma del navegador en español → español.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.

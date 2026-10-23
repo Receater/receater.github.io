@@ -1659,6 +1659,13 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .theme-dlg .set-row[aria-pressed="true"]{border-style:solid;border-color:#1F1F1F}
 .theme-dlg .set-row[aria-pressed="true"] .th-ok{background:#1E7A50;border-color:#1E7A50}
 .theme-dlg .set-row[aria-pressed="true"] .th-ok::after{content:"";width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.acc-sum .acc-month{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
+.due-next .due strong{font-size:1.05em}
+/* Cartel de Google: compacto, en una línea cuando entra */
+.cloud-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 14px !important}
+.cloud-banner > p:first-child{flex:1 1 240px;margin:0;font-size:.88rem}
+.cloud-banner .row{flex:none}
+.cloud-banner .cb-terms{flex:1 1 100%;margin:0 !important;font-size:.72rem}
 /* ===== Ahorros: estantería de cubos. La madera es el fondo y los huecos son los cubos ===== */
 .jar-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;padding:10px;border-radius:6px;
   background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),#9A6B3F;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.25)}
@@ -2079,12 +2086,12 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
     </div>
   </div>
   <div class="cloud-banner" id="cloudBanner" hidden>
-    <p>Entrá con Google para guardar tus datos en tu Drive y verlos desde cualquier celu o compu.</p>
+    <p>Guardá tus datos en tu Drive y miralos desde cualquier celu o compu.</p>
     <div class="row">
       <button type="button" class="small-btn primary" id="cloudLogin">Entrar con Google</button>
       <button type="button" class="small-btn" id="cloudLater">Ahora no</button>
     </div>
-    <p class="fx-hint" style="margin:8px 0 0">Al entrar aceptás los <a href="terminos.html" target="_blank" rel="noopener">Términos</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a>.</p>
+    <p class="fx-hint cb-terms">Al entrar aceptás los <a href="terminos.html" target="_blank" rel="noopener">Términos</a> y la <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a>.</p>
   </div>
 
   <div id="viewList">
@@ -2767,7 +2774,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 <div class="sheet-bg" id="accBg"></div>
 <div class="sheet notepad" id="accSheet" role="dialog" aria-modal="true" aria-labelledby="accTitle">
   <h3 id="accTitle">Dónde está tu plata</h3>
-  <div class="acc-acts"><button type="button" class="small-btn" id="accMove">Pasé plata de una cuenta a otra</button><button type="button" class="small-btn" id="accFix">Actualizar saldos</button><button type="button" class="small-btn" id="accMp">Importar resumen de Mercado Pago (PDF)</button></div>
+  <div class="acc-acts"><button type="button" class="small-btn" id="accMove">Pasar plata entre cuentas</button><button type="button" class="small-btn" id="accFix">Actualizar saldos</button><button type="button" class="small-btn" id="accMp">Importar resumen de Mercado Pago (PDF)</button></div>
   <div id="accBox"></div>
   <div class="actions">
     <button type="button" class="btn ghost" id="accAdd">+ Agregar cuenta</button>
@@ -2826,9 +2833,11 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 
 <script>
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
-  return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
+  // Idioma del navegador (cualquiera de los que tenga configurados): si hay español, en español
+  const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
+  const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1015";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1330";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -2907,6 +2916,7 @@ if (!Array.isArray(data.expenses)) data = {expenses:[]};
 if (!Array.isArray(data.incomes)) data.incomes = [];
 /* Hora de carga de cada movimiento: lo que ya existía queda en 0, lo nuevo se marca al guardar */
 [data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = 0; }));
+[data.expenses, data.incomes].forEach(l => l.forEach(x => { if (x.adjust && /sin anotar \(ajuste/i.test(x.note || "")) x.note = "Ajuste de saldo"; }));
 const INCOME_KINDS = [
   {id:"sueldo",    name:"Sueldo",         color:"var(--accent)"},
   {id:"extra",     name:"Trabajos extra", color:"var(--accent)"},
@@ -3657,6 +3667,17 @@ window.addEventListener("resize", () => setTimeout(equalizeBoards, 150));
 /* Escritorio: la columna izquierda queda fija al scrollear solo si entra entera en la pantalla (si no, scrollea normal) */
 function fitLeftCol(){ document.querySelectorAll(".vcol-l").forEach(c => { c.classList.remove("stick"); if (innerWidth >= 1100 && c.offsetParent && c.getBoundingClientRect().height <= innerHeight - 120) c.classList.add("stick"); }); }
 window.addEventListener("resize", () => setTimeout(fitLeftCol, 160));
+/* "Te queda" real (uno solo para toda la app): plata de las cuentas − fijos sin pagar − tarjeta que vence antes de cobrar − lo que tenés que devolver.
+   null si no es el período actual o si alguna cuenta no tiene saldo. */
+function teQuedaReal(y, m){
+  if (!isCurrentPeriod(y, m)) return null;
+  let real = null; try { real = accTotal(); } catch {}
+  if (real == null) return null;
+  const cobro = isFree() ? latestCobro() : null, end = cobro ? dateOnly(cobro.until) : payDate(y, m + 1), now = new Date();
+  const fix = fixedPendingARS(y, m), repay = toRepayARS(y, m);
+  const card = round2(entries().filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) < end).reduce((a, x) => a + x.amount, 0));
+  return { real, fix, card, repay, left: round2(real - fix - card - repay) };
+}
 function render(){
   if (learnOn){ setScene("learn"); return; }
   queueMicrotask(() => { try { renderAccounts(); } catch {} });
@@ -3767,7 +3788,8 @@ function render(){
       .reduce((s2,x) => s2 + x.amount, 0);
     const perDay = days > 0 ? (freeD + spentToday) / days : 0;
     if (perDay > 0){
-      const info = { inc: bIncA, spent: bSpentA, fix: fixScreen, repay: repayScreen, spentToday, days, until: untilD, perDay, cobro: !!cobro };
+      const tqI = boardReal ? teQuedaReal(viewYear, viewMonth) : null;
+      const info = { inc: bIncA, spent: bSpentA, fix: fixScreen, repay: repayScreen, spentToday, days, until: untilD, perDay, cobro: !!cobro, tq: tqI };
       screen.push({ t: `Te da para ${fmtARS.format(perDay)} por día`, info: () => explainPerDay(info) });
       if (spentToday > 0){
         const leftToday = perDay - spentToday;
@@ -4313,8 +4335,9 @@ function renderItem(e){
   sub.append(chev, document.createTextNode((card ? card.name + ". " : "") + (e.loan ? (o ? `Préstamo a ${e.split.people[0].name}, te debe ${money(o, e.currency)}` : `Préstamo a ${e.split.people[0].name}, ya te devolvió`)
     : (o ? `Compartido, te deben ${money(o, e.currency)}` : "Compartido, ya te pagaron todos"))));
   mid.append(cat, sub);
-  const of = document.createElement("span"); of.className = "of"; of.textContent = "de " + money(e.amount, e.currency);
-  amt.append(of);
+  // Un préstamo que ya te devolvieron: se muestra lo que prestaste, no "$ 0 de $ X"
+  if (e.loan && !o){ amt.firstChild.textContent = money(e.amount, e.currency); }
+  else { const of = document.createElement("span"); of.className = "of"; of.textContent = "de " + money(e.amount, e.currency); amt.append(of); }
   addStamp();
   b.setAttribute("aria-expanded", String(open));
   const wrap = document.createElement("div"); if (open) wrap.className = "is-open";
@@ -7087,7 +7110,8 @@ function renderDash(){
     if (cur === "ARS"){ const tb = document.createElement("button"); tb.type = "button"; tb.className = "linkbtn bud-link";
       tb.textContent = Object.keys(data.budgets || {}).length ? "Cambiar topes por categoría" : "+ Ponerle un tope a cada categoría"; tb.onclick = openBudgets; box.append(tb); }
 
-    // Leyenda con comparación
+    // Leyenda con comparación (si el mes anterior está vacío, no se compara)
+    const prevHas = Object.values(prev).some(v => v > 0);
     const ul = document.createElement("ul"); ul.className = "legend";
     sorted.forEach(([id,v]) => {
       const c = catById(id), p = prev[id] || 0;
@@ -7096,7 +7120,7 @@ function renderDash(){
       const mid = document.createElement("div");
       const n = document.createElement("div"); n.className = "n"; n.textContent = c.name;
       const d = document.createElement("div"); d.className = "d";
-      if (!p) d.textContent = `No tenías en ${prevName}`;
+      if (!p) d.textContent = prevHas ? `Nuevo: no tenías en ${prevName}` : "";
       else {
         const pct = Math.round((v-p)/p*100);
         d.textContent = pct === 0 ? `Igual que ${prevName}` : `${pct>0?"▲":"▼"} ${Math.abs(pct)}% vs ${prevName}`;
@@ -7136,12 +7160,14 @@ function renderDash(){
         ul.append(box2);
       }
     });
-    if (inc > total){
+    // "Te queda": el mismo número de la pizarra de Movimientos cuando las cuentas están al día
+    const tq = cur === "ARS" ? teQuedaReal(viewYear, viewMonth) : null, leftV = tq ? tq.left : inc - total;
+    if (tq ? tq.left > 0 : inc > total){
       const li = document.createElement("li");
       const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "var(--line)";
       const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda";
-      const a = document.createElement("div"); a.className = "a"; a.textContent = money(inc-total,cur);
-      const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(inc-total); a.append(pc);
+      const a = document.createElement("div"); a.className = "a"; a.textContent = money(leftV,cur);
+      const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pctLbl(leftV); a.append(pc);
       li.append(dot, n, a); ul.append(li);
     }
     box.append(ul);
@@ -7318,7 +7344,17 @@ function renderCardsDash(list, cur){
       const mine = all.filter(x => x.cardId === card.id && inPeriod(x, viewYear, viewMonth));
       const dates = [...new Set(mine.map(x => x.date.slice(0,10)))].sort();
       const both = xs => [["ARS", fmtARS], ["USD", fmtUSD]].map(([c, f]) => { const v = round2(xs.filter(x => x.currency === c).reduce((s,x) => s + x.amount, 0)); return v ? f.format(v) : ""; }).filter(Boolean).join(" + ");
-      if (!dates.length){ info.textContent = "Este mes no te llega nada"; next.append(info); }
+      // Mirando el mes actual: arriba de todo, el próximo pago que se viene (aunque caiga en el mes que viene)
+      if (isCurrentPeriod(viewYear, viewMonth)){
+        const fut = all.filter(x => x.cardId === card.id && dateOnly(x.date) > today && !data.cardPayments.some(p => p.cardId === card.id && p.date === x.date.slice(0,10)));
+        const nd = fut.map(x => x.date.slice(0,10)).sort()[0];
+        if (nd && !dates.includes(nd)){
+          const nx = document.createElement("div"); nx.className = "due-wrap due-next";
+          const ln = document.createElement("span"); ln.className = "due"; const st = document.createElement("strong"); st.textContent = both(fut.filter(x => x.date.slice(0,10) === nd));
+          ln.append("Próximo pago: ", st, ` el ${shortDate(dateOnly(nd))}`); nx.append(ln); next.append(nx);
+        }
+      }
+      if (!dates.length && !next.childElementCount){ info.textContent = "Este mes no te llega nada"; next.append(info); }
       dates.forEach((d, i) => {
         const ds = mine.filter(x => x.date.slice(0,10) === d), paid = data.cardPayments.some(p => p.cardId === card.id && p.date === d);
         const ln = document.createElement("span"); ln.className = "due";
@@ -7332,7 +7368,7 @@ function renderCardsDash(list, cur){
         const est = !paid && dateOnly(d) >= today ? usdEstimate(ds) : "";
         if (est){ const e2 = document.createElement("small"); e2.className = "due-br due-usd"; e2.textContent = est; w.append(e2); }
         if (!paid) w.append(stmtControl(card, d, ds));
-        if (i === 0) next.append(w); else el.append(w);
+        if (i === 0 && !next.querySelector(".due-next")) next.append(w); else el.append(w);
       });
     }
     // Editar: un lápiz al lado del nombre
@@ -7354,7 +7390,7 @@ function renderCardsDash(list, cur){
       bill && closed ? `Subir el resumen de ${prevM}, el que vence el ${shortDate(bill.due)}` : "Subir un resumen"));
     { const last = row.lastElementChild; if (last){ const t = last.textContent; last.innerHTML = ico("file") + " "; last.append(t); } }
     const mine2 = stmtExpensesIn(card, viewYear, viewMonth);
-    if (mine2.length) row.append(mkB(`Ver lo del resumen (${mine2.length})`, "chip", () => openStmtManage(card)));
+    if (mine2.length) row.append(mkB(`Ver las ${mine2.length} compras del resumen`, "chip", () => openStmtManage(card)));
     foot.append(row);
     const reps = card.rule === "open" ? [] : findRepeats(card, viewYear, viewMonth);
     if (reps.length) foot.append(mkB(`Puede haber ${reps.length} ${reps.length === 1 ? "cosa repetida" : "cosas repetidas"} · Revisar`, "st-warn", () => openRepeats(card)));
@@ -7920,7 +7956,7 @@ function fixPie(){
   });
   if (inc > S.total){
     const li = document.createElement("li"), dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "var(--line)";
-    const n = document.createElement("div"); n.className = "n"; n.textContent = "Te queda libre";
+    const n = document.createElement("div"); n.className = "n"; n.textContent = "Sueldo después de fijos";
     const a = document.createElement("div"); a.className = "a"; a.textContent = fmtARS.format(round2(inc - S.total));
     const pc = document.createElement("span"); pc.className = "p"; pc.textContent = pct(inc - S.total); a.append(pc);
     li.append(dot, n, a); ul.append(li);
@@ -8499,8 +8535,10 @@ function renderAccounts(){
     box.append(row);
   });
   const sum = document.createElement("div"); sum.className = "acc-sum";
-  sum.innerHTML = `<div><span>En total</span><b></b></div>` + (totM || totD ? `<div><span>Te rindió este mes</span><b class="up"></b></div>` : "");
-  sum.querySelector("b").textContent = f0ARS(tot); if (totM || totD) sum.querySelector(".up").textContent = `≈ ${f0ARS(totM)}`;
+  // Rinde (hoy, por día) y lo que ya rindió en el mes
+  sum.innerHTML = `<div><span>En total</span><b></b></div>` + (totD ? `<div><span>Rinde por día</span><b class="up"></b><small class="acc-month"></small></div>` : "");
+  sum.querySelector("b").textContent = f0ARS(tot);
+  if (totD){ sum.querySelector(".up").textContent = `≈ ${f0ARS(totD)}`; sum.querySelector(".acc-month").textContent = totM >= 1 ? `Este mes te rindió ≈ ${f0ARS(totM)}` : "Este mes todavía nada"; }
   box.prepend(sum);
   const hint = document.createElement("p"); hint.className = "fx-hint"; hint.style.margin = "10px 0 0";
   hint.textContent = (unknown ? "Para las que dicen ¿?, tocalas y poné cuánto tenés hoy. " : "") + "Los saldos se calculan con lo que cargás. Si no coincide con tu app, tocá la cuenta y poné el número real. Los intereses son una estimación.";
@@ -8585,15 +8623,15 @@ function reconcileDiffs(diffs){
   const tot = round2(diffs.reduce((a, d) => a + d.diff, 0));
   if (Math.abs(tot) < 1) return;
   const lost = tot < 0, where = diffs.filter(d => Math.abs(d.diff) >= 1).map(d => d.acc.name).join(", ");
-  uiDialog({ msg: lost ? `Tenés ${f0ARS(-tot)} menos de lo que calculé (${where}). Seguro hay algún gasto que no cargaste. ¿Lo agrego como "Gasto sin anotar" para que la pizarra también cierre?`
-                       : `Tenés ${f0ARS(tot)} más de lo que calculé (${where}). ¿Lo agrego como "Ingreso sin anotar" para que la pizarra también cierre?`,
+  uiDialog({ msg: lost ? `Tenés ${f0ARS(-tot)} menos de lo que calculé (${where}). Seguro hay algún gasto que no cargaste. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre?`
+                       : `Tenés ${f0ARS(tot)} más de lo que calculé (${where}). ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre?`,
     ok: "Sí, agregalo", cancel: "No, solo corregí el saldo" }).then(ok => {
     if (!ok) return;
     const t = new Date(), date = `${iso()}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
     diffs.filter(d => Math.abs(d.diff) >= 1).forEach(d => {
       const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), cash = accProv(d.acc.prov).cash;
-      if (d.diff < 0) data.expenses.push({ id, source: "manual", amount: round2(-d.diff), currency: "ARS", category: "otros", date, note: "Gasto sin anotar (ajuste de saldo)", method: cash ? "cash" : "debit", accountId: d.acc.id, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false, adjust: true });
-      else data.incomes.push({ id, type: "income", amount: round2(d.diff), currency: "ARS", category: "otro_ing", date, note: "Ingreso sin anotar (ajuste de saldo)", accountId: d.acc.id, adjust: true });
+      if (d.diff < 0) data.expenses.push({ id, source: "manual", amount: round2(-d.diff), currency: "ARS", category: "otros", date, note: "Ajuste de saldo", method: cash ? "cash" : "debit", accountId: d.acc.id, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false, adjust: true });
+      else data.incomes.push({ id, type: "income", amount: round2(d.diff), currency: "ARS", category: "otro_ing", date, note: "Ajuste de saldo", accountId: d.acc.id, adjust: true });
     });
     persist(); render(); renderAccounts();
   });
@@ -8605,8 +8643,8 @@ function accTotal(){ if (!data.accounts.length) return null; const fl = accFlows
 function nowLocal(){ const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`; }
 function addAdjust(diff, accId, what){
   const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), a = accId ? accById(accId) : null, cash = a && accProv(a.prov).cash;
-  if (diff < 0) data.expenses.push({ id, source: "manual", amount: round2(-diff), currency: "ARS", category: "otros", date: nowLocal(), note: `Gasto sin anotar (${what})`, method: cash ? "cash" : "debit", accountId: accId || null, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false, adjust: true });
-  else data.incomes.push({ id, type: "income", amount: round2(diff), currency: "ARS", category: "otro_ing", date: nowLocal(), note: `Ingreso sin anotar (${what})`, accountId: accId || null, adjust: true });
+  if (diff < 0) data.expenses.push({ id, source: "manual", amount: round2(-diff), currency: "ARS", category: "otros", date: nowLocal(), note: "Ajuste de saldo", method: cash ? "cash" : "debit", accountId: accId || null, cardId: null, installments: 1, paidInstallments: 0, items: [], split: null, loan: false, adjust: true });
+  else data.incomes.push({ id, type: "income", amount: round2(diff), currency: "ARS", category: "otro_ing", date: nowLocal(), note: "Ajuste de saldo", accountId: accId || null, adjust: true });
 }
 function openFixLeft(){
   if (boardLeft == null) return;
@@ -8621,7 +8659,7 @@ function openFixLeft(){
       const v = parseAmount(b.querySelector("#flAmt").value);
       if (!(v >= 0) || b.querySelector("#flAmt").value.trim() === ""){ b.querySelector("#flErr").textContent = "Poné cuánto tenés."; return false; }
       const diff = round2(v - boardLeft); if (Math.abs(diff) < 1) return;
-      addAdjust(diff, null, "ajuste de lo que te queda");
+      addAdjust(diff, null, "ajuste de saldo");
       persist(); render();
     });
   const u = box.querySelector("#flUseAcc"); if (u) u.onclick = () => { box.querySelector("#flAmt").value = fmtARS.format(Math.max(0, Math.round(at))).replace(/[^\d.,]/g, ""); };
@@ -8643,18 +8681,18 @@ function openFixJars(){
 /* Explica cómo se calcula "Te da para $X por día" (para que se vea que los fijos pendientes ya están descontados) */
 function explainPerDay(i){
   const row = (l, v, cls) => `<div class="pd-row${cls ? " " + cls : ""}"><span>${l}</span><b>${v}</b></div>`;
-  const rest = i.inc - i.spent - i.fix - i.repay + i.spentToday;
+  const rest = i.tq ? i.tq.left + i.spentToday : i.inc - i.spent - i.fix - i.repay + i.spentToday;
   uiDialog({ msg: "", ok: "Entendido" });
   const all = document.querySelectorAll(".dlg"), box = all[all.length - 1];
   if (!box) return;
   const p = box.querySelector("p") || box.firstElementChild;
   const html = `<p><b>¿Cómo calculo lo que podés gastar por día?</b></p>
     <div class="pd-list">
-      ${row(i.cobro ? "Lo que entró desde que cobraste" : "Lo que cobraste este mes", f0ARS(i.inc))}
-      ${row("Menos lo que ya gastaste" + (i.spentToday ? " (sin contar hoy)" : ""), "− " + f0ARS(i.spent - i.spentToday))}
+      ${i.tq ? row("Lo que tenés en tus cuentas" + (i.spentToday ? " (más lo de hoy)" : ""), f0ARS(i.tq.real + i.spentToday)) + (i.tq.card ? row("Menos la tarjeta que vence antes de cobrar", "− " + f0ARS(i.tq.card)) : "") :
+        row(i.cobro ? "Lo que entró desde que cobraste" : "Lo que cobraste este mes", f0ARS(i.inc)) + row("Menos lo que ya gastaste" + (i.spentToday ? " (sin contar hoy)" : ""), "− " + f0ARS(i.spent - i.spentToday))}
       ${i.fix ? row("Menos los fijos que todavía no pagaste", "− " + f0ARS(i.fix), "pd-fix") : ""}
       ${i.repay ? row("Menos lo que tenés que devolver", "− " + f0ARS(i.repay)) : ""}
-      ${row("Te queda libre", f0ARS(rest), "pd-tot")}
+      ${row("Te queda", f0ARS(rest), "pd-tot")}
       ${row(`Dividido ${i.days} ${i.days === 1 ? "día" : "días"} (hasta el ${shortDate(i.until)})`, f0ARS(i.perDay) + " por día", "pd-tot")}
     </div>
     <p class="fx-hint" style="margin:10px 0 0">${i.fix ? "Los fijos que te faltan pagar ya están apartados: podés gastar esto tranquilo sin tocar esa plata." : "No tenés fijos pendientes este mes."} El número de hoy no cambia mientras cargás gastos del día: lo que gastes hoy se descuenta en "Hoy te quedan".</p>`;
@@ -8943,8 +8981,8 @@ function learnGo(where){ exitLearn(); if (where === "accounts"){ setTab("list");
 function renderLearn(){
   const all = LEARN.flatMap(c => c.lessons), done = learnDone(), tot = learnTotal(), nextL = all.find(l => !data.learned[l.id]);
   const topicsDone = LEARN.filter(c => c.lessons.length && c.lessons.every(l => data.learned[l.id])).length;
-  renderStage("stageLearn", { label: "Extra opcional", big: `${topicsDone} de ${LEARN.length} temas`, bar: done / tot,
-    lines: ["No hace falta para usar la app", "Pero te ayuda un montón a entender tu plata", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!"],
+  renderStage("stageLearn", { label: "Aprendé a tu ritmo", big: `${topicsDone} de ${LEARN.length} temas`, bar: done / tot,
+    lines: ["Una lección por día alcanza", nextL ? `Sigue: ${nextL.title}` : "¡Terminaste todo lo que hay!"],
     mood: done === tot ? "full" : "happy", line: done ? "¡Vas bien! Una lección por día y listo." : "Vení que te explico todo sin vueltas." });
   const nx = $("learnNext"); nx.innerHTML = "";
   if (!learnCur && nextL){ nx.hidden = false;
@@ -9524,7 +9562,8 @@ window.cloud = (() => {
   }
   btn.onclick = () => { if (ready) logout(); else if (needsRefresh) reconnectTap(); else connect(); };
   $("cloudLogin").onclick = connect;
-  $("cloudLater").onclick = () => { ls.set(BANNER_KEY, "1"); $("cloudBanner").hidden = true; status("Entrar"); };
+  $("cloudLater").onclick = () => { ls.set(BANNER_KEY, "1"); $("cloudBanner").hidden = true; status("Entrar");
+    uiDialog({ msg: "Listo. Cuando quieras, entrás con Google desde Ajustes → Tu cuenta.", ok: "Entendido" }); };
 
   /* ---------- Cartel "Conectando con tu Drive…" con un Recy chiquito ---------- */
   const conn = { el: $("connCard"), t: $("connTitle"), sub: $("connSub"), b: $("connBtn"), skip: $("connSkip") };
@@ -10199,6 +10238,19 @@ Pagué una tarjeta	I paid a card
 Sigue lo que tenga tu celu o compu.	Follows your phone or computer setting.
 Siempre claro.	Always light.
 Siempre oscuro.	Always dark.
+Pasar plata entre cuentas	Move money between accounts
+Aprendé a tu ritmo	Learn at your own pace
+Una lección por día alcanza	One lesson a day is enough
+Sueldo después de fijos	Salary after fixed costs
+Rinde por día	Earns per day
+Este mes todavía nada	Nothing yet this month
+Ajuste de saldo	Balance adjustment
+Guardá tus datos en tu Drive y miralos desde cualquier celu o compu.	Save your data to your Drive and see it from any phone or computer.
+Listo. Cuando quieras, entrás con Google desde Ajustes → Tu cuenta.	Done. Whenever you want, sign in with Google from Settings → Your account.
+Entendido	Got it
+Lo que tenés en tus cuentas	What you have in your accounts
+Lo que tenés en tus cuentas (más lo de hoy)	What you have in your accounts (plus today's)
+Menos la tarjeta que vence antes de cobrar	Minus the card due before payday
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10474,6 +10526,12 @@ const I18N_EN_P = [
   [/^(\d+) de (\d+)$/, "$1 of $2"],
   [/^(\d+) capítulos$/, "$1 chapters"],
   [/^Lecciones leídas: (\d+)$/, "Lessons read: $1"],
+  [/^Ver las (\d+) compras del resumen$/, "See the $1 purchases on the statement"],
+  [/^Próximo pago: (.+) el (.+)$/, "Next payment: $1 on $2"],
+  [/^Nuevo: no tenías en (.+)$/, "New: none in $1"],
+  [/^Este mes te rindió ≈ (.+)$/, "This month it earned ≈ $1"],
+  [/^Tenés (.+) menos de lo que calculé \((.+)\)\. Seguro hay algún gasto que no cargaste\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 less than I calculated ($2). There's probably an expense you didn't log. Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
+  [/^Tenés (.+) más de lo que calculé \((.+)\)\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 more than I calculated ($2). Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
