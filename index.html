@@ -2828,7 +2828,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if (l === "es" || l === "en") return l; } catch {}
   return /^es\b/i.test(navigator.language || "es") ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-22.1610";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1015";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3691,9 +3691,9 @@ function render(){
     const calcLeft = incA - spentA, cur = isCurrentPeriod(viewYear, viewMonth);
     const fixP = cur ? fixedPendingARS(viewYear, viewMonth) : 0;
     let realNow = null; try { realNow = cur ? accTotal() : null; } catch {}
-    // Con las cuentas al día, "te queda" es la plata real menos lo que todavía tenés que pagar (fijos y tarjeta hasta que cobres)
+    // Con las cuentas al día, "te queda" es la plata real menos lo que todavía tenés que pagar (fijos y tarjeta que vence antes del día que cobrás; lo que vence ese día o después se paga con el sueldo nuevo)
     const periodEnd = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth + 1), now = new Date();
-    const cardP = realNow != null ? round2(allEnts.filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) <= periodEnd).reduce((a, x) => a + x.amount, 0)) : 0;
+    const cardP = realNow != null ? round2(allEnts.filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) < periodEnd).reduce((a, x) => a + x.amount, 0)) : 0;
     const left = realNow != null ? round2(realNow - fixP - cardP) : calcLeft;
     const free = realNow != null ? left : calcLeft - fixP;
     boardReal = realNow != null; boardRealNow = realNow; boardRealLeft = realNow != null ? left : null;
