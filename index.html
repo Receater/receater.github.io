@@ -1666,6 +1666,22 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .cloud-banner > p:first-child{flex:1 1 240px;margin:0;font-size:.88rem}
 .cloud-banner .row{flex:none}
 .cloud-banner .cb-terms{flex:1 1 100%;margin:0 !important;font-size:.72rem}
+/* Resumen: el ahorro se distingue de los gastos */
+.legend li.is-sav{background:repeating-linear-gradient(45deg,rgba(30,122,80,.07) 0 6px,transparent 6px 12px);border-radius:6px;padding-left:8px !important;padding-right:8px !important}
+.legend li.is-sav .n{color:#1E7A50}
+.legend .dot-sav{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.6) 0 2px,transparent 2px 4px) !important}
+.legend li.legend-hd{display:block;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 0 2px;border:0}
+#catSwatches .swatch.in-use{position:relative}
+#catSwatches .swatch.in-use::after{content:"";position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#FBF8F1;border:1.5px solid #6E6A62}
+/* Movimientos: filtro por categoría y total del día */
+.list-filter{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 8px;scrollbar-width:none}
+.list-filter::-webkit-scrollbar{display:none}
+.lf-chip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;border:1.5px solid #BDB6A5;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.lf-chip .dot{width:9px;height:9px;border-radius:50%}
+.lf-chip[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
+.lf-total{display:inline-block;margin:0 0 10px;padding:6px 12px;border-radius:99px;background:#FBF8F1;color:#1F1F1F;font-weight:700;font-size:.88rem;box-shadow:0 2px 6px rgba(0,0,0,.14)}
+.day h2 .day-tot{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.85em;opacity:.7;margin-left:6px}
+.js-label .jar-name{white-space:normal !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.15}
 /* ===== Ahorros: estantería de cubos. La madera es el fondo y los huecos son los cubos ===== */
 .jar-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;padding:10px;border-radius:6px;
   background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),#9A6B3F;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.25)}
@@ -2023,6 +2039,12 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"]{border-color:#CCCCCC !important}
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"] .th-ok{background:#146D46 !important;border-color:#146D46 !important}
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"] .th-ok::after{border:solid #181818 !important}
+:root[data-theme="dark"] .legend li.is-sav{background:repeating-linear-gradient(45deg,rgba(20,109,70,0.07) 0 6px,transparent 6px 12px) !important}
+:root[data-theme="dark"] .legend li.is-sav .n{color:#55A57B !important}
+:root[data-theme="dark"] #catSwatches .swatch.in-use::after{background:#1D1C19 !important;border:1.5px solid #817E78 !important}
+:root[data-theme="dark"] .lf-chip{border:1.5px solid #3D382D !important;background:#1D1C19 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .lf-chip[aria-pressed="true"]{background:#3D3D3D !important;border-color:#CCCCCC !important}
+:root[data-theme="dark"] .lf-total{background:#1D1C19 !important;color:#CCCCCC !important}
 :root[data-theme="dark"] .jar-shelf{background:linear-gradient(90deg,rgba(24,24,24,0.06),rgba(0,0,0,.06)),#8A5F35 !important}
 :root[data-theme="dark"] .jar-slot{color:#CCCCCC !important;background:linear-gradient(180deg,#5A3A20,#603C21 70%,#6D4628) !important}
 :root[data-theme="dark"] .js-label{background:linear-gradient(180deg,#302913,#44381A) !important;border:1.5px solid #7C5E25 !important;box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(24,24,24,0.5) !important;color:#D0CAB8 !important}
@@ -2547,6 +2569,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <div class="field"><label for="catName">Nombre</label><input class="input" id="catName" placeholder="Ej: Mascotas, Taller, Regalos" autocomplete="off"></div>
   <div class="field"><span class="lbl">Color</span>
     <div class="swatches" id="catSwatches" role="radiogroup" aria-label="Color"></div>
+    <p class="fx-hint" style="margin:6px 0 0">Los que tienen un puntito ya los usa otra categoría. Podés elegirlos igual.</p>
     <label class="custom-color">Otro color <input type="color" id="catColor" value="#2F5BEA"></label>
   </div>
   <div class="err" id="catErr"></div>
@@ -2837,7 +2860,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1330";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3856,8 +3879,26 @@ function render(){
     days.append(e);
     return;
   }
+  // Filtro por categoría: chips arriba de la lista, con el total de cada una
+  if (!viewDay){
+    const tot = {}; rows.forEach(r => { if (r.kind !== "item" || isIncome(r.e)) return; tot[r.e.category] = (tot[r.e.category] || 0) + (r.e.currency === "ARS" ? eff(r.e) : 0); });
+    if (listCat && !tot.hasOwnProperty(listCat)) listCat = null;
+    const ids = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
+    if (ids.length > 1){
+      const bar = document.createElement("div"); bar.className = "list-filter"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "Filtrar por categoría");
+      const chip = (id, label, color) => { const b = document.createElement("button"); b.type = "button"; b.className = "lf-chip"; b.setAttribute("aria-pressed", String(listCat === id));
+        if (color){ const d = document.createElement("span"); d.className = "dot"; d.style.background = color; b.append(d); }
+        b.append(label); b.onclick = () => { listCat = listCat === id || id === null ? null : id; render(); }; return b; };
+      bar.append(chip(null, "Todo"));
+      ids.forEach(id => bar.append(chip(id, catById(id).name, catById(id).color)));
+      days.append(bar);
+      if (listCat){ const n = rows.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat).length;
+        const t = document.createElement("p"); t.className = "lf-total"; t.textContent = `${catById(listCat).name}: ${fmtARS.format(round2(tot[listCat]))} en ${n} ${n === 1 ? "gasto" : "gastos"}`; days.append(t); }
+    }
+  }
+  const shownF = listCat && !viewDay ? shown.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat) : shown;
   const groups = {};
-  shown.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
+  shownF.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
   Object.keys(groups).sort().reverse().forEach(key => {
     const sec = document.createElement("section"); sec.className = "day";
     const h = document.createElement("h2");
@@ -3866,6 +3907,9 @@ function render(){
     const today = toLocalInput(new Date()), yest = toLocalInput(new Date(Date.now()-864e5));
     h.textContent = key === today ? "Hoy" : key === yest ? "Ayer"
       : dt.toLocaleDateString("es-AR",{weekday:"long", day:"numeric", month:"short"});
+    // Total del día (gastos en pesos, sin lo que va a la tarjeta)
+    const dayTot = round2(groups[key].reduce((a, r) => a + (r.kind === "item" && !isIncome(r.e) && r.e.currency === "ARS" && !isCardExp(r.e) && !r.e.fx ? eff(r.e) : 0), 0));
+    if (dayTot > 0){ const tt = document.createElement("span"); tt.className = "day-tot"; tt.textContent = fmtARS.format(dayTot); h.append(" ", tt); }
     const list = document.createElement("div"); list.className = "list";
     groups[key].forEach(r => {
       const t = document.createElement("div");
@@ -4947,12 +4991,24 @@ function setCatColor(c){
 (() => { const box = $("catSwatches"); CAT_SWATCHES.forEach(c => { const b = document.createElement("button"); b.type = "button"; b.className = "swatch";
   b.dataset.c = c; b.style.background = c; b.setAttribute("role","radio"); b.setAttribute("aria-label", "Color " + c); b.onclick = () => setCatColor(c); box.append(b); }); })();
 $("catColor").addEventListener("input", () => setCatColor($("catColor").value));
+/* Un color que no use ninguna categoría: el tono más lejos de los que ya hay */
+function freeColor(used){
+  const hue = h => { const r = parseInt(h.slice(1,3),16)/255, g = parseInt(h.slice(3,5),16)/255, b = parseInt(h.slice(5,7),16)/255, mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+    if (!d) return null; let x = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return (x * 60 + 360) % 360; };
+  const hs = [...used].filter(x => /^#[0-9a-f]{6}$/.test(x)).map(hue).filter(x => x != null);
+  let best = 0, bestD = -1; for (let h = 0; h < 360; h += 5){ const d = Math.min(...hs.map(x => Math.min(Math.abs(x - h), 360 - Math.abs(x - h))), 999); if (d > bestD){ bestD = d; best = h; } }
+  const f = n => { const k = (n + best / 30) % 12, a = 0.55 * Math.min(0.5, 1 - 0.5); const v = 0.5 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(v * 255).toString(16).padStart(2, "0"); };
+  return "#" + f(0) + f(8) + f(4);
+}
 function openCat(c, name){
   editingCat = c || null;
   $("catTitle").textContent = c ? "Editar categoría" : "Nueva categoría";
   $("catName").value = c ? c.name : (name || "");
-  const used = new Set(allCats().map(x => x.color.toLowerCase()));
-  setCatColor(c ? c.color : (CAT_SWATCHES.find(x => !used.has(x.toLowerCase())) || CAT_SWATCHES[0]));
+  const used = new Set(allCats().filter(x => !c || x.id !== c.id).map(x => String(x.color).toLowerCase()));
+  // Los colores que ya usa otra categoría quedan marcados (se pueden elegir igual)
+  document.querySelectorAll("#catSwatches .swatch").forEach(sw => { const who = allCats().find(x => (!c || x.id !== c.id) && String(x.color).toLowerCase() === sw.dataset.c.toLowerCase());
+    sw.classList.toggle("in-use", !!who); sw.title = who ? `Ya la usa ${who.name}` : ""; });
+  setCatColor(c ? c.color : (CAT_SWATCHES.find(x => !used.has(x.toLowerCase())) || freeColor(used)));
   $("catDel").hidden = !c || !!c.builtin; $("catErr").textContent = "";
   $("catBg").classList.add("open"); $("catSheet").classList.add("open");
   setTimeout(() => autoFocus($("catName")), 120);
@@ -7093,11 +7149,15 @@ function renderDash(){
     const svg = svgEl("svg", {viewBox:"0 0 200 200", role:"img", "aria-label":"Reparto por categoría"});
     const r = 78, C = 2*Math.PI*r;
     svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
-    const sorted = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+    // El ahorro va primero y con rayas: es plata que se va del mes, pero no es un gasto
+    const sorted = Object.entries(cats).sort((a,b) => (b[0] === "ahorro") - (a[0] === "ahorro") || b[1]-a[1]);
+    const defs = svgEl("defs", {}), pat = svgEl("pattern", { id: "savPat", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
+    pat.append(svgEl("rect", { width: 6, height: 6, fill: catById("ahorro").color }), svgEl("rect", { width: 2.5, height: 6, fill: "rgba(255,255,255,.55)" }));
+    defs.append(pat); svg.append(defs);
     let off = 0;
     sorted.forEach(([id,v]) => {
       const len = v/base*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
-      svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:catById(id).color,"stroke-width":26,
+      svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:id === "ahorro" ? "url(#savPat)" : catById(id).color,"stroke-width":26,
         "stroke-dasharray":`${Math.max(len-gap,0.01)} ${C}`,"stroke-dashoffset":-off,transform:"rotate(-90 100 100)"}));
       off += len;
     });
@@ -7115,10 +7175,12 @@ function renderDash(){
     const ul = document.createElement("ul"); ul.className = "legend";
     sorted.forEach(([id,v]) => {
       const c = catById(id), p = prev[id] || 0;
-      const li = document.createElement("li");
-      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = c.color;
+      const li = document.createElement("li"), isSav = id === "ahorro";
+      if (isSav) li.className = "is-sav";
+      if (!isSav && sorted[0][0] === "ahorro" && id === sorted[1][0]){ const hd = document.createElement("li"); hd.className = "legend-hd"; hd.textContent = "Gastos"; ul.append(hd); }
+      const dot = document.createElement("span"); dot.className = "dot" + (isSav ? " dot-sav" : ""); dot.style.background = c.color;
       const mid = document.createElement("div");
-      const n = document.createElement("div"); n.className = "n"; n.textContent = c.name;
+      const n = document.createElement("div"); n.className = "n"; n.textContent = isSav ? "Ahorraste" : c.name;
       const d = document.createElement("div"); d.className = "d";
       if (!p) d.textContent = prevHas ? `Nuevo: no tenías en ${prevName}` : "";
       else {
@@ -7127,6 +7189,7 @@ function renderDash(){
         if (pct) d.classList.add(pct>0 ? "up" : "down");
       }
       mid.append(n);
+      if (isSav){ const hp = document.createElement("div"); hp.className = "help"; hp.textContent = "Sale de tu mes, pero no es un gasto: va a tus frascos."; mid.append(hp); }
       if (c.desc){ const hp = document.createElement("div"); hp.className = "help"; hp.textContent = c.desc; mid.append(hp); }
       mid.append(d);
       const cap = cur === "ARS" && (data.budgets || {})[id];
@@ -8638,6 +8701,7 @@ function reconcileDiffs(diffs){
 }
 
 /* ===== Corregir los números de la pizarra cuando no coinciden con la realidad ===== */
+var listCat = null;
 var boardLeft = null, boardMismatch = null, boardReal = false, boardRealNow = null, boardRealLeft = null;
 function accTotal(){ if (!data.accounts.length) return null; const fl = accFlows(); let t = 0; for (const a of data.accounts){ const st = accStatus(a, fl); if (!st.known) return null; t += st.bal; } return round2(t); }
 function nowLocal(){ const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`; }
@@ -10251,6 +10315,12 @@ Entendido	Got it
 Lo que tenés en tus cuentas	What you have in your accounts
 Lo que tenés en tus cuentas (más lo de hoy)	What you have in your accounts (plus today's)
 Menos la tarjeta que vence antes de cobrar	Minus the card due before payday
+Ahorraste	You saved
+Gastos	Expenses
+Sale de tu mes, pero no es un gasto: va a tus frascos.	It leaves your month, but it isn't an expense: it goes to your jars.
+Los que tienen un puntito ya los usa otra categoría. Podés elegirlos igual.	The ones with a dot are already used by another category. You can still pick them.
+Todo	All
+Filtrar por categoría	Filter by category
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10532,6 +10602,8 @@ const I18N_EN_P = [
   [/^Este mes te rindió ≈ (.+)$/, "This month it earned ≈ $1"],
   [/^Tenés (.+) menos de lo que calculé \((.+)\)\. Seguro hay algún gasto que no cargaste\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 less than I calculated ($2). There's probably an expense you didn't log. Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
   [/^Tenés (.+) más de lo que calculé \((.+)\)\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 more than I calculated ($2). Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
+  [/^Ya la usa (.+)$/, "Already used by $1"],
+  [/^(.+): (.+) en (\d+) gastos?$/, "$1: $2 in $3 expenses"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

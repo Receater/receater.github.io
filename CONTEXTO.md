@@ -313,6 +313,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Préstamo ya devuelto: muestra lo que prestaste, no "$ 0 de $ X".
 - Cartel de Google más compacto; al tocar "Ahora no" avisa que se puede entrar desde Ajustes. Idioma: cualquier idioma del navegador en español → español.
 
+### 7o. Resumen con ahorro aparte, filtros y colores
+- Resumen: el ahorro va primero, con rayas en la torta y su fila "Ahorraste" (fondo rayado + aclaración), y abajo el encabezado "Gastos".
+- Movimientos: chips para filtrar por categoría (con total y cantidad) y total del día al lado de cada fecha (pesos, sin tarjeta ni compra de dólares). Estado en `listCat`.
+- Categorías: los colores que ya usa otra categoría tienen un puntito ("Ya la usa X"); se pueden elegir igual. Para una nueva, Recy propone uno libre (`freeColor`: el tono más lejos de los usados).
+- Frascos: el nombre en la plaquita usa hasta dos renglones.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
