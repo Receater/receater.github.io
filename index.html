@@ -1803,6 +1803,19 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   #learnMain.ln-one .ln-chap .ln-item:nth-of-type(2n){margin-right:8px}
   #learnMain.ln-one .ln-chap .ln-item:nth-of-type(3n){margin-right:0}
 }
+/* Frascos: entran con una sacudidita, como cuando agitás un frasco */
+#jarSheet.jarsheet.open,#jmSheet.jarsheet.open,#jdSheet.jarsheet.open{animation:sheetIn .25s ease,jarShake .55s ease-out .22s}
+@keyframes jarShake{0%,100%{rotate:0deg}20%{rotate:-1.6deg}45%{rotate:1.3deg}70%{rotate:-.6deg}85%{rotate:.3deg}}
+/* Darle a Recy: la hoja sale como un ticket que se imprime */
+#sheet.open{animation:ticketIn .38s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes ticketIn{0%{transform:translateY(100%);clip-path:inset(0 0 100% 0)}60%{clip-path:inset(0 0 0 0)}80%{transform:translateY(-6px)}100%{transform:none}}
+/* ¿Me lo puedo comprar?: más grande, siempre a la misma altura */
+#buySheet.open{height:min(86vh,760px);height:min(86dvh,760px)}
+@media (min-width:700px){#buySheet{max-width:620px}}
+@media (prefers-reduced-motion:reduce){#jarSheet.open,#jmSheet.open,#jdSheet.open,#sheet.open{animation:none}}
+/* Compu: el header es sólido, lo de abajo no se ve a través */
+@media (min-width:1100px){.brand{background:#FFFFFF !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important}}
+:root[data-theme="dark"] .brand{background:#181818 !important}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2206,6 +2219,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .mn-today{color:#CCCCCC !important}
 :root[data-theme="dark"] .mn-today span{color:#817E78 !important}
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:rgba(24,24,24,0.82) !important}}
+@media (min-width:1100px){:root[data-theme="dark"] .brand{background:#181818 !important}}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -3037,7 +3051,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1430b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1445";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4328,7 +4342,8 @@ function openAsk(){
   $("askLog").innerHTML = ""; $("askQ").value = "";
   const sug = $("askSug"); sug.innerHTML = "";
   const [py, pm] = periodOf(new Date()), prev = monthName(py, pm - 1);
-  const people = knownPeople().slice(0, 1);
+  // Solo sugerimos "¿cuánto me debe?" de alguien que todavía te debe
+  const people = balances().filter(x => x.ARS > 0.5 || x.USD > 0.005).map(x => x.name).slice(0, 1);
   ["¿En qué gasté más este mes?", `¿Gasté más o menos que en ${prev}?`, people[0] ? `¿Cuánto me debe ${people[0]}?` : "¿Cuánto me queda por día?", "¿Cuánto gasté en delivery este mes?"].forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = () => { $("askQ").value = t; askGo(); }; sug.append(b); });
   if (!aiKey()){ askMsg("recy", "Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez)."); const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy"; a.onclick = () => { closeAsk(); openAi(); }; $("askLog").append(a); }
@@ -7072,6 +7087,8 @@ function offerSetup(){
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
   { v: "1.9", d: "2026-10-23", t: { es: "Header nuevo y escuelita", en: "New header and school" }, i: [
+    { es: "Los frascos se abren con una sacudidita y \"Darle a Recy\" sale como un ticket.", en: "Jars open with a little shake and \"Feed Recy\" comes out like a receipt." },
+    { es: "\"¿Me lo puedo comprar?\" más grande, y Recy solo sugiere preguntar por quien todavía te debe.", en: "\"Can I afford it?\" is bigger, and Recy only suggests asking about people who still owe you." },
     { es: "En compu, header finito y liviano, y la escuelita con la pizarra, los temas y la próxima lección en una fila.", en: "On desktop, a slim light header, and the school with the board, topics and next lesson in one row." },
     { es: "Al cambiar de pestaña, la página vuelve arriba.", en: "Switching tabs takes you back to the top." },
     { es: "El calendario muestra el día de hoy grande.", en: "The calendar shows today's date big." },
