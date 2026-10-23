@@ -2973,7 +2973,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1730";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1800";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3942,6 +3942,10 @@ function render(){
       }
     }
   }
+  // Hoy (o mañana) cierra una tarjeta: desde cuándo lo que compres se paga más adelante
+  if (isCurrentPeriod(viewYear, viewMonth)){ const td = dateOnly(toLocalInput(new Date()));
+    data.cards.forEach(card => { const ci = cardCloseInfo(card); if (!ci) return; const dd = Math.round((ci.close - td) / 864e5); if (dd > 1) return;
+      screen.unshift({ t: `${dd === 0 ? "Hoy" : "Mañana"} cierra ${card.name}`, info: () => uiDialog({ msg: `${dd === 0 ? "Hoy" : "Mañana"} cierra el resumen de ${card.name}. Lo que compres ${dd === 0 ? "desde mañana" : "desde pasado mañana"} entra en el resumen que viene${ci.pay ? ` y lo pagás el ${shortDate(ci.pay)}` : ""}. Si podés esperar unos días para una compra grande, tenés más tiempo para pagarla.`, ok: "Entendido" }) }); }); }
   if (isCurrentPeriod(viewYear, viewMonth)) budgetStatus(viewYear, viewMonth).filter(x => x.pct >= 0.8).slice(0, 2).forEach(x => screen.push(budLine(x)));
   if (!bIncA && !screen.length) screen.push(ents.length || exps.length ? "Cargá tu sueldo para ver cuánto te queda" : "Sin gastos este mes");
   if (boardMismatch != null) screen.unshift(`En tus cuentas hay ${f0ARS(boardMismatch)}: no coincide, tocá el lápiz`);
@@ -6381,6 +6385,14 @@ var swReg = null;
 if ("serviceWorker" in navigator && /^https:$|^http:$/.test(location.protocol) && location.hostname !== ""){
   navigator.serviceWorker.register("sw.js").then(r => { swReg = r; scheduleAlertsSoon(); }).catch(() => {});
 }
+/* Cierre de una tarjeta: cuándo cierra el resumen que está abierto y cuándo se paga lo que compres después */
+function cardCloseInfo(card, day){
+  if (!card || card.rule === "open" || !cardCloseDay(card)) return null;
+  const d = day || dateOnly(toLocalInput(new Date())), close = stmtClose(card, d); if (!close) return null;
+  const after = new Date(close.getTime() + 864e5);
+  let pay = null; try { pay = cardSchedule({ cardId: card.id, date: toLocalInput(after) + "T12:00", installments: 1, currency: "ARS", amount: 1 })[0] || null; } catch {}
+  return { close, pay };
+}
 function buildAlerts(){
   const out = [], now = new Date(), today = dateOnly(toLocalInput(now)), lim = new Date(today.getTime() + 21 * 864e5);
   const at = (d, h, m = 0) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.getTime(); };
@@ -6402,6 +6414,10 @@ function buildAlerts(){
       out.push({ id: `card:${card.id}:${d}:day`, at: at(dd, 9), title: `Hoy vence ${card.name}`, body: `${t}. ¿Ya la pagaste?` });
     });
   });
+  // Tarjetas: el día que cierra el resumen
+  data.cards.forEach(card => { const ci = cardCloseInfo(card); if (!ci || ci.close < today || ci.close > lim) return;
+    out.push({ id: `close:${card.id}:${toLocalInput(ci.close)}`, at: at(ci.close, 9, 15), title: `Hoy cierra ${card.name}`,
+      body: ci.pay ? `Lo que compres desde mañana lo pagás el ${shortDate(ci.pay)}.` : "Lo que compres desde mañana va al resumen que viene." }); });
   // Fijos que pagás vos o por débito: el día que vencen
   const [cy, cm] = periodOf(now);
   [[cy, cm], [cy, cm + 1]].forEach(([y, m]) => fixInstances(y, m).forEach(i => {
@@ -6979,6 +6995,8 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.7.1", d: "2026-10-23", t: { es: "Cierre de tarjeta", en: "Card closing" }, i: [
+    { es: "El día que cierra tu tarjeta (y el anterior) Recy te avisa en la pizarra desde cuándo lo que compres se paga más adelante, y llega un aviso al celu.", en: "On your card's closing day (and the day before), Recy tells you on the board when new purchases move to the next bill, and you get a phone notice." } ] },
   { v: "1.7", d: "2026-10-23", t: { es: "Más prolijo", en: "Tidier" }, i: [
     { es: "El buscador va arriba de los filtros, y los filtros ya no se cortan.", en: "Search sits above the filters, and filters no longer get cut off." },
     { es: "Los pagos de tarjeta que vencen antes de cobrar están en \"lo que todavía te falta pagar\".", en: "Card payments due before payday are in \"still to pay\"." },
@@ -10749,6 +10767,7 @@ Calculadora	Calculator
 Fuente: DolarApi. Son precios de referencia.	Source: DolarApi. Reference prices.
 Cargar compra de dólares	Log a dollar purchase
 tocá uno para verlo	tap one to see it
+Lo que compres desde mañana va al resumen que viene.	What you buy from tomorrow on goes to the next statement.
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11048,6 +11067,8 @@ const I18N_EN_P = [
   [/^Por pagar · (.+)$/, "To pay · $1"],
   [/^Actualizado hace (\d+) min$/, "Updated $1 min ago"],
   [/^(.+) \(venta\)$/, "$1 (sell)"],
+  [/^(Hoy|Mañana) cierra (.+)$/, (m, a, b) => `${a === "Hoy" ? "Today" : "Tomorrow"} ${b} closes`],
+  [/^Lo que compres desde mañana lo pagás el (.+)\.$/, "What you buy from tomorrow on, you pay on $1."],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

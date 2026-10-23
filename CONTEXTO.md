@@ -347,6 +347,11 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Escuelita en compu (≥1100px): un tema por vez a la derecha (`learnTopic`, por defecto el primero con lecciones sin leer), elegido desde el índice "Temas"; lecciones en 2 columnas. En el celu siguen todos los temas.
 - "Guardar el mes como imagen": misma torta (ahorro con rayitas), Gastaste / Ahorraste / Te queda, 5 categorías con comparación o % del sueldo. Cambios del Resumen → reflejarlos también acá.
 
+### 7t. Cierre de tarjeta
+- `cardCloseInfo(card)`: próximo cierre del resumen (`stmtClose`) y cuándo se paga lo que compres después (`cardSchedule` de una compra ficticia del día siguiente).
+- Pizarra de Movimientos: "Hoy cierra X" / "Mañana cierra X" arriba, con ⓘ que explica desde cuándo va al resumen siguiente y cuándo se paga.
+- Aviso al celu el día del cierre a las 9:15 ("Hoy cierra X · Lo que compres desde mañana lo pagás el …").
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
