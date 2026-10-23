@@ -344,6 +344,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Frascos: cubo de alto fijo, frasco del mismo tamaño, plaquita de alto fijo apoyada en el estante (tapa apenas la base), siempre con nombre, saldo (≈ pesos), barra y texto.
 - Dólar hoy: pizarra de casa de cambio (`.fx-board`, excluida del generador oscuro), brecha blue/oficial, calculadora y "Cargar compra de dólares".
 - Fijos en compu: torta y suscripciones lado a lado, tickets en 2 columnas.
+- Escuelita en compu (≥1100px): un tema por vez a la derecha (`learnTopic`, por defecto el primero con lecciones sin leer), elegido desde el índice "Temas"; lecciones en 2 columnas. En el celu siguen todos los temas.
 - "Guardar el mes como imagen": misma torta (ahorro con rayitas), Gastaste / Ahorraste / Te queda, 5 categorías con comparación o % del sueldo. Cambios del Resumen → reflejarlos también acá.
 
 ## 8. Pendientes e ideas

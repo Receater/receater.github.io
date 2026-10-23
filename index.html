@@ -1740,6 +1740,16 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   #fixedList > .list{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px;align-items:start}
   #fixedList > .list > .fx-group{grid-column:1 / -1}
 }
+/* Escuelita en compu: índice a la izquierda, un tema por vez a la derecha */
+@media (min-width:1100px){
+  #learnMain.ln-one .ln-chap{margin-top:12px}
+  #learnMain.ln-one .ln-chap .ln-item{display:inline-flex;width:calc(50% - 6px);vertical-align:top;margin-right:8px;min-height:64px}
+  #learnMain.ln-one .ln-chap .ln-item:nth-of-type(2n){margin-right:0}
+  #learnMain.ln-one .ln-chap .card-head h2{font-size:1.1rem}
+  .lt-row[aria-current="true"]{background:#F3EBD6;border-radius:4px}
+  .lt-row[aria-current="true"] .lt-t{text-decoration:underline}
+  #learnTopics .card-head{display:flex;justify-content:space-between;align-items:baseline}
+}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2132,6 +2142,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .up-d small{color:#E85D69 !important}
 :root[data-theme="dark"] .up-m small{color:#817E78 !important}
 :root[data-theme="dark"] .back-today{border:1.5px solid #CCCCCC !important;background:#3D3D3D !important}
+@media (min-width:1100px){:root[data-theme="dark"] .lt-row[aria-current="true"]{background:#27241B !important}}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2962,7 +2973,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1700";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1730";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6974,7 +6985,8 @@ const NEWS = [
     { es: "El ahorro en la torta tiene rayitas como las marcas de un reloj.", en: "Savings in the chart have tick marks like a clock." },
     { es: "Plaquitas de los frascos todas iguales, apoyadas en el estante y con barra de progreso.", en: "Jar plaques all the same size, resting on the shelf, with a progress bar." },
     { es: "Dólar hoy: pizarra de casa de cambio, con la brecha y una calculadora.", en: "Dollar today: an exchange board, with the gap and a calculator." },
-    { es: "Fijos en compu en dos columnas, y la imagen del mes igual al Resumen.", en: "Fixed costs in two columns on desktop, and the month image matches the Summary." } ] },
+    { es: "Fijos en compu en dos columnas, y la imagen del mes igual al Resumen.", en: "Fixed costs in two columns on desktop, and the month image matches the Summary." },
+    { es: "La escuelita en compu muestra un tema por vez: lo elegís en el índice.", en: "On desktop, the school shows one topic at a time: pick it from the index." } ] },
   { v: "1.6.1", d: "2026-10-23", t: { es: "Volver a hoy", en: "Back to today" }, i: [
     { es: "Si estás mirando otro mes, arriba aparece un botón para volver al de hoy, y avisa si ese mes todavía no empezó.", en: "If you're looking at another month, a button at the top takes you back to today's, and tells you if that month hasn't started." },
     { es: "Configurar la app ya no cambia tu día de cobro sin preguntarte.", en: "Setting up the app no longer changes your payday without asking." } ] },
@@ -9381,7 +9393,7 @@ const LEARN_FIG = {
     <polyline points="${A.map(p => p.join(",")).join(" ")}" fill="none" stroke="#C9374B" stroke-width="2"/><polyline points="${B.map(p => p.join(",")).join(" ")}" fill="none" stroke="#2F5BEA" stroke-width="3"/>
     <text x="30" y="126" font-size="11" fill="#C9374B">una sola: sube y baja fuerte</text><text x="190" y="126" font-size="11" fill="#2F5BEA">muchas: más tranqui</text></svg>`; }
 };
-var learnCur = null, learnOn = false;
+var learnCur = null, learnOn = false, learnTopic = null;
 function learnDone(){ return LEARN.flatMap(c => c.lessons).filter(l => data.learned[l.id]).length; }
 function learnTotal(){ return LEARN.flatMap(c => c.lessons).length; }
 /* Ir de la escuelita a una parte de la app (los links de "En tu caso") */
@@ -9399,16 +9411,20 @@ function renderLearn(){
     nx.querySelector("button").onclick = () => { learnCur = nextL.id; renderLearn(); window.scrollTo({ top: 0 }); };
   } else nx.hidden = true;
   // Escritorio: índice de temas con su progreso en la columna izquierda
-  const tp = $("learnTopics"); tp.innerHTML = '<div class="card-head"><h2>Temas</h2></div>';
+  const wide = matchMedia("(min-width:1100px)").matches;
+  const selT = learnTopic != null ? learnTopic : Math.max(0, LEARN.findIndex(c => c.lessons.some(l => !data.learned[l.id])));
+  const tp = $("learnTopics"); tp.innerHTML = '<div class="card-head"><h2>Temas</h2><span class="fx-hint">tocá uno para verlo</span></div>';
   LEARN.forEach((c, ci) => { const n = c.lessons.filter(l => data.learned[l.id]).length, b = document.createElement("button"); b.type = "button"; b.className = "lt-row";
     b.innerHTML = `<span class="lt-n">${ci + 1}</span><span class="lt-t"></span><span class="lt-c">${n}/${c.lessons.length}</span><span class="lt-bar"><i style="width:${c.lessons.length ? Math.round(n / c.lessons.length * 100) : 0}%"></i></span>`;
     b.querySelector(".lt-t").textContent = c.title;
-    b.onclick = () => { learnCur = null; renderLearn(); const el = document.querySelectorAll("#learnMain .ln-chap")[ci]; if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+    if (wide && ci === selT && !learnCur) b.setAttribute("aria-current", "true");
+    b.onclick = () => { learnCur = null; learnTopic = ci; renderLearn(); if (!wide){ const el = document.querySelectorAll("#learnMain .ln-chap")[ci]; if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); } else window.scrollTo({ top: 0, behavior: "smooth" }); };
     tp.append(b); });
   const box = $("learnMain"); box.innerHTML = "";
-  box.classList.toggle("ln-grid", !learnCur);
+  box.classList.toggle("ln-grid", !learnCur && !wide); box.classList.toggle("ln-one", !learnCur && wide);
   if (!learnCur){
-    LEARN.forEach((c, ci) => {
+    // En compu: un tema por vez (el que elegiste en el índice); en el celu, todos
+    LEARN.forEach((c, ci) => { if (wide && ci !== selT) return;
       const sec = document.createElement("section"); sec.className = "ln-chap" + (c.soon ? " soon" : "");
       const n = c.lessons.filter(l => data.learned[l.id]).length;
       sec.innerHTML = `<div class="card-head"><h2><small>Tema ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
@@ -10732,6 +10748,7 @@ Brecha blue / oficial	Blue / official gap
 Calculadora	Calculator
 Fuente: DolarApi. Son precios de referencia.	Source: DolarApi. Reference prices.
 Cargar compra de dólares	Log a dollar purchase
+tocá uno para verlo	tap one to see it
 Tema	Theme
 Automático	Automatic
 Claro	Light
