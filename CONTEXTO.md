@@ -319,6 +319,11 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Categorías: los colores que ya usa otra categoría tienen un puntito ("Ya la usa X"); se pueden elegir igual. Para una nueva, Recy propone uno libre (`freeColor`: el tono más lejos de los usados).
 - Frascos: el nombre en la plaquita usa hasta dos renglones.
 
+### 7p. Novedades (patch notes) — REGLA
+- `NEWS` en index.html: lista de versiones (v, fecha, título e ítems en es y en). Se abre desde el botón de ayuda (?) → Novedades, y desde Ajustes → Novedades.
+- Si hay una versión que no viste, el (?) tiene un puntito rojo (`receater.newsSeen`). La primera vez que alguien abre la app no se le marca.
+- **REGLA: cada actualización que cambia algo que el usuario ve suma su entrada arriba de todo en `NEWS` (versión nueva, o sumar a la del día), en español y en inglés, con textos cortos de usuario, no técnicos.**
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.

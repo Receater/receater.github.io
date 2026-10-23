@@ -1682,6 +1682,22 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .lf-total{display:inline-block;margin:0 0 10px;padding:6px 12px;border-radius:99px;background:#FBF8F1;color:#1F1F1F;font-weight:700;font-size:.88rem;box-shadow:0 2px 6px rgba(0,0,0,.14)}
 .day h2 .day-tot{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.85em;opacity:.7;margin-left:6px}
 .js-label .jar-name{white-space:normal !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.15}
+/* Novedades: un ticket largo */
+.news-tk{position:relative;width:min(420px,100%);max-height:86vh;max-height:86dvh;overflow-y:auto;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;
+  filter:drop-shadow(0 18px 30px rgba(0,0,0,.35))}
+.news-in{padding:22px 20px 26px}
+.news-h{margin:0;text-align:center;font-weight:700;font-size:1.1rem;letter-spacing:.14em;text-transform:uppercase}
+.news-sub{margin:4px 0 14px;text-align:center;font-size:.8rem;color:#6E6A62;padding-bottom:12px;border-bottom:1.5px dashed #BDB6A5}
+.news-v{padding:10px 0 12px;border-bottom:1.5px dashed #BDB6A5}
+.news-vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.news-vh b{font-size:.95rem}.news-vh span{font-size:.75rem;color:#6E6A62}
+.news-t{margin:2px 0 6px;font-weight:700;color:#2F5BEA;font-size:.88rem}
+.news-v ul{margin:0;padding-left:18px;font-size:.84rem;line-height:1.45}
+.news-v li{margin:3px 0}
+.news-ok{width:100%;margin-top:16px;border-radius:6px !important;background:#1F1F1F !important;color:#FBF8F1 !important;font-family:inherit}
+.help-btn.has-news{position:relative}
+.help-btn.has-news::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#D0485E;border:2px solid #F5E8C8}
 /* ===== Ahorros: estantería de cubos. La madera es el fondo y los huecos son los cubos ===== */
 .jar-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;padding:10px;border-radius:6px;
   background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),#9A6B3F;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.25)}
@@ -2045,6 +2061,13 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .lf-chip{border:1.5px solid #3D382D !important;background:#1D1C19 !important;color:#CCCCCC !important}
 :root[data-theme="dark"] .lf-chip[aria-pressed="true"]{background:#3D3D3D !important;border-color:#CCCCCC !important}
 :root[data-theme="dark"] .lf-total{background:#1D1C19 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .news-tk{background:#1D1C19 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .news-sub{color:#817E78 !important;border-bottom:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .news-v{border-bottom:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .news-vh span{color:#817E78 !important}
+:root[data-theme="dark"] .news-t{color:#5487FF !important}
+:root[data-theme="dark"] .news-ok{background:#3D3D3D !important}
+:root[data-theme="dark"] .help-btn.has-news::after{background:#BC3D52 !important;border:2px solid #2A2518 !important}
 :root[data-theme="dark"] .jar-shelf{background:linear-gradient(90deg,rgba(24,24,24,0.06),rgba(0,0,0,.06)),#8A5F35 !important}
 :root[data-theme="dark"] .jar-slot{color:#CCCCCC !important;background:linear-gradient(180deg,#5A3A20,#603C21 70%,#6D4628) !important}
 :root[data-theme="dark"] .js-label{background:linear-gradient(180deg,#302913,#44381A) !important;border:1.5px solid #7C5E25 !important;box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(24,24,24,0.5) !important;color:#D0CAB8 !important}
@@ -2700,6 +2723,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <div class="set-group">
     <a class="set-row as-btn" href="privacidad.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Privacidad</strong><span>Qué datos usa Receater y dónde se guardan.</span></div><span class="chev2">›</span></a>
     <button type="button" class="set-row as-btn" id="setTour"><div><strong>Recorrido por la app</strong><span>Te muestro para qué sirve cada parte, con la app de fondo.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" id="setNews"><div><strong>Novedades</strong><span id="setNewsTxt">Lo nuevo de cada versión</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setOnb"><div><strong>Configurar la app</strong><span>Cuándo cobrás, tus fijos y tus tarjetas.</span></div><span class="chev2">›</span></button>
     <a class="set-row as-btn" href="terminos.html" target="_blank" rel="noopener" style="text-decoration:none"><div><strong>Términos de uso</strong><span>Las reglas de la app, en corto.</span></div><span class="chev2">›</span></a>
   </div>
@@ -2860,7 +2884,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1400";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1430";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6773,17 +6797,61 @@ function offerSetup(){
     .then(ok => { try { localStorage.setItem("receater.setup", ok ? "1" : "later"); } catch {} if (ok) openSetup(); });
 }
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
+/* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
+const NEWS = [
+  { v: "1.6", d: "2026-10-23", t: { es: "Un solo \"Te queda\"", en: "One single \"You have left\"" }, i: [
+    { es: "\"Te queda\" sale de la plata de tus cuentas menos lo que falta pagar, y es el mismo número en toda la app.", en: "\"You have left\" comes from your accounts minus what's still to pay, and it's the same number everywhere." },
+    { es: "En el Resumen, cada tarjeta muestra arriba su próximo pago.", en: "In the Summary, each card shows its next payment at the top." },
+    { es: "El ahorro se ve aparte en el Resumen, con rayas en la torta.", en: "Savings show apart in the Summary, striped in the chart." },
+    { es: "Movimientos: filtros por categoría y el total de cada día.", en: "Activity: category filters and each day's total." },
+    { es: "Categorías nuevas con un color que no use otra; los usados tienen un puntito.", en: "New categories get a color nobody uses; used ones have a dot." },
+    { es: "Textos más claros y novedades como estas, acá.", en: "Clearer texts, and release notes like these, right here." } ] },
+  { v: "1.5", d: "2026-10-22", t: { es: "Cuentas que no se desajustan", en: "Accounts that stay right" }, i: [
+    { es: "Cuando actualizás un saldo, lo que cargás después ese mismo día ya se descuenta.", en: "After you update a balance, what you add later that day is now taken off." },
+    { es: "La pizarra y el gasto por día se actualizan apenas cambiás una cuenta.", en: "The board and daily budget update as soon as you change an account." },
+    { es: "La tarjeta que vence el día que cobrás se paga con el sueldo nuevo.", en: "A card due on payday is paid with the new salary." } ] },
+  { v: "1.4", d: "2026-10-21", t: { es: "Modo oscuro y estantería", en: "Dark mode and shelf" }, i: [
+    { es: "Modo oscuro: automático, claro u oscuro, desde Ajustes → Tema.", en: "Dark mode: automatic, light or dark, from Settings → Theme." },
+    { es: "Ahorros como estantería de cubos, con una plaquita por frasco.", en: "Savings as a cube shelf, with a little plaque per jar." },
+    { es: "Header nuevo en compu, botón de ayuda (?) y configuración más corta.", en: "New desktop header, help button (?) and a shorter setup." } ] },
+  { v: "1.3", d: "2026-10-20", t: { es: "English y recorrido", en: "English and tour" }, i: [
+    { es: "La app en inglés o español, según tu navegador o lo que elijas.", en: "The app in English or Spanish, from your browser or your pick." },
+    { es: "Recorrido por la app con la pantalla de fondo.", en: "A tour of the app over the real screen." },
+    { es: "Corregir desde una persona cuánto te debe.", en: "Fix how much someone owes you from their page." } ] },
+  { v: "1.2", d: "2026-10-19", t: { es: "Escuelita y Mercado Pago", en: "School and Mercado Pago" }, i: [
+    { es: "La escuelita de Recy: lecciones cortas de finanzas.", en: "Recy's school: short money lessons." },
+    { es: "Importar el resumen de Mercado Pago (PDF), leído en tu dispositivo.", en: "Import your Mercado Pago statement (PDF), read on your device." },
+    { es: "Categorías editables y link de pago o alias en los fijos.", en: "Editable categories and payment link or alias on fixed costs." } ] },
+  { v: "1.1", d: "2026-10-18", t: { es: "¿Dónde está tu plata?", en: "Where's your money?" }, i: [
+    { es: "Cuentas, billeteras y efectivo, con saldo e intereses de cada día.", en: "Accounts, wallets and cash, with balance and daily interest." },
+    { es: "Versión de compu en dos columnas.", en: "Desktop version in two columns." } ] },
+];
+const NEWS_KEY = "receater.newsSeen";
+function newsUnseen(){ try { if (!localStorage.getItem("receater.onb")){ localStorage.setItem(NEWS_KEY, NEWS[0].v); return false; } return localStorage.getItem(NEWS_KEY) !== NEWS[0].v; } catch { return false; } }
+function markNewsDot(){ const b = $("helpBtn"); if (b) b.classList.toggle("has-news", newsUnseen()); }
+function openNews(){
+  const L = LANG === "en" ? "en" : "es", fmtD = d => dateOnly(d).toLocaleDateString(L === "en" ? "en-US" : "es-AR", { day: "numeric", month: "short", year: "numeric" });
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "news-tk"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+  box.innerHTML = `<div class="news-in"><p class="news-h">Novedades</p><p class="news-sub">Lo nuevo de Recy, versión por versión</p>` +
+    NEWS.map(n => `<div class="news-v"><div class="news-vh"><b>Recy ${n.v}</b><span>${fmtD(n.d)}</span></div><p class="news-t">${n.t[L]}</p><ul>${n.i.map(x => `<li>${x[L]}</li>`).join("")}</ul></div>`).join("") +
+    `<button type="button" class="btn primary news-ok">Listo</button></div>`;
+  box.querySelectorAll(".news-t, li").forEach(e => e.setAttribute("translate", "no"));
+  bg.append(box); document.body.append(bg);
+  const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); }; box.querySelector(".news-ok").onclick = close;
+  try { localStorage.setItem(NEWS_KEY, NEWS[0].v); } catch {} markNewsDot();
+}
 function openHelp(){
   const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "dlg help-dlg";
   box.innerHTML = `<p class="dlg-ttl">¿En qué te ayudo?</p>
     <button type="button" class="set-row as-btn" data-h="tour"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><div><strong>Recorrido por la app</strong><span>Te muestro para qué sirve cada parte.</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" data-h="setup"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-gear"/></svg></span><div><strong>Configurar la app</strong><span>Cuándo cobrás, tus fijos y tus tarjetas.</span></div><span class="chev2">›</span></button>
+    <button type="button" class="set-row as-btn" data-h="news"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-news"/></svg></span><div><strong>Novedades</strong><span>Lo nuevo de cada versión.</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" data-h="learn"><span class="hico"><svg class="ic" aria-hidden="true"><use href="#i-grad"/></svg></span><div><strong>Aprender de finanzas</strong><span>Lecciones cortas, cuando tengas ganas.</span></div><span class="chev2">›</span></button>
     <div class="dlg-acts" style="margin-top:12px"><button type="button" class="btn ghost" data-h="x">Cerrar</button></div>`;
   bg.append(box); document.body.append(bg);
   const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); };
   box.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { close(); const h = b.dataset.h;
-    if (h === "tour") setTimeout(startTour, 150); else if (h === "setup") openSetup(); else if (h === "learn") enterLearn(); });
+    if (h === "tour") setTimeout(startTour, 150); else if (h === "setup") openSetup(); else if (h === "learn") enterLearn(); else if (h === "news") openNews(); });
 }
 function renderOnb(){
   const st = ONB_STEPS[onbStep], B = $("onbBody"); B.innerHTML = ""; B.scrollTop = 0; $("onbErr").textContent = "";
@@ -6961,6 +7029,8 @@ $("onbSkip").onclick = () => { if (ONB_STEPS[onbStep] === "hola"){ closeOnb(); s
 $("setOnb").onclick = () => { closeSettings(); openSetup(); };
 $("helpBtn").onclick = openHelp;
 $("setTour").onclick = () => { closeSettings(); setTimeout(startTour, 300); };
+$("setNews").onclick = () => { closeSettings(); setTimeout(openNews, 250); };
+$("setNewsTxt").textContent = `Versión ${NEWS[0].v} · lo nuevo de cada versión`; markNewsDot();
 setTimeout(() => {
   let seen = false; try { seen = !!localStorage.getItem(ONB_KEY); } catch {}
   const empty = !data.expenses.length && !data.incomes.length && !data.fixed.length && !data.cards.length;
@@ -10321,6 +10391,9 @@ Sale de tu mes, pero no es un gasto: va a tus frascos.	It leaves your month, but
 Los que tienen un puntito ya los usa otra categoría. Podés elegirlos igual.	The ones with a dot are already used by another category. You can still pick them.
 Todo	All
 Filtrar por categoría	Filter by category
+Novedades	What's new
+Lo nuevo de cada versión.	What's new in each version.
+Lo nuevo de Recy, versión por versión	What's new in Recy, version by version
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10604,6 +10677,7 @@ const I18N_EN_P = [
   [/^Tenés (.+) más de lo que calculé \((.+)\)\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 more than I calculated ($2). Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
   [/^Ya la usa (.+)$/, "Already used by $1"],
   [/^(.+): (.+) en (\d+) gastos?$/, "$1: $2 in $3 expenses"],
+  [/^Versión (.+) · lo nuevo de cada versión$/, "Version $1 · what's new in each version"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
