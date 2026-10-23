@@ -10371,11 +10371,13 @@ async function checkNewVersion(){
     const r = await fetch(location.pathname + "?_=" + Date.now(), { cache: "no-store" }); if (!r.ok) return;
     const m = (await r.text()).match(/const BUILD = "([^"]+)"/);
     if (m && m[1] !== BUILD){
+      // Si ya tocaste "Actualizar" para esa versión y el servidor todavía da la vieja, no insistir (se está publicando)
+      try { if (sessionStorage.getItem("receater.updTried") === m[1]) return; } catch {}
       updShown = true;
       const bar = document.createElement("div"); bar.className = "upd-bar"; bar.setAttribute("role", "status");
       const t = document.createElement("span"); t.textContent = "Hay una versión nueva de Receater.";
       const b = document.createElement("button"); b.type = "button"; b.textContent = "Actualizar";
-      b.onclick = () => { location.href = location.pathname + "?v=" + encodeURIComponent(m[1]); };
+      b.onclick = () => { try { sessionStorage.setItem("receater.updTried", m[1]); } catch {} location.href = location.pathname + "?v=" + encodeURIComponent(m[1]); };
       bar.append(t, b); document.body.append(bar);
     }
   } catch {}
