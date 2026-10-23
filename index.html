@@ -1807,8 +1807,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 #jarSheet.jarsheet.open,#jmSheet.jarsheet.open,#jdSheet.jarsheet.open{animation:sheetIn .25s ease,jarShake .55s ease-out .22s}
 @keyframes jarShake{0%,100%{rotate:0deg}20%{rotate:-1.6deg}45%{rotate:1.3deg}70%{rotate:-.6deg}85%{rotate:.3deg}}
 /* Darle a Recy: la hoja sale como un ticket que se imprime */
-#sheet.open{animation:ticketIn .38s cubic-bezier(.2,.9,.3,1.1)}
-@keyframes ticketIn{0%{transform:translateY(100%);clip-path:inset(0 0 100% 0)}60%{clip-path:inset(0 0 0 0)}80%{transform:translateY(-6px)}100%{transform:none}}
+#sheet.open{animation:sheetIn .25s ease}
 /* ¿Me lo puedo comprar?: más grande, siempre a la misma altura */
 #buySheet.open{height:min(86vh,760px);height:min(86dvh,760px)}
 @media (min-width:700px){#buySheet{max-width:620px}}
@@ -1816,6 +1815,47 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 /* Compu: el header es sólido, lo de abajo no se ve a través */
 @media (min-width:1100px){.brand{background:#FFFFFF !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important}}
 :root[data-theme="dark"] .brand{background:#181818 !important}
+/* Compu: el header entero es el cajón de madera, con todo adentro */
+@media (min-width:1100px){
+  .brand{background:linear-gradient(180deg,#8A5C38,#74492B) !important;box-shadow:0 4px 0 #4A2F1B,0 8px 16px rgba(0,0,0,.25) !important;padding-top:10px !important;padding-bottom:10px !important}
+  .brand .logo{color:#FBF1DA !important}.brand .logo span{color:#F4C24E !important}
+  .brand .icon-btn,.brand .learn-btn,.brand .usd-pill{background:#FBF1DA !important;color:#3A2617 !important;box-shadow:0 3px 0 #4A2F1B !important;border-radius:8px !important}
+  .brand .icon-btn:hover,.brand .learn-btn:hover,.brand .usd-pill:hover{background:#FFF8E6 !important}
+  .brand .main-tabs{transform:translate(-50%,-50%) !important;width:min(680px,calc(100vw - 600px)) !important;background:rgba(0,0,0,.18) !important;box-shadow:inset 0 2px 6px rgba(0,0,0,.35) !important;padding:8px 10px 6px !important}
+  .brand .main-tabs::after{display:none}
+  .brand .main-tabs button{height:42px !important;min-height:42px !important;font-size:1.02rem !important}
+  .brand .main-tabs #tabList{font-size:.82rem !important}
+  .wrap{padding-top:84px !important}
+  .vcol-l{top:92px !important}
+}
+:root[data-theme="dark"] .brand{background:linear-gradient(180deg,#5C3E26,#4A3220) !important}
+/* Escuelita en compu: cada tema es un cuadernito; el elegido se abre abajo como un cuaderno abierto */
+@media (min-width:1100px){
+  #learnTopics{background:none !important;box-shadow:none !important;padding:0 !important}
+  #learnTopics::before{display:none}
+  #learnTopics .card-head{border:0 !important;padding:0 0 6px !important;color:#FBF8F1;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  #learnTopics .card-head .fx-hint{color:#FBF8F1 !important}
+  #learnTopics{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-content:start}
+  #learnTopics .card-head{grid-column:1 / -1}
+  #learnTopics .lt-row{display:flex !important;flex-direction:column;justify-content:space-between;position:relative;height:104px;padding:10px 10px 8px 18px !important;border:0 !important;border-radius:3px 8px 8px 3px !important;
+    background:var(--nb,#2F5BEA) !important;color:#fff !important;box-shadow:inset 6px 0 0 rgba(0,0,0,.22),3px 4px 0 -1px #EAE3D3,0 4px 8px rgba(0,0,0,.25);transition:transform .15s}
+  #learnTopics .lt-row:hover{transform:translateY(-3px) rotate(-1deg)}
+  #learnTopics .lt-row[aria-current="true"]{transform:translateY(-4px);outline:3px solid #FBF8F1;outline-offset:2px}
+  #learnTopics .lt-row .lt-n{position:absolute;right:8px;top:6px;color:rgba(255,255,255,.7) !important;font-size:.75rem}
+  #learnTopics .lt-row .lt-t{font-size:.8rem;line-height:1.2;text-decoration:none !important;background:#FBF8F1;color:#1F1F1F;padding:4px 6px;border-radius:2px;margin-right:12px}
+  #learnTopics .lt-row .lt-c{color:#fff !important;font-size:.72rem}
+  #learnTopics .lt-row .lt-bar{height:4px;background:rgba(255,255,255,.3)}
+  #learnTopics .lt-row .lt-bar i{background:#fff !important}
+  #learnTopics .lt-row:nth-of-type(1){--nb:#2F9E6E}#learnTopics .lt-row:nth-of-type(2){--nb:#E08A2C}#learnTopics .lt-row:nth-of-type(3){--nb:#D0485E}
+  #learnTopics .lt-row:nth-of-type(4){--nb:#2F5BEA}#learnTopics .lt-row:nth-of-type(5){--nb:#7A5AC8}#learnTopics .lt-row:nth-of-type(6){--nb:#5B6B82}
+  #learnMain.ln-one .ln-chap{background:linear-gradient(90deg,#FBF8F1 calc(50% - 10px),#DCD4C2 calc(50% - 2px),#B9AF9A 50%,#DCD4C2 calc(50% + 2px),#FBF8F1 calc(50% + 10px)) !important;padding-left:28px !important;padding-right:28px !important;
+    box-shadow:0 6px 16px rgba(0,0,0,.25),-5px 6px 0 -2px #EAE3D3,5px 6px 0 -2px #EAE3D3 !important;border-radius:4px !important}
+  #learnMain.ln-one .ln-chap::before{left:calc(50% - 14px) !important;right:auto !important;width:28px;top:12px;bottom:12px;height:auto;background:repeating-linear-gradient(180deg,#8E8A80 0 6px,transparent 6px 22px) !important}
+  #learnMain.ln-one .ln-chap .ln-item{width:calc(50% - 24px) !important;margin-right:0 !important}
+  #learnMain.ln-one .ln-chap .ln-item:nth-of-type(odd){margin-right:48px !important}
+}
+/* Hojas: nunca se corren de costado (overflow clip no deja scrollear en X ni por foco) y abren arriba */
+.sheet,.jar-glass,.dlg{overflow-x:clip !important}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2220,6 +2260,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .mn-today span{color:#817E78 !important}
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:rgba(24,24,24,0.82) !important}}
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:#181818 !important}}
+@media (min-width:1100px){:root[data-theme="dark"] .brand{background:linear-gradient(180deg,#7C512F,#684024) !important}:root[data-theme="dark"] .brand .icon-btn,:root[data-theme="dark"] .brand .learn-btn,:root[data-theme="dark"] .brand .usd-pill{background:#242017 !important;color:#D7C2B4 !important}:root[data-theme="dark"] .brand .icon-btn:hover,:root[data-theme="dark"] .brand .learn-btn:hover,:root[data-theme="dark"] .brand .usd-pill:hover{background:#1F1C15 !important}}
+@media (min-width:1100px){:root[data-theme="dark"] #learnTopics .lt-row{background:var(--nb,#274FD5) !important;color:#FFFFFF !important;box-shadow:inset 6px 0 0 rgba(0,0,0,.22),3px 4px 0 -1px #2C2922,0 4px 8px rgba(0,0,0,.25) !important}:root[data-theme="dark"] #learnTopics .lt-row[aria-current="true"]{outline:3px solid #1D1C19 !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-n{color:rgba(255,255,255,0.7) !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-t{background:#1D1C19 !important;color:#CCCCCC !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-c{color:#FFFFFF !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-bar{background:rgba(24,24,24,0.3) !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(1){--nb:#238E61 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(2){--nb:#CA7A1F !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(3){--nb:#BC3D52 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(4){--nb:#274FD5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(5){--nb:#6D4FB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(6){--nb:#738093 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap{background:linear-gradient(90deg,#1D1C19 calc(50% - 10px),#36322B calc(50% - 2px),#443D2F 50%,#36322B calc(50% + 2px),#1D1C19 calc(50% + 10px)) !important;box-shadow:0 6px 16px rgba(0,0,0,.25),-5px 6px 0 -2px #2C2922,5px 6px 0 -2px #2C2922 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap::before{background:repeating-linear-gradient(180deg,#625F58 0 6px,transparent 6px 22px) !important}}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -3051,7 +3093,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1445";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1515";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7086,6 +7128,10 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.9.1", d: "2026-10-23", t: { es: "Arreglos", en: "Fixes" }, i: [
+    { es: "\"Darle a Recy\" ya no abre corrido para abajo ni se mueve de costado.", en: "\"Feed Recy\" no longer opens scrolled down or shifts sideways." },
+    { es: "En compu, el header es un cajón de madera con todo adentro y pestañas más grandes.", en: "On desktop, the header is a wooden drawer with everything inside and bigger tabs." },
+    { es: "Escuelita en compu: cada tema es un cuadernito y se abre abajo como cuaderno abierto.", en: "School on desktop: each topic is a notebook that opens below like an open notebook." } ] },
   { v: "1.9", d: "2026-10-23", t: { es: "Header nuevo y escuelita", en: "New header and school" }, i: [
     { es: "Los frascos se abren con una sacudidita y \"Darle a Recy\" sale como un ticket.", en: "Jars open with a little shake and \"Feed Recy\" comes out like a receipt." },
     { es: "\"¿Me lo puedo comprar?\" más grande, y Recy solo sugiere preguntar por quien todavía te debe.", en: "\"Can I afford it?\" is bigger, and Recy only suggests asking about people who still owe you." },
@@ -10436,7 +10482,10 @@ buildSheetHeads();
 /* Que el teclado no tape el campo en el que escribís */
 document.addEventListener("focusin", e => {
   const el = e.target; if (!el.closest || !el.closest(".sheet") || !/INPUT|TEXTAREA|SELECT/.test(el.tagName)) return;
-  setTimeout(() => { try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} }, 300);
+  // Solo en celus/tablets (teclado en pantalla) y solo si el campo quedó tapado; en compu nunca mueve la hoja
+  if (!isTouchUI()) return;
+  setTimeout(() => { try { const vv = window.visualViewport, r = el.getBoundingClientRect(), bottom = vv ? vv.height + vv.offsetTop : innerHeight;
+    if (r.bottom > bottom - 12 || r.top < 0) el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} }, 300);
 });
 try { const t0 = localStorage.getItem("receater.tab"); if (["list","dash","fixed","jars"].includes(t0)) setTab(t0); else render(); } catch { render(); }
 cloud.init();
