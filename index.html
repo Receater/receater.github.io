@@ -1667,21 +1667,21 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .cloud-banner .row{flex:none}
 .cloud-banner .cb-terms{flex:1 1 100%;margin:0 !important;font-size:.72rem}
 /* Resumen: el ahorro se distingue de los gastos */
-.legend li.is-sav{background:repeating-linear-gradient(45deg,rgba(30,122,80,.07) 0 6px,transparent 6px 12px);border-radius:6px;padding-left:8px !important;padding-right:8px !important}
+.legend li.is-sav{background:rgba(30,122,80,.07);border-radius:6px;padding-left:8px !important;padding-right:8px !important}
 .legend li.is-sav .n{color:#1E7A50}
-.legend .dot-sav{background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.6) 0 2px,transparent 2px 4px) !important}
+.legend .dot-sav{background-image:repeating-conic-gradient(rgba(255,255,255,.7) 0 8deg,transparent 8deg 30deg) !important}
 .legend li.legend-hd{display:block;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 0 2px;border:0}
 #catSwatches .swatch.in-use{position:relative}
 #catSwatches .swatch.in-use::after{content:"";position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#FBF8F1;border:1.5px solid #6E6A62}
 /* Movimientos: filtro por categoría y total del día */
-.list-filter{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin:0 0 8px;scrollbar-width:none}
+.list-filter{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 4px;margin:0 0 12px}
 .list-filter::-webkit-scrollbar{display:none}
-.lf-chip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;border:1.5px solid #BDB6A5;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.lf-chip{flex:none;max-width:100%;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;border:1.5px solid #BDB6A5;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.lf-more{border-style:dashed}
 .lf-chip .dot{width:9px;height:9px;border-radius:50%}
 .lf-chip[aria-pressed="true"]{background:#1F1F1F;color:#FBF8F1;border-color:#1F1F1F}
 .lf-total{display:inline-block;margin:0 0 10px;padding:6px 12px;border-radius:99px;background:#FBF8F1;color:#1F1F1F;font-weight:700;font-size:.88rem;box-shadow:0 2px 6px rgba(0,0,0,.14)}
 .day h2 .day-tot{font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.85em;opacity:.7;margin-left:6px}
-.js-label .jar-name{white-space:normal !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.15}
 /* Novedades: un ticket largo */
 .news-tk{position:relative;width:min(420px,100%);max-height:86vh;max-height:86dvh;overflow-y:auto;background:#FBF8F1;color:#1F1F1F;font-family:"Courier Prime","Courier New",ui-monospace,monospace;
   -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/12px 100%;
@@ -1709,6 +1709,37 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .mc-list{margin:0;padding-left:18px;font-size:.88rem;line-height:1.5}.mc-list li{margin:4px 0}
 .mc-later{width:100%;margin-top:8px;border-radius:6px !important;font-family:inherit}
 .back-today{display:inline-block;margin:6px auto 0;padding:5px 12px;border-radius:99px;border:1.5px solid #1F1F1F;background:#1F1F1F;color:#FBF8F1;font-family:"Courier Prime","Courier New",ui-monospace,monospace;font-weight:700;font-size:.8rem;cursor:pointer}
+/* Dólar hoy: pizarra de casa de cambio */
+.fx-board{width:min(640px,100%);max-height:88vh;max-height:88dvh;overflow-y:auto;background:#1E2622;color:#EFE6CF;border-radius:8px;padding:18px 18px 16px;border:6px solid #5C4330;box-shadow:0 18px 40px rgba(0,0,0,.45);font-family:"Courier Prime","Courier New",ui-monospace,monospace}
+.fxb-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1.5px dashed rgba(239,230,207,.3);padding-bottom:8px;margin-bottom:8px}
+.fxb-head b{font-size:1.05rem;letter-spacing:.14em;text-transform:uppercase}.fxb-head span{font-size:.72rem;opacity:.7}
+.fxb-cols{display:grid;gap:14px}
+@media (min-width:640px){.fxb-cols{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
+.fxb-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:14px;padding:6px 2px;border-bottom:1px dotted rgba(239,230,207,.2);font-size:.9rem}
+.fxb-row span:not(:first-child){text-align:right;color:#F4C24E;font-weight:700;min-width:6.2em}
+.fxb-row.hl span:first-child{font-weight:700}.fxb-row.hl span:not(:first-child){color:#FFD76A}
+.fxb-th span{color:#EFE6CF !important;opacity:.6;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:400 !important}
+.fxb-side{display:flex;flex-direction:column;gap:10px}
+.fxb-gap,.fxb-calc{background:rgba(239,230,207,.06);border:1.5px dashed rgba(239,230,207,.25);border-radius:6px;padding:10px}
+.fxb-gap small,.fxb-calc small{display:block;font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.fxb-gap b{font-size:1.5rem;color:#F4C24E}
+.fxb-in{display:flex;align-items:center;gap:6px;margin:6px 0}
+.fx-board .input{background:transparent !important;border:0 !important;border-bottom:1.5px solid #EFE6CF !important;border-radius:0 !important;color:#EFE6CF !important;font-family:inherit;min-height:36px}
+.fx-board select.input option{color:#1F1F1F}
+.fxb-res{margin-top:8px;font-size:1.15rem;font-weight:700;color:#F4C24E}
+.fxb-src{margin:10px 0 0;font-size:.7rem;opacity:.6}
+.fxb-acts{display:flex;gap:8px;margin-top:12px}.fxb-acts .btn{flex:1;border-radius:6px !important;font-family:inherit}
+.fxb-acts .btn.ghost{color:#EFE6CF;border-color:rgba(239,230,207,.4);background:transparent}
+.fxb-acts .btn.primary{background:#F4C24E !important;color:#1E2622 !important;border-color:#F4C24E !important}
+/* Fijos en compu: torta y suscripciones lado a lado, y los tickets en dos columnas */
+@media (min-width:1100px){
+  #fixedList{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px;align-items:start}
+  #fixedList > *{grid-column:1 / -1}
+  #fixedList > .fx-pie{grid-column:1}
+  #fixedList > .subs-pad{grid-column:2;margin-top:12px}
+  #fixedList > .list{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px;align-items:start}
+  #fixedList > .list > .fx-group{grid-column:1 / -1}
+}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -1722,23 +1753,30 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(0,0,0,.06)),#9A6B3F;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.25)}
 @media (min-width:700px){.jar-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:1100px){.jar-shelf{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
-.jar-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0;padding:16px 8px 10px;margin:0;border:0;border-radius:2px;cursor:pointer;font:inherit;color:#1F1F1F;
+.jar-slot{position:relative;display:block;height:236px;min-width:0;padding:0;margin:0;border:0;border-radius:2px;cursor:pointer;font:inherit;color:#1F1F1F;overflow:hidden;
   background:linear-gradient(180deg,#5A3A20,#6B4528 70%,#7A5030);box-shadow:inset 0 10px 14px -6px rgba(0,0,0,.55),inset 8px 0 10px -8px rgba(0,0,0,.5),inset -8px 0 10px -8px rgba(0,0,0,.5)}
-.jar-slot.js-empty{cursor:default;min-height:80px}
-.js-jar{position:relative;z-index:1;width:min(78%,130px);transition:transform .15s}
-.jar-slot:hover .js-jar{transform:translateY(-3px)}
+@media (min-width:1100px){.jar-slot{height:250px}}
+/* el estante de cada cubo: la plaquita se apoya acá */
+.jar-slot::after{content:"";position:absolute;left:0;right:0;bottom:0;height:9px;background:linear-gradient(180deg,#B88250,#8A5C35);box-shadow:0 -2px 4px rgba(0,0,0,.3)}
+.jar-slot.js-empty{cursor:default}
+.js-jar{position:absolute;z-index:1;left:50%;bottom:66px;width:min(62%,118px);transform:translateX(-50%);transition:transform .15s}
+.jar-slot:hover .js-jar{transform:translate(-50%,-3px)}
 .js-jar svg{display:block;width:100%;height:auto;overflow:visible}
-.js-label{position:relative;z-index:2;width:min(100%,150px);margin-top:-6px;padding:4px 6px 5px;text-align:center;border-radius:3px;
-  background:linear-gradient(180deg,#F3E2B0,#E2C887);border:1.5px solid #8A6A2E;box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.5);
-  font-family:"Courier Prime","Courier New",ui-monospace,monospace;line-height:1.2;color:#2A2412}
-.js-label::before,.js-label::after{content:"";position:absolute;top:50%;width:4px;height:4px;margin-top:-2px;border-radius:50%;background:#8A6A2E}
+/* plaquita: mismo tamaño en todos los frascos, apoyada en el estante, tapa apenas la base del frasco */
+.js-label{position:absolute;z-index:2;left:8px;right:8px;bottom:9px;height:66px;box-sizing:border-box;padding:5px 12px 0;text-align:center;border-radius:3px 3px 0 0;
+  background:linear-gradient(180deg,#F3E2B0,#E2C887);border:1.5px solid #8A6A2E;border-bottom:0;box-shadow:0 -1px 3px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.5);
+  font-family:"Courier Prime","Courier New",ui-monospace,monospace;line-height:1.15;color:#2A2412;display:flex;flex-direction:column;gap:2px}
+.js-label::before,.js-label::after{content:"";position:absolute;top:7px;width:4px;height:4px;border-radius:50%;background:#8A6A2E}
 .js-label::before{left:4px}.js-label::after{right:4px}
-.js-label div{text-align:center;padding:0 6px}
-.js-label .jar-name{font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.js-label .jar-bal{font-family:inherit;font-weight:700;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.js-label > div{text-align:center;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.js-label .jar-name{font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+.js-label .jar-bal{font-family:inherit;font-weight:700;font-size:.86rem}
+.js-label .jar-bal small{font-weight:400;font-size:.7em;color:#5E4E2A;margin-left:4px}
 .js-label .jar-bal.usd{color:#1E6B45}
-.js-label .jar-sub,.js-label .jar-ars,.js-label .jar-delta{font-size:.66rem;color:#5E4E2A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.js-label .jar-delta{color:#1E6B45;font-weight:700}.js-label .jar-delta.neg{color:#A8323F}
+.js-label .js-bar{height:5px;border-radius:3px;background:rgba(90,60,30,.22);overflow:hidden;flex:none;margin:1px 0}
+.js-label .js-bar i{display:block;height:100%;border-radius:3px}
+.js-label .jar-sub{font-size:.64rem;color:#5E4E2A}
+.js-label .jar-sub .dl{color:#1E6B45;font-weight:700}.js-label .jar-sub .dl.neg{color:#A8323F}
 /* Header en celu: el logo nunca queda tapado; los botones se achican antes */
 @media (max-width:1099px){
   .brand{gap:6px}
@@ -2074,7 +2112,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"]{border-color:#CCCCCC !important}
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"] .th-ok{background:#146D46 !important;border-color:#146D46 !important}
 :root[data-theme="dark"] .theme-dlg .set-row[aria-pressed="true"] .th-ok::after{border:solid #181818 !important}
-:root[data-theme="dark"] .legend li.is-sav{background:repeating-linear-gradient(45deg,rgba(20,109,70,0.07) 0 6px,transparent 6px 12px) !important}
+:root[data-theme="dark"] .legend li.is-sav{background:rgba(20,109,70,0.07) !important}
 :root[data-theme="dark"] .legend li.is-sav .n{color:#55A57B !important}
 :root[data-theme="dark"] #catSwatches .swatch.in-use::after{background:#1D1C19 !important;border:1.5px solid #817E78 !important}
 :root[data-theme="dark"] .lf-chip{border:1.5px solid #3D382D !important;background:#1D1C19 !important;color:#CCCCCC !important}
@@ -2102,12 +2140,14 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .sp-year b{color:#E85D69 !important}
 :root[data-theme="dark"] .jar-shelf{background:linear-gradient(90deg,rgba(24,24,24,0.06),rgba(0,0,0,.06)),#8A5F35 !important}
 :root[data-theme="dark"] .jar-slot{color:#CCCCCC !important;background:linear-gradient(180deg,#5A3A20,#603C21 70%,#6D4628) !important}
-:root[data-theme="dark"] .js-label{background:linear-gradient(180deg,#302913,#44381A) !important;border:1.5px solid #7C5E25 !important;box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(24,24,24,0.5) !important;color:#D0CAB8 !important}
+:root[data-theme="dark"] .jar-slot::after{background:linear-gradient(180deg,#A67344,#7C512C) !important}
+:root[data-theme="dark"] .js-label{background:linear-gradient(180deg,#302913,#44381A) !important;border:1.5px solid #7C5E25 !important;box-shadow:0 -1px 3px rgba(0,0,0,.3),inset 0 1px 0 rgba(24,24,24,0.5) !important;color:#D0CAB8 !important}
 :root[data-theme="dark"] .js-label::before,:root[data-theme="dark"] .js-label::after{background:#7C5E25 !important}
+:root[data-theme="dark"] .js-label .jar-bal small{color:#A1906C !important}
 :root[data-theme="dark"] .js-label .jar-bal.usd{color:#5FA37C !important}
-:root[data-theme="dark"] .js-label .jar-sub,:root[data-theme="dark"] .js-label .jar-ars,:root[data-theme="dark"] .js-label .jar-delta{color:#A1906C !important}
-:root[data-theme="dark"] .js-label .jar-delta{color:#5FA37C !important}
-:root[data-theme="dark"] .js-label .jar-delta.neg{color:#DD696F !important}
+:root[data-theme="dark"] .js-label .jar-sub{color:#A1906C !important}
+:root[data-theme="dark"] .js-label .jar-sub .dl{color:#5FA37C !important}
+:root[data-theme="dark"] .js-label .jar-sub .dl.neg{color:#DD696F !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -2188,14 +2228,15 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 
   <button type="button" class="quick-btn acc-open" id="accOpen"><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-coins"/></svg></span><span><strong>¿Dónde está tu plata?</strong><small id="accOpenSub">Efectivo, banco y billeteras, y cuánto te rinden</small></span></button>
   <button type="button" class="quick-btn acc-open" id="nextOpen" hidden><span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><span><strong>Lo que viene</strong><small id="nextOpenSub"></small></span></button>
+  <section class="day-sum" id="daySum" hidden></section>
+  <section class="clip" id="fixedPend" hidden></section>
+  <section class="fixed-pend" id="loanPend" hidden></section>
   <div class="search-bar" role="search">
     <span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
     <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
     <button type="button" class="x" id="searchX" aria-label="Borrar la búsqueda" hidden>×</button>
   </div>
-  <section class="day-sum" id="daySum" hidden></section>
-  <section class="clip" id="fixedPend" hidden></section>
-  <section class="fixed-pend" id="loanPend" hidden></section>
+  <div class="list-filter" id="listFilter" role="group" aria-label="Filtrar por categoría" hidden></div>
   <div id="days"></div>
   </div>
 
@@ -2921,7 +2962,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-23.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-23.1700";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3940,7 +3981,8 @@ function render(){
   const shown = viewDay ? rows.filter(r => r.date.slice(0,10) === viewDay) : rows;
   const days = $("days");
   days.innerHTML = "";
-  if (searchQ){ $("fixedPend").hidden = true; $("loanPend").hidden = true; ds.hidden = true; renderSearch(days); return; }
+  if (searchQ){ $("fixedPend").hidden = true; $("loanPend").hidden = true; ds.hidden = true; $("listFilter").hidden = true; renderSearch(days); return; }
+  if (viewDay || !rows.length) $("listFilter").hidden = true;
   if (viewDay && !shown.length){ const e = document.createElement("div"); e.className = "empty"; e.innerHTML = "<strong>Nada cargado ese día</strong>Tocá el mes de arriba para elegir otro día."; days.append(e); return; }
   if (!rows.length){
     const e = document.createElement("div");
@@ -3954,18 +3996,19 @@ function render(){
     const tot = {}; rows.forEach(r => { if (r.kind !== "item" || isIncome(r.e)) return; tot[r.e.category] = (tot[r.e.category] || 0) + (r.e.currency === "ARS" ? eff(r.e) : 0); });
     if (listCat && !tot.hasOwnProperty(listCat)) listCat = null;
     const ids = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
+    const bar = $("listFilter"); bar.innerHTML = ""; bar.hidden = ids.length < 2;
     if (ids.length > 1){
-      const bar = document.createElement("div"); bar.className = "list-filter"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "Filtrar por categoría");
       const chip = (id, label, color) => { const b = document.createElement("button"); b.type = "button"; b.className = "lf-chip"; b.setAttribute("aria-pressed", String(listCat === id));
         if (color){ const d = document.createElement("span"); d.className = "dot"; d.style.background = color; b.append(d); }
         b.append(label); b.onclick = () => { listCat = listCat === id || id === null ? null : id; render(); }; return b; };
       bar.append(chip(null, "Todo"));
-      ids.forEach(id => bar.append(chip(id, catById(id).name, catById(id).color)));
-      days.append(bar);
+      const MAXC = 6, shownIds = lfAll || ids.length <= MAXC + 1 ? ids : ids.slice(0, MAXC).concat(listCat && ids.indexOf(listCat) >= MAXC ? [listCat] : []);
+      shownIds.forEach(id => bar.append(chip(id, catById(id).name, catById(id).color)));
+      if (ids.length > MAXC + 1){ const mb = document.createElement("button"); mb.type = "button"; mb.className = "lf-chip lf-more"; mb.textContent = lfAll ? "Menos" : `+${ids.length - shownIds.length} más`; mb.onclick = () => { lfAll = !lfAll; render(); }; bar.append(mb); }
       if (listCat){ const n = rows.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat).length;
         const t = document.createElement("p"); t.className = "lf-total"; t.textContent = `${catById(listCat).name}: ${fmtARS.format(round2(tot[listCat]))} en ${n} ${n === 1 ? "gasto" : "gastos"}`; days.append(t); }
     }
-  }
+  } else { $("listFilter").hidden = true; }
   const shownF = listCat && !viewDay ? shown.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat) : shown;
   const groups = {};
   shownF.forEach(r => (groups[r.date.slice(0,10)] ||= []).push(r));
@@ -4093,7 +4136,35 @@ function payToEl(f){
   b.addEventListener("click", ev => ev.stopPropagation());
   w.append(lbl, b); return w;
 }
+/* La tablilla "lo que todavía te falta pagar": fijos + los pagos de tarjeta que vencen antes de que cobres
+   (lo que vence el día de cobro o después ya es del mes que viene) */
 function renderFixedPend(){
+  renderFixedPend0();
+  const u = isCurrentPeriod(viewYear, viewMonth) ? upcomingList() : null;
+  const cards = u ? u.items.filter(o => o.card && +o.d < +u.end) : [];
+  if (!cards.length) return;
+  const box = $("fixedPend");
+  if (box.hidden || !box.querySelector(".clip-paper")){
+    box.innerHTML = ""; box.hidden = false;
+    const top = document.createElement("div"); top.className = "cal-top";
+    top.innerHTML = '<div class="cal-title"></div><div class="cal-sub">lo que todavía te falta pagar</div>'; top.firstChild.textContent = `Por pagar · ${monthName(viewYear, viewMonth)}`;
+    const clamp = document.createElement("div"); clamp.className = "clip-clamp"; clamp.setAttribute("aria-hidden", "true");
+    const paper = document.createElement("div"); paper.className = "clip-paper"; paper.append(top); box.append(clamp, paper);
+  }
+  const paper = box.querySelector(".clip-paper"), today = dateOnly(toLocalInput(new Date()));
+  cards.forEach(o => {
+    const r = document.createElement("button"); r.type = "button"; r.className = "cal-row"; r.onclick = () => setTab("dash");
+    const day = document.createElement("div"); day.className = "cal-day"; const mo = document.createElement("small"); mo.textContent = o.d.toLocaleDateString("es-AR", { month: "short" }).replace(".", "").toUpperCase();
+    const dn = document.createElement("b"); dn.textContent = o.d.getDate(); day.append(mo, dn);
+    const info = document.createElement("div"); info.className = "cal-info"; const nm = document.createElement("strong"); nm.textContent = o.name;
+    const s1 = document.createElement("span"); s1.className = "s1"; s1.textContent = "Pago de tarjeta"; const s2 = document.createElement("span"); s2.className = "s2"; s2.textContent = `vence el ${shortDate(o.d)}`; info.append(nm, s1, s2);
+    const right = document.createElement("div"); right.className = "cal-right"; const amt = document.createElement("b"); amt.className = "amt";
+    amt.textContent = [o.ars && fmtARS.format(round2(o.ars)), o.usd && "+ " + fmtUSD.format(round2(o.usd))].filter(Boolean).join(" "); right.append(amt);
+    r.append(day, info, right);
+    paper.append(r);
+  });
+}
+function renderFixedPend0(){
   const box = $("fixedPend"); box.innerHTML = "";
   const owesIn = i => fixShared(i.f) && i.f.shares.some(p => !fixSharePaid(i.f, i.key, p.name));
   // Si estás ajustando las sesiones de uno (menú abierto), queda a la vista aunque quede pagado o en 0
@@ -5353,12 +5424,25 @@ function renderUsdPill(){
   if (m.oficial){ const o = document.createElement("span"); o.className = "o"; o.textContent = "Oficial " + f(m.oficial.venta); el.append(o); }
 }
 function refreshUsdPill(){ getQuotes().then(renderUsdPill); }
+/* Dólar hoy: una pizarra de casa de cambio, con la brecha y una calculadora */
 $("usdPill").onclick = () => {
   const m = quotes && quotes.map; if (!m) return;
-  const f = v => v ? "$" + Math.round(v).toLocaleString("es-AR") : "—";
-  const rows = Object.keys(USD_NAMES).filter(k => m[k]).map(k => `${USD_NAMES[k]}: compra ${f(m[k].compra)} · venta ${f(m[k].venta)}`);
-  const ago = Math.round((Date.now() - quotes.at) / 60000);
-  uiAlert(`Dólar hoy\n\n${rows.join("\n")}\n\nActualizado hace ${ago < 1 ? "menos de un minuto" : ago + " min"}. Fuente: DolarApi.`);
+  const f = v => v ? "$ " + Math.round(v).toLocaleString("es-AR") : "—";
+  const ago = Math.round((Date.now() - quotes.at) / 60000), keys = Object.keys(USD_NAMES).filter(k => m[k]);
+  const bg = document.createElement("div"); bg.className = "dlg-bg"; const box = document.createElement("div"); box.className = "fx-board"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true");
+  const gap = m.blue && m.oficial ? Math.round((m.blue.venta / m.oficial.venta - 1) * 100) : null;
+  box.innerHTML = `<div class="fxb-head"><b>Dólar hoy</b><span>${ago < 1 ? "Recién actualizado" : `Actualizado hace ${ago} min`}</span></div>
+    <div class="fxb-cols"><div class="fxb-table"><div class="fxb-row fxb-th"><span></span><span>Compra</span><span>Venta</span></div>${keys.map(k => `<div class="fxb-row${k === "blue" || k === "oficial" ? " hl" : ""}"><span>${USD_NAMES[k]}</span><span>${f(m[k].compra)}</span><span>${f(m[k].venta)}</span></div>`).join("")}</div>
+    <div class="fxb-side">${gap != null ? `<div class="fxb-gap"><small>Brecha blue / oficial</small><b>${gap}%</b></div>` : ""}
+      <div class="fxb-calc"><small>Calculadora</small><div class="fxb-in"><span>US$</span><input class="input" id="fxbU" inputmode="decimal" value="100" aria-label="Dólares"></div>
+        <select class="input" id="fxbT" aria-label="Tipo de dólar">${keys.map(k => `<option value="${k}"${k === "blue" ? " selected" : ""}>${USD_NAMES[k]} (venta)</option>`).join("")}</select><div class="fxb-res" id="fxbR"></div></div></div></div>
+    <p class="fxb-src">Fuente: DolarApi. Son precios de referencia.</p>
+    <div class="fxb-acts"><button type="button" class="btn ghost" data-x>Cerrar</button><button type="button" class="btn primary" data-buy>Cargar compra de dólares</button></div>`;
+  bg.append(box); document.body.append(bg);
+  const calc = () => { const u = parseAmount(box.querySelector("#fxbU").value) || 0, q = m[box.querySelector("#fxbT").value]; box.querySelector("#fxbR").textContent = q ? "= " + f0ARS(u * q.venta) : ""; };
+  box.querySelector("#fxbU").oninput = calc; box.querySelector("#fxbT").onchange = calc; calc();
+  const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); }; box.querySelector("[data-x]").onclick = close;
+  box.querySelector("[data-buy]").onclick = () => { close(); openSheet(); setTimeout(() => { try { setMode("fx"); } catch {} }, 60); };
 };
 try { const c = JSON.parse(localStorage.getItem("receater.quotes") || "null"); if (c && c.map && !quotes) quotes = c; } catch {}
 setTimeout(() => { renderUsdPill(); refreshUsdPill(); }, 300);
@@ -6884,6 +6968,13 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.7", d: "2026-10-23", t: { es: "Más prolijo", en: "Tidier" }, i: [
+    { es: "El buscador va arriba de los filtros, y los filtros ya no se cortan.", en: "Search sits above the filters, and filters no longer get cut off." },
+    { es: "Los pagos de tarjeta que vencen antes de cobrar están en \"lo que todavía te falta pagar\".", en: "Card payments due before payday are in \"still to pay\"." },
+    { es: "El ahorro en la torta tiene rayitas como las marcas de un reloj.", en: "Savings in the chart have tick marks like a clock." },
+    { es: "Plaquitas de los frascos todas iguales, apoyadas en el estante y con barra de progreso.", en: "Jar plaques all the same size, resting on the shelf, with a progress bar." },
+    { es: "Dólar hoy: pizarra de casa de cambio, con la brecha y una calculadora.", en: "Dollar today: an exchange board, with the gap and a calculator." },
+    { es: "Fijos en compu en dos columnas, y la imagen del mes igual al Resumen.", en: "Fixed costs in two columns on desktop, and the month image matches the Summary." } ] },
   { v: "1.6.1", d: "2026-10-23", t: { es: "Volver a hoy", en: "Back to today" }, i: [
     { es: "Si estás mirando otro mes, arriba aparece un botón para volver al de hoy, y avisa si ese mes todavía no empezó.", en: "If you're looking at another month, a button at the top takes you back to today's, and tells you if that month hasn't started." },
     { es: "Configurar la app ya no cambia tu día de cobro sin preguntarte.", en: "Setting up the app no longer changes your payday without asking." } ] },
@@ -7215,7 +7306,7 @@ function renderMonthClose(){
     const L = document.createElement("div"), Rt = document.createElement("div"); L.className = "vcol-l"; Rt.className = "vcol-r";
     const kids = [...v.children], right = kids.filter(k => k.matches(rightSel));
     kids.forEach(k => (right.includes(k) ? Rt : L).append(k)); v.append(L, Rt); };
-  wrap("viewList", "#days"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList, #yieldCard"); wrap("viewLearn", "#learnMain");
+  wrap("viewList", "#days, #listFilter, .search-bar"); wrap("viewDash", ".paper"); wrap("viewFixed", "#fixedList"); wrap("viewJars", "#jarList, #yieldCard"); wrap("viewLearn", "#learnMain");
   const paper = document.querySelector("#viewDash .paper"); if (paper && !paper.querySelector(".paper-cols")){
     const cols = document.createElement("div"); cols.className = "paper-cols"; const A = document.createElement("div"), Bc = document.createElement("div"); A.className = "pcol-a"; Bc.className = "pcol-b";
     const secs = [...paper.querySelectorAll(":scope > section")];
@@ -7267,31 +7358,46 @@ async function shareMonthImage(){
   const sav = all.filter(isSaving).reduce((a,x) => a + x.amount, 0);
   const inc = data.incomes.filter(e => inPeriod(e, y, m) && e.currency === "ARS").reduce((a,e) => a + e.amount, 0);
   const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1, prev = monthExpenses(py, pm, "ARS").filter(x => !isSaving(x)).reduce((a,x) => a + x.amount, 0);
-  const cats = Object.entries(byCat(sp)).sort((a,b) => b[1] - a[1]).slice(0, 6);
+  const cats = Object.entries(byCat(sp)).sort((a,b) => b[1] - a[1]).slice(0, 5);
   const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
   g.fillStyle = "#FBF8F1"; g.fillRect(0, 0, W, H);
   g.strokeStyle = "#C2AE7F"; g.setLineDash([14, 10]); g.lineWidth = 4; g.strokeRect(40, 40, W - 80, H - 80); g.setLineDash([]);
   const F = (sz, w = 700, fam = "system-ui, -apple-system, Segoe UI, sans-serif") => `${w} ${sz}px ${fam}`;
+  const MONO = "Courier Prime, Courier New, monospace";
   g.fillStyle = "#1B2430"; g.textAlign = "center";
-  g.font = F(30, 600); g.fillText("EL DIARIO DE RECY", W/2, 120);
-  g.font = F(64, 800, "Georgia, serif"); g.fillText(periodTitle(y, m), W/2, 200);
-  g.fillRect(100, 235, W - 200, 4);
-  g.font = F(34, 600); g.fillStyle = "#5A6B76"; g.fillText("Gastaste", W/2, 310);
-  g.font = F(110, 800); g.fillStyle = "#1B2430"; g.fillText(f0ARS(tot), W/2, 420);
-  g.font = F(34, 500); g.fillStyle = "#5A6B76";
-  const sub = [prev > 0 ? `${tot >= prev ? "+" : "−"}${Math.round(Math.abs(tot / prev - 1) * 100)}% vs ${monthName(py, pm)}` : null, inc > 0 ? `${Math.round(tot / inc * 100)}% de lo que cobraste` : null].filter(Boolean).join("  ·  ");
-  if (sub) g.fillText(sub, W/2, 475);
-  let yy = 560; g.textAlign = "left";
+  g.font = F(28, 700, MONO); g.fillText("EL DIARIO DE RECY", W/2, 112);
+  g.font = F(64, 800, "Georgia, serif"); g.fillText(periodTitle(y, m), W/2, 190);
+  g.fillRect(100, 222, W - 200, 4); g.fillRect(100, 232, W - 200, 1.5);
+  // Torta como en el Resumen: el ahorro primero, con rayitas que salen del centro
+  const cx = 300, cy = 470, R = 150, SW = 56, base = Math.max(inc, tot + sav) || 1;
+  g.lineWidth = SW; g.strokeStyle = "#E6DECB"; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
+  let ang = -Math.PI / 2; const slices = (sav > 0 ? [["ahorro", sav]] : []).concat(Object.entries(byCat(sp)).sort((a2, b2) => b2[1] - a2[1]));
+  slices.forEach(([id, v]) => { const da = v / base * Math.PI * 2; let col = catById(id).color; if (/^var\(/.test(col)) col = "#2F5BEA";
+    g.strokeStyle = col; g.beginPath(); g.arc(cx, cy, R, ang, ang + Math.max(0.001, da - 0.02)); g.stroke();
+    if (id === "ahorro"){ g.strokeStyle = "rgba(255,255,255,.6)"; g.lineWidth = 3; for (let t = ang + 0.04; t < ang + da - 0.03; t += 0.09){ g.beginPath(); g.moveTo(cx + Math.cos(t) * (R - 24), cy + Math.sin(t) * (R - 24)); g.lineTo(cx + Math.cos(t) * (R + 24), cy + Math.sin(t) * (R + 24)); g.stroke(); } g.lineWidth = SW; }
+    ang += da; });
+  g.fillStyle = "#1B2430"; g.font = F(34, 800); g.fillText(f0ARS(tot + sav), cx, cy + 4); g.font = F(19, 500); g.fillStyle = "#5A6B76"; g.fillText("gastos + ahorro", cx, cy + 34);
+  // A la derecha, los tres números del mes
+  const tq = isCurrentPeriod(y, m) ? teQuedaReal(y, m) : null, left = tq ? tq.left : inc - tot - sav;
+  const big = (lbl, val, col, yy2) => { g.textAlign = "left"; g.font = F(24, 700, MONO); g.fillStyle = "#5A6B76"; g.fillText(lbl.toUpperCase(), 520, yy2); g.font = F(54, 800); g.fillStyle = col; g.fillText(val, 520, yy2 + 58); };
+  big("Gastaste", f0ARS(tot), "#1B2430", 350);
+  if (sav > 0) big("Ahorraste", f0ARS(sav), "#1E7A50", 470);
+  if (inc > 0) big(left >= 0 ? "Te queda" : "Te pasaste", f0ARS(Math.abs(left)), left >= 0 ? "#1E7A50" : "#C9374B", sav > 0 ? 590 : 470);
+  // Categorías con la comparación del Resumen
+  const prevC = byCat(prevExpensesFair(y, m, "ARS").filter(x => !isSaving(x))), hasPrev = monthExpenses(py, pm, "ARS").length > 0;
+  let yy = 740; g.textAlign = "left";
+  g.font = F(24, 700, MONO); g.fillStyle = "#1B2430"; g.fillText("EN QUÉ SE TE VA", 110, yy); g.fillRect(110, yy + 14, W - 220, 2); yy += 66;
   const mx = cats.length ? cats[0][1] : 1;
-  cats.forEach(([id, v]) => { const ct = catById(id);
-    g.font = F(36, 700); g.fillStyle = "#1B2430"; g.fillText(ct.name, 110, yy);
-    g.textAlign = "right"; g.fillText(f0ARS(v), W - 110, yy); g.textAlign = "left";
-    g.fillStyle = "#E6DECB"; g.fillRect(110, yy + 18, W - 220, 22);
-    let col = ct.color; if (/^var\(/.test(col)) col = "#2F5BEA"; g.fillStyle = col; g.fillRect(110, yy + 18, Math.max(8, (W - 220) * v / mx), 22);
-    yy += 100; });
+  cats.forEach(([id, v]) => { const ct = catById(id); let col = ct.color; if (/^var\(/.test(col)) col = "#2F5BEA";
+    g.fillStyle = col; g.beginPath(); g.arc(122, yy - 12, 10, 0, Math.PI * 2); g.fill();
+    g.font = F(32, 700); g.fillStyle = "#1B2430"; g.fillText(ct.name, 146, yy);
+    g.textAlign = "right"; g.fillText(f0ARS(v), W - 110, yy);
+    const p0 = prevC[id] || 0, dv = v - p0, cmp = hasPrev && p0 ? `${dv > 0 ? "▲" : "▼"} ${f0ARS(Math.abs(dv))} vs ${monthName(py, pm)}` : (inc > 0 ? `${Math.round(v / inc * 100)}% del sueldo` : "");
+    g.font = F(22, 600); g.fillStyle = hasPrev && p0 ? (dv > 0 ? "#C9374B" : "#1E7A50") : "#5A6B76"; g.fillText(cmp, W - 110, yy + 32); g.textAlign = "left";
+    g.fillStyle = "#E6DECB"; g.fillRect(146, yy + 16, W - 520, 12); g.fillStyle = col; g.fillRect(146, yy + 16, Math.max(6, (W - 520) * v / mx), 12);
+    yy += 84; });
   g.textAlign = "center";
-  if (sav > 0){ g.font = F(40, 800); g.fillStyle = "#1E7A50"; g.fillText(`Ahorraste ${f0ARS(sav)}`, W/2, yy + 40); }
-  g.font = F(28, 500); g.fillStyle = "#8A8170"; g.fillText("Hecho con Receater · receater.github.io", W/2, H - 90);
+  g.font = F(24, 500, MONO); g.fillStyle = "#8A8170"; g.fillText("Hecho con Receater · receater.github.io", W/2, H - 80);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   const name = `receater-${monthKey(y, m)}.png`, file = new File([blob], name, { type: "image/png" });
   const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
@@ -7338,14 +7444,15 @@ function renderDash(){
     svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
     // El ahorro va primero y con rayas: es plata que se va del mes, pero no es un gasto
     const sorted = Object.entries(cats).sort((a,b) => (b[0] === "ahorro") - (a[0] === "ahorro") || b[1]-a[1]);
-    const defs = svgEl("defs", {}), pat = svgEl("pattern", { id: "savPat", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
-    pat.append(svgEl("rect", { width: 6, height: 6, fill: catById("ahorro").color }), svgEl("rect", { width: 2.5, height: 6, fill: "rgba(255,255,255,.55)" }));
-    defs.append(pat); svg.append(defs);
     let off = 0;
     sorted.forEach(([id,v]) => {
       const len = v/base*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
-      svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:id === "ahorro" ? "url(#savPat)" : catById(id).color,"stroke-width":26,
+      svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:catById(id).color,"stroke-width":26,
         "stroke-dasharray":`${Math.max(len-gap,0.01)} ${C}`,"stroke-dashoffset":-off,transform:"rotate(-90 100 100)"}));
+      // Ahorro: rayitas que salen del centro, como las marcas de un reloj
+      if (id === "ahorro"){ const a0 = off / C * 360, a1 = (off + len - gap) / C * 360;
+        for (let a = a0 + 2.5; a < a1 - 1; a += 5){ const t = (a - 90) * Math.PI / 180, c1 = Math.cos(t), s1 = Math.sin(t);
+          svg.append(svgEl("line", { x1: 100 + c1 * (r - 11), y1: 100 + s1 * (r - 11), x2: 100 + c1 * (r + 11), y2: 100 + s1 * (r + 11), stroke: "rgba(255,255,255,.6)", "stroke-width": 1.6, "stroke-linecap": "round" })); } }
       off += len;
     });
     const center = document.createElement("div"); center.className = "donut-center";
@@ -8515,16 +8622,16 @@ function renderJars(){
     tile.setAttribute("aria-label", `${j.name}: ${money2(bal)}${j.goal ? `, meta ${money2(j.goal)}` : ""}`);
     const art = document.createElement("div"); art.className = "js-jar"; art.innerHTML = jarSVG(j.color, level, j.goal && bal >= j.goal);
     const lab = document.createElement("div"); lab.className = "js-label";
-    const nm = document.createElement("div"); nm.className = "jar-name"; nm.textContent = j.name;
+    const nm = document.createElement("div"); nm.className = "jar-name"; nm.textContent = j.name; nm.title = j.name;
     const bb = document.createElement("div"); bb.className = "jar-bal" + (j.currency === "USD" ? " usd" : ""); bb.textContent = money2(bal);
+    const rq = jarUsdRate();
+    if (j.currency === "USD" && rq && bal > 0){ const pz = document.createElement("small"); pz.textContent = `≈ ${f0ARS(bal * rq.venta)}`; bb.append(pz); }
+    // barra de progreso: siempre, para que todas las plaquitas tengan lo mismo (sin meta, cuánto tiene comparado con el frasco más lleno)
+    const bar = document.createElement("div"); bar.className = "js-bar"; const bi = document.createElement("i"); bi.style.width = Math.round(level * 100) + "%"; bi.style.background = j.color; bar.append(bi);
     const sb = document.createElement("div"); sb.className = "jar-sub";
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
-    lab.append(nm, bb);
-    const rq = jarUsdRate();
-    if (j.currency === "USD" && rq && bal > 0){ const pz = document.createElement("div"); pz.className = "jar-ars"; pz.textContent = `≈ ${f0ARS(bal * rq.venta)}`; lab.append(pz); }
-    lab.append(sb);
-    if (delta){ const dl = document.createElement("div"); dl.className = "jar-delta" + (delta < 0 ? " neg" : "");
-      dl.textContent = (delta > 0 ? "+ " : "− ") + money2(Math.abs(delta)) + (jarScope.mode === "day" ? " ese día" : " en el mes"); lab.append(dl); }
+    if (delta){ const dl = document.createElement("span"); dl.className = "dl" + (delta < 0 ? " neg" : ""); dl.textContent = ` · ${delta > 0 ? "+" : "−"}${money2(Math.abs(delta))}`; sb.append(dl); }
+    lab.append(nm, bb, bar, sb);
     tile.append(art, lab);
     tile.onclick = () => openJarDetail(j.id);
     grid.append(tile);
@@ -8888,14 +8995,14 @@ function upcomingList(){
   const out = [];
   fixInstances(y, m).filter(i => i.f.how !== "card" && i.state !== "paid").forEach(i => { const v = Math.max(0, (i.expected || 0) - i.paid); if (v > 0) out.push({ d: i.due, name: i.f.name, sub: i.paid ? "Fijo · te falta una parte" : "Fijo", ars: fixToARS(v, i.currency), usd: 0 }); });
   const g = {}; entries().filter(x => x.cardId && dateOnly(x.date) >= today && dateOnly(x.date) <= end && !data.cardPayments.some(p => p.cardId === x.cardId && p.date === x.date.slice(0,10))).forEach(x => {
-    const k = x.cardId + "|" + x.date.slice(0,10); const o = g[k] || (g[k] = { d: dateOnly(x.date), name: (cardById(x.cardId) || {}).name || "Tarjeta", sub: "Tarjeta", ars: 0, usd: 0 }); if (x.currency === "USD") o.usd += x.amount; else o.ars += x.amount; });
+    const k = x.cardId + "|" + x.date.slice(0,10); const o = g[k] || (g[k] = { d: dateOnly(x.date), name: (cardById(x.cardId) || {}).name || "Tarjeta", sub: "Tarjeta", card: true, ars: 0, usd: 0 }); if (x.currency === "USD") o.usd += x.amount; else o.ars += x.amount; });
   Object.values(g).forEach(o => { if (+o.d >= +end) o.sub = "Tarjeta · se paga con el sueldo nuevo"; out.push(o); });
   out.sort((a, b) => a.d - b.d);
   return { end, items: out, total: round2(out.reduce((a, o) => a + o.ars, 0)) };
 }
 function renderUpcomingBtn(){
   const b = $("nextOpen"); if (!b) return; const u = tab === "list" ? upcomingList() : null;
-  b.hidden = !u || !u.items.length; if (b.hidden) return;
+  b.hidden = true; return;   // lo que viene ahora está en la tablilla de "lo que todavía te falta pagar"
   $("nextOpenSub").textContent = `${u.items.length} ${u.items.length === 1 ? "pago" : "pagos"} · ${f0ARS(u.total)} hasta el ${shortDate(u.end)}`;
 }
 function openUpcoming(){
@@ -8938,7 +9045,7 @@ function reconcileDiffs(diffs){
 }
 
 /* ===== Corregir los números de la pizarra cuando no coinciden con la realidad ===== */
-var listCat = null;
+var listCat = null, lfAll = false;
 var boardLeft = null, boardMismatch = null, boardReal = false, boardRealNow = null, boardRealLeft = null;
 function accTotal(){ if (!data.accounts.length) return null; const fl = accFlows(); let t = 0; for (const a of data.accounts){ const st = accStatus(a, fl); if (!st.known) return null; t += st.bal; } return round2(t); }
 function nowLocal(){ const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`; }
@@ -10615,6 +10722,16 @@ Las que están en dólares, al dólar de hoy.	The ones in dollars, at today's ra
 Separar plata para los frascos	Set money aside for your jars
 Juntar	Merge
 Esto cambia desde qué día cuenta tu mes, y tus movimientos se reparten distinto entre los meses. ¿Cambiarlo?	This changes which day your month starts, and your activity gets split differently across months. Change it?
+Menos	Less
+Pago de tarjeta	Card payment
+Dólar hoy	Dollar today
+Recién actualizado	Just updated
+Compra	Buy
+Venta	Sell
+Brecha blue / oficial	Blue / official gap
+Calculadora	Calculator
+Fuente: DolarApi. Son precios de referencia.	Source: DolarApi. Reference prices.
+Cargar compra de dólares	Log a dollar purchase
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -10910,6 +11027,10 @@ const I18N_EN_P = [
   [/^¿Reemplazar tus datos por los de la copia\? Tiene (\d+) gastos\. Lo que tenés ahora se pierde \(si estás con Google, también en tu Drive\)\.$/, "Replace your data with the backup's? It has $1 expenses. What you have now will be lost (in your Drive too, if you're signed in)."],
   [/^Cerró (.+)$/, "$1 is closed"],
   [/^(Este mes todavía no empezó · )?Volver a (.+)$/, (m, a, b) => `${a ? "This month hasn't started yet · " : ""}Back to ${b}`],
+  [/^\+(\d+) más$/, "+$1 more"],
+  [/^Por pagar · (.+)$/, "To pay · $1"],
+  [/^Actualizado hace (\d+) min$/, "Updated $1 min ago"],
+  [/^(.+) \(venta\)$/, "$1 (sell)"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

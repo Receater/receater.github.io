@@ -105,7 +105,7 @@ def conv_decl(name, value):
     out = COLOR_RE.sub(lambda m: conv_color(m.group(0), name_l in SHADOWY, name_l in TEXTY, name_l.startswith("background")), value)
     return out if out != value else None
 
-SKIP_SEL = re.compile(r'data-theme|#scene|(?:^|[\s>,])\.recy\b|recy-svg|\.lt-bar i|\.cat-dot|\.dot\b|::selection')
+SKIP_SEL = re.compile(r'data-theme|#scene|\.fx-board|\.fxb-|(?:^|[\s>,])\.recy\b|recy-svg|\.lt-bar i|\.cat-dot|\.dot\b|::selection')
 def prefix(sel):
     out = []
     for s in sel.split(","):

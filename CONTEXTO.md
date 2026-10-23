@@ -337,6 +337,15 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Mirando un período que no es el actual, debajo del rango aparece "Volver a <mes>" (y "Este mes todavía no empezó" si es futuro). Un mes futuro se ve casi vacío (solo pagos de tarjeta, "Cargá tu sueldo", fijos sin pagar) y se confundía con que se había borrado todo.
 - En Configurar la app, cambiar la regla de cobro cuando ya hay datos pide confirmación.
 
+### 7s. Prolijidad (1.7)
+- Movimientos: buscador (`.search-bar`) arriba de los filtros (`#listFilter`, fuera de `#days`); en compu ambos van en la columna derecha. Filtros en varias líneas, máximo 6 + "+N más".
+- "Lo que viene" se sacó como botón: los pagos de tarjeta que vencen ANTES del día de cobro se suman a la tablilla de fijos ("lo que todavía te falta pagar"). Lo que vence el día de cobro es del mes siguiente.
+- Torta del Resumen: el ahorro con rayitas radiales (como un reloj), no diagonales.
+- Frascos: cubo de alto fijo, frasco del mismo tamaño, plaquita de alto fijo apoyada en el estante (tapa apenas la base), siempre con nombre, saldo (≈ pesos), barra y texto.
+- Dólar hoy: pizarra de casa de cambio (`.fx-board`, excluida del generador oscuro), brecha blue/oficial, calculadora y "Cargar compra de dólares".
+- Fijos en compu: torta y suscripciones lado a lado, tickets en 2 columnas.
+- "Guardar el mes como imagen": misma torta (ahorro con rayitas), Gastaste / Ahorraste / Te queda, 5 categorías con comparación o % del sueldo. Cambios del Resumen → reflejarlos también acá.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
