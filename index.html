@@ -3159,7 +3159,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1620";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1630";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6196,20 +6196,24 @@ function openStmtManage(card){
   $("stBg").classList.add("open"); $("stSheet").classList.add("open");
 }
 /* Posibles repetidos de una tarjeta en un período: gastos del resumen que se parecen a uno tuyo, y dos pagos de la misma tarjeta muy cerca */
+/* Pares que ya revisaste y dijiste "son distintos": no se vuelven a preguntar */
+const dupKey = x => x.id || `${x.cardId || ""}|${x.date}|${x.amount || 0}|${x.usd || 0}`;
+function notDup(a, b){ const k1 = dupKey(a) + "~" + dupKey(b), k2 = dupKey(b) + "~" + dupKey(a); return (data.notDups || []).some(k => k === k1 || k === k2); }
+function markNotDup(a, b){ (data.notDups ||= []).push(dupKey(a) + "~" + dupKey(b)); persist(); }
 function findRepeats(card, y, mo){
   // Los gastos de resúmenes viejos (antes de guardar el cierre) quedan anotados con el cierre de su resumen, así no se pierden al borrar repetidos
   data.expenses.forEach(e => { if (e.source === "statement" && e.cardId === card.id && !e.stmtClose){ const c = stmtCloseOf(e); if (c) e.stmtClose = toLocalInput(c); } });
   const list = stmtExpensesIn(card, y, mo), pool = data.expenses.filter(e => e.source !== "statement" && !isIncome(e) && !e.fx), pairs = [];
   list.forEach(e => { const m = { fecha: e.date.slice(0,10), monto: round2(e.amount / Math.max(1, e.installments || 1)), moneda: e.currency,
     comercio: e.note, detalle: e.raw, cuotas: (e.installments || 1) > 1 ? e.installments : null };
-    let best = null; pool.forEach(o => { const sc = dupScore(card, m, o); if (sc >= 4 && (!best || sc > best[0])) best = [sc, o]; });
+    let best = null; pool.forEach(o => { if (notDup(e, o)) return; const sc = dupScore(card, m, o); if (sc >= 4 && (!best || sc > best[0])) best = [sc, o]; });
     if (best) pairs.push({ s: e, o: best[1], sc: best[0] }); });
   pairs.sort((a,b) => b.sc - a.sc);
   const used = new Set(), out = pairs.filter(p => used.has(p.o) ? false : (used.add(p.o), true));
   const pays = data.cardPayments.filter(p => p.cardId === card.id).sort((a,b) => a.date.localeCompare(b.date)), seen = new Set();
   for (let i = 0; i < pays.length; i++) for (let j = i + 1; j < pays.length; j++){
     const a = pays[i], b = pays[j];
-    if (seen.has(a) || seen.has(b) || Math.abs(dateOnly(b.date) - dateOnly(a.date)) > 15 * 864e5) continue;
+    if (notDup(a, b) || seen.has(a) || seen.has(b) || Math.abs(dateOnly(b.date) - dateOnly(a.date)) > 15 * 864e5) continue;
     if (!inPeriod({ date: a.date + "T12:00" }, y, mo) && !inPeriod({ date: b.date + "T12:00" }, y, mo)) continue;
     seen.add(a); seen.add(b); out.push({ pay: true, a, b });
   }
@@ -6274,7 +6278,7 @@ function renderStmtMdup(b, P){
     const nav = document.createElement("div"); nav.className = "st-nav st-pays";
     const keep = (k, d) => { const x = document.createElement("button"); x.type = "button"; x.className = "btn primary"; x.textContent = `Quedarme con el del ${shortDate(dateOnly(k.date))}`;
       x.onclick = () => { data.cardPayments = data.cardPayments.filter(p => p !== d); persist(); feedRecy(); render(); next0(); }; return x; };
-    const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "Son dos pagos distintos"; no.onclick = next0;
+    const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "Son dos pagos distintos"; no.onclick = () => { markNotDup(pr.a, pr.b); render(); next0(); };
     nav.append(keep(pr.a, pr.b), keep(pr.b, pr.a), no); b.append(nav);
     return;
   }
@@ -6285,7 +6289,7 @@ function renderStmtMdup(b, P){
   b.append(box("Vino del resumen", pr.s), box("Lo cargaste vos", pr.o));
   const next = next0;
   const nav = document.createElement("div"); nav.className = "st-nav st-yn";
-  const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "No, son distintos"; no.onclick = next;
+  const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "No, son distintos"; no.onclick = () => { markNotDup(pr.s, pr.o); render(); next(); };
   const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn primary"; yes.textContent = "Sí, borrar el repetido";
   yes.onclick = () => {
     const o = pr.o, s2 = pr.s;
@@ -7237,6 +7241,8 @@ function offerSetup(){
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
+    { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
+    { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
     { es: "Cuando alguien te paga lo que te debía, aparece en Movimientos (\"Delfi te pagó\") y la plata se suma a tu cuenta, así el \"Te queda\" y el por día se actualizan.", en: "When someone pays you back, it shows in Activity (\"Delfi paid you\") and the money adds to your account, so \"You have left\" and the daily amount update." },
     { es: "Al preguntarte la categoría de un gasto del resumen: buscador, todas las categorías y un botón \"Siguiente\" (vale la que propone Recy).", en: "When asking a statement expense's category: search, all categories and a \"Next\" button (Recy's guess counts)." },
     { es: "Si creás una categoría que ya existe, se elige esa en vez de dar error.", en: "Creating a category that already exists picks it instead of erroring." },
@@ -7968,7 +7974,9 @@ function stmtControl(card, d, ds){
     const have = c => round2(ds.filter(x => !x.stmtKey && x.currency === c).reduce((s2,x) => s2 + x.amount, 0));
     const miss = round2(Math.max(0, (st.ars || 0) - have("ARS"))), missU = round2(Math.max(0, (st.usd || 0) - have("USD")));
     const tot = [st.ars && fmtARS.format(st.ars), st.usd && fmtUSD.format(st.usd)].filter(Boolean).join(" + ");
-    b.textContent = `Resumen: ${tot}` + (miss > 0.5 || missU > 0.005 ? ` · faltan anotar ${[miss > 0.5 && fmtARS.format(miss), missU > 0.005 && fmtUSD.format(missU)].filter(Boolean).join(" + ")}` : " · ya cargaste todo ✓");
+    const over = round2(Math.max(0, have("ARS") - (st.ars || 0))), overU = round2(Math.max(0, have("USD") - (st.usd || 0)));
+    b.textContent = `Según el resumen: ${tot}` + (miss > 0.5 || missU > 0.005 ? ` · faltan anotar ${[miss > 0.5 && fmtARS.format(miss), missU > 0.005 && fmtUSD.format(missU)].filter(Boolean).join(" + ")}`
+      : over > 0.5 || overU > 0.005 ? ` · en la app sumás ${[over > 0.5 && fmtARS.format(over), overU > 0.005 && fmtUSD.format(overU)].filter(Boolean).join(" + ")} de más (algo repetido, un fijo que el banco cobra en otro resumen o una compra que entra en el próximo)` : " · ya cargaste todo ✓");
   } else b.textContent = "¿Ya tenés el resumen? Poné el total";
   b.onclick = () => { stmtEdit = k; render(); };
   wrap.append(b);
@@ -8027,7 +8035,9 @@ function renderCardsDash(list, cur){
       dates.forEach((d, i) => {
         const ds = mine.filter(x => x.date.slice(0,10) === d), paid = data.cardPayments.some(p => p.cardId === card.id && p.date === d);
         const ln = document.createElement("span"); ln.className = "due";
-        const strong = document.createElement("strong"); strong.textContent = both(ds);
+        // Si cargaste el total del resumen, ese es el número que manda ("te llega" = lo que dice el banco)
+        const stR = (data.cardStmt || {})[card.id + "|" + d];
+        const strong = document.createElement("strong"); strong.textContent = stR ? [stR.ars && fmtARS.format(stR.ars), stR.usd && fmtUSD.format(stR.usd)].filter(Boolean).join(" + ") : both(ds);
         if (paid || dateOnly(d) >= today) ln.append(paid ? "Pagaste " : "Te llega ", strong, ` el ${shortDate(dateOnly(d))}`); else ln.append(`Venció el ${shortDate(dateOnly(d))}: `, strong, " · ¿ya la pagaste?");
         const real = x => !x.payId && !x.stmtKey && !x.estc && !x.src.virtual;
         const parts = [["Cuotas", ds.filter(x => real(x) && x.of > 1)], ["Compras", ds.filter(x => real(x) && !(x.of > 1))],
@@ -11449,6 +11459,9 @@ const I18N_EN_P = [
   [/^Ver todas \((\d+)\)$/, "See all ($1)"],
   [/^(.+) te pagó$/, "$1 paid you"],
   [/^Le pagaste a (.+)$/, "You paid $1"],
+  [/^Según el resumen: (.+?) · ya cargaste todo ✓$/, "Per the statement: $1 · you've logged everything ✓"],
+  [/^Según el resumen: (.+?) · faltan anotar (.+)$/, "Per the statement: $1 · $2 left to log"],
+  [/^Según el resumen: (.+?) · en la app sumás (.+?) de más .*$/, "Per the statement: $1 · the app has $2 more (a repeat, a fixed cost billed on another statement, or a purchase for the next one)"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

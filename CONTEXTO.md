@@ -403,6 +403,10 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - "X me pagó todo" / "Anotá una parte": además de saldar, guarda en `data.settles` un registro `{log:true, closed:true, all, dir, amount, date, at}`. Se ve en Movimientos (`renderSettleLog`, sello SALDADO / A CUENTA) y suma/resta en la cuenta principal (`accFlows`), así "Te queda" y el por día se actualizan. No es gasto ni ingreso.
 - Botón "X me pagó todo" ahora es primario (parece botón).
 
+### 7ad. Repetidos y total del resumen
+- "No, son distintos" / "Son dos pagos distintos" guarda el par en `data.notDups` (`dupKey`, `notDup`) y `findRepeats` no lo vuelve a sugerir.
+- Tarjeta con total del resumen cargado (`data.cardStmt`): "Te llega" muestra ese total. Abajo "Según el resumen: X" + faltan anotar / ya cargaste todo / "en la app sumás $Y de más" (repetido, fijo en otro resumen o compra del próximo).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
