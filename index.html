@@ -1792,10 +1792,13 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 /* Escuelita en compu: arriba, en una fila, la pizarra, los temas y "si tenés 2 minutos"; abajo, el tema a lo ancho */
 @media (min-width:1100px){
   #viewLearn:not([hidden]){display:block !important}
-  #viewLearn > .vcol-l{position:static !important;display:grid !important;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.9fr);column-gap:24px;align-items:stretch;padding-bottom:0}
+  #viewLearn > .vcol-l{position:static !important;display:grid !important;grid-template-columns:minmax(380px,430px) minmax(0,1fr);column-gap:24px;align-items:stretch;padding-bottom:0}
   #viewLearn > .vcol-l > *{margin-top:0 !important;margin-bottom:0 !important;min-width:0}
   #viewLearn > .vcol-l > #learnTopics{order:2}
-  #viewLearn > .vcol-l > #learnNext{order:3;align-self:start}
+  #viewLearn > .vcol-l > #learnNext{display:none !important}
+  #learnTopics{grid-template-columns:repeat(6,minmax(0,1fr)) !important}
+  #learnTopics .lt-row{height:150px !important}
+  .ln-nextmini{display:inline-flex !important}
   #viewLearn > .vcol-l > #learnNext[hidden]{display:none}
   #viewLearn > .vcol-r{margin-top:28px}
   #viewLearn .lt-row{padding:6px 2px}
@@ -1842,7 +1845,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   #learnTopics .lt-row:hover{transform:translateY(-3px) rotate(-1deg)}
   #learnTopics .lt-row[aria-current="true"]{transform:translateY(-4px);outline:3px solid #FBF8F1;outline-offset:2px}
   #learnTopics .lt-row .lt-n{position:absolute;right:8px;top:6px;color:rgba(255,255,255,.7) !important;font-size:.75rem}
-  #learnTopics .lt-row .lt-t{font-size:.8rem;line-height:1.2;text-decoration:none !important;background:#FBF8F1;color:#1F1F1F;padding:4px 6px;border-radius:2px;margin-right:12px}
+  #learnTopics .lt-row .lt-t{font-size:.78rem;line-height:1.2;text-decoration:none !important;background:#FBF8F1;color:#1F1F1F;padding:5px 6px;border-radius:2px;margin:12px 0 0;hyphens:auto}
   #learnTopics .lt-row .lt-c{color:#fff !important;font-size:.72rem}
   #learnTopics .lt-row .lt-bar{height:4px;background:rgba(255,255,255,.3)}
   #learnTopics .lt-row .lt-bar i{background:#fff !important}
@@ -1856,6 +1859,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 }
 /* Hojas: nunca se corren de costado (overflow clip no deja scrollear en X ni por foco) y abren arriba */
 .sheet,.jar-glass,.dlg{overflow-x:clip !important}
+.ln-nextmini{text-decoration:none;display:none;align-items:center;gap:8px;margin:0 0 10px;padding:6px 12px;border-radius:99px;border:1.5px solid #2F5BEA;background:#fff;color:#2F5BEA;font:inherit;font-weight:700;font-size:.82rem;cursor:pointer}
+@media (min-width:1100px){.brand .hello{color:#E9D3B0 !important}}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2262,6 +2267,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:#181818 !important}}
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:linear-gradient(180deg,#7C512F,#684024) !important}:root[data-theme="dark"] .brand .icon-btn,:root[data-theme="dark"] .brand .learn-btn,:root[data-theme="dark"] .brand .usd-pill{background:#242017 !important;color:#D7C2B4 !important}:root[data-theme="dark"] .brand .icon-btn:hover,:root[data-theme="dark"] .brand .learn-btn:hover,:root[data-theme="dark"] .brand .usd-pill:hover{background:#1F1C15 !important}}
 @media (min-width:1100px){:root[data-theme="dark"] #learnTopics .lt-row{background:var(--nb,#274FD5) !important;color:#FFFFFF !important;box-shadow:inset 6px 0 0 rgba(0,0,0,.22),3px 4px 0 -1px #2C2922,0 4px 8px rgba(0,0,0,.25) !important}:root[data-theme="dark"] #learnTopics .lt-row[aria-current="true"]{outline:3px solid #1D1C19 !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-n{color:rgba(255,255,255,0.7) !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-t{background:#1D1C19 !important;color:#CCCCCC !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-c{color:#FFFFFF !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-bar{background:rgba(24,24,24,0.3) !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(1){--nb:#238E61 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(2){--nb:#CA7A1F !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(3){--nb:#BC3D52 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(4){--nb:#274FD5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(5){--nb:#6D4FB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(6){--nb:#738093 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap{background:linear-gradient(90deg,#1D1C19 calc(50% - 10px),#36322B calc(50% - 2px),#443D2F 50%,#36322B calc(50% + 2px),#1D1C19 calc(50% + 10px)) !important;box-shadow:0 6px 16px rgba(0,0,0,.25),-5px 6px 0 -2px #2C2922,5px 6px 0 -2px #2C2922 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap::before{background:repeating-linear-gradient(180deg,#625F58 0 6px,transparent 6px 22px) !important}}
+:root[data-theme="dark"] .ln-nextmini{border:1.5px solid #274FD5 !important;background:#181818 !important;color:#5487FF !important}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -9615,7 +9621,9 @@ function renderLearn(){
     LEARN.forEach((c, ci) => { if (wide && ci !== selT) return;
       const sec = document.createElement("section"); sec.className = "ln-chap" + (c.soon ? " soon" : "");
       const n = c.lessons.filter(l => data.learned[l.id]).length;
-      sec.innerHTML = `<div class="card-head"><h2><small>Tema ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
+      const nxt = c.lessons.find(l => !data.learned[l.id]);
+      sec.innerHTML = (wide && nxt ? `<a href="#" role="button" class="ln-nextmini">Seguir con: ${nxt.title} · ${nxt.min} min ›</a>` : "") + `<div class="card-head"><h2><small>Tema ${ci + 1}</small>${c.title}</h2>${c.soon ? '<span class="ln-soon">pronto</span>' : `<span class="ln-cnt">${n}/${c.lessons.length}</span>`}</div><p class="fx-hint">${c.sub}</p>`;
+      { const nb = sec.querySelector(".ln-nextmini"); if (nb) nb.onclick = ev => { ev.preventDefault(); learnCur = nxt.id; renderLearn(); window.scrollTo({ top: 0 }); }; }
       c.lessons.forEach(l => { const b = document.createElement("button"); b.type = "button"; b.className = "ln-item" + (data.learned[l.id] ? " done" : "");
         b.innerHTML = `<span class="ln-t"></span><span class="ln-m">${data.learned[l.id] ? "✓ leída" : l.min + " min"}</span>`; b.querySelector(".ln-t").textContent = l.title;
         b.onclick = () => { learnCur = l.id; renderLearn(); window.scrollTo({ top: 0 }); }; sec.append(b); });
@@ -11250,6 +11258,7 @@ const I18N_EN_P = [
   [/^(Por pagar|Ya pagados) · (.+)$/, (m, a, b) => `${a === "Por pagar" ? "To pay" : "Already paid"} · ${b}`],
   [/^En tarjeta · (.+) · (.+)$/, "On card · $1 · $2"],
   [/^Te (falta 1 sesión|faltan (\d+) sesiones) · pagaste (.+)$/, (m, a, n, p) => `${n ? n + " sessions" : "1 session"} left · you paid ${p}`],
+  [/^Seguir con: (.+) · (\d+) min ›$/, "Continue with: $1 · $2 min ›"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
