@@ -375,6 +375,10 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Header de compu: cajón de madera entero con todo adentro (botones crema, pestañas más grandes en un hueco hundido).
 - Escuelita en compu: temas como cuadernitos de colores (grilla 3x2); el tema elegido abajo como cuaderno abierto con espiral al medio.
 
+### 7x. Color principal violeta (Recy nuevo)
+- Recy nuevo (diseño de Tomas): cuerpo #8478DC, tapa/patas #6355C7, tinta #21194A. Acento de la app = #6355C7 (antes #2F5BEA); en oscuro #A79DF0.
+- Recy (recySVG, icon.svg) todavía no se cambió: Tomas manda los frames.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
