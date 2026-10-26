@@ -1868,17 +1868,17 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 #jdSheet .t,.cat-entry .t,[class*="hist"] .t{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
 .sheet h3{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
 /* Plaquita compacta y siempre igual: nombre, plata y barra con el %. El resto está en el detalle del frasco */
-.jar-slot{height:226px !important}
-@media (min-width:1100px){.jar-slot{height:238px !important}}
-.js-jar{bottom:52px !important;width:min(56%,108px) !important}
-.js-label{left:14px !important;right:14px !important;height:52px !important;padding:5px 10px 0 !important;gap:1px !important;justify-content:flex-start}
+.jar-slot{height:234px !important}
+@media (min-width:1100px){.jar-slot{height:246px !important}}
+.js-jar{bottom:62px !important;width:min(56%,108px) !important}
+.js-label{left:14px !important;right:14px !important;height:62px !important;padding:5px 10px 0 !important;gap:1px !important;justify-content:flex-start}
 .js-label > div{white-space:nowrap !important;overflow:hidden !important;text-overflow:clip !important}
-.js-label .jar-name{display:block !important;font-size:.62rem !important;line-height:1.15;min-height:0 !important;letter-spacing:.02em}
+.js-label .jar-name{display:flex !important;align-items:center;justify-content:center;font-size:.6rem !important;line-height:1.1;height:2.2em;white-space:normal !important;overflow-wrap:anywhere;letter-spacing:.02em}
 .js-label .jar-bal{font-size:.8rem !important;line-height:1.15}
 .js-label .jar-bal small,.js-label .jar-sub{display:none !important}
 .js-label .js-barw{display:flex;align-items:center;gap:5px;margin-top:2px}
 .js-label .js-barw .js-bar{flex:1;margin:0}
-.js-label .js-pct{font-size:.6rem;font-weight:700;color:#5E4E2A;min-width:2.6em;text-align:right}
+.js-label .js-pct{font-size:.6rem;font-weight:700;color:#5E4E2A;flex:none;width:3.4em;text-align:right}
 /* Darle a Recy ordenado */
 #whoField .who-seg{display:flex;flex-wrap:wrap}
 #whoField .who-seg button{flex:1 1 auto}
@@ -1909,6 +1909,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .sheet.sheet-split > .sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:clip;overscroll-behavior:contain;margin:0 -18px;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));
   scrollbar-width:thin;scrollbar-color:#BDB6A5 transparent}
 .sheet-body::-webkit-scrollbar{width:6px}.sheet-body::-webkit-scrollbar-thumb{background:#BDB6A5;border-radius:6px}.sheet-body::-webkit-scrollbar-button{display:none;height:0}
+.cats-more{border-style:dashed !important;font-weight:700}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -3154,7 +3155,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1100b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4025,7 +4026,7 @@ function render(){
   renderRange();
   $("next").disabled = false;
   if (tab === "dash") { renderDash(); stageDash(); renderPaper(); return; }
-  if (tab === "jars") { jarsNavUpdate(); renderJars(); stageJars(); return; }
+  if (tab === "jars") { jarsNavUpdate(); renderJars(); stageJars(); requestAnimationFrame(() => { try { fitJarNames(); } catch {} }); return; }
   if (tab === "fixed") { renderFixed(); stageFixed(); return; }
 
   const inThisMonth = e => inPeriod(e, viewYear, viewMonth);
@@ -5292,6 +5293,7 @@ function updateUntilField(){
 $("date").addEventListener("change", () => updateUntilField());
 let catEditing = false;
 const norm = t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var catsAll = false;
 function renderCats(){
   const box = $("cats"); box.innerHTML = "";
   const isExp = mode !== "income";
@@ -5303,6 +5305,14 @@ function renderCats(){
   let list = isExp ? allCats().filter(c => !c.hidden || c.id === category) : INCOME_KINDS;
   if (q) list = list.filter(c => norm(c.name).includes(q));
   const sel = isExp ? category : incomeKind;
+  // Plegadas: se ven las 8 que más usás (y la elegida); el resto con "Ver todas"
+  const MAXC = 8, folded = isExp && !q && !catEditing && !catsAll && list.length > MAXC + 1;
+  if (folded){
+    const cnt = {}; data.expenses.forEach(e => { cnt[e.category] = (cnt[e.category] || 0) + 1; });
+    const top = list.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0)).slice(0, MAXC);
+    if (!top.some(c => c.id === sel)){ const cs = list.find(c => c.id === sel); if (cs) top[MAXC - 1] = cs; }
+    list = list.filter(c => top.includes(c));
+  }
   list.forEach(c => {
     const custom = isExp && data.customCats.some(x => x.id === c.id);
     if (catEditing && c.hidden) return;
@@ -5319,6 +5329,8 @@ function renderCats(){
     const add = document.createElement("button"); add.type = "button"; add.className = "chip add";
     add.textContent = raw && !list.length ? `+ Crear "${raw}"` : "+ Categoría";
     add.onclick = () => openCat(null, raw && !list.length ? raw : "");
+    if (folded || catsAll){ const mb = document.createElement("button"); mb.type = "button"; mb.className = "chip cats-more";
+      mb.textContent = catsAll ? "Ver menos" : `Ver todas (${allCats().filter(c => !c.hidden).length})`; mb.onclick = () => { catsAll = !catsAll; renderCats(); }; box.append(mb); }
     box.append(add);
   }
 }
@@ -6561,7 +6573,7 @@ function openSheet(exp){
   $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
   // Arranca arriba de todo: el foco no tiene que hacer bajar la hoja (ni la página)
   $("sheet").scrollTop = 0;
-  try { $("tellBox").classList.remove("tell-open"); const dt = document.querySelector("#sheet .more-det"); if (dt) dt.open = false; setTimeout(syncWho, 0); } catch {}
+  catsAll = false; try { $("tellBox").classList.remove("tell-open"); const dt = document.querySelector("#sheet .more-det"); if (dt) dt.open = false; setTimeout(syncWho, 0); } catch {}
   setTimeout(() => { const y = window.scrollY; autoFocus(mode === "fx" ? $("fxUsd") : $("amount")); $("sheet").scrollTop = 0; window.scrollTo(0, y); }, 120);
 }
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
@@ -8856,10 +8868,11 @@ function jarSVG(color, level, full){
   </svg>`;
 }
 // Completa la última fila del estante con lugares vacíos, así la madera llega de punta a punta
-function fitJarNames(){ document.querySelectorAll(".js-label .jar-name").forEach(n => { n.style.fontSize = ""; let fs = parseFloat(getComputedStyle(n).fontSize);
-  while (n.scrollWidth > n.clientWidth + 1 && fs > 7){ fs -= 0.5; n.style.fontSize = fs + "px"; } }); }
+function fitJarNames(){ return; document.querySelectorAll(".js-label .jar-name").forEach(n => { if (!n.clientWidth) return; n.style.fontSize = ""; let fs = parseFloat(getComputedStyle(n).fontSize);
+  n.style.letterSpacing = ""; let k = 0; while (n.scrollWidth > n.clientWidth + 1 && fs > 6.5 && k++ < 40){ fs -= 0.25; n.style.fontSize = fs + "px"; n.style.letterSpacing = "0"; } }); }
+setTimeout(() => { try { fitJarNames(); } catch {} }, 600); if (document.fonts) document.fonts.ready.then(() => { try { fitJarNames(); } catch {} });
 function fillShelf(grid){
-  requestAnimationFrame(fitJarNames);
+  requestAnimationFrame(fitJarNames); setTimeout(fitJarNames, 80);
   if (!grid || !grid.isConnected) return;
   grid.querySelectorAll(".js-empty").forEach(x => x.remove());
   const n = grid.children.length; if (!n) return;
@@ -8902,7 +8915,7 @@ function renderJars(){
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
     if (delta){ const dl = document.createElement("span"); dl.className = "dl" + (delta < 0 ? " neg" : ""); dl.textContent = ` · ${delta > 0 ? "+" : "−"}${money2(Math.abs(delta))}`; sb.append(dl); }
     const bw = document.createElement("div"); bw.className = "js-barw"; const pc = document.createElement("span"); pc.className = "js-pct";
-    pc.textContent = j.goal ? Math.round(level * 100) + "%" : ""; bw.append(bar, pc);
+    pc.textContent = j.goal ? Math.round(level * 100) + "%" : bal > 0 ? "—" : "0%"; bw.append(bar, pc);
     tile.title = [j.name, money2(bal), sb.textContent].join(" · ");
     lab.append(nm, bb, bw, sb);
     tile.append(art, lab);
@@ -10564,7 +10577,9 @@ buildSheetHeads();
   // 3) quién pagó: una fila de opciones en vez de tres casillas
   const who = document.createElement("div"); who.className = "field"; who.id = "whoField";
   who.innerHTML = '<span class="lbl">¿Quién pagó?</span><div class="seg who-seg" role="group" aria-label="Quién pagó"><button type="button" data-who="me">Yo</button><button type="button" data-who="split">Lo dividimos</button><button type="button" data-who="other">Pagó otro</button><button type="button" data-who="lend">Le presté</button></div>';
-  const of = $("otherField"); of.parentElement.insertBefore(who, of);
+  const of = $("otherField"); of.parentElement.insertBefore(who, $("catField"));
+  // lo que se despliega al elegir (con quién, cuánto) queda justo abajo de "¿Quién pagó?"
+  ["otherField", "lendField", "splitField"].forEach(id => who.after($(id)));
   const box = { other: "otherOn", split: "splitOn", lend: "lendOn" };
   who.querySelectorAll("[data-who]").forEach(b => b.onclick = () => {
     const k = b.dataset.who;
@@ -10580,8 +10595,8 @@ function syncWho(){
   const cur = $("otherOn").checked ? "other" : $("splitOn").checked ? "split" : $("lendOn").checked ? "lend" : "me";
   w.querySelectorAll("[data-who]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === cur)));
   const vis = id => { const f = $(id); return f && !f.hidden; };
-  w.hidden = !(vis("otherField") || vis("splitField") || vis("lendField"));
-  w.querySelector('[data-who="lend"]').hidden = !vis("lendField"); w.querySelector('[data-who="other"]').hidden = !vis("otherField"); w.querySelector('[data-who="split"]').hidden = !vis("splitField");
+  // las 4 opciones se ven siempre en un gasto (no dependen de cuál elegiste)
+  w.hidden = mode !== "expense";
   // si la nota o la fecha tienen algo distinto de lo de siempre, "Más detalles" queda abierto
   const det = document.querySelector("#sheet .more-det"); if (det && ($("note").value || ($("date").value && $("date").value !== toLocalInput(new Date())))) det.open = true;
 }
@@ -11079,6 +11094,7 @@ Pagó otro	Someone else
 Le presté	I lent it
 Más detalles	More details
 fecha, hora y nota	date, time and note
+Ver menos	Show less
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11384,6 +11400,7 @@ const I18N_EN_P = [
   [/^En tarjeta · (.+) · (.+)$/, "On card · $1 · $2"],
   [/^Te (falta 1 sesión|faltan (\d+) sesiones) · pagaste (.+)$/, (m, a, n, p) => `${n ? n + " sessions" : "1 session"} left · you paid ${p}`],
   [/^Seguir con: (.+) · (\d+) min ›$/, "Continue with: $1 · $2 min ›"],
+  [/^Ver todas \((\d+)\)$/, "See all ($1)"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

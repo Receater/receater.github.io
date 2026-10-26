@@ -391,6 +391,10 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Plaquitas de frasco compactas (52px): nombre (se achica para entrar, `fitJarNames`), plata y barra con %. Lo demás en el detalle.
 - Categorías e ingresos conservan el azul viejo (#2F5BEA); el violeta es solo el color de la app. Botón "Darle a Recy" con el ícono violeta.
 
+### 7aa. 1.11.1
+- Darle a Recy: "¿Quién pagó?" va antes de la categoría (con sus campos justo abajo); las 4 opciones se ven siempre en un gasto. Categorías plegadas: las 8 más usadas + "Ver todas (N)" (`catsAll`).
+- Plaquita: nombre en hasta 2 renglones (alto fijo, todas iguales), % siempre ("0%" vacío, "—" sin meta) con ancho fijo.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
