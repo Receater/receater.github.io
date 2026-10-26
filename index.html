@@ -1861,6 +1861,27 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .sheet,.jar-glass,.dlg{overflow-x:clip !important}
 .ln-nextmini{text-decoration:none;display:none;align-items:center;gap:8px;margin:0 0 10px;padding:6px 12px;border-radius:99px;border:1.5px solid #6355C7;background:#fff;color:#6355C7;font:inherit;font-weight:700;font-size:.82rem;cursor:pointer}
 @media (min-width:1100px){.brand .hello{color:#E9D3B0 !important}}
+/* Que no se corte ningún texto: todo lo que antes se cortaba con "…" ahora baja de renglón */
+.item .sub,.ticket .item .sub{white-space:normal !important;display:block !important;-webkit-line-clamp:unset !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere}
+.fx-item .st,.hist-row .t,.hist-row .t strong,.hist-row .t small,.sp-row span,.up-m strong,.cal-info span{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;overflow-wrap:anywhere}
+#tellInput,#askQ{min-height:84px;resize:vertical}
+#jdSheet .t,.cat-entry .t,[class*="hist"] .t{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+.sheet h3{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+/* Plaquita del frasco: el nombre en hasta dos renglones y los pesos abajo, sin cortes */
+.jar-slot{height:262px !important}
+@media (min-width:1100px){.jar-slot{height:276px !important}}
+.js-jar{bottom:94px !important}
+.js-label{height:94px !important;padding-top:6px !important}
+.js-label > div{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+.js-label .jar-name{display:-webkit-box !important;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.1;min-height:2.2em;overflow:hidden !important;overflow-wrap:anywhere;font-size:.68rem}
+.js-label .jar-bal{line-height:1.1;font-size:.84rem}
+.js-label .jar-bal small{display:block;margin:1px 0 0 !important}
+/* Barra de scroll de las hojas: finita, del color del papel, sin flechas */
+.sheet,.jar-glass,.news-tk,.fx-board{scrollbar-width:thin;scrollbar-color:#BDB6A5 transparent}
+.sheet::-webkit-scrollbar,.jar-glass::-webkit-scrollbar,.news-tk::-webkit-scrollbar{width:6px}
+.sheet::-webkit-scrollbar-thumb,.jar-glass::-webkit-scrollbar-thumb,.news-tk::-webkit-scrollbar-thumb{background:#BDB6A5;border-radius:6px}
+.sheet::-webkit-scrollbar-track,.jar-glass::-webkit-scrollbar-track,.news-tk::-webkit-scrollbar-track{background:transparent;margin:18px 0}
+.sheet::-webkit-scrollbar-button{display:none;height:0}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2268,6 +2289,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:linear-gradient(180deg,#7C512F,#684024) !important}:root[data-theme="dark"] .brand .icon-btn,:root[data-theme="dark"] .brand .learn-btn,:root[data-theme="dark"] .brand .usd-pill{background:#242017 !important;color:#D7C2B4 !important}:root[data-theme="dark"] .brand .icon-btn:hover,:root[data-theme="dark"] .brand .learn-btn:hover,:root[data-theme="dark"] .brand .usd-pill:hover{background:#1F1C15 !important}}
 @media (min-width:1100px){:root[data-theme="dark"] #learnTopics .lt-row{background:var(--nb,#584AB5) !important;color:#FFFFFF !important;box-shadow:inset 6px 0 0 rgba(0,0,0,.22),3px 4px 0 -1px #2C2922,0 4px 8px rgba(0,0,0,.25) !important}:root[data-theme="dark"] #learnTopics .lt-row[aria-current="true"]{outline:3px solid #1D1C19 !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-n{color:rgba(255,255,255,0.7) !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-t{background:#1D1C19 !important;color:#CCCCCC !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-c{color:#FFFFFF !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-bar{background:rgba(24,24,24,0.3) !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(1){--nb:#238E61 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(2){--nb:#CA7A1F !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(3){--nb:#BC3D52 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(4){--nb:#584AB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(5){--nb:#6D4FB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(6){--nb:#738093 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap{background:linear-gradient(90deg,#1D1C19 calc(50% - 10px),#36322B calc(50% - 2px),#443D2F 50%,#36322B calc(50% + 2px),#1D1C19 calc(50% + 10px)) !important;box-shadow:0 6px 16px rgba(0,0,0,.25),-5px 6px 0 -2px #2C2922,5px 6px 0 -2px #2C2922 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap::before{background:repeating-linear-gradient(180deg,#625F58 0 6px,transparent 6px 22px) !important}}
 :root[data-theme="dark"] .ln-nextmini{border:1.5px solid #584AB5 !important;background:#181818 !important;color:#8981F0 !important}
+:root[data-theme="dark"] .sheet::-webkit-scrollbar-thumb,:root[data-theme="dark"] .jar-glass::-webkit-scrollbar-thumb,:root[data-theme="dark"] .news-tk::-webkit-scrollbar-thumb{background:#3D382D !important}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2369,7 +2391,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <section class="fixed-pend" id="loanPend" hidden></section>
   <div class="search-bar" role="search">
     <span aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span>
-    <input class="input" id="searchQ" type="search" placeholder="Buscar: Starbucks, Delfi, cine, 15000…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
+    <input class="input" id="searchQ" type="search" placeholder="Buscar gastos o montos" autocomplete="off" enterkeyhint="search" aria-label="Buscar en tus movimientos">
     <button type="button" class="x" id="searchX" aria-label="Borrar la búsqueda" hidden>×</button>
   </div>
   <div class="lf-wrap" id="listFilterW" hidden><button type="button" class="lf-arr" id="lfL" aria-label="Ver categorías anteriores">‹</button><div class="list-filter" id="listFilter" role="group" aria-label="Filtrar por categoría"></div><button type="button" class="lf-arr" id="lfR" aria-label="Ver más categorías">›</button></div>
@@ -2487,7 +2509,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
       <span class="spin" aria-hidden="true"></span>
       <div><strong id="tellBusyTxt">Recy está leyendo…</strong><span id="tellBusySub">Un segundito.</span></div>
     </div>
-    <textarea class="input" id="tellInput" rows="2" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
+    <textarea class="input" id="tellInput" rows="3" placeholder="Contale a Recy: ayer fui al cine, gasté 50.000 y la mitad es de Fede" autocomplete="off" enterkeyhint="go" aria-label="Contale a Recy qué gastaste"></textarea>
     <div class="tell-row" style="margin-top:8px">
       <button type="button" class="small-btn" id="tellPhoto" aria-label="Sacar foto del ticket"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg> Sacar foto</button>
       <button type="button" class="small-btn" id="tellPick" aria-label="Subir una imagen del ticket"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg> Subir imagen</button>
@@ -2736,11 +2758,11 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 <div class="sheet-bg" id="fixBg"></div>
 <div class="sheet notepad" id="fixSheet" role="dialog" aria-modal="true" aria-labelledby="fixTitle">
   <h3 id="fixTitle">Nuevo gasto fijo</h3>
-  <div class="field"><label for="fixName">Nombre</label><input class="input" id="fixName" placeholder="Ej: Alquiler, Netflix, Taller de dibujo" autocomplete="off"></div>
+  <div class="field"><label for="fixName">Nombre</label><input class="input" id="fixName" placeholder="Ej: Alquiler, Netflix" autocomplete="off"></div>
   <div class="field"><label for="fixCat">Categoría</label><select class="input" id="fixCat"></select>
     <button type="button" class="linkbtn" id="fixNewCat">+ Nueva categoría</button> <button type="button" class="linkbtn" id="fixEditCat">Editar esta categoría</button></div>
   <div class="field two">
-    <div><label for="fixAmount" id="fixAmountLbl">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Vacío si cambia" autocomplete="off"></div>
+    <div><label for="fixAmount" id="fixAmountLbl">Monto por mes</label><input class="input" id="fixAmount" inputmode="decimal" placeholder="Variable" autocomplete="off"></div>
     <div><span class="lbl-sm">Moneda</span>
       <div class="seg" role="group" aria-label="Moneda del fijo">
         <button type="button" data-fixcur="ARS" aria-pressed="true">$</button>
@@ -2775,7 +2797,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
     </div></div>
   <div class="field"><label for="fixPayTo">Datos para pagarlo (opcional)</label>
     <input class="input" id="fixPayTo" placeholder="Link de pago, alias o CBU" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <input class="input" id="fixPayWho" placeholder="A nombre de (ej: Mamá, Lic. Pérez)" autocomplete="off" style="margin-top:8px">
+    <input class="input" id="fixPayWho" placeholder="A nombre de (ej: Mamá)" autocomplete="off" style="margin-top:8px">
     <div class="fx-hint">Así lo tenés a mano: si es un link, lo abrís con un toque; si es un alias o CBU, lo copiás.</div></div>
   <div class="err" id="fixErr"></div>
   <div class="actions">
@@ -2986,7 +3008,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <div id="askLog" class="ask-log" aria-live="polite"></div>
   <div class="chips ask-sug" id="askSug"></div>
   <div class="ask-row">
-    <textarea class="input" id="askQ" rows="2" placeholder="Ej: ¿cuánto gasté en Starbucks este año?" aria-label="Tu pregunta para Recy" enterkeyhint="send"></textarea>
+    <textarea class="input" id="askQ" rows="3" placeholder="Ej: ¿cuánto gasté en Starbucks este año?" aria-label="Tu pregunta para Recy" enterkeyhint="send"></textarea>
     <button type="button" class="btn primary" id="askGo">Preguntar</button>
   </div>
   <p class="fx-hint">Recy contesta con tus datos usando Gemini (lo que activaste en Recy inteligente). Los números los calcula con lo que tenés cargado.</p>
@@ -3099,7 +3121,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1000";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -5836,11 +5858,11 @@ const AI_FORMAT = `Respondé SOLO con un objeto JSON, sin texto extra, con esta 
 "items":[{"nombre":"...","precio":número,"categoria":id}] (solo si es un ticket con productos) o []}
 Reglas: si pagó por otra persona y esa persona le debe, "monto" es el total que pagó y esa parte va en "dividido". Usá la fecha de hoy para resolver "ayer", "el lunes", etc. Elegí la categoría que mejor encaje de la lista. Si menciona una tarjeta de la lista, usá su id y medio "card".`;
 async function aiFromText(text){
-  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Interpretá lo que cuenta el usuario y armá el gasto o ingreso.\n${aiContext()}\n${AI_FORMAT}\n\nLo que contó el usuario: """${text}"""` }]);
+  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Interpretá lo que cuenta el usuario y armá el gasto o ingreso.\n${aiContext()}\n${AI_FORMAT}\n\nLo que contó el usuario: """${text}"""` }], { fast: true, models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest"] });
 }
 async function aiFromImage(b64, mime){
   return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Esta foto es un ticket o comprobante de compra. Leé el comercio, la fecha, el total pagado y cada producto con su precio final (con descuentos aplicados). Asigná a cada producto una categoría de la lista. La nota debe ser el nombre del comercio. "monto" es el TOTAL del ticket.\n${aiContext()}\n${AI_FORMAT}` },
-    { inline_data: { mime_type: mime, data: b64 } }]);
+    { inline_data: { mime_type: mime, data: b64 } }], { fast: true, models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest"] });
 }
 /* Volcar lo que entendió la IA en el formulario */
 function aiApply(r){
@@ -5899,10 +5921,10 @@ function shrinkImage(file){
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+      const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
       const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-      res(c.toDataURL("image/jpeg", 0.85).split(",")[1]);
+      res(c.toDataURL("image/jpeg", 0.8).split(",")[1]);
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(); };
     img.src = url;
@@ -7135,6 +7157,9 @@ function offerSetup(){
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
   { v: "1.10", d: "2026-10-26", t: { es: "Color nuevo", en: "New color" }, i: [
+    { es: "Ningún texto se corta con \"…\": los que no entran bajan de renglón.", en: "No text gets cut with \"…\": what doesn't fit wraps." },
+    { es: "Recy lee más rápido las fotos de tickets y lo que le contás.", en: "Recy reads receipt photos and what you tell it faster." },
+    { es: "Barra de scroll finita en las ventanas.", en: "Thin scrollbar in sheets." },
     { es: "El color principal de la app ahora es el violeta de Recy.", en: "The app's main color is now Recy's violet." },
     { es: "Escuelita en compu: la pizarra y los cuadernitos en una fila.", en: "School on desktop: board and notebooks in one row." } ] },
   { v: "1.9.1", d: "2026-10-23", t: { es: "Arreglos", en: "Fixes" }, i: [
@@ -8667,7 +8692,7 @@ function syncPerSession(){
   const on = $("fixPerSession").checked;
   $("fixDayField").hidden = on; $("fixWeekField").hidden = !on; $("fixSessHint").hidden = !on;
   $("fixAmountLbl").textContent = on ? "Precio por sesión" : "Monto por mes";
-  $("fixAmount").placeholder = on ? "Ej: 25000" : "Vacío si cambia";
+  $("fixAmount").placeholder = on ? "Ej: 25000" : "Variable";
   const cardOpt = document.querySelector('input[name="fixHow"][value="card"]');
   cardOpt.disabled = on; if (on && cardOpt.checked) document.querySelector('input[name="fixHow"][value="manual"]').checked = true;
 }
@@ -10633,7 +10658,7 @@ Borrar todo lo de este dispositivo	Delete everything on this device
 Borrar esta cuenta	Delete this account
 Buscar categoría	Search category
 Buscar en tus movimientos	Search your entries
-Buscar: Starbucks, Delfi, cine, 15000…	Search: Starbucks, cinema, 15000…
+Buscar gastos o montos	Search expenses
 Buscá: Fima, Cocos, Mercado…	Search: Fima, Cocos, Mercado…
 Cada vez que cargás un sueldo te preguntamos hasta cuándo te tiene que durar.	Every time you log a paycheck we ask how long it has to last.
 Cambiar	Change
@@ -10823,7 +10848,7 @@ Las personas con las que dividís gastos o te prestás plata. Aparecen como suge
 Las reglas de la app, en corto.	The app's rules, in short.
 Le di	I gave
 Le presté plata a alguien	I lent money to someone
-Link de pago, alias o CBU	Payment link, alias or account number
+Link de pago, alias o CBU	Payment link or alias
 Listo	Done
 Lo básico para dormir tranquilo	The basics to sleep well
 Lo de siempre	The usual
@@ -11094,7 +11119,7 @@ Un día fijo del mes	A fixed day of the month
 Un segundito.	One second.
 Uy, nos pasamos este mes.	Oops, we went over this month.
 VENCIDO	OVERDUE
-Vacío si cambia	Empty if it changes
+Variable	Varies
 Vence el día	Due on
 Vencido	Overdue
 Vení que te explico todo sin vueltas.	Come, I'll explain everything plainly.
