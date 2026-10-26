@@ -2942,7 +2942,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <h3 id="pbTitle">Cuenta</h3>
   <div class="pb-sum" id="pbSum"></div>
   <ul class="pb-list" id="pbList"></ul>
-  <button type="button" class="btn ghost pb-all" id="pbAll">Me pagó todo</button>
+  <button type="button" class="btn primary pb-all" id="pbAll">Me pagó todo</button>
   <div class="field" style="margin-top:16px"><span class="lbl">O anotá una parte</span>
     <div class="seg pb-dir" role="group"><button type="button" data-pbdir="in">Me dio</button><button type="button" data-pbdir="out">Le di</button></div></div>
   <div class="field"><label for="pbAmount">Cuánto</label><input class="input" id="pbAmount" inputmode="decimal" placeholder="0" autocomplete="off"></div>
@@ -3159,7 +3159,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1610";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1620";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3237,7 +3237,7 @@ let data = store.load();
 if (!Array.isArray(data.expenses)) data = {expenses:[]};
 if (!Array.isArray(data.incomes)) data.incomes = [];
 /* Hora de carga de cada movimiento: lo que ya existía queda en 0, lo nuevo se marca al guardar */
-[data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = 0; }));
+[data.expenses, data.incomes, data.accMoves || [], data.settles || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = 0; }));
 [data.expenses, data.incomes].forEach(l => l.forEach(x => { if (x.adjust && /sin anotar \(ajuste/i.test(x.note || "")) x.note = "Ajuste de saldo"; }));
 const INCOME_KINDS = [
   {id:"sueldo",    name:"Sueldo",         color:"#2F5BEA"},
@@ -4155,7 +4155,8 @@ function render(){
   const payGroups = {};
   ents.filter(x => x.cardId).forEach(x => { const k = x.cardId + "|" + x.date.slice(0,10); (payGroups[k] ||= []).push(x); });
   const rows = [...inMonth.map(e => ({ kind:"item", e, date:e.date })),
-    ...Object.entries(payGroups).map(([k, xs]) => ({ kind:"pay", key:k, xs, date: xs[0].date }))].sort((a,b) => b.date.localeCompare(a.date));
+    ...Object.entries(payGroups).map(([k, xs]) => ({ kind:"pay", key:k, xs, date: xs[0].date })),
+    ...(data.settles || []).filter(x => x.log && inThisMonth({ date: x.date })).map(x => ({ kind:"settle", s:x, date:x.date }))].sort((a,b) => b.date.localeCompare(a.date));
   if (!rows.length){ mood = "hungry"; line = "Tengo hambre. Dame un ticket."; }
   else if (bIncA > 0){
     const ratio = (bIncA - bSpentA) / bIncA, savA = bSavA;
@@ -4239,8 +4240,8 @@ function render(){
     const list = document.createElement("div"); list.className = "list";
     groups[key].forEach(r => {
       const t = document.createElement("div");
-      t.className = "ticket" + (r.kind === "item" && isIncome(r.e) ? " inc" : "");
-      t.append(r.kind === "pay" ? renderPayGroup(r) : renderItem(r.e));
+      t.className = "ticket" + (r.kind === "item" && isIncome(r.e) || r.kind === "settle" && r.s.dir === "in" ? " inc" : "");
+      t.append(r.kind === "pay" ? renderPayGroup(r) : r.kind === "settle" ? renderSettleLog(r.s) : renderItem(r.e));
       list.append(t);
     });
     sec.append(h, list);
@@ -4248,6 +4249,20 @@ function render(){
   });
 }
 
+/* Cuando alguien te paga (o le pagás) lo que se debían: un ticket más en Movimientos. No es gasto ni ingreso, pero la plata entró (o salió) de tu cuenta */
+function renderSettleLog(x){
+  const b = document.createElement("button"); b.type = "button"; b.className = "item";
+  const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = "#1E7A50";
+  const mid = document.createElement("div"); const cat = document.createElement("div"); cat.className = "cat";
+  cat.textContent = x.dir === "in" ? `${x.name} te pagó` : `Le pagaste a ${x.name}`;
+  const sub = document.createElement("div"); sub.className = "sub"; sub.textContent = [x.date.slice(11, 16), x.all ? (x.dir === "in" ? "Te pagó toda la deuda" : "Saldaste toda la deuda") : "Pago a cuenta de la deuda", x.note].filter(Boolean).join("  ");
+  mid.append(cat, sub);
+  const amt = document.createElement("div"); amt.className = "amt" + (x.dir === "in" ? " is-inc" : ""); amt.textContent = (x.dir === "in" ? "+ " : "− ") + money(x.amount, x.currency);
+  amt.append(stampEl(x.all ? "SALDADO" : "A CUENTA", "ok"));
+  b.append(dot, mid, amt);
+  b.onclick = () => { try { openPersonBal(x.name); } catch {} };
+  return b;
+}
 function stampEl(text, cls){ const s = document.createElement("span"); s.className = "stamp " + cls; s.textContent = text; return s; }
 function renderPayGroup(r){
   const [cid, day] = r.key.split("|"), card = cardById(cid), open = expanded.has("pay:" + r.key);
@@ -5180,6 +5195,7 @@ function pbRecord(amt){
   const toSettle = round2(Math.min(amt, owedBefore)), extra = round2(amt - toSettle);
   const id = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
   if (toSettle > 0.004 && x){
+    (data.settles ||= []).push({ id: id(), name: pb.name, currency: cur, amount: toSettle, dir: pb.dir, date: now, note, closed: true, log: true, all: Math.abs(toSettle - owedBefore) < 0.005 });
     if (Math.abs(toSettle - owedBefore) < 0.005) settleWith(x, cur);   // cubre todo: quedan a mano
     else {
       const rest = applyPersonPay(x, cur, pb.dir, toSettle, note);
@@ -5207,7 +5223,9 @@ $("pbSave").onclick = () => {
 $("pbAll").onclick = async () => {
   const { x, v } = pbBal();
   if (!x || !await uiConfirm(v > 0 ? `¿${pb.name} te pagó ${money(v, pb.cur)} y quedan a mano?` : `¿Le pagaste ${money(-v, pb.cur)} a ${pb.name} y quedan a mano?`)) return;
-  settleWith(x, pb.cur); persist(); feedRecy(); render(); closePersonBal();
+  settleWith(x, pb.cur);
+  (data.settles ||= []).push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name: pb.name, currency: pb.cur, amount: round2(Math.abs(v)), dir: v > 0 ? "in" : "out", date: `${toLocalInput(new Date())}T${toTime(new Date())}`, closed: true, log: true, all: true });
+  persist(); feedRecy(); render(); closePersonBal();
 };
 $("pbCancel").onclick = closePersonBal; $("pbBg").onclick = closePersonBal;
 let repaySel = null;
@@ -6595,7 +6613,7 @@ function openSheet(exp){
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
 
 function persist(){
-  const now = Date.now(); [data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = now; }));
+  const now = Date.now(); [data.expenses, data.incomes, data.accMoves || [], data.settles || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = now; }));
   if (!store.save(data)) $("err").textContent = "No se pudo guardar en este navegador. Revisá que no esté en modo privado.";
   scheduleAlertsSoon();
 }
@@ -7219,6 +7237,7 @@ function offerSetup(){
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
+    { es: "Cuando alguien te paga lo que te debía, aparece en Movimientos (\"Delfi te pagó\") y la plata se suma a tu cuenta, así el \"Te queda\" y el por día se actualizan.", en: "When someone pays you back, it shows in Activity (\"Delfi paid you\") and the money adds to your account, so \"You have left\" and the daily amount update." },
     { es: "Al preguntarte la categoría de un gasto del resumen: buscador, todas las categorías y un botón \"Siguiente\" (vale la que propone Recy).", en: "When asking a statement expense's category: search, all categories and a \"Next\" button (Recy's guess counts)." },
     { es: "Si creás una categoría que ya existe, se elige esa en vez de dar error.", en: "Creating a category that already exists picks it instead of erroring." },
     { es: "\"Darle a Recy\" tiene la misma altura en todas las pestañas.", en: "\"Feed Recy\" keeps the same height on every tab." } ] },
@@ -9172,6 +9191,8 @@ function accFlows(){
   entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount, (x.src || x).at); });
   data.incomes.forEach(e => { if (e.currency !== "ARS" || e.adjust) return; add(accIdOf(e), e.date.slice(0, 10), e.amount, e.at); });
   data.accMoves.forEach(m => { add(m.from, m.date, -m.amount, m.at); add(m.to, m.date, m.amount, m.at); });
+  // lo que te pagaron (o pagaste) de una deuda entra o sale de tu cuenta principal
+  (data.settles || []).forEach(x => { if (x.log && x.currency === "ARS") add(mainAccId(), x.date.slice(0, 10), x.dir === "in" ? x.amount : -x.amount, x.at); });
   return f;
 }
 /* Saldo de hoy y lo que rindió, desde el último "tengo $X" */
@@ -11117,6 +11138,9 @@ fecha, hora y nota	date, time and note
 Ver menos	Show less
 Siguiente ›	Next ›
 Listo ›	Done ›
+Te pagó toda la deuda	Paid you the whole debt
+Saldaste toda la deuda	You paid off the whole debt
+Pago a cuenta de la deuda	Partial payment of the debt
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11423,6 +11447,8 @@ const I18N_EN_P = [
   [/^Te (falta 1 sesión|faltan (\d+) sesiones) · pagaste (.+)$/, (m, a, n, p) => `${n ? n + " sessions" : "1 session"} left · you paid ${p}`],
   [/^Seguir con: (.+) · (\d+) min ›$/, "Continue with: $1 · $2 min ›"],
   [/^Ver todas \((\d+)\)$/, "See all ($1)"],
+  [/^(.+) te pagó$/, "$1 paid you"],
+  [/^Le pagaste a (.+)$/, "You paid $1"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
