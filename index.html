@@ -1912,6 +1912,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .cats-more{border-style:dashed !important;font-weight:700}
 /* Darle a Recy: siempre la misma altura, cambies de pestaña o no (lo que no entra, scrollea adentro) */
 #sheet.sheet-split.open{height:92vh;height:92dvh}
+.st-next{width:100%;margin-top:10px;position:sticky;bottom:8px;z-index:2;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#stSheet.sheet-split.open{height:92vh;height:92dvh}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -3157,7 +3159,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1220";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1610";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -5397,7 +5399,10 @@ $("catCancel").onclick = closeCat; $("catBg").onclick = closeCat;
 $("catSave").onclick = () => {
   const name = $("catName").value.trim();
   if (!name){ $("catErr").textContent = "Ponele un nombre."; $("catName").focus(); return; }
-  if (allCats().some(x => x !== editingCat && norm(x.name) === norm(name))){ $("catErr").textContent = "Ya hay una categoría con ese nombre."; return; }
+  { const ex = allCats().find(x => x !== editingCat && norm(x.name) === norm(name));
+    if (ex){ if (!editingCat && catAfter){ const fn = catAfter; closeCat(); fn(ex.id); return; }   // ya existe: se elige esa
+      if (!editingCat && $("sheet").classList.contains("open")){ closeCat(); category = ex.id; catUserPicked = true; renderCats(); return; }
+      $("catErr").textContent = "Ya hay una categoría con ese nombre."; return; } }
   if (editingCat && editingCat.builtin){ data.catEdits = data.catEdits || {}; data.catEdits[editingCat.id] = { name, color: catColor }; }
   else if (editingCat){ const real = data.customCats.find(x => x.id === editingCat.id) || editingCat; real.name = name; real.color = catColor; }
   else {
@@ -6397,13 +6402,22 @@ function renderStmt(){
     if (x.cat){ const h = P("fx-hint", `Recy cree que es ${catById(x.cat).name}.`); b.append(h); }
     const chips = document.createElement("div"); chips.className = "chips st-chips";
     const pick = id => { x.cat = id; x.unsure = false; if (st.step < st.ask.length - 1) st.step++; else st.phase = "review"; renderStmt(); };
-    allCats().filter(cc => !cc.hidden && cc.id !== "ahorro").forEach(cc => {
-      const ch = document.createElement("button"); ch.type = "button"; ch.className = "chip"; ch.setAttribute("aria-pressed", String(x.cat === cc.id));
-      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = cc.color; ch.append(dot, cc.name); ch.onclick = () => pick(cc.id); chips.append(ch);
-    });
+    // Tocar una categoría la marca; "Siguiente" confirma (también la que propuso Recy). Con buscador para encontrar cualquiera.
+    const srch = document.createElement("input"); srch.className = "input cat-search"; srch.type = "search"; srch.placeholder = "Buscar categoría"; srch.autocomplete = "off"; srch.setAttribute("aria-label", "Buscar categoría");
+    b.append(srch);
+    const drawChips = () => { chips.querySelectorAll(".chip:not(.chip-new)").forEach(c => c.remove()); const q = norm(srch.value.trim());
+      allCats().filter(cc => !cc.hidden && cc.id !== "ahorro" && (!q || norm(cc.name).includes(q))).forEach(cc => {
+        const ch = document.createElement("button"); ch.type = "button"; ch.className = "chip"; ch.setAttribute("aria-pressed", String(x.cat === cc.id));
+        const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = cc.color; ch.append(dot, cc.name);
+        ch.onclick = () => { x.cat = cc.id; chips.querySelectorAll(".chip").forEach(k => k.setAttribute("aria-pressed", "false")); ch.setAttribute("aria-pressed", "true"); nextB.disabled = false; };
+        chips.insertBefore(ch, chips.querySelector(".chip-new")); }); };
+    srch.oninput = drawChips;
     const nc = document.createElement("button"); nc.type = "button"; nc.className = "chip chip-new"; nc.textContent = "+ Nueva categoría";
-    nc.onclick = () => newCatThen(id => pick(id)); chips.append(nc);
+    nc.onclick = () => newCatThen(id => pick(id), srch.value.trim()); chips.append(nc);
     b.append(chips);
+    const nextB = document.createElement("button"); nextB.type = "button"; nextB.className = "btn primary st-next"; nextB.textContent = st.step < st.ask.length - 1 ? "Siguiente ›" : "Listo ›";
+    nextB.disabled = !x.cat; nextB.onclick = () => { if (x.cat) pick(x.cat); };
+    drawChips(); b.append(nextB);
     const nav = document.createElement("div"); nav.className = "st-nav";
     const back = document.createElement("button"); back.type = "button"; back.className = "small-btn"; back.textContent = "‹ Atrás"; back.disabled = st.step === 0; back.onclick = () => { st.step--; renderStmt(); };
     const dk = document.createElement("button"); dk.type = "button"; dk.className = "small-btn"; dk.textContent = "No sé qué es"; dk.onclick = () => pick(ST_DONTKNOW);
@@ -7204,6 +7218,10 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
+    { es: "Al preguntarte la categoría de un gasto del resumen: buscador, todas las categorías y un botón \"Siguiente\" (vale la que propone Recy).", en: "When asking a statement expense's category: search, all categories and a \"Next\" button (Recy's guess counts)." },
+    { es: "Si creás una categoría que ya existe, se elige esa en vez de dar error.", en: "Creating a category that already exists picks it instead of erroring." },
+    { es: "\"Darle a Recy\" tiene la misma altura en todas las pestañas.", en: "\"Feed Recy\" keeps the same height on every tab." } ] },
   { v: "1.11", d: "2026-10-26", t: { es: "Darle a Recy, ordenado", en: "Feed Recy, reorganized" }, i: [
     { es: "Nuevo gasto: primero el monto, Recy en una fila, y \"¿Quién pagó?\" (Yo · Lo dividimos · Pagó otro · Le presté) en vez de tres casillas. Fecha y nota en \"Más detalles\".", en: "New expense: amount first, Recy in one row, and \"Who paid?\" (Me · We split it · Someone else · I lent it) instead of three checkboxes. Date and note under \"More details\"." },
     { es: "Las ventanas tienen la cabecera quieta: solo scrollea el contenido.", en: "Sheets keep their header still: only the content scrolls." },
@@ -11097,6 +11115,8 @@ Le presté	I lent it
 Más detalles	More details
 fecha, hora y nota	date, time and note
 Ver menos	Show less
+Siguiente ›	Next ›
+Listo ›	Done ›
 Tema	Theme
 Automático	Automatic
 Claro	Light
