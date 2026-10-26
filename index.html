@@ -1867,21 +1867,48 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 #tellInput,#askQ{min-height:84px;resize:vertical}
 #jdSheet .t,.cat-entry .t,[class*="hist"] .t{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
 .sheet h3{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
-/* Plaquita del frasco: el nombre en hasta dos renglones y los pesos abajo, sin cortes */
-.jar-slot{height:262px !important}
-@media (min-width:1100px){.jar-slot{height:276px !important}}
-.js-jar{bottom:94px !important}
-.js-label{height:94px !important;padding-top:6px !important}
-.js-label > div{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
-.js-label .jar-name{display:-webkit-box !important;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.1;min-height:2.2em;overflow:hidden !important;overflow-wrap:anywhere;font-size:.68rem}
-.js-label .jar-bal{line-height:1.1;font-size:.84rem}
-.js-label .jar-bal small{display:block;margin:1px 0 0 !important}
-/* Barra de scroll de las hojas: finita, del color del papel, sin flechas */
-.sheet,.jar-glass,.news-tk,.fx-board{scrollbar-width:thin;scrollbar-color:#BDB6A5 transparent}
-.sheet::-webkit-scrollbar,.jar-glass::-webkit-scrollbar,.news-tk::-webkit-scrollbar{width:6px}
-.sheet::-webkit-scrollbar-thumb,.jar-glass::-webkit-scrollbar-thumb,.news-tk::-webkit-scrollbar-thumb{background:#BDB6A5;border-radius:6px}
-.sheet::-webkit-scrollbar-track,.jar-glass::-webkit-scrollbar-track,.news-tk::-webkit-scrollbar-track{background:transparent;margin:18px 0}
-.sheet::-webkit-scrollbar-button{display:none;height:0}
+/* Plaquita compacta y siempre igual: nombre, plata y barra con el %. El resto está en el detalle del frasco */
+.jar-slot{height:226px !important}
+@media (min-width:1100px){.jar-slot{height:238px !important}}
+.js-jar{bottom:52px !important;width:min(56%,108px) !important}
+.js-label{left:14px !important;right:14px !important;height:52px !important;padding:5px 10px 0 !important;gap:1px !important;justify-content:flex-start}
+.js-label > div{white-space:nowrap !important;overflow:hidden !important;text-overflow:clip !important}
+.js-label .jar-name{display:block !important;font-size:.62rem !important;line-height:1.15;min-height:0 !important;letter-spacing:.02em}
+.js-label .jar-bal{font-size:.8rem !important;line-height:1.15}
+.js-label .jar-bal small,.js-label .jar-sub{display:none !important}
+.js-label .js-barw{display:flex;align-items:center;gap:5px;margin-top:2px}
+.js-label .js-barw .js-bar{flex:1;margin:0}
+.js-label .js-pct{font-size:.6rem;font-weight:700;color:#5E4E2A;min-width:2.6em;text-align:right}
+/* Darle a Recy ordenado */
+#whoField .who-seg{display:flex;flex-wrap:wrap}
+#whoField .who-seg button{flex:1 1 auto}
+#otherField > .switch,#splitField > .switch,#lendField > .switch{display:none !important}
+#otherField,#splitField,#lendField{margin-top:0}
+.tell-compact{padding:8px !important}
+.tell-bar{display:flex;flex-wrap:wrap;gap:6px}
+.tell-bar .small-btn{flex:1 1 auto;justify-content:center}
+.tell-compact #tellInput,.tell-compact .tell-row,.tell-compact #tellMsg{display:none}
+.tell-compact.tell-open #tellInput{display:block;margin-top:8px}
+.tell-compact.tell-open .tell-row,.tell-compact.tell-open #tellMsg{display:flex}
+.tell-compact.tell-open #tellMsg{display:block}
+.tell-compact .tell-row #tellPhoto,.tell-compact .tell-row #tellPick{display:none}
+.more-det{margin-top:14px;border-top:1.5px dashed #BDB6A5;padding-top:8px}
+.more-det summary{cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;list-style:none;padding:6px 0}
+.more-det summary::-webkit-details-marker{display:none}
+.more-det summary::after{content:" ›";display:inline-block;transition:transform .15s}
+.more-det[open] summary::after{transform:rotate(90deg)}
+.more-det summary small{font-weight:400;text-transform:none;letter-spacing:0;color:#6E6A62;margin-left:6px}
+/* Nuevo gasto con más pinta de ticket: bordes picados abajo y renglones */
+#sheet.sheet-split{border-radius:6px 6px 0 0 !important}
+#sheet .sheet-head{background:#FBF8F1}
+#sheet .sheet-body{background:repeating-linear-gradient(180deg,transparent 0 27px,rgba(0,0,0,.025) 27px 28px),#FBF8F1}
+/* Hojas partidas: cabecera quieta + cuerpo con scroll */
+.sheet.sheet-split{overflow:hidden !important;padding-bottom:0 !important}
+.sheet.sheet-split.open{display:flex !important;flex-direction:column}
+.sheet.sheet-split > .sheet-head{position:relative;flex:none}
+.sheet.sheet-split > .sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:clip;overscroll-behavior:contain;margin:0 -18px;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));
+  scrollbar-width:thin;scrollbar-color:#BDB6A5 transparent}
+.sheet-body::-webkit-scrollbar{width:6px}.sheet-body::-webkit-scrollbar-thumb{background:#BDB6A5;border-radius:6px}.sheet-body::-webkit-scrollbar-button{display:none;height:0}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2289,7 +2316,13 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 @media (min-width:1100px){:root[data-theme="dark"] .brand{background:linear-gradient(180deg,#7C512F,#684024) !important}:root[data-theme="dark"] .brand .icon-btn,:root[data-theme="dark"] .brand .learn-btn,:root[data-theme="dark"] .brand .usd-pill{background:#242017 !important;color:#D7C2B4 !important}:root[data-theme="dark"] .brand .icon-btn:hover,:root[data-theme="dark"] .brand .learn-btn:hover,:root[data-theme="dark"] .brand .usd-pill:hover{background:#1F1C15 !important}}
 @media (min-width:1100px){:root[data-theme="dark"] #learnTopics .lt-row{background:var(--nb,#584AB5) !important;color:#FFFFFF !important;box-shadow:inset 6px 0 0 rgba(0,0,0,.22),3px 4px 0 -1px #2C2922,0 4px 8px rgba(0,0,0,.25) !important}:root[data-theme="dark"] #learnTopics .lt-row[aria-current="true"]{outline:3px solid #1D1C19 !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-n{color:rgba(255,255,255,0.7) !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-t{background:#1D1C19 !important;color:#CCCCCC !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-c{color:#FFFFFF !important}:root[data-theme="dark"] #learnTopics .lt-row .lt-bar{background:rgba(24,24,24,0.3) !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(1){--nb:#238E61 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(2){--nb:#CA7A1F !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(3){--nb:#BC3D52 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(4){--nb:#584AB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(5){--nb:#6D4FB5 !important}:root[data-theme="dark"] #learnTopics .lt-row:nth-of-type(6){--nb:#738093 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap{background:linear-gradient(90deg,#1D1C19 calc(50% - 10px),#36322B calc(50% - 2px),#443D2F 50%,#36322B calc(50% + 2px),#1D1C19 calc(50% + 10px)) !important;box-shadow:0 6px 16px rgba(0,0,0,.25),-5px 6px 0 -2px #2C2922,5px 6px 0 -2px #2C2922 !important}:root[data-theme="dark"] #learnMain.ln-one .ln-chap::before{background:repeating-linear-gradient(180deg,#625F58 0 6px,transparent 6px 22px) !important}}
 :root[data-theme="dark"] .ln-nextmini{border:1.5px solid #584AB5 !important;background:#181818 !important;color:#8981F0 !important}
-:root[data-theme="dark"] .sheet::-webkit-scrollbar-thumb,:root[data-theme="dark"] .jar-glass::-webkit-scrollbar-thumb,:root[data-theme="dark"] .news-tk::-webkit-scrollbar-thumb{background:#3D382D !important}
+:root[data-theme="dark"] .js-label .js-pct{color:#A1906C !important}
+:root[data-theme="dark"] .more-det{border-top:1.5px dashed #3D382D !important}
+:root[data-theme="dark"] .more-det summary small{color:#817E78 !important}
+:root[data-theme="dark"] #sheet .sheet-head{background:#1D1C19 !important}
+:root[data-theme="dark"] #sheet .sheet-body{background:repeating-linear-gradient(180deg,transparent 0 27px,rgba(0,0,0,.025) 27px 28px),#1D1C19 !important}
+:root[data-theme="dark"] .sheet.sheet-split > .sheet-body{scrollbar-color:#3D382D transparent !important}
+:root[data-theme="dark"] .sheet-body::-webkit-scrollbar-thumb{background:#3D382D !important}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2826,7 +2859,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <div class="field"><span class="lbl">Color</span>
     <div class="swatches" id="catSwatches" role="radiogroup" aria-label="Color"></div>
     <p class="fx-hint" style="margin:6px 0 0">Los que tienen un puntito ya los usa otra categoría. Podés elegirlos igual.</p>
-    <label class="custom-color">Otro color <input type="color" id="catColor" value="#6355C7"></label>
+    <label class="custom-color">Otro color <input type="color" id="catColor" value="#2F5BEA"></label>
   </div>
   <button type="button" class="linkbtn" id="catMerge" hidden>Juntar con otra categoría…</button>
   <div class="err" id="catErr"></div>
@@ -3121,7 +3154,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-26.1030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-26.1130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3202,10 +3235,10 @@ if (!Array.isArray(data.incomes)) data.incomes = [];
 [data.expenses, data.incomes, data.accMoves || []].forEach(l => l.forEach(x => { if (x.at == null) x.at = 0; }));
 [data.expenses, data.incomes].forEach(l => l.forEach(x => { if (x.adjust && /sin anotar \(ajuste/i.test(x.note || "")) x.note = "Ajuste de saldo"; }));
 const INCOME_KINDS = [
-  {id:"sueldo",    name:"Sueldo",         color:"var(--accent)"},
-  {id:"extra",     name:"Trabajos extra", color:"var(--accent)"},
-  {id:"otro_ing",  name:"Otro ingreso",   color:"var(--accent)"},
-  {id:"prestamo",  name:"Préstamo",       color:"var(--accent)"},
+  {id:"sueldo",    name:"Sueldo",         color:"#2F5BEA"},
+  {id:"extra",     name:"Trabajos extra", color:"#2F5BEA"},
+  {id:"otro_ing",  name:"Otro ingreso",   color:"#2F5BEA"},
+  {id:"prestamo",  name:"Préstamo",       color:"#2F5BEA"},
 ];
 const kindById = id => INCOME_KINDS.find(k => k.id === id) || INCOME_KINDS.at(-1);
 const isIncome = e => e.type === "income";
@@ -5312,7 +5345,7 @@ $("note").addEventListener("input", () => {
 $("catEditToggle").onclick = () => { catEditing = !catEditing; renderCats(); };
 
 /* Modal de categoría propia */
-const CAT_SWATCHES = ["#E4572E","#F3A712","#C9A227","#7BAE3A","#2F9E6E","#1FA3B3","#3B7DD8","#6355C7","#7A5AC8","#B05BA8","#D0485E","#8C6A4F","#5B6B82","#222831"];
+const CAT_SWATCHES = ["#E4572E","#F3A712","#C9A227","#7BAE3A","#2F9E6E","#1FA3B3","#3B7DD8","#2F5BEA","#7A5AC8","#B05BA8","#D0485E","#8C6A4F","#5B6B82","#222831"];
 let editingCat = null, catColor = CAT_SWATCHES[0], catFromFix = false;
 function setCatColor(c){
   catColor = c; $("catColor").value = c;
@@ -6528,6 +6561,7 @@ function openSheet(exp){
   $("sheetBg").classList.add("open"); $("sheet").classList.add("open");
   // Arranca arriba de todo: el foco no tiene que hacer bajar la hoja (ni la página)
   $("sheet").scrollTop = 0;
+  try { $("tellBox").classList.remove("tell-open"); const dt = document.querySelector("#sheet .more-det"); if (dt) dt.open = false; setTimeout(syncWho, 0); } catch {}
   setTimeout(() => { const y = window.scrollY; autoFocus(mode === "fx" ? $("fxUsd") : $("amount")); $("sheet").scrollTop = 0; window.scrollTo(0, y); }, 120);
 }
 function closeSheet(){ $("sheetBg").classList.remove("open"); $("sheet").classList.remove("open"); }
@@ -7156,6 +7190,10 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.11", d: "2026-10-26", t: { es: "Darle a Recy, ordenado", en: "Feed Recy, reorganized" }, i: [
+    { es: "Nuevo gasto: primero el monto, Recy en una fila, y \"¿Quién pagó?\" (Yo · Lo dividimos · Pagó otro · Le presté) en vez de tres casillas. Fecha y nota en \"Más detalles\".", en: "New expense: amount first, Recy in one row, and \"Who paid?\" (Me · We split it · Someone else · I lent it) instead of three checkboxes. Date and note under \"More details\"." },
+    { es: "Las ventanas tienen la cabecera quieta: solo scrollea el contenido.", en: "Sheets keep their header still: only the content scrolls." },
+    { es: "Plaquitas de los frascos más chicas y todas alineadas.", en: "Smaller jar plaques, all aligned." } ] },
   { v: "1.10", d: "2026-10-26", t: { es: "Color nuevo", en: "New color" }, i: [
     { es: "Ningún texto se corta con \"…\": los que no entran bajan de renglón.", en: "No text gets cut with \"…\": what doesn't fit wraps." },
     { es: "Recy lee más rápido las fotos de tickets y lo que le contás.", en: "Recy reads receipt photos and what you tell it faster." },
@@ -7588,7 +7626,7 @@ async function shareMonthImage(){
   const cx = 300, cy = 470, R = 150, SW = 56, base = Math.max(inc, tot + sav) || 1;
   g.lineWidth = SW; g.strokeStyle = "#E6DECB"; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.stroke();
   let ang = -Math.PI / 2; const slices = (sav > 0 ? [["ahorro", sav]] : []).concat(Object.entries(byCat(sp)).sort((a2, b2) => b2[1] - a2[1]));
-  slices.forEach(([id, v]) => { const da = v / base * Math.PI * 2; let col = catById(id).color; if (/^var\(/.test(col)) col = "#6355C7";
+  slices.forEach(([id, v]) => { const da = v / base * Math.PI * 2; let col = catById(id).color; if (/^var\(/.test(col)) col = "#2F5BEA";
     g.strokeStyle = col; g.beginPath(); g.arc(cx, cy, R, ang, ang + Math.max(0.001, da - 0.02)); g.stroke();
     if (id === "ahorro"){ g.fillStyle = "rgba(255,255,255,.7)"; [[R - 19, 0], [R - 7, 0.028], [R + 5, 0], [R + 17, 0.028]].forEach(([rr, sh]) => { for (let t = ang + 0.03 + sh; t < ang + da - 0.02; t += 9 / rr){ g.beginPath(); g.arc(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr, 2.2, 0, Math.PI * 2); g.fill(); } }); }
     ang += da; });
@@ -7604,7 +7642,7 @@ async function shareMonthImage(){
   let yy = 740; g.textAlign = "left";
   g.font = F(24, 700, MONO); g.fillStyle = "#1B2430"; g.fillText("EN QUÉ SE TE VA", 110, yy); g.fillRect(110, yy + 14, W - 220, 2); yy += 66;
   const mx = cats.length ? cats[0][1] : 1;
-  cats.forEach(([id, v]) => { const ct = catById(id); let col = ct.color; if (/^var\(/.test(col)) col = "#6355C7";
+  cats.forEach(([id, v]) => { const ct = catById(id); let col = ct.color; if (/^var\(/.test(col)) col = "#2F5BEA";
     g.fillStyle = col; g.beginPath(); g.arc(122, yy - 12, 10, 0, Math.PI * 2); g.fill();
     g.font = F(32, 700); g.fillStyle = "#1B2430"; g.fillText(ct.name, 146, yy);
     g.textAlign = "right"; g.fillText(f0ARS(v), W - 110, yy);
@@ -8818,7 +8856,10 @@ function jarSVG(color, level, full){
   </svg>`;
 }
 // Completa la última fila del estante con lugares vacíos, así la madera llega de punta a punta
+function fitJarNames(){ document.querySelectorAll(".js-label .jar-name").forEach(n => { n.style.fontSize = ""; let fs = parseFloat(getComputedStyle(n).fontSize);
+  while (n.scrollWidth > n.clientWidth + 1 && fs > 7){ fs -= 0.5; n.style.fontSize = fs + "px"; } }); }
 function fillShelf(grid){
+  requestAnimationFrame(fitJarNames);
   if (!grid || !grid.isConnected) return;
   grid.querySelectorAll(".js-empty").forEach(x => x.remove());
   const n = grid.children.length; if (!n) return;
@@ -8860,7 +8901,10 @@ function renderJars(){
     const sb = document.createElement("div"); sb.className = "jar-sub";
     sb.textContent = j.goal ? (bal >= j.goal ? "¡Meta cumplida!" : `${Math.round(level * 100)}% de ${money2(j.goal)}`) : (j.currency === "USD" ? "En dólares" : "En pesos");
     if (delta){ const dl = document.createElement("span"); dl.className = "dl" + (delta < 0 ? " neg" : ""); dl.textContent = ` · ${delta > 0 ? "+" : "−"}${money2(Math.abs(delta))}`; sb.append(dl); }
-    lab.append(nm, bb, bar, sb);
+    const bw = document.createElement("div"); bw.className = "js-barw"; const pc = document.createElement("span"); pc.className = "js-pct";
+    pc.textContent = j.goal ? Math.round(level * 100) + "%" : ""; bw.append(bar, pc);
+    tile.title = [j.name, money2(bal), sb.textContent].join(" · ");
+    lab.append(nm, bb, bw, sb);
     tile.append(art, lab);
     tile.onclick = () => openJarDetail(j.id);
     grid.append(tile);
@@ -10475,6 +10519,14 @@ function buildSheetHeads(){
       if (!acts.querySelector("button")) acts.remove();
     }
     row.append(left, h3 || document.createElement("span"), right); head.append(row);
+    // Cabecera fija arriba y el cuerpo es lo único que scrollea (así el scroll no pasa por el borde redondeado)
+    if (!["jarSheet", "jmSheet", "jdSheet", "fixSheet"].includes(sh.id)){
+      const body = document.createElement("div"); body.className = "sheet-body";
+      while (sh.firstChild) body.append(sh.firstChild);
+      sh.append(body); sh.classList.add("sheet-split");
+      // lo que antes movía el scroll de la hoja ahora mueve el del cuerpo
+      Object.defineProperty(sh, "scrollTop", { get: () => body.scrollTop, set: v => { body.scrollTop = v; }, configurable: true });
+    }
     sh.prepend(head);
     // deslizar hacia abajo para cerrar
     let y0 = null, dy = 0;
@@ -10498,6 +10550,43 @@ function buildSheetHeads(){
 }
 document.querySelectorAll(".sheet").forEach(sh => { if (!["jarSheet", "jmSheet", "jdSheet"].includes(sh.id)) sh.classList.add("notepad"); });
 buildSheetHeads();
+/* ===== Darle a Recy, ordenado: monto arriba · Recy compacto · categoría · cómo pagaste · quién pagó · más detalles ===== */
+(function reorderAdd(){
+  const body = document.querySelector("#sheet .sheet-body"); if (!body || body.querySelector("#whoField")) return;
+  const tell = $("tellBox"), amt = $("amountRow"), err = $("err");
+  // 1) el monto va primero (antes de Recy)
+  body.insertBefore(amt, tell); body.insertBefore(err, tell);
+  // 2) Recy en una fila: Contale / Sacar foto / Subir; el texto aparece al tocar "Contale"
+  const bar = document.createElement("div"); bar.className = "tell-bar";
+  const tb = document.createElement("button"); tb.type = "button"; tb.className = "small-btn"; tb.id = "tellOpen"; tb.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg> Contale a Recy';
+  bar.append(tb, $("tellPhoto"), $("tellPick")); tell.prepend(bar); tell.classList.add("tell-compact");
+  tb.onclick = () => { tell.classList.toggle("tell-open"); if (tell.classList.contains("tell-open")) setTimeout(() => $("tellInput").focus({ preventScroll: true }), 30); };
+  // 3) quién pagó: una fila de opciones en vez de tres casillas
+  const who = document.createElement("div"); who.className = "field"; who.id = "whoField";
+  who.innerHTML = '<span class="lbl">¿Quién pagó?</span><div class="seg who-seg" role="group" aria-label="Quién pagó"><button type="button" data-who="me">Yo</button><button type="button" data-who="split">Lo dividimos</button><button type="button" data-who="other">Pagó otro</button><button type="button" data-who="lend">Le presté</button></div>';
+  const of = $("otherField"); of.parentElement.insertBefore(who, of);
+  const box = { other: "otherOn", split: "splitOn", lend: "lendOn" };
+  who.querySelectorAll("[data-who]").forEach(b => b.onclick = () => {
+    const k = b.dataset.who;
+    Object.entries(box).forEach(([kk, id]) => { const c = $(id); const want = kk === k; if (c.checked !== want){ c.checked = want; c.dispatchEvent(new Event("change")); } });
+    syncWho(); });
+  // 4) fecha, hora y nota: plegadas en "Más detalles"
+  const det = document.createElement("details"); det.className = "more-det"; det.innerHTML = "<summary>Más detalles <small>fecha, hora y nota</small></summary>";
+  const dateF = $("date").closest(".field"), noteF = $("note").closest(".field");
+  dateF.parentElement.insertBefore(det, dateF); det.append(dateF, noteF);
+})();
+function syncWho(){
+  const w = $("whoField"); if (!w) return;
+  const cur = $("otherOn").checked ? "other" : $("splitOn").checked ? "split" : $("lendOn").checked ? "lend" : "me";
+  w.querySelectorAll("[data-who]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === cur)));
+  const vis = id => { const f = $(id); return f && !f.hidden; };
+  w.hidden = !(vis("otherField") || vis("splitField") || vis("lendField"));
+  w.querySelector('[data-who="lend"]').hidden = !vis("lendField"); w.querySelector('[data-who="other"]').hidden = !vis("otherField"); w.querySelector('[data-who="split"]').hidden = !vis("splitField");
+  // si la nota o la fecha tienen algo distinto de lo de siempre, "Más detalles" queda abierto
+  const det = document.querySelector("#sheet .more-det"); if (det && ($("note").value || ($("date").value && $("date").value !== toLocalInput(new Date())))) det.open = true;
+}
+["otherOn", "splitOn", "lendOn"].forEach(id => $(id).addEventListener("change", () => setTimeout(syncWho, 0)));
+{ const _sm = setMode; setMode = function(m){ const r = _sm.apply(this, arguments); try { syncWho(); } catch {} return r; }; }
 /* El frasco: tapa arriba, cuello y cuerpo de vidrio (todo el contenido va adentro del vidrio) */
 ["jarSheet", "jmSheet", "jdSheet"].forEach(function jarify(id){
   const js = $(id); if (js.querySelector(":scope > .jar-glass")) return;
@@ -10982,6 +11071,14 @@ tocá uno para verlo	tap one to see it
 Lo que compres desde mañana va al resumen que viene.	What you buy from tomorrow on goes to the next statement.
 Por pagar	To pay
 Ya pagados	Already paid
+Contale a Recy	Tell Recy
+¿Quién pagó?	Who paid?
+Yo	Me
+Lo dividimos	We split it
+Pagó otro	Someone else
+Le presté	I lent it
+Más detalles	More details
+fecha, hora y nota	date, time and note
 Tema	Theme
 Automático	Automatic
 Claro	Light

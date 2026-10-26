@@ -385,6 +385,12 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Fotos y texto a Recy: `fast` (gemini-2.5-flash sin "pensar") e imagen máx 1280px.
 - Hojas con scrollbar finita sin flechas.
 
+### 7z. 1.11
+- Hojas partidas (`.sheet-split`): `buildSheetHeads` mete el contenido en `.sheet-body`, que es lo único que scrollea; `sheet.scrollTop` está redirigido al cuerpo. No aplica a frascos ni al post-it.
+- Darle a Recy (`reorderAdd`): monto arriba; Recy compacto (Contale / Sacar foto / Subir, el texto se abre al tocar); "¿Quién pagó?" (`#whoField`, `syncWho`) maneja las casillas otherOn/splitOn/lendOn (ocultas); fecha, hora y nota en `<details class="more-det">`. Fondo con renglones de ticket.
+- Plaquitas de frasco compactas (52px): nombre (se achica para entrar, `fitJarNames`), plata y barra con %. Lo demás en el detalle.
+- Categorías e ingresos conservan el azul viejo (#2F5BEA); el violeta es solo el color de la app. Botón "Darle a Recy" con el ícono violeta.
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
