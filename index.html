@@ -1914,6 +1914,10 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 #sheet.sheet-split.open{height:92vh;height:92dvh}
 .st-next{width:100%;margin-top:10px;position:sticky;bottom:8px;z-index:2;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 #stSheet.sheet-split.open{height:92vh;height:92dvh}
+/* Cuotas de deudas */
+.plan-box{margin-top:10px}.plan-in{margin-top:6px}
+.pb-plan{display:block;color:#6355C7;font-weight:700;font-size:.78rem;margin-top:2px}
+.pb-adv{margin-left:6px;padding:4px 10px !important;min-height:0 !important;font-size:.78rem !important}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -2328,6 +2332,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] #sheet .sheet-body{background:repeating-linear-gradient(180deg,transparent 0 27px,rgba(0,0,0,.025) 27px 28px),#1D1C19 !important}
 :root[data-theme="dark"] .sheet.sheet-split > .sheet-body{scrollbar-color:#3D382D transparent !important}
 :root[data-theme="dark"] .sheet-body::-webkit-scrollbar-thumb{background:#3D382D !important}
+:root[data-theme="dark"] .pb-plan{color:#8981F0 !important}
 :root[data-theme="dark"] .subs-pad{background:#1D1C19 !important;color:#CCCCCC !important;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #2C2922 !important}
 :root[data-theme="dark"] .subs-pad::before{background:repeating-linear-gradient(90deg,#625F58 0 6px,transparent 6px 22px) !important}
 :root[data-theme="dark"] .sp-head{border-bottom:1.5px dashed #3D382D !important}
@@ -2651,9 +2656,13 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
       <div class="chips suggest" id="borrowSuggest" style="margin-top:8px"></div>
     </div>
     <div class="field">
-      <label for="borrowDue">¿Cuándo lo devolvés?</label>
+      <div class="plan-box" id="borPlan"><label class="switch plan-sw"><input type="checkbox" id="borPlanOn"> Se lo devuelvo en cuotas</label>
+      <div class="plan-in" id="borPlanIn" hidden><div class="field two"><div><label class="lbl-sm" for="borPlanN">Cuotas</label><input class="input" id="borPlanN" inputmode="numeric" placeholder="Ej: 6" autocomplete="off"></div>
+      <div><label class="lbl-sm" for="borPlanDay">Día de cada mes</label><select class="input" id="borPlanDay"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option></select></div></div>
+      <div class="fx-hint" id="borPlanTxt"></div></div></div>
+      <div id="borrowDueW"><label for="borrowDue">¿Cuándo lo devolvés?</label>
       <input class="input" type="date" id="borrowDue">
-      <div class="fx-hint">Ese mes te aparece como un gasto a devolver.</div>
+      <div class="fx-hint">Ese mes te aparece como un gasto a devolver.</div></div>
     </div>
   </div>
 
@@ -2705,6 +2714,10 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
         <div style="display:flex;align-items:flex-end"><button type="button" class="linkbtn" id="otherHalf">Mitad y mitad</button></div>
       </div>
       <div class="fx-hint">Arriba poné el total que pagó. Vos le debés tu parte, y si esa persona ya te debía algo, se descuenta.</div>
+      <div class="plan-box" id="othPlan"><label class="switch plan-sw"><input type="checkbox" id="othPlanOn"> Se lo devuelvo en cuotas (ej: usé su tarjeta)</label>
+      <div class="plan-in" id="othPlanIn" hidden><div class="field two"><div><label class="lbl-sm" for="othPlanN">Cuotas</label><input class="input" id="othPlanN" inputmode="numeric" placeholder="Ej: 6" autocomplete="off"></div>
+      <div><label class="lbl-sm" for="othPlanDay">Día de cada mes</label><select class="input" id="othPlanDay"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option></select></div></div>
+      <div class="fx-hint" id="othPlanTxt"></div></div></div>
     </div>
   </div>
 
@@ -2714,6 +2727,10 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
       <input class="input" id="lendTo" aria-label="A quién le prestaste" placeholder="¿A quién?" autocomplete="off" style="margin-top:10px">
       <div class="chips suggest" id="lendSuggest" style="margin-top:8px"></div>
       <div class="fx-hint">Cuenta como gasto hasta que te lo devuelva.</div>
+      <div class="plan-box" id="lenPlan"><label class="switch plan-sw"><input type="checkbox" id="lenPlanOn"> Me lo devuelve en cuotas</label>
+      <div class="plan-in" id="lenPlanIn" hidden><div class="field two"><div><label class="lbl-sm" for="lenPlanN">Cuotas</label><input class="input" id="lenPlanN" inputmode="numeric" placeholder="Ej: 6" autocomplete="off"></div>
+      <div><label class="lbl-sm" for="lenPlanDay">Día de cada mes</label><select class="input" id="lenPlanDay"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option></select></div></div>
+      <div class="fx-hint" id="lenPlanTxt"></div></div></div>
     </div>
   </div>
 
@@ -3159,7 +3176,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-29.1100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-29.1130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4374,6 +4391,10 @@ function renderFixedPend(){
   renderFixedPend0();
   const u = isCurrentPeriod(viewYear, viewMonth) ? upcomingList() : null;
   const cards = u ? u.items.filter(o => o.card && +o.d < +u.end) : [];
+  // cuotas de deudas que vencen antes de cobrar
+  if (u) planRefs().filter(r => r.kind !== "lend").forEach(r => planCuotas(r).forEach(c => { if (c.owed > 0.004 && +c.date < +u.end)
+    cards.push({ d: c.date, name: r.name, ars: r.cur === "ARS" ? c.owed : 0, usd: r.cur === "USD" ? c.owed : 0, plan: `Cuota ${c.k} de ${c.n}`, person: r.name, pcur: r.cur }); }));
+  cards.sort((a, b) => a.d - b.d);
   if (!cards.length) return;
   const box = $("fixedPend");
   if (box.hidden || !box.querySelector(".clip-paper")){
@@ -4389,7 +4410,8 @@ function renderFixedPend(){
     const day = document.createElement("div"); day.className = "cal-day"; const mo = document.createElement("small"); mo.textContent = o.d.toLocaleDateString("es-AR", { month: "short" }).replace(".", "").toUpperCase();
     const dn = document.createElement("b"); dn.textContent = o.d.getDate(); day.append(mo, dn);
     const info = document.createElement("div"); info.className = "cal-info"; const nm = document.createElement("strong"); nm.textContent = o.name;
-    const s1 = document.createElement("span"); s1.className = "s1"; s1.textContent = "Pago de tarjeta"; const s2 = document.createElement("span"); s2.className = "s2"; s2.textContent = `vence el ${shortDate(o.d)}`; info.append(nm, s1, s2);
+    if (o.plan) r.onclick = () => openPersonBal(o.person, o.pcur);
+    const s1 = document.createElement("span"); s1.className = "s1"; s1.textContent = o.plan || "Pago de tarjeta"; const s2 = document.createElement("span"); s2.className = "s2"; s2.textContent = `vence el ${shortDate(o.d)}`; info.append(nm, s1, s2);
     const right = document.createElement("div"); right.className = "cal-right"; const amt = document.createElement("b"); amt.className = "amt";
     amt.textContent = [o.ars && fmtARS.format(round2(o.ars)), o.usd && "+ " + fmtUSD.format(round2(o.usd))].filter(Boolean).join(" "); right.append(amt);
     r.append(day, info, right);
@@ -5025,8 +5047,8 @@ function balances(){
   data.incomes.forEach(i => { if (i.category === "prestamo" && i.loanFrom){ const l = loanLeft(i); if (l > 0.004) add(i.loanFrom, i.currency, -l, { t: "loan", i }); } });
   (data.settles || []).forEach(x => { if (!x.closed) add(x.name, x.currency, x.dir === "in" ? -x.amount : x.amount, { t: "settle", s: x }); });
   data.expenses.forEach(e => {
-    if (e.split) e.split.people.forEach(p => { if (!p.paid){ const l = round2(p.share - (p.paidAmt || 0)); if (l > 0.004) add(p.name, e.currency, l, { t: "split", e, p }); } });
-    if (e.paidBy && !e.paidBy.settled){ const l = round2(e.amount - (e.paidBy.paidAmt || 0)); if (l > 0.004) add(e.paidBy.name, e.currency, -l, { t: "paidBy", e }); }
+    if (e.split) e.split.people.forEach(p => { if (!p.paid){ const l = round2(p.share - (p.paidAmt || 0) - (p.advAmt || 0)); if (l > 0.004) add(p.name, e.currency, l, { t: "split", e, p }); } });
+    if (e.paidBy && !e.paidBy.settled){ const l = round2(e.amount - (e.paidBy.paidAmt || 0) - (e.paidBy.advAmt || 0)); if (l > 0.004) add(e.paidBy.name, e.currency, -l, { t: "paidBy", e }); }
   });
   const [cy, cm] = periodOf(new Date()), curKey = monthKey(cy, cm);
   data.fixed.filter(fixShared).forEach(f => {
@@ -5070,11 +5092,61 @@ function applyPersonPay(x, cur, dir, amt, note){
 }
 /* Préstamos que vencen en el período, pero solo por lo que realmente le debés a esa persona
    (si te debe plata por otro lado, se descuenta) */
+/* ===== Deudas en cuotas (me prestaron, pagó otro con su tarjeta, le presté). plan = { n, day, start:"YYYY-MM" }
+   Los pagos normales cubren las cuotas de la primera en adelante; los adelantos, de la última para atrás (así terminás antes). ===== */
+function planRefs(){
+  const out = [];
+  data.incomes.forEach(i => { if (i.category === "prestamo" && i.loanFrom && i.plan){ const rs = data.expenses.filter(e => e.repaysId === i.id);
+    out.push({ kind: "borrow", obj: i, name: i.loanFrom, cur: i.currency, total: i.amount, plan: i.plan, reg: i.loanClosed ? i.amount : rs.filter(e => !e.adv).reduce((a, e) => a + e.amount, 0), adv: rs.filter(e => e.adv).reduce((a, e) => a + e.amount, 0) }); } });
+  data.expenses.forEach(e => {
+    if (e.paidBy && e.paidBy.plan) out.push({ kind: "paidBy", obj: e, name: e.paidBy.name, cur: e.currency, total: e.amount, plan: e.paidBy.plan, reg: e.paidBy.settled ? e.amount : (e.paidBy.paidAmt || 0), adv: e.paidBy.advAmt || 0 });
+    if (e.loan && e.split && e.split.plan){ const pp = e.split.people[0]; out.push({ kind: "lend", obj: e, name: pp.name, cur: e.currency, total: pp.share, plan: e.split.plan, reg: pp.paid ? pp.share : (pp.paidAmt || 0), adv: pp.advAmt || 0 }); }
+  });
+  return out;
+}
+function planCuotas(r){
+  const n = Math.max(1, r.plan.n | 0), each = round2(r.total / n); let [y, m] = r.plan.start.split("-").map(Number); m--;
+  const out = []; let reg = r.reg, adv = r.adv;
+  for (let k = 0; k < n; k++){ const amt = k === n - 1 ? round2(r.total - each * (n - 1)) : each; out.push({ k: k + 1, n, date: dayIn(y, m, Math.min(28, r.plan.day || 10)), amt, owed: amt }); m++; if (m > 11){ m = 0; y++; } }
+  out.forEach(c => { const t = Math.min(reg, c.owed); c.owed = round2(c.owed - t); reg -= t; });
+  for (let i = out.length - 1; i >= 0; i--){ const c = out[i], t = Math.min(adv, c.owed); c.owed = round2(c.owed - t); adv -= t; }
+  return out;
+}
+function planNext(r){ return planCuotas(r).find(c => c.owed > 0.004) || null; }
+function planText(r){ const c = planNext(r); if (!c) return "Cuotas pagadas"; return `cuota ${c.k} de ${c.n}: ${money(c.owed, r.cur)} el ${shortDate(c.date)}`; }
+/* Lo que vence de cuotas que vos debés hasta el fin del período */
+function planDueIn(y, m){
+  const end = payDate(y, m + 1), cur = isCurrentPeriod(y, m), out = [];
+  planRefs().filter(r => r.kind !== "lend").forEach(r => { const amt = round2(planCuotas(r).filter(c => c.owed > 0.004 && (cur ? c.date < end : inPeriod({ date: toLocalInput(c.date) + "T12:00" }, y, m))).reduce((a, c) => a + c.owed, 0));
+    if (amt > 0.004) out.push({ inc: { loanFrom: r.name, currency: r.cur, id: r.obj.id, plan: true }, amt, ref: r }); });
+  return out;
+}
+function planAdvance(r, amt){
+  amt = round2(amt);
+  if (r.kind === "borrow") data.expenses.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), source: "manual", amount: amt, currency: r.cur,
+    category: "devolucion", date: `${toLocalInput(new Date())}T${toTime(new Date())}`, note: `Adelanto de cuotas a ${r.name}`, repaysId: r.obj.id, adv: true, method: "transfer", cardId: null, installments: 1, items: [], split: null, loan: false });
+  else if (r.kind === "paidBy"){ r.obj.paidBy.advAmt = round2((r.obj.paidBy.advAmt || 0) + amt); if (r.reg + r.obj.paidBy.advAmt >= r.total - 0.005) r.obj.paidBy.settled = true; }
+  else { const pp = r.obj.split.people[0]; pp.advAmt = round2((pp.advAmt || 0) + amt); if (r.reg + pp.advAmt >= r.total - 0.005) pp.paid = true; }
+}
+/* UI: casilla "en cuotas" con cantidad y día */
+function planUIinit(pfx, totalFn){
+  const on = $(pfx + "PlanOn"), box = $(pfx + "PlanIn"), n = $(pfx + "PlanN"), txt = $(pfx + "PlanTxt");
+  const upd = () => { box.hidden = !on.checked; if (pfx === "bor") $("borrowDueW").hidden = on.checked;
+    const t = totalFn(), k = parseInt(n.value) || 0; txt.textContent = on.checked && k > 1 && t > 0 ? `${k} cuotas de ${fmtARS.format(round2(t / k))}, el ${$(pfx + "PlanDay").value} de cada mes, desde el mes que viene.` : ""; };
+  on.onchange = upd; n.oninput = upd; $(pfx + "PlanDay").onchange = upd; return upd;
+}
+const planUpd = { bor: planUIinit("bor", () => parseAmount($("amount").value) || 0), oth: planUIinit("oth", () => parseAmount($("otherMine").value) || parseAmount($("amount").value) || 0), len: planUIinit("len", () => parseAmount($("amount").value) || 0) };
+function planRead(pfx, date){
+  if (!$(pfx + "PlanOn").checked) return null; const n = parseInt($(pfx + "PlanN").value) || 0; if (n < 2) return { err: "¿En cuántas cuotas? (2 o más)" };
+  const d = dateOnly(date.slice(0, 10)); let y = d.getFullYear(), m = d.getMonth() + 1; if (m > 11){ m = 0; y++; }
+  return { n, day: parseInt($(pfx + "PlanDay").value) || 10, start: `${y}-${String(m + 1).padStart(2, "0")}` };
+}
+function planFill(pfx, plan){ $(pfx + "PlanOn").checked = !!plan; $(pfx + "PlanN").value = plan ? String(plan.n) : ""; $(pfx + "PlanDay").value = String(plan ? plan.day : Math.min(28, new Date().getDate())); planUpd[pfx](); }
 function toRepay(y, m){
   const end = payDate(y, m+1), cur = isCurrentPeriod(y, m), owe = {};
   balances().forEach(x => ["ARS","USD"].forEach(c => { owe[x.name.toLowerCase() + "|" + c] = Math.max(0, -x[c]); }));
   const out = [];
-  data.incomes.filter(i => i.category === "prestamo" && i.loanFrom && i.dueDate && loanLeft(i) > 0.004)
+  data.incomes.filter(i => i.category === "prestamo" && i.loanFrom && i.dueDate && !i.plan && loanLeft(i) > 0.004)
     .sort((a,b) => a.dueDate.localeCompare(b.dueDate)).forEach(i => {
       const k = i.loanFrom.trim().toLowerCase() + "|" + i.currency, amt = round2(Math.min(loanLeft(i), owe[k] || 0));
       owe[k] = Math.max(0, (owe[k] || 0) - amt);
@@ -5082,7 +5154,7 @@ function toRepay(y, m){
       const d = dateOnly(i.dueDate);
       if (cur ? d < end : inPeriod({ date: i.dueDate + "T12:00" }, y, m)) out.push({ inc: i, amt });
     });
-  return out;
+  return out.concat(planDueIn(y, m));
 }
 const toRepayARS = (y, m) => toRepay(y, m).filter(r => r.inc.currency === "ARS").reduce((s,r) => s + r.amt, 0);
 function suggestInto(boxId, inputId){
@@ -5138,7 +5210,17 @@ function renderPersonBal(){
     else t.textContent = (r.s.dir === "in" ? "Te dio" : "Le diste") + ` · ${shortDate(dateOnly(r.s.date))}` + (r.s.note ? ` · ${r.s.note}` : "");
     a.textContent = (r.v > 0 ? "+" : "−") + " " + money(Math.abs(r.v), cur);
     a.classList.add(r.v > 0 ? "pos" : "neg");
-    li.append(t, a);
+    // En cuotas: la próxima cuota y el botón para adelantar
+    const pr = planRefs().find(q => q.obj === (r.t === "loan" ? r.i : r.e) && (r.t === "loan" || r.t === "paidBy" || (r.t === "split" && r.e.loan)));
+    if (pr){ const pl = document.createElement("small"); pl.className = "pb-plan"; pl.textContent = planText(pr); t.append(pl);
+      const ab = document.createElement("button"); ab.type = "button"; ab.className = "small-btn pb-adv"; ab.textContent = "Adelantar";
+      ab.onclick = () => { const left = round2(Math.abs(r.v));
+        miniDialog(`<p><b>¿Cuánto ${pr.kind === "lend" ? `te adelantó ${pb.name}` : `le adelantás a ${pb.name}`}?</b></p><p class="fx-hint" style="margin:0 0 8px">Se descuenta de las últimas cuotas, así termina antes. Quedan ${money(left, cur)}.</p><input class="input" inputmode="decimal" autocomplete="off" placeholder="Ej: ${fmtARS.format(planNext(pr) ? planNext(pr).owed : left)}"><p id="pbaErr" style="color:#C0392B;margin:6px 0 0;font-size:14px"></p>`,
+          b2 => { const v2 = parseAmount(b2.querySelector("input").value); if (!(v2 > 0) || v2 > left + 0.005){ b2.querySelector("#pbaErr").textContent = `Poné un monto entre $ 1 y ${money(left, cur)}.`; return false; }
+            planAdvance(pr, v2); (data.settles ||= []).push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name: pb.name, currency: cur, amount: round2(v2), dir: pr.kind === "lend" ? "in" : "out", date: `${toLocalInput(new Date())}T${toTime(new Date())}`, closed: true, log: true, all: false, note: "Adelanto de cuotas" });
+            persist(); render(); renderPersonBal(); }, "Adelantar"); };
+      li.append(t, a, ab); }
+    else li.append(t, a);
     // Lápiz: corregir el monto sin ir a buscar el gasto
     const ed = document.createElement("button"); ed.type = "button"; ed.className = "x pb-ed"; ed.innerHTML = ico("pencil"); ed.setAttribute("aria-label", "Corregir este monto");
     ed.onclick = () => pbEdit(r); li.append(ed);
@@ -6587,6 +6669,7 @@ function openSheet(exp){
   $("otherMine").value = exp && exp.paidBy ? String(exp.amount).replace(".",",") : "";
   repaySel = exp && exp.repaysId ? exp.repaysId : null;
   $("borrowFrom").value = exp && exp.loanFrom ? exp.loanFrom : ""; $("borrowDue").value = exp && exp.dueDate ? exp.dueDate : "";
+  try { planFill("bor", exp && exp.plan); planFill("oth", exp && exp.paidBy && exp.paidBy.plan); planFill("len", exp && exp.split && exp.split.plan); } catch {}
   $("personName").value = "";
   setCurrency(exp ? exp.currency : currency);
   renderSplit();
@@ -6680,6 +6763,9 @@ function buildAlerts(){
     const nx = payDate(cy, cm + 1);
     if (nx <= lim) out.push({ id: `pay:${toLocalInput(nx)}`, at: at(nx, 10), title: "¡Hoy cobrás!", body: "¿Cargamos el sueldo? Así Recy arranca el mes nuevo." });
   }
+  // Cuotas de deudas: el día antes
+  planRefs().forEach(r => planCuotas(r).forEach(c => { if (c.owed < 0.005 || c.date < today || c.date > lim) return;
+    out.push({ id: `plan:${r.obj.id}:${c.k}`, at: at(new Date(c.date.getTime() - 864e5), 10), title: r.kind === "lend" ? `Mañana ${r.name} te paga la cuota ${c.k} de ${c.n}` : `Mañana le pagás la cuota ${c.k} de ${c.n} a ${r.name}`, body: money(c.owed, r.cur) }); }));
   // Préstamos que tenés que devolver
   data.incomes.filter(i => i.category === "prestamo" && i.loanFrom && i.dueDate && loanLeft(i) > 0.004).forEach(i => {
     const dd = dateOnly(i.dueDate); if (dd < today || dd > lim) return;
@@ -6782,6 +6868,8 @@ $("sheet").addEventListener("submit", ev => {
       if (!to){ $("err").textContent = "¿A quién le prestaste?"; $("lendTo").focus(); return; }
       const wasPaid = editing && editing.loan && editing.split ? editing.split.people[0].paid : false;
       fields.split = { people: [{ name: to, share: fields.amount, paid: wasPaid }] }; fields.loan = true; fields.category = "prestamo";
+      { const lp = planRead("len", date); if (lp && lp.err){ $("err").textContent = lp.err; return; } if (lp) fields.split.plan = lp;
+        const op0 = editing && editing.split && editing.split.people[0]; if (op0){ if (op0.paidAmt) fields.split.people[0].paidAmt = op0.paidAmt; if (op0.advAmt) fields.split.people[0].advAmt = op0.advAmt; } }
     }
     fields.repaysId = repaySel || null;
     fields.paidBy = null;
@@ -6790,6 +6878,8 @@ $("sheet").addEventListener("submit", ev => {
       if (!who){ $("err").textContent = "¿Quién pagó?"; $("otherWho").focus(); return; }
       if (!(mine >= 0) || mine > fields.amount + 0.001){ $("err").textContent = "Tu parte tiene que ser menor o igual al total."; return; }
       fields.paidBy = { name: who, total: fields.amount, settled: editing && editing.paidBy ? editing.paidBy.settled : false };
+      { const op = planRead("oth", date); if (op && op.err){ $("err").textContent = op.err; return; } if (op) fields.paidBy.plan = op;
+        if (editing && editing.paidBy){ if (editing.paidBy.paidAmt) fields.paidBy.paidAmt = editing.paidBy.paidAmt; if (editing.paidBy.advAmt) fields.paidBy.advAmt = editing.paidBy.advAmt; } }
       fields.amount = round2(mine); fields.split = null; fields.loan = false; fields.method = null; fields.cardId = null; fields.installments = 1;
       rememberPerson(who);
     }
@@ -6815,9 +6905,12 @@ $("sheet").addEventListener("submit", ev => {
   if (mode === "income" && incomeKind === "prestamo"){
     const who = $("borrowFrom").value.trim(), due = $("borrowDue").value;
     if (!who){ $("err").textContent = "¿Quién te prestó?"; $("borrowFrom").focus(); return; }
-    if (!due){ $("err").textContent = "¿Cuándo lo devolvés?"; $("borrowDue").focus(); return; }
-    fields.loanFrom = who; fields.dueDate = due;
-    if (!fields.note) fields.note = `De ${who}, devolver el ${shortDate(dateOnly(due))}`;
+    const bp = planRead("bor", date);
+    if (bp && bp.err){ $("err").textContent = bp.err; return; }
+    if (!bp && !due){ $("err").textContent = "¿Cuándo lo devolvés?"; $("borrowDue").focus(); return; }
+    fields.loanFrom = who; fields.plan = bp || null;
+    fields.dueDate = bp ? toLocalInput(planCuotas({ total: fields.amount, plan: bp, reg: 0, adv: 0 }).pop().date) : due;
+    if (!fields.note) fields.note = bp ? `De ${who}, en ${bp.n} cuotas` : `De ${who}, devolver el ${shortDate(dateOnly(due))}`;
   }
   if (mode === "income" && isFree() && incomeKind === "sueldo"){
     const until = $("until").value;
@@ -7244,6 +7337,11 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.12", d: "2026-10-29", t: { es: "Deudas en cuotas", en: "Debts in installments" }, i: [
+    { es: "Préstamos en cuotas: si te prestaron, si usaste la tarjeta de alguien o si vos prestaste, podés poner en cuántas cuotas y qué día de cada mes.", en: "Loans in installments: if someone lent you money, you used their card, or you lent money, set how many installments and which day." },
+    { es: "Las cuotas que debés aparecen en lo que te falta pagar y se restan del \"Te queda\"; te avisamos un día antes.", en: "Installments you owe show in what's left to pay and come off \"You have left\"; you get a notice the day before." },
+    { es: "En la hoja de la persona ves la próxima cuota y podés adelantar: se descuenta de las últimas.", en: "On the person's page you see the next installment and can pay ahead: it comes off the last ones." },
+    { es: "El último día antes de cobrar, la pizarra muestra lo que te queda hoy.", en: "On the last day before payday, the board shows what you have left today." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -11155,6 +11253,15 @@ Listo ›	Done ›
 Te pagó toda la deuda	Paid you the whole debt
 Saldaste toda la deuda	You paid off the whole debt
 Pago a cuenta de la deuda	Partial payment of the debt
+Se lo devuelvo en cuotas	I'll pay it back in installments
+Se lo devuelvo en cuotas (ej: usé su tarjeta)	I'll pay it back in installments (e.g. I used their card)
+Me lo devuelve en cuotas	They pay me back in installments
+Cuotas	Installments
+Día de cada mes	Day of each month
+Adelantar	Pay ahead
+Cuotas pagadas	Installments paid
+¿En cuántas cuotas? (2 o más)	How many installments? (2 or more)
+Adelanto de cuotas	Advance payment
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11468,6 +11575,9 @@ const I18N_EN_P = [
   [/^Según el resumen: (.+?) · en la app sumás (.+?) de más .*$/, "Per the statement: $1 · the app has $2 more (a repeat, a fixed cost billed on another statement, or a purchase for the next one)"],
   [/^Último día antes de cobrar: hoy te quedan (.+)$/, "Last day before payday: you have $1 left today"],
   [/^Último día antes de cobrar: te pasaste por (.+)$/, "Last day before payday: you went over by $1"],
+  [/^cuota (\d+) de (\d+): (.+) el (.+)$/, "installment $1 of $2: $3 on $4"],
+  [/^(\d+) cuotas de (.+), el (\d+) de cada mes, desde el mes que viene\.$/, "$1 installments of $2, on day $3 of each month, starting next month."],
+  [/^Cuota (\d+) de (\d+)$/, "Installment $1 of $2"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
