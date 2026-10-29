@@ -1918,6 +1918,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .plan-box{margin-top:10px}.plan-in{margin-top:6px}
 .pb-plan{display:block;color:#6355C7;font-weight:700;font-size:.78rem;margin-top:2px}
 .pb-adv{margin-left:6px;padding:4px 10px !important;min-height:0 !important;font-size:.78rem !important}
+.plan-inline .field.two{grid-template-columns:1fr 1fr}
 /* Fijos: libreta de suscripciones */
 .subs-pad{position:relative;margin:28px 0 18px;padding:24px 18px 14px;background:#FBF8F1;color:#1F1F1F;border-radius:6px;font-family:"Courier Prime","Courier New",ui-monospace,monospace;box-shadow:0 3px 8px rgba(0,0,0,.14),4px 5px 0 -1px #EAE3D3}
 .subs-pad::before{content:"";position:absolute;left:14px;right:14px;top:-10px;height:22px;background:repeating-linear-gradient(90deg,#8E8A80 0 6px,transparent 6px 22px);border-radius:3px}
@@ -3176,7 +3177,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-29.1130";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-29.1110";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -5131,17 +5132,27 @@ function planAdvance(r, amt){
 /* UI: casilla "en cuotas" con cantidad y día */
 function planUIinit(pfx, totalFn){
   const on = $(pfx + "PlanOn"), box = $(pfx + "PlanIn"), n = $(pfx + "PlanN"), txt = $(pfx + "PlanTxt");
-  const upd = () => { box.hidden = !on.checked; if (pfx === "bor") $("borrowDueW").hidden = on.checked;
+  const upd = () => { box.hidden = pfx === "oth" ? false : !on.checked; if (pfx === "bor") $("borrowDueW").hidden = on.checked;
     const t = totalFn(), k = parseInt(n.value) || 0; txt.textContent = on.checked && k > 1 && t > 0 ? `${k} cuotas de ${fmtARS.format(round2(t / k))}, el ${$(pfx + "PlanDay").value} de cada mes, desde el mes que viene.` : ""; };
   on.onchange = upd; n.oninput = upd; $(pfx + "PlanDay").onchange = upd; return upd;
 }
+/* En "Pagó otro" las cuotas van a la vista: 1 = de una; con 2 o más aparece el día */
+(function othInline(){
+  const on = $("othPlanOn"), box = $("othPlanIn"), n = $("othPlanN");
+  on.closest("label").hidden = true; box.hidden = false; box.classList.add("plan-inline");
+  n.closest("div").querySelector("label").textContent = "¿En cuántas cuotas se lo devolvés?"; n.placeholder = "1 (de una)";
+  const dayW = $("othPlanDay").closest("div");
+  const sync = () => { const k = parseInt(n.value) || 1; on.checked = k > 1; dayW.hidden = k < 2; };
+  n.addEventListener("input", sync); on.addEventListener("change", () => { box.hidden = false; }); othInline.sync = sync; sync();
+})();
 const planUpd = { bor: planUIinit("bor", () => parseAmount($("amount").value) || 0), oth: planUIinit("oth", () => parseAmount($("otherMine").value) || parseAmount($("amount").value) || 0), len: planUIinit("len", () => parseAmount($("amount").value) || 0) };
 function planRead(pfx, date){
   if (!$(pfx + "PlanOn").checked) return null; const n = parseInt($(pfx + "PlanN").value) || 0; if (n < 2) return { err: "¿En cuántas cuotas? (2 o más)" };
   const d = dateOnly(date.slice(0, 10)); let y = d.getFullYear(), m = d.getMonth() + 1; if (m > 11){ m = 0; y++; }
   return { n, day: parseInt($(pfx + "PlanDay").value) || 10, start: `${y}-${String(m + 1).padStart(2, "0")}` };
 }
-function planFill(pfx, plan){ $(pfx + "PlanOn").checked = !!plan; $(pfx + "PlanN").value = plan ? String(plan.n) : ""; $(pfx + "PlanDay").value = String(plan ? plan.day : Math.min(28, new Date().getDate())); planUpd[pfx](); }
+function planFill(pfx, plan){ $(pfx + "PlanOn").checked = !!plan; $(pfx + "PlanN").value = plan ? String(plan.n) : ""; $(pfx + "PlanDay").value = String(plan ? plan.day : Math.min(28, new Date().getDate())); planUpd[pfx]();
+  if (pfx === "oth"){ $("othPlanIn").hidden = false; const d = $("othPlanDay").closest("div"); d.hidden = !plan; } }
 function toRepay(y, m){
   const end = payDate(y, m+1), cur = isCurrentPeriod(y, m), owe = {};
   balances().forEach(x => ["ARS","USD"].forEach(c => { owe[x.name.toLowerCase() + "|" + c] = Math.max(0, -x[c]); }));
@@ -11262,6 +11273,8 @@ Adelantar	Pay ahead
 Cuotas pagadas	Installments paid
 ¿En cuántas cuotas? (2 o más)	How many installments? (2 or more)
 Adelanto de cuotas	Advance payment
+¿En cuántas cuotas se lo devolvés?	In how many installments do you pay it back?
+1 (de una)	1 (all at once)
 Tema	Theme
 Automático	Automatic
 Claro	Light

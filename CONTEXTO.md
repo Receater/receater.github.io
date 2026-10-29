@@ -411,6 +411,7 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `plan = {n, day, start:"YYYY-MM"}` en: préstamo recibido (income prestamo `.plan`; `dueDate` = última cuota), "Pagó otro" (`paidBy.plan`), "Le presté" (`split.plan`). UI con casilla "en cuotas" (`planUIinit`/`planRead`/`planFill`, prefijos bor/oth/len).
 - `planRefs`/`planCuotas`: pagos normales cubren desde la primera cuota; adelantos (`adv` en devoluciones, `advAmt` en paidBy/split) desde la última. `planDueIn` se suma a `toRepay` (resta del Te queda). Tablilla "lo que te falta pagar" muestra "Cuota k de n". Avisos el día antes.
 - Hoja de la persona: próxima cuota y botón "Adelantar" (queda también como ticket en Movimientos).
+- "Pagó otro": las cuotas van a la vista ("¿En cuántas cuotas se lo devolvés?", 1 = de una; con 2+ aparece el día).
 - Último día antes de cobrar: la pizarra dice "Último día antes de cobrar: hoy te quedan $X".
 
 ## 8. Pendientes e ideas
