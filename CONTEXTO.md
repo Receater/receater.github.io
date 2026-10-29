@@ -414,6 +414,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - "Pagó otro": las cuotas van a la vista ("¿En cuántas cuotas se lo devolvés?", 1 = de una; con 2+ aparece el día).
 - Último día antes de cobrar: la pizarra dice "Último día antes de cobrar: hoy te quedan $X".
 
+- Bug arreglado en `accStatus`: el loop de días comparaba con la hora (d a las 12:00 > ahora) y lo del día no contaba antes del mediodía. Ahora compara por fecha (iso).
+
 ## 8. Pendientes e ideas
 
 - **Revisión de interfaz (21/10):** chequeo automático de textos que se salen y elementos que se pisan en todas las pestañas, hojas y diálogos, a 320/390/820/1280 px, en español e inglés. Arreglado: botones partidos (`.seg` ahora hace salto de línea), fijo ya pagado mostraba monto negativo (ahora "pagado ✓"), y en celus de ≤360 px las pestañas, el calendario de fijos y "Cuentas con amigos". Repetir el chequeo cada vez que se agregue interfaz.
