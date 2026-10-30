@@ -3192,7 +3192,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1415";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1500";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4051,8 +4051,17 @@ function teQuedaReal(y, m){
   if (real == null) return null;
   const cobro = isFree() ? latestCobro() : null, end = cobro ? dateOnly(cobro.until) : payDate(y, m + 1), now = new Date();
   const fix = fixedPendingARS(y, m), repay = toRepayARS(y, m);
-  const card = round2(entries().filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) < end).reduce((a, x) => a + x.amount, 0));
+  const card = cardDueARS(end);
   return { real, fix, card, repay, left: round2(real - fix - card - repay) };
+}
+/* Tarjetas que vencen antes del próximo cobro y todavía no pagaste (también la que vence hoy); si cargaste el resumen, manda el total del banco */
+function cardDueARS(end){
+  const now = new Date(), today0 = dateOnly(toLocalInput(now)), byK = {};
+  entries().filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) >= today0 && dateOnly(x.date) < end).forEach(x => { const k = x.cardId + "|" + x.date.slice(0,10); byK[k] = (byK[k] || 0) + x.amount; });
+  const card = round2(Object.entries(byK).reduce((a, [k, v]) => { const [cid, d] = k.split("|");
+    if (data.cardPayments.some(p => p.cardId === cid && p.date === d)) return a;
+    const stR = (data.cardStmt || {})[k]; return a + (stR && stR.ars > 0 ? stR.ars : v); }, 0));
+  return card;
 }
 /* En compu el calendario del mes va chiquito arriba de la pizarra (columna izquierda); en el celu, arriba de todo */
 var monthNavHome = null;
@@ -4100,7 +4109,7 @@ function render(){
     let realNow = null; try { realNow = cur ? accTotal() : null; } catch {}
     // Con las cuentas al día, "te queda" es la plata real menos lo que todavía tenés que pagar (fijos y tarjeta que vence antes del día que cobrás; lo que vence ese día o después se paga con el sueldo nuevo)
     const periodEnd = cobro ? dateOnly(cobro.until) : payDate(viewYear, viewMonth + 1), now = new Date();
-    const cardP = realNow != null ? round2(allEnts.filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) > now && dateOnly(x.date) < periodEnd).reduce((a, x) => a + x.amount, 0)) : 0;
+    const cardP = realNow != null ? cardDueARS(periodEnd) : 0;
     const left = realNow != null ? round2(realNow - fixP - cardP) : calcLeft;
     const free = realNow != null ? left : calcLeft - fixP;
     boardReal = realNow != null; boardRealNow = realNow; boardRealLeft = realNow != null ? left : null;
@@ -4151,6 +4160,7 @@ function render(){
   if (bIncA > 0) screen.push(`Gastaste ${fmtARS.format(bGastoA)}`);
   const fixScreen = isCurrentPeriod(viewYear, viewMonth) ? fixedPendingARS(viewYear, viewMonth) : 0;
   if (fixScreen > 0) screen.push(`Fijos por pagar ${fmtARS.format(fixScreen)}`);
+  if (boardReal && isCurrentPeriod(viewYear, viewMonth)){ const cd = cardDueARS(isFree() && latestCobro() ? dateOnly(latestCobro().until) : payDate(viewYear, viewMonth + 1)); if (cd > 0) screen.push(`Tarjetas por pagar ${fmtARS.format(cd)}`); }
   const repayScreen = isCurrentPeriod(viewYear, viewMonth) ? toRepayARS(viewYear, viewMonth) : 0;
   if (repayScreen > 0) screen.push(`A devolver ${fmtARS.format(repayScreen)}`);
   const balS = balances();
@@ -7449,7 +7459,9 @@ const NEWS = [
     { es: "Las compras que se cancelaron con una devolución en el resumen ya no se cargan.", en: "Purchases cancelled by a refund on the statement are no longer added." },
     { es: "Arreglo: el pago de la tarjeta y los fijos ya no cuentan como gasto del día; las compras con tarjeta cuentan el día que las hacés.", en: "Fix: card payments and fixed expenses no longer count as today's spending; card purchases count on the day you make them." },
     { es: "Si pagás los dólares de la tarjeta con dólares, al cargar el pago se saca sola la percepción RG 5617.", en: "If you pay your card's dollars with dollars, the RG 5617 surcharge is removed when you log the payment." },
-    { es: "Arreglo: una tarjeta ya pagada muestra lo que pagaste, no la suma de lo que anotaste.", en: "Fix: a paid card shows what you paid, not the sum of what you logged." } ] },
+    { es: "Arreglo: una tarjeta ya pagada muestra lo que pagaste, no la suma de lo que anotaste.", en: "Fix: a paid card shows what you paid, not the sum of what you logged." },
+    { es: "Arreglo: la tarjeta que vence hoy y todavía no pagaste ahora se resta de lo que te queda.", en: "Fix: a card due today that you haven't paid yet is now taken off what you have left." },
+    { es: "La pizarra muestra cuánto te falta pagar de tarjetas. Cuando cargás el pago, sale de tu cuenta lo que pagaste (con los dólares que compraste).", en: "The board shows how much you still owe on cards. When you log the payment, what you paid (including the dollars you bought) comes out of your account." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -9408,7 +9420,15 @@ function accFlows(){
   // por cuenta y día: total, y la lista con la hora en que se cargó cada cosa (para el día del "tengo $X")
   const f = {}; const add = (id, d, v, at) => { if (!id) return; const k = id + "|" + d; (f[k] = f[k] || { sum: 0, its: [] }); f[k].sum += v; f[k].its.push([at || 0, v]); };
   data.expenses.forEach(e => { if (isIncome(e) || e.adjust || e.currency !== "ARS" || e.paidBy || (e.method === "card" && cardById(e.cardId))) return; add(accIdOf(e), e.date.slice(0, 10), -e.amount, e.at); });
-  entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy)) return; const c = cardById(x.cardId); add(c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(), x.date.slice(0, 10), -x.amount, (x.src || x).at); });
+  // Tarjetas: si cargaste el pago, sale de tu cuenta lo que pagaste (pesos + lo que te costaron los dólares), cuando lo cargaste.
+  // Si no lo cargaste: lo que ya venció se toma como pagado ese día; lo de hoy o después queda "por pagar" (no sale todavía de la cuenta)
+  const payAcc = cid => { const c = cardById(cid); return c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(); };
+  data.cardPayments.forEach(p => { if (!cardById(p.cardId)) return; const usdA = p.usd && p.usdMode === "ars" ? (p.usdArs || round2(p.usd * (p.rate || 0))) : 0;
+    add(payAcc(p.cardId), p.date, -round2((p.amount || 0) + usdA), p.at); });
+  const todayS = toLocalInput(new Date());
+  entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy) || x.payId) return; const d = x.date.slice(0, 10);
+    if (d >= todayS || data.cardPayments.some(p => p.cardId === x.cardId && p.date === d)) return;
+    add(payAcc(x.cardId), d, -x.amount, (x.src || x).at); });
   data.incomes.forEach(e => { if (e.currency !== "ARS" || e.adjust) return; add(accIdOf(e), e.date.slice(0, 10), e.amount, e.at); });
   data.accMoves.forEach(m => { add(m.from, m.date, -m.amount, m.at); add(m.to, m.date, m.amount, m.at); });
   // lo que te pagaron (o pagaste) de una deuda entra o sale de tu cuenta principal
@@ -11702,6 +11722,7 @@ const I18N_EN_P = [
   [/^(.+): ya estaba con otro nombre$/, "$1: already there under another name"],
   [/^(.+) \(vino en este resumen\)$/, "$1 (came in this statement)"],
   [/^Como pagaste los dólares con dólares, saqué la percepción RG 5617 \((.+)\): no la pagaste\.$/, "Since you paid the dollars with dollars, I removed the RG 5617 surcharge ($1): you didn't pay it."],
+  [/^Tarjetas por pagar (.+)$/, "Cards to pay $1"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
