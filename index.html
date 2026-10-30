@@ -1991,6 +1991,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .brand .hello{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.15}
 .gap-fix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0;border-top:1px dashed #C9BFA8;font-size:.85rem}
 .gap-fix>span{flex:1 1 100%}
+/* El logo va de un solo color (antes "eater" iba en otro color) */
+.logo span,.brand .logo span{color:inherit !important}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -3207,7 +3209,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1840";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1830b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7583,7 +7585,8 @@ const NEWS = [
     { es: "Arreglo: Google dio de baja los modelos de Gemini que usaba Recy. Ahora usa los nuevos (Gemini 3.5) y recuerda el que anda.", en: "Fix: Google retired the Gemini models Recy used. It now uses the new ones (Gemini 3.5) and remembers the one that works." },
     { es: "Arreglo: \"¿cuántos dólares puedo comprar?\" ahora usa lo que gastás de verdad en el día a día (sin fijos, tarjetas ni ahorro), te da una recomendación y cuánto más podrías si recortás algo.", en: "Fix: \"how many dollars can I buy?\" now uses your real day-to-day spending (no fixed costs, cards or savings), gives a recommendation and how much more if you cut back." },
     { es: "Arreglo: la comparación de cada tarjeta con el mes anterior ahora es resumen contra resumen (antes comparaba el pago entero contra casi nada).", en: "Fix: each card's comparison with last month is now statement vs statement (it used to compare the whole payment against almost nothing)." },
-    { es: "Arreglo: al principio del mes, las comparaciones con el mes anterior eran engañosas porque el pago de la tarjeta cae el primer día. Ahora se compara bien y dice \"a esta altura\".", en: "Fix: early in the month, comparisons with last month were misleading because the card payment lands on day one. They're fair now and say \"so far\"." } ] },
+    { es: "Arreglo: al principio del mes, las comparaciones con el mes anterior eran engañosas porque el pago de la tarjeta cae el primer día. Ahora se compara bien y dice \"a esta altura\".", en: "Fix: early in the month, comparisons with last month were misleading because the card payment lands on day one. They're fair now and say \"so far\"." },
+    { es: "Textos más claros en las pizarras de Resumen y Fijos.", en: "Clearer wording on the Summary and Fixed boards." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -8474,7 +8477,7 @@ function setBoardLines(el, lines){
       b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>'; b.onclick = ev => { ev.stopPropagation(); t0.info(); }; d.append(" ", b); }
     d.className = "mk " + (/pasaste|Vencidos|Debés|A devolver|Fijos por pagar|falta pagar/i.test(t) ? "mk-red"
       : /Te deben|te quedan|Te da para|Ahorr|Pagados|Pagaste|meta/i.test(t) ? "mk-green"
-      : /Gastaste|Donde más|Próximo|frasco|vs |en tarjeta|en total/i.test(t) ? "mk-blue" : "mk-ink");
+      : /Gastaste|Donde más|En lo que más|Próximo|frasco|vs |en tarjeta|en la tarjeta|en total/i.test(t) ? "mk-blue" : "mk-ink");
     el.append(d);
   });
 }
@@ -8547,9 +8550,9 @@ function stageDash(){
     bar: inc ? (savedNow > 0.5 ? allNow : now) / inc : null, over: inc && allNow > inc,
     lines: [savedNow > 0.5 ? `Gastos ${fmtARS.format(round2(now))} · Ahorro ${fmtARS.format(savedNow)}` : null,
       inc && `Es el ${Math.round((savedNow > 0.5 ? allNow : now) / inc * 100)}% de lo que cobraste`,
-      top && `Donde más: ${catById(top[0]).name}, ${fmtARS.format(round2(top[1]))} (${topPct}% ${inc > 0 ? "de tu sueldo" : "de tus gastos"})`,
+      top && `En lo que más gastaste: ${catById(top[0]).name} (${fmtARS.format(round2(top[1]))})`,
       top && top[0] === "tarjeta_sd" ? "Son pagos de tarjeta que no cargaste compra por compra." : null,
-      before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}` : null],
+      before && Math.abs(diff) >= 1 ? `Gastaste ${fmtARS.format(Math.abs(round2(diff)))} ${diff > 0 ? "más" : "menos"} que en ${monthName(py, pm)}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}` : null],
     mood: !now ? "hungry" : inc && now > inc * 0.8 ? "worried" : "happy",
     line: !now ? "Todavía no tengo nada para analizar." : top ? `${catById(top[0]).name} se lleva la mayor parte.` : "Acá va el resumen del mes."
   });
@@ -8565,9 +8568,9 @@ function stageFixed(){
     label: `Fijos ${periodShort(viewYear, viewMonth)}, en total`, big: A(S.total),
     bar: S.total ? S.paid / S.total : null,
     lines: [list.length && `Pagaste ${done} de ${list.length} fijos${S.paid ? ` (${A(S.paid)})` : ""}`,
-      S.toPay > 0 && `Falta pagar a mano o débito: ${A(S.toPay)}`,
-      S.inCard > 0 && `Van en tarjeta: ${A(S.inCard)}`,
-      S.usdTotal > 0 && (S.rate ? `Incluye ${fmtUSD.format(S.usdTotal)} en dólares, al dólar de hoy` : `Los ${fmtUSD.format(S.usdTotal)} en dólares no están sumados (sin cotización)`),
+      S.toPay > 0 && `Te falta pagar ${A(S.toPay)} (los que no van en tarjeta)`,
+      S.inCard > 0 && `${A(S.inCard)} van en la tarjeta, llegan con el resumen`,
+      S.usdTotal > 0 && (S.rate ? `Los ${fmtUSD.format(S.usdTotal)} en dólares, pasados a pesos al dólar de hoy` : `Los ${fmtUSD.format(S.usdTotal)} en dólares no están sumados (sin cotización)`),
       S.noAmount.length && `Sin monto este mes: ${S.noAmount.map(i => i.f.name).join(", ")}`,
       late.length && `Vencidos: ${late.length}`],
     mood: !data.fixed.length ? "hungry" : late.length ? "worried" : list.length && done === list.length ? "full" : "happy",
@@ -11894,6 +11897,11 @@ const I18N_EN_P = [
   [/^Edición (.+)$/, "$1 edition"],
   [/^Es el (\d+)% de lo que cobraste$/, "That's $1% of what you got paid"],
   [/^Donde más: (.+), (.+) \((\d+)% de tu sueldo\)$/, "Where most goes: $1, $2 ($3% of your paycheck)"],
+  [/^En lo que más gastaste: (.+) \((.+)\)$/, "What you spent most on: $1 ($2)"],
+  [/^Gastaste (.+) (más|menos) que en (\S+)( a esta altura)?$/, (m, a, b, c, d) => `You spent ${a} ${b === "más" ? "more" : "less"} than in ${c}${d ? " so far" : ""}`],
+  [/^Te falta pagar (.+) \(los que no van en tarjeta\)$/, "You still have to pay $1 (the ones not on a card)"],
+  [/^(.+) van en la tarjeta, llegan con el resumen$/, "$1 go on the card, they come with the statement"],
+  [/^Los (.+) en dólares, pasados a pesos al dólar de hoy$/, "The $1 in dollars, converted at today's rate"],
   [/^(\d+)% en gastos$/, "$1% on spending"],
   [/^(.+) de (.+) cobrados$/, "$1 of $2 paid to you"],
   [/^de (.+)$/, "of $1"],
