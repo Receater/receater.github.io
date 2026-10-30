@@ -3199,7 +3199,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1610";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4606,6 +4606,8 @@ function askContext(){
   const bal = balances(); if (bal.length) L.push("CUENTAS CON PERSONAS (positivo = te debe, negativo = le debés): " + bal.map(x => `${x.name}: ARS ${f(x.ARS)}${x.USD ? `, USD ${x.USD}` : ""}`).join("; "));
   const S2 = fixSummary(cy, cm); L.push(`FIJOS del período actual: total ARS ${f(S2.total)}, pagado ${f(S2.paid)}, por pagar ${f(S2.toPay)}, en tarjeta ${f(S2.inCard)}. ` + S2.list.map(i => `${i.f.name} ${i.currency} ${f(i.expected || 0)} (${i.state})`).join("; "));
   if (data.jars && data.jars.length) L.push("FRASCOS DE AHORRO: " + data.jars.map(j => `${j.name}: ${j.currency} ${f(jarBalance(j))}${j.goal ? ` de ${f(j.goal)}` : ""}`).join("; "));
+  try { const tq = teQuedaReal(cy, cm); if (tq) L.push(`PLATA LIBRE HOY (período actual): en cuentas ARS ${f(tq.real)}, menos fijos por pagar ${f(tq.fix)}, tarjetas por pagar ${f(tq.card)} y deudas ${f(tq.repay)} = te quedan ARS ${f(tq.left)} hasta que cobre de nuevo (${toLocalInput(payDate(cy, cm + 1))}). Para "cuántos dólares puedo comprar", usá esto menos lo que necesita para vivir hasta cobrar (gasto diario promedio del mes pasado × días que faltan), dividido el dólar de hoy.`); } catch {}
+  try { const rt = fixUsdRate(); if (rt > 0) L.push(`DÓLAR HOY: ${f(rt)} pesos por dólar (para comprar dólares).`); } catch {}
   const bud = budgetStatus(cy, cm); if (bud.length) L.push("TOPES: " + bud.map(x => `${catById(x.id).name} ${f(x.spent)} de ${f(x.cap)}`).join("; "));
   return L.join("\n");
 }
@@ -4614,6 +4616,7 @@ async function askGo(){
   if (!aiKey()){ askMsg("recy", "Primero activá Recy inteligente."); return; }
   askMsg("me", q); $("askQ").value = ""; askBusy = true; $("askGo").disabled = true;
   const w = askMsg("recy busy", "Recy está mirando tus números…");
+  const slow = setTimeout(() => { if (w.classList.contains("busy")) w.textContent = "Sigo haciendo cuentas, ya casi…"; }, 12000);
   try {
     const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Contestá la pregunta del usuario SOLO con los datos de abajo, en español rioplatense, corto (máximo 3 o 4 oraciones), con los montos en formato argentino ($ 12.345). Si con los datos no alcanza para responder, decilo. No inventes.
 Respondé SOLO un JSON: {"respuesta":"..."}
@@ -4621,10 +4624,10 @@ Respondé SOLO un JSON: {"respuesta":"..."}
 DATOS:
 ${askContext()}
 
-PREGUNTA: """${q}"""` }], { fast: true, timeout: 60000 });
+PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS.slice(0, 2) });
     w.classList.remove("busy"); w.textContent = (r && r.respuesta) || "No me salió una respuesta. Probá preguntarlo de otra forma.";
   } catch (e){ w.classList.remove("busy"); w.textContent = (aiErrorMsg(e) || "Algo falló.").replace(" Usé el modo simple.", ""); }
-  askBusy = false; $("askGo").disabled = false;
+  clearTimeout(slow); askBusy = false; $("askGo").disabled = false;
 }
 $("askGo").onclick = askGo;
 $("askQ").addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); askGo(); } });
@@ -6083,15 +6086,15 @@ async function aiCall(parts, opt = {}){
       lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" };   // se cortó o tardó demasiado: probamos con otro modelo
       continue;
     }
-    clearTimeout(tm);
-    if (!r.ok){
+    if (!r.ok){ clearTimeout(tm);
       const body = await r.text().catch(() => "");
       if (r.status === 401 || r.status === 403 || /API_KEY_INVALID|API key not valid/i.test(body)) throw { code: "badkey" };
       if (/location is not supported/i.test(body)) throw { code: "region" };
       lastErr = { code: r.status === 429 || r.status === 503 ? "quota" : r.status === 404 ? "model" : "other" };
       continue;
     }
-    const j = await r.json();
+    let j; try { j = await r.json(); } catch (e){ clearTimeout(tm); lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" }; continue; }
+    clearTimeout(tm);
     const txt = (((j.candidates || [])[0] || {}).content || {}).parts?.map(p => p.text || "").join("") || "";
     try { return JSON.parse(txt.replace(/```json|```/g, "").trim()); } catch { lastErr = { code: "parse" }; continue; }
   }
@@ -7479,7 +7482,8 @@ const NEWS = [
     { es: "Arreglo: la tarjeta que vence hoy y todavía no pagaste ahora se resta de lo que te queda.", en: "Fix: a card due today that you haven't paid yet is now taken off what you have left." },
     { es: "La pizarra muestra cuánto te falta pagar de tarjetas. Cuando cargás el pago, sale de tu cuenta lo que pagaste (con los dólares que compraste).", en: "The board shows how much you still owe on cards. When you log the payment, what you paid (including the dollars you bought) comes out of your account." },
     { es: "Arreglo: en el celu, la lista de lo que falta pagar se rompía con montos largos (el nombre quedaba en vertical). Ahí también se ve el total del banco.", en: "Fix: on phones, the to-pay list broke with long amounts (the name went vertical). It also shows the bank's total now." },
-    { es: "Las tarjetas por pagar tienen su botón para pagar, con lo del resumen ya puesto.", en: "Cards to pay have a pay button, with the statement amounts filled in." } ] },
+    { es: "Las tarjetas por pagar tienen su botón para pagar, con lo del resumen ya puesto.", en: "Cards to pay have a pay button, with the statement amounts filled in." },
+    { es: "Arreglo: Preguntale a Recy podía quedarse colgado. Ahora, si Gemini tarda, te avisa y corta a tiempo.", en: "Fix: Ask Recy could hang. Now if Gemini is slow it tells you and gives up in time." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -11743,6 +11747,7 @@ const I18N_EN_P = [
   [/^(.+) \(vino en este resumen\)$/, "$1 (came in this statement)"],
   [/^Como pagaste los dólares con dólares, saqué la percepción RG 5617 \((.+)\): no la pagaste\.$/, "Since you paid the dollars with dollars, I removed the RG 5617 surcharge ($1): you didn't pay it."],
   [/^Tarjetas por pagar (.+)$/, "Cards to pay $1"],
+  [/^Sigo haciendo cuentas, ya casi…$/, "Still crunching numbers, almost there…"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
