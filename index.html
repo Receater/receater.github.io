@@ -3207,7 +3207,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1730";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1745";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4632,7 +4632,7 @@ Respondé SOLO un JSON: {"respuesta":"..."}
 DATOS:
 ${askContext()}
 
-PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS.slice(0, 2) });
+PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS });
     w.classList.remove("busy"); w.textContent = (r && r.respuesta) || "No me salió una respuesta. Probá preguntarlo de otra forma.";
   } catch (e){ w.classList.remove("busy"); w.textContent = (aiErrorMsg(e) || "Algo falló.").replace(" Usé el modo simple.", ""); }
   clearTimeout(slow); askBusy = false; $("askGo").disabled = false;
@@ -4661,7 +4661,7 @@ function micSetup(btn, ta, after){
         if (blob.size < 1500) throw { code: "short" };
         const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
         const r = await aiCall([{ text: 'Transcribí este audio en español rioplatense, tal cual lo dice (con los números en cifras). Respondé SOLO un JSON: {"texto":"..."}' },
-          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 20000, models: ["gemini-2.5-flash-lite", "gemini-2.5-flash"] });
+          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 20000, models: AI_LITE });
         if (!put(r && r.texto)) throw { code: "empty" };
         idle(); if (after) after(); return;
       } catch (e){ uiAlert(e && (e.code === "short" || e.code === "empty") ? "No te escuché. Tocá Hablar, decilo y tocá de nuevo para terminar." : (aiErrorMsg(e) || "No pude pasar el audio a texto.").replace(" Usé el modo simple.", "")); }
@@ -6051,7 +6051,9 @@ function tellApply(){
 }
 /* ---------- Recy inteligente (Gemini, plan gratis, clave del usuario guardada en el dispositivo) ---------- */
 const AI_KEY = "receater.gkey";
-const AI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
+// Gemini 2.5 se dio de baja (oct 2026): primero los 3.x; el que anduvo último se prueba primero
+const AI_MODELS = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash"];
+const AI_LITE = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-flash-latest"];
 const aiKey = () => { if (data.aiKey) return data.aiKey; try { return localStorage.getItem(AI_KEY) || ""; } catch { return ""; } };
 function setAiKey(k){ if (k) data.aiKey = k; else delete data.aiKey; try { k ? localStorage.setItem(AI_KEY, k) : localStorage.removeItem(AI_KEY); } catch {} persist(); }
 /* ---------- Productos del ticket (se ven y se editan antes y después de guardar; el total sigue a los productos) ---------- */
@@ -6123,12 +6125,18 @@ function aiSetupLabel(){
 async function aiCall(parts, opt = {}){
   const key = aiKey(); if (!key) throw { code: "nokey" };
   let lastErr = null;
-  for (const model of (opt.models || AI_MODELS)){
+  let list = opt.models || AI_MODELS, good = null; try { good = localStorage.getItem("receater.aiModel"); } catch {}
+  if (good && list.includes(good)) list = [good, ...list.filter(m => m !== good)];
+  const t0 = Date.now(), budget = opt.budget || Math.max(opt.timeout || 60000, 45000);
+  for (const model of list){
+    if (Date.now() - t0 > budget) break;
+    let noThink = false;
+    for (let attempt = 0; attempt < 2; attempt++){
     let r;
     const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
     const tm = ctl ? setTimeout(() => ctl.abort(), opt.timeout || 60000) : null;
     const gen = { temperature: 0.1, responseMimeType: "application/json" };
-    if (opt.fast && /2\.5/.test(model)) gen.thinkingConfig = { thinkingBudget: 0 };   // sin "pensar": mucho más rápido para leer listas
+    if (opt.fast && !noThink) gen.thinkingConfig = /2\.5/.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: "minimal" };   // sin "pensar": mucho más rápido
     if (opt.maxTokens) gen.maxOutputTokens = opt.maxTokens;
     try {
       r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
@@ -6139,19 +6147,22 @@ async function aiCall(parts, opt = {}){
       clearTimeout(tm);
       if (!navigator.onLine) throw { code: "net" };
       lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" };   // se cortó o tardó demasiado: probamos con otro modelo
-      continue;
+      break;
     }
     if (!r.ok){ clearTimeout(tm);
       const body = await r.text().catch(() => "");
       if (r.status === 401 || r.status === 403 || /API_KEY_INVALID|API key not valid/i.test(body)) throw { code: "badkey" };
       if (/location is not supported/i.test(body)) throw { code: "region" };
-      lastErr = { code: r.status === 429 || r.status === 503 ? "quota" : r.status === 404 ? "model" : "other" };
-      continue;
+      if (r.status === 400 && gen.thinkingConfig && !noThink && /thinking/i.test(body)){ noThink = true; continue; }   // ese modelo no acepta el ajuste de "pensar": de nuevo sin él
+      lastErr = { code: r.status === 429 || r.status === 503 ? "quota" : r.status === 404 ? "model" : "other", status: r.status, body: body.slice(0, 300) };
+      try { console.warn("Gemini", model, r.status, body.slice(0, 300)); } catch {}
+      break;
     }
-    let j; try { j = await r.json(); } catch (e){ clearTimeout(tm); lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" }; continue; }
+    let j; try { j = await r.json(); } catch (e){ clearTimeout(tm); lastErr = { code: e && e.name === "AbortError" ? "timeout" : "net" }; break; }
     clearTimeout(tm);
-    const txt = (((j.candidates || [])[0] || {}).content || {}).parts?.map(p => p.text || "").join("") || "";
-    try { return JSON.parse(txt.replace(/```json|```/g, "").trim()); } catch { lastErr = { code: "parse" }; continue; }
+    const txt = (((j.candidates || [])[0] || {}).content || {}).parts?.filter(p => !p.thought).map(p => p.text || "").join("") || "";
+    try { const out = JSON.parse(txt.replace(/```json|```/g, "").trim()); try { localStorage.setItem("receater.aiModel", model); } catch {} return out; } catch { lastErr = { code: "parse" }; break; }
+    }
   }
   throw lastErr || { code: "other" };
 }
@@ -6174,11 +6185,11 @@ const AI_FORMAT = `Respondé SOLO con un objeto JSON, sin texto extra, con esta 
 "items":[{"nombre":"...","precio":número,"categoria":id}] (solo si es un ticket con productos) o []}
 Reglas: si pagó por otra persona y esa persona le debe, "monto" es el total que pagó y esa parte va en "dividido". Usá la fecha de hoy para resolver "ayer", "el lunes", etc. Elegí la categoría que mejor encaje de la lista. Si menciona una tarjeta de la lista, usá su id y medio "card".`;
 async function aiFromText(text){
-  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Interpretá lo que cuenta el usuario y armá el gasto o ingreso.\n${aiContext()}\n${AI_FORMAT}\n\nLo que contó el usuario: """${text}"""` }], { fast: true, models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest"] });
+  return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Interpretá lo que cuenta el usuario y armá el gasto o ingreso.\n${aiContext()}\n${AI_FORMAT}\n\nLo que contó el usuario: """${text}"""` }], { fast: true, models: AI_MODELS });
 }
 async function aiFromImage(b64, mime){
   return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Esta foto es un ticket o comprobante de compra. Leé el comercio, la fecha, el total pagado y cada producto con su precio final (con descuentos aplicados). Asigná a cada producto una categoría de la lista. La nota debe ser el nombre del comercio. "monto" es el TOTAL del ticket.\n${aiContext()}\n${AI_FORMAT}` },
-    { inline_data: { mime_type: mime, data: b64 } }], { fast: true, models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest"] });
+    { inline_data: { mime_type: mime, data: b64 } }], { fast: true, models: AI_MODELS });
 }
 /* Volcar lo que entendió la IA en el formulario */
 function aiApply(r){
@@ -6369,7 +6380,7 @@ $("stFile").onchange = async () => {
     let r;
     try {
       r = await aiCall([{ text: head }, ...parts], { timeout: parts.length ? 150000 : 90000, fast: true, maxTokens: 16000,
-        models: ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"] });
+        models: AI_MODELS });
       if (!r || !Array.isArray(r.movimientos) || !r.movimientos.length) throw { code: "parse" };
     } catch (e){ if (local && local.movimientos.length){ local.aiErr = e; r = local; } else throw e; }
     if (!st) return;
@@ -7540,7 +7551,8 @@ const NEWS = [
     { es: "Las tarjetas por pagar tienen su botón para pagar, con lo del resumen ya puesto.", en: "Cards to pay have a pay button, with the statement amounts filled in." },
     { es: "Arreglo: Preguntale a Recy podía quedarse colgado. Ahora, si Gemini tarda, te avisa y corta a tiempo.", en: "Fix: Ask Recy could hang. Now if Gemini is slow it tells you and gives up in time." },
     { es: "Ahora le podés hablar a Recy: botón Hablar en Preguntale a Recy y al cargar un gasto. Funciona también en la compu.", en: "You can now talk to Recy: a Speak button in Ask Recy and when adding an expense. Works on computers too." },
-    { es: "Hablar ahora escribe mientras hablás (en Chrome, Edge y Safari) y los botones dicen más claro qué está pasando.", en: "Speak now types as you talk (in Chrome, Edge and Safari), and the button says more clearly what's going on." } ] },
+    { es: "Hablar ahora escribe mientras hablás (en Chrome, Edge y Safari) y los botones dicen más claro qué está pasando.", en: "Speak now types as you talk (in Chrome, Edge and Safari), and the button says more clearly what's going on." },
+    { es: "Arreglo: Google dio de baja los modelos de Gemini que usaba Recy. Ahora usa los nuevos (Gemini 3.5) y recuerda el que anda.", en: "Fix: Google retired the Gemini models Recy used. It now uses the new ones (Gemini 3.5) and remembers the one that works." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
