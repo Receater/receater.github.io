@@ -465,3 +465,5 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Gemini: 2.5 dado de baja (oct 2026). `AI_MODELS` = 3.5-flash, flash-latest, 3.5-flash-lite, 3.1-flash-lite, flash-lite-latest, 2.5-flash; `AI_LITE` para audio. Recuerda el último que anduvo (`receater.aiModel`). En 3.x usa thinkingLevel "minimal" y si da 400 reintenta sin. Errores van a console.warn.
 - Comparaciones del mes en curso: `prevExpensesFair` incluye entero el pago de tarjeta del período anterior si este período ya tiene uno; pizarra y diario dicen "a esta altura"; tarjetas: "que el resumen de X". Categorías en $0 no se muestran.
 - `usdPlan()`: cuántos dólares comprar = sueldo − fijos − gasto variable promedio (hasta 3 períodos; con tarjeta, sin fijos/ahorro/préstamos/dólares), tope plata libre, 10% colchón, y opción recortando 30% las 2 categorías más grandes. Va al contexto de Preguntale a Recy.
+- Hablar (v3): siempre graba con MediaRecorder; en Chrome/Edge además dictado en vivo (en iPhone no). Si el dictado no entendió nada, el audio va a Gemini (AI_LITE).
+- Logo: Alfa Slab One, un solo color.

@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#E6E9ED; --paper:#FFFFFF; --ink:#1B2430; --muted:#66707D; --line:#D5DAE0;
@@ -1991,8 +1991,10 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .brand .hello{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.15}
 .gap-fix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0;border-top:1px dashed #C9BFA8;font-size:.85rem}
 .gap-fix>span{flex:1 1 100%}
-/* El logo va de un solo color (antes "eater" iba en otro color) */
+/* El logo va de un solo color, con letra de sello (Alfa Slab One) */
 .logo span,.brand .logo span{color:inherit !important}
+.logo{font-family:"Alfa Slab One",Georgia,serif !important;font-weight:400 !important;letter-spacing:.01em !important}
+.brand .logo{font-size:1.3rem !important}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -3209,7 +3211,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1830b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1840b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4666,49 +4668,50 @@ PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS });
   clearTimeout(slow); askBusy = false; $("askGo").disabled = false;
 }
 $("askGo").onclick = askGo;
-/* Hablarle a Recy: si el navegador sabe dictar (Chrome, Edge, Safari), se escribe mientras hablás.
-   Si no, se graba y Gemini lo pasa a texto. */
+/* Hablarle a Recy: siempre se graba el audio. Si el navegador sabe dictar (Chrome, Edge), se ve el texto mientras hablás;
+   si el dictado no entendió nada (o no hay, como en iPhone), el audio grabado lo pasa a texto Gemini. */
 function micSetup(btn, ta, after){
   if (!btn) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR && (!navigator.mediaDevices || !window.MediaRecorder)){ btn.hidden = true; return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder){ btn.hidden = true; return; }
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const SR = !ios && (window.SpeechRecognition || window.webkitSpeechRecognition);
   const label = t => { const sp = btn.querySelector("span"); if (sp) sp.textContent = t; };
   const idle = () => { btn.classList.remove("rec"); btn.disabled = false; label("Hablar"); };
-  const put = t => { t = (t || "").trim(); if (!t) return false; ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + t; ta.dispatchEvent(new Event("input", { bubbles: true })); return true; };
-  let live = null, rec = null, chunks = [], stopT = null;
-  const useGemini = async () => {
-    if (!aiKey()){ uiAlert("Para hablarle a Recy primero activá Recy inteligente (en Ajustes)."); return; }
+  let rec = null, live = null, stopT = null, busy = false;
+  btn.onclick = async () => {
+    if (busy) return;
+    if (rec && rec.state === "recording"){ clearTimeout(stopT); try { live && live.stop(); } catch {} rec.stop(); return; }
     let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
     catch { uiAlert("No me diste permiso para usar el micrófono. Habilitalo en el navegador para este sitio y probá de nuevo."); return; }
-    chunks = []; try { rec = new MediaRecorder(stream, { audioBitsPerSecond: 24000 }); } catch { rec = new MediaRecorder(stream); }
+    const base = ta.value.trim(); let heard = "", chunks = [];
+    try { rec = new MediaRecorder(stream, { audioBitsPerSecond: 32000 }); } catch { rec = new MediaRecorder(stream); }
     rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    if (SR){ try { live = new SR(); live.lang = "es-AR"; live.interimResults = true; live.continuous = true;
+      live.onresult = ev => { heard = [...ev.results].map(r => r[0].transcript).join(" ").trim(); ta.value = (base ? base + " " : "") + heard; };
+      live.onerror = () => {}; live.onend = () => { live = null; }; live.start(); } catch { live = null; } }
     rec.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop()); btn.classList.remove("rec"); btn.disabled = true; label("Pasando a texto…");
+      stream.getTracks().forEach(t => t.stop()); btn.classList.remove("rec");
+      if (heard){ ta.value = (base ? base + " " : "") + heard; ta.dispatchEvent(new Event("input", { bubbles: true })); idle(); if (after) after(); return; }
+      busy = true; btn.disabled = true; label("Pasando a texto…");
       try {
+        if (!aiKey()) throw { code: "nokey" };
         const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
-        if (blob.size < 1500) throw { code: "short" };
+        if (blob.size < 1200) throw { code: "short" };
         const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
-        const r = await aiCall([{ text: 'Transcribí este audio en español rioplatense, tal cual lo dice (con los números en cifras). Respondé SOLO un JSON: {"texto":"..."}' },
-          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 20000, models: AI_LITE });
-        if (!put(r && r.texto)) throw { code: "empty" };
-        idle(); if (after) after(); return;
-      } catch (e){ uiAlert(e && (e.code === "short" || e.code === "empty") ? "No te escuché. Tocá Hablar, decilo y tocá de nuevo para terminar." : (aiErrorMsg(e) || "No pude pasar el audio a texto.").replace(" Usé el modo simple.", "")); }
-      idle();
+        const r = await aiCall([{ text: 'Transcribí este audio en español rioplatense, tal cual lo dice (con los números en cifras). Si no se escucha nada, devolvé texto vacío. Respondé SOLO un JSON: {"texto":"..."}' },
+          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 25000, models: AI_LITE });
+        const t = (r && r.texto || "").trim(); if (!t) throw { code: "empty" };
+        ta.value = (base ? base + " " : "") + t; ta.dispatchEvent(new Event("input", { bubbles: true }));
+        busy = false; idle(); if (after) after(); return;
+      } catch (e){
+        uiAlert(e && e.code === "nokey" ? "Para pasar el audio a texto en este navegador hace falta Recy inteligente (en Ajustes)."
+          : e && (e.code === "short" || e.code === "empty") ? "No te escuché. Tocá Hablar, decilo y después tocá \"Tocá para terminar\"."
+          : (aiErrorMsg(e) || "No pude pasar el audio a texto.").replace(" Usé el modo simple.", ""));
+      }
+      busy = false; idle();
     };
-    rec.start(); btn.classList.add("rec"); label("Tocá para terminar"); stopT = setTimeout(() => rec && rec.state === "recording" && rec.stop(), 60000);
-  };
-  btn.onclick = () => {
-    if (live){ live.stop(); return; }
-    if (rec && rec.state === "recording"){ clearTimeout(stopT); rec.stop(); return; }
-    if (!SR){ useGemini(); return; }
-    const base = ta.value.trim(); let heard = "", failed = false;
-    live = new SR(); live.lang = "es-AR"; live.interimResults = true; live.continuous = true;
-    live.onresult = ev => { heard = [...ev.results].map(r => r[0].transcript).join(" ").trim(); ta.value = (base ? base + " " : "") + heard; };
-    live.onerror = ev => { failed = true; if (ev.error === "not-allowed" || ev.error === "service-not-allowed") uiAlert("No me diste permiso para usar el micrófono. Habilitalo en el navegador para este sitio y probá de nuevo."); };
-    live.onend = () => { live = null; idle(); ta.dispatchEvent(new Event("input", { bubbles: true }));
-      if (heard) { if (after) after(); } else if (!failed) uiAlert("No te escuché. Tocá Hablar, decilo y tocá de nuevo para terminar."); };
-    try { live.start(); btn.classList.add("rec"); label("Tocá para terminar"); if (after && after.open) after.open(); }
-    catch { live = null; useGemini(); }
+    rec.start(250); btn.classList.add("rec"); label("Tocá para terminar"); if (after && after.open) after.open();
+    stopT = setTimeout(() => { try { live && live.stop(); } catch {} rec && rec.state === "recording" && rec.stop(); }, 60000);
   };
 }
 micSetup($("askMic"), $("askQ"), () => askGo());
@@ -7586,7 +7589,9 @@ const NEWS = [
     { es: "Arreglo: \"¿cuántos dólares puedo comprar?\" ahora usa lo que gastás de verdad en el día a día (sin fijos, tarjetas ni ahorro), te da una recomendación y cuánto más podrías si recortás algo.", en: "Fix: \"how many dollars can I buy?\" now uses your real day-to-day spending (no fixed costs, cards or savings), gives a recommendation and how much more if you cut back." },
     { es: "Arreglo: la comparación de cada tarjeta con el mes anterior ahora es resumen contra resumen (antes comparaba el pago entero contra casi nada).", en: "Fix: each card's comparison with last month is now statement vs statement (it used to compare the whole payment against almost nothing)." },
     { es: "Arreglo: al principio del mes, las comparaciones con el mes anterior eran engañosas porque el pago de la tarjeta cae el primer día. Ahora se compara bien y dice \"a esta altura\".", en: "Fix: early in the month, comparisons with last month were misleading because the card payment lands on day one. They're fair now and say \"so far\"." },
-    { es: "Textos más claros en las pizarras de Resumen y Fijos.", en: "Clearer wording on the Summary and Fixed boards." } ] },
+    { es: "Textos más claros en las pizarras de Resumen y Fijos.", en: "Clearer wording on the Summary and Fixed boards." },
+    { es: "Arreglo: Hablar a veces no te escuchaba. Ahora siempre graba, y si el dictado del navegador no entendió, lo pasa a texto Gemini.", en: "Fix: Speak sometimes didn't hear you. It now always records, and if the browser's dictation missed it, Gemini transcribes it." },
+    { es: "Logo nuevo: una sola tinta y letra de sello.", en: "New logo: one ink color and a stamp-style font." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -11862,6 +11867,7 @@ const I18N_EN_P = [
   [/^Para hablarle a Recy primero activá Recy inteligente \(en Ajustes\)\.$/, "To talk to Recy, first turn on Smart Recy (in Settings)."],
   [/^No me diste permiso para usar el micrófono\..*$/, "You didn't allow the microphone. Enable it in your browser for this site and try again."],
   [/^No te escuché\..*$/, "I didn't hear you. Tap Speak, say it, and tap again to finish."],
+  [/^Para pasar el audio a texto en este navegador hace falta Recy inteligente \(en Ajustes\)\.$/, "To turn audio into text in this browser you need Smart Recy (in Settings)."],
   [/^No pude pasar el audio a texto\.$/, "I couldn't turn the audio into text."],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
