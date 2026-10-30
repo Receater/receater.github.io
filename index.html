@@ -1772,7 +1772,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 /* Calendario: el día de hoy grande, como una hoja de taco */
 .mn-today{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:6px 0 0;color:#1F1F1F}
 .mn-today b{font-family:var(--display);font-size:2.6rem;line-height:1;font-weight:800}
-.mn-today span{font-size:.9rem;text-transform:capitalize;color:#6E6A62;font-weight:600}
+.mn-today span{font-size:.9rem;text-transform:none;color:#6E6A62;font-weight:600}
 .month-nav .range{display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:8px}
 .month-nav .month-btn .caret{font-size:1.25rem;margin-left:4px;vertical-align:-1px}
 /* Header de compu minimalista: barra fina, blanca y translúcida, botones sin caja */
@@ -1977,6 +1977,8 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   .fab{left:calc(50% + 231px) !important}
 }
 .brand .hello{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.15}
+.gap-fix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0;border-top:1px dashed #C9BFA8;font-size:.85rem}
+.gap-fix>span{flex:1 1 100%}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2360,6 +2362,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .js-label .jar-sub{color:#A1906C !important}
 :root[data-theme="dark"] .js-label .jar-sub .dl{color:#5FA37C !important}
 :root[data-theme="dark"] .js-label .jar-sub .dl.neg{color:#DD696F !important}
+:root[data-theme="dark"] .gap-fix{border-top:1px dashed #454036 !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -3189,7 +3192,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1235";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1330";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3467,9 +3470,10 @@ function virtualFixed(){
       const lim = monthKey(cy, cm+1), vk = typeof viewYear === "number" ? monthKey(viewYear, viewMonth+1) : lim;
       if (key > (vk > lim ? vk : lim)) break;
       if (fixActiveIn(f, key)){
-        const amt = fixAmountFor(f, key);
-        if (amt) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category,
-          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(fixDue(f, y, m))}T00:00`, dueDate: toLocalInput(fixDue(f, y, m)), note:f.name, items:[], split: fixSplit(f, key) });
+        const amt = fixAmountFor(f, key), mv = (data.fixStmt || {})[f.id + "|" + key];   // { v: "next" | "in", card, pay }
+        const due = mv && mv.v === "next" ? fixDue(f, y, m + 1) : fixDue(f, y, m);
+        if (amt && !(mv && mv.v === "in")) out.push({ id:`vf:${f.id}|${key}`, virtual:true, fixedId:f.id, fixedKey:key, amount:amt, currency:f.currency, category:f.category, moved: !!mv,
+          method:"card", cardId:f.cardId, installments:1, date:`${toLocalInput(due)}T00:00`, dueDate: toLocalInput(due), note:f.name, items:[], split: fixSplit(f, key) });
       }
       m++; if (m > 11){ m = 0; y++; }
     }
@@ -3983,6 +3987,14 @@ function ruleText(rule = payRule){
   if (rule === "free") return "sin día fijo";
   return `el día ${rule}`;
 }
+/* Si el mes va de cobro a cobro (no del 1 al 30), arriba van las fechas: "30 oct – 29 nov", así nadie piensa que ya es noviembre */
+function payPeriodShifted(){ return !isFree() && !(payRule === "1" && !data.payOverrides[monthKey(viewYear, viewMonth)]); }
+function navTitle(y, m){
+  if (!payPeriodShifted()) return periodTitle(y, m);
+  const a = payDate(y, m), b = new Date(payDate(y, m+1) - 864e5);
+  const f = d => d.toLocaleDateString(LANG === "en" ? "en-US" : "es-AR", { day: "numeric", month: "short" }).replace(".", "");
+  return `${f(a)} – ${f(b)}`;
+}
 function renderRange(){
   const box = $("rangeLine"); box.innerHTML = "";
   $("payBtn").innerHTML = "";
@@ -3995,7 +4007,7 @@ function renderRange(){
     if (c) txt = `Lo calculamos hasta el ${shortDate(dateOnly(c.until))}`;
   } else if (!(payRule === "1" && !data.payOverrides[monthKey(viewYear, viewMonth)])){
     const end = new Date(payDate(viewYear, viewMonth+1) - 864e5);
-    txt = `${shortDate(payDate(viewYear, viewMonth))} al ${shortDate(end)}`;
+    txt = `Tu mes de ${monthName(viewYear, viewMonth)} · empieza cuando cobrás`;
   }
   if (txt){
     const b = document.createElement("button"); b.type = "button"; b.className = "range-btn"; b.textContent = txt;
@@ -4005,7 +4017,7 @@ function renderRange(){
   }
   // Hoja de calendario: el día de hoy grande (solo mirando el mes actual)
   if (isCurrentPeriod(viewYear, viewMonth)){ const t = new Date(), d = document.createElement("div"); d.className = "mn-today";
-    d.innerHTML = `<b>${t.getDate()}</b><span></span>`; d.querySelector("span").textContent = t.toLocaleDateString(LANG === "en" ? "en-US" : "es-AR", { weekday: "long" }); box.prepend(d); }
+    d.innerHTML = `<b>${t.getDate()}</b><span></span>`; d.querySelector("span").textContent = LANG === "en" ? t.toLocaleDateString("en-US", { month: "long" }) + ", " + t.toLocaleDateString("en-US", { weekday: "long" }) : "de " + t.toLocaleDateString("es-AR", { month: "long" }) + ", " + t.toLocaleDateString("es-AR", { weekday: "long" }); box.prepend(d); }
   // Si estás mirando otro mes, siempre a mano la vuelta al de hoy (un mes que todavía no empezó se ve casi vacío)
   if (!learnOn && !isCurrentPeriod(viewYear, viewMonth)){
     const [ty, tm] = periodOf(new Date()), fut = viewYear * 12 + viewMonth > ty * 12 + tm;
@@ -4056,7 +4068,7 @@ function render(){
   queueMicrotask(() => { try { renderAccounts(); } catch {} try { renderUpcomingBtn(); } catch {} });
   placeMonthNav();
   setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); });
-  $("monthTitle").textContent = periodTitle(viewYear, viewMonth);
+  $("monthTitle").textContent = navTitle(viewYear, viewMonth);
   renderRange();
   $("next").disabled = false;
   if (tab === "dash") { renderDash(); stageDash(); renderPaper(); return; }
@@ -4314,23 +4326,27 @@ function renderPayGroup(r){
   const payTxt = payHere ? [payHere.amount && fmtARS.format(payHere.amount), payHere.usd && fmtUSD.format(payHere.usd)].filter(Boolean).join(" + ") : "";
   sub.append(chev, document.createTextNode(payHere ? `Pagaste ${payTxt}` : buys ? `Pago de tarjeta, ${buys} ${buys === 1 ? "compra" : "compras"}` : "Pago de tarjeta"));
   mid.append(cat, sub);
-  const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = ars ? fmtARS.format(ars) : fmtUSD.format(usd);
-  if (ars && usd){ const of = document.createElement("span"); of.className = "of"; of.textContent = "+ " + fmtUSD.format(usd); amt.append(of); }
+  // Si cargaste el resumen y todavía no lo pagaste, el número que manda es el del banco
+  const stR = !payHere && (data.cardStmt || {})[r.key], bA = stR ? stR.ars || 0 : ars, bU = stR ? stR.usd || 0 : usd;
+  const amt = document.createElement("div"); amt.className = "amt"; amt.textContent = bA || !bU ? fmtARS.format(bA) : fmtUSD.format(bU);
+  if (bA && bU){ const of = document.createElement("span"); of.className = "of"; of.textContent = "+ " + fmtUSD.format(bU); amt.append(of); }
   if (payHere) amt.append(stampEl("PAGADO", "ok"));
-  else if (usd > 0 && fixUsdRate() > 0 && dateOnly(day) >= dateOnly(toLocalInput(new Date()))){
-    const of = document.createElement("span"); of.className = "of"; of.textContent = `≈ ${f0ARS(ars + usd * fixUsdRate())} al dólar de hoy`; amt.append(of);
+  else if (bU > 0 && fixUsdRate() > 0 && dateOnly(day) >= dateOnly(toLocalInput(new Date()))){
+    const of = document.createElement("span"); of.className = "of"; of.textContent = `≈ ${f0ARS(bA + bU * fixUsdRate())} al dólar de hoy`; amt.append(of);
   }
+  if (stR){ const of = document.createElement("span"); of.className = "of"; of.textContent = "según tu resumen"; amt.append(of); }
   b.append(dot, mid, amt);
   b.onclick = () => { open ? expanded.delete("pay:" + r.key) : expanded.add("pay:" + r.key); render(); };
   wrap.append(b);
   if (open){
     const panel = document.createElement("div"); panel.className = "split-panel";
     const pay = data.cardPayments.find(p => p.cardId === cid && p.date === day);
+    if (stR) stmtGap(panel, r, cid, day, stR, ars, usd);
     if (r.xs.some(x => !x.payId && !x.stmtKey)){ const h = document.createElement("div"); h.className = "pay-h"; h.textContent = "Compras que incluye"; panel.append(h); }
     r.xs.forEach(x => {
       const row = document.createElement("div"); row.className = "split-row";
       const n = document.createElement("span");
-      n.textContent = (x.payId || x.stmtKey || x.estc ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "");
+      n.textContent = (x.payId || x.stmtKey || x.estc ? x.note : [catById(x.category).name, x.note].filter(Boolean).join(", ")) + (x.of > 1 ? ` (cuota ${x.cuota}/${x.of})` : "") + (x.src && x.src.moved ? " (vino en este resumen)" : "");
       const v = document.createElement("span"); v.className = "s"; v.textContent = money(x.amount, x.currency);
       const t = document.createElement("span"); t.className = "pill me";
       row.append(n, v, t); panel.append(row);
@@ -4363,6 +4379,39 @@ function renderPayGroup(r){
   return wrap;
 }
 
+/* Lo que anotaste no da igual que el resumen del banco: se ve la diferencia y, si es un fijo que no vino, se corre al próximo */
+function stmtGap(panel, r, cid, day, stR, ars, usd){
+  const box = document.createElement("div"); box.className = "pay-sum first";
+  const row = (a, b, cls) => { const x = document.createElement("div"); x.className = "split-row" + (cls ? " " + cls : "");
+    const n = document.createElement("span"); n.textContent = a; const v = document.createElement("span"); v.className = "s"; v.textContent = b; x.append(n, v, document.createElement("span")); box.append(x); return x; };
+  const both = (a, u) => [a && fmtARS.format(a), u && fmtUSD.format(u)].filter(Boolean).join(" + ") || fmtARS.format(0);
+  row("Te cobra el banco", both(stR.ars, stR.usd), "tot");
+  row("Lo que anotaste", both(ars, usd));
+  const dA = round2(ars - (stR.ars || 0)), dU = round2(usd - (stR.usd || 0));
+  const fx = r.xs.filter(x => x.src && x.src.virtual && !x.src.moved);
+  const marked = Object.entries(data.fixStmt || {}).filter(([, v]) => v.card === cid && v.pay === day);
+  if (dA > 0.5 || dU > 0.005){
+    const t = document.createElement("p"); t.className = "fx-hint";
+    t.textContent = `Anotaste ${both(Math.max(dA, 0), Math.max(dU, 0))} más que el resumen. Puede ser un fijo que el banco todavía no cobró, uno que ya está con otro nombre, o algo que se canceló (eso borralo).`;
+    box.append(t);
+    fx.forEach(x => {
+      const it = document.createElement("div"); it.className = "gap-fix";
+      const n = document.createElement("span"); n.textContent = `${x.note} · ${money(x.amount, x.currency)}`;
+      const set = v => { data.fixStmt = data.fixStmt || {}; data.fixStmt[x.src.fixedId + "|" + x.src.fixedKey] = { v, card: cid, pay: day }; persist(); render(); };
+      const b1 = document.createElement("button"); b1.type = "button"; b1.className = "small-btn"; b1.textContent = "Viene en el próximo"; b1.onclick = () => set("next");
+      const b2 = document.createElement("button"); b2.type = "button"; b2.className = "small-btn"; b2.textContent = "Ya está con otro nombre"; b2.onclick = () => set("in");
+      it.append(n, b1, b2); box.append(it);
+    });
+  }
+  marked.forEach(([k, v]) => {
+    const f = fixById(k.split("|")[0]); if (!f) return;
+    const it = document.createElement("div"); it.className = "gap-fix";
+    const n = document.createElement("span"); n.textContent = `${f.name}: ${v.v === "next" ? "lo pasaste al próximo resumen" : "ya estaba con otro nombre"}`;
+    const u = document.createElement("button"); u.type = "button"; u.className = "linkbtn"; u.textContent = "Deshacer"; u.onclick = () => { delete data.fixStmt[k]; persist(); render(); };
+    it.append(n, u); box.append(it);
+  });
+  panel.append(box);
+}
 /* Menú de un fijo por sesión (igual en Movimientos y en Fijos): ajustar sesiones del mes, pagar y editar */
 /* El último pago cargado de un fijo en ese mes (para corregirlo desde Fijos) */
 const fixPayOf = i => data.expenses.filter(e => e.fixedId === i.f.id && e.fixedKey === i.key).sort((a,b) => b.date.localeCompare(a.date))[0] || null;
@@ -6466,6 +6515,13 @@ function stmtLoad(r){
     x.on = x.tipo !== "devolucion" && !x.dup;
     x.unsure = x.tipo === "compra" && !x.dup && !x.maybe && !x.learned && (!x.m.seguro || !x.catOk);
   });
+  // Una devolución por el mismo monto cancela una compra: del resumen (no se carga ninguna) o una que ya tenías (se borra)
+  rows.filter(x => x.tipo === "devolucion").forEach(dv => {
+    const c = rows.find(x => x.tipo === "compra" && !x.cancel && x.m.moneda === dv.m.moneda && Math.abs(x.m.monto - dv.m.monto) < 0.01);
+    if (c){ c.cancel = dv; c.on = false; c.unsure = false; c.maybe = null; dv.cancelOf = c; if (c.dup && !c.dup.fixed && !c.dup.virtual) dv.delExp = c.dup; }
+    else dv.delExp = data.expenses.find(e => !isIncome(e) && e.cardId === card.id && e.currency === dv.m.moneda && Math.abs(e.amount - dv.m.monto) < 0.01) || null;
+    dv.on = !!dv.delExp;
+  });
   st.r = r; st.rows = rows; st.same = rows.filter(x => x.maybe); st.ask = rows.filter(x => x.unsure); st.step = 0;
   st.paid = !!(r.vencimiento && dateOnly(r.vencimiento) <= dateOnly(toLocalInput(new Date())));
   st.phase = !rows.length ? "pick" : st.same.length ? "same" : st.ask.length ? "ask" : "review";
@@ -6558,27 +6614,28 @@ function renderStmt(){
   }
   // Revisión final
   const r = st.r, rows = st.rows;
-  const sumOn = cur => round2(rows.filter(x => x.on && x.m.moneda === cur).reduce((a, x) => a + x.m.monto, 0));
+  const sumOn = cur => round2(rows.filter(x => x.on && x.tipo !== "devolucion" && x.m.moneda === cur).reduce((a, x) => a + x.m.monto, 0));
   const head = document.createElement("div"); head.className = "st-sum";
   const tot = [r.total_ars > 0 && fmtARS.format(r.total_ars), r.total_usd > 0 && fmtUSD.format(r.total_usd)].filter(Boolean).join(" + ");
   head.append(P("", [r.vencimiento ? `Vence el ${shortDate(dateOnly(r.vencimiento))}` : null, tot ? `Total: ${tot}` : null].filter(Boolean).join(" · ") || "Resumen leído"));
   b.append(head);
   if (r.sinIA) b.append(P("fx-hint", r.aiErr ? `Gemini no respondió (${(aiErrorMsg(r.aiErr) || "").replace(" Usé el modo simple.", "").replace(/\.$/, "").toLowerCase()}), así que lo leí yo sin IA. Revisá las categorías.` : "Lo leí sin IA: revisá las categorías."));
-  const groups = [["Para cargar", rows.filter(x => !x.dup && x.tipo !== "devolucion")], ["Ya los tenías cargados (no se repiten)", rows.filter(x => x.dup)], ["Devoluciones (no se cargan)", rows.filter(x => x.tipo === "devolucion")]];
+  const groups = [["Para cargar", rows.filter(x => !x.dup && !x.cancel && x.tipo !== "devolucion")], ["Ya los tenías cargados (no se repiten)", rows.filter(x => x.dup && !x.cancel)],
+    ["Canceladas y devoluciones (no se cargan)", rows.filter(x => x.cancel || x.tipo === "devolucion")]];
   const catsSel = [...allCats().filter(c => !c.hidden && c.id !== "ahorro"), catById("intereses"), { id: ST_DONTKNOW, name: "No sé qué es" }, { id: "__new", name: "+ Nueva categoría…" }];
   groups.forEach(([title, xs]) => {
     if (!xs.length) return;
     const h = document.createElement("div"); h.className = "st-gh"; h.textContent = `${title} (${xs.length})`; b.append(h);
     xs.forEach(x => {
       const row = document.createElement("div"); row.className = "st-row" + (x.on ? "" : " off");
-      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = x.on; cb.disabled = x.tipo === "devolucion"; cb.setAttribute("aria-label", `Cargar ${stmtLine(x)}`);
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = x.on; cb.disabled = x.cancel || (x.tipo === "devolucion" && !x.delExp); cb.setAttribute("aria-label", `Cargar ${stmtLine(x)}`);
       cb.onchange = () => { x.on = cb.checked; if (x.dup && x.on && !x.dup.fixed && !x.cat) x.cat = ST_DONTKNOW; renderStmt(); };
       const mid = document.createElement("div"); mid.className = "st-mid";
       const n = document.createElement("div"); n.className = "n"; n.textContent = stmtLine(x);
       const d = document.createElement("small");
-      d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.dup ? (x.dup.fixed ? ` · es tu fijo ${x.dup.fixed.name}` : ` · ya lo tenías: ${expDesc(x.dup)}`) : x.learned ? " · como la otra vez" : "");
+      d.textContent = shortDate(dateOnly(x.m.fecha)) + (x.cancel ? " · se canceló (tiene su devolución)" : x.cancelOf ? " · es la devolución de esa compra" : x.delExp ? ` · cancela tu gasto ${expDesc(x.delExp)}: si está tildado, lo borro` : x.dup ? (x.dup.fixed ? ` · es tu fijo ${x.dup.fixed.name}` : ` · ya lo tenías: ${expDesc(x.dup)}`) : x.learned ? " · como la otra vez" : "");
       mid.append(n, d);
-      if (x.tipo !== "devolucion" && (!x.dup || x.on)){
+      if (x.tipo !== "devolucion" && !x.cancel && (!x.dup || x.on)){
         const sel = document.createElement("select"); sel.className = "input st-sel"; sel.setAttribute("aria-label", `Categoría de ${stmtLine(x)}`);
         catsSel.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.name; sel.append(o); });
         sel.value = x.cat || ST_DONTKNOW; x.cat = sel.value;
@@ -6589,7 +6646,7 @@ function renderStmt(){
       row.append(cb, mid, a); b.append(row);
     });
   });
-  const n = rows.filter(x => x.on).length;
+  const n = rows.filter(x => x.on && x.tipo !== "devolucion").length;
   const pay = document.createElement("label"); pay.className = "st-paid";
   const pcb = document.createElement("input"); pcb.type = "checkbox"; pcb.checked = st.paid; pcb.onchange = () => { st.paid = pcb.checked; };
   pay.append(pcb, r.vencimiento ? ` Ya lo pagué (el ${shortDate(dateOnly(r.vencimiento))})` : " Ya lo pagué");
@@ -6601,8 +6658,10 @@ function renderStmt(){
 function stmtSave(){
   const card = st.card, r = st.r, mk = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), added = [], batch = mk();
   // Los que confirmaste que ya tenías: si estaban con otro medio de pago, pasan a esta tarjeta
-  let movedN = 0; const dupN = st.rows.filter(x => x.dup && !x.on).length;
-  st.rows.filter(x => x.dup && !x.dup.fixed && !x.on).forEach(x => { const e = x.dup;
+  let movedN = 0; const dupN = st.rows.filter(x => x.dup && !x.on && !x.cancel).length;
+  const gone = st.rows.filter(x => x.tipo === "devolucion" && x.on && x.delExp).map(x => x.delExp);
+  if (gone.length) data.expenses = data.expenses.filter(e => !gone.includes(e));
+  st.rows.filter(x => x.dup && !x.dup.fixed && !x.on && !x.cancel).forEach(x => { const e = x.dup;
     if (!(e.method === "card" && e.cardId === card.id)){ e.method = "card"; e.cardId = card.id; e.installments = Math.max(1, e.installments || 1); movedN++; } });
   const okD = v => v && /^\d{4}-\d{2}-\d{2}$/.test(v);
   const cierre = okD(r.cierre) ? r.cierre : okD(r.vencimiento) ? toLocalInput(new Date(dateOnly(r.vencimiento).getTime() - 10 * 864e5)) : null;
@@ -6637,7 +6696,7 @@ function stmtSave(){
   let moved = "";
   if (venc){ const [vy, vm] = periodOf(`${venc}T12:00`); if (vy !== viewYear || vm !== viewMonth){ viewYear = vy; viewMonth = vm; moved = ` Como vence el ${shortDate(dateOnly(venc))}, lo vas a ver en ${monthName(vy, vm)} (ya te llevé ahí).`; } }
   closeStmt(); render();
-  uiAlert((added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dupN ? ` ${dupN} ya los tenías y no los repetí${movedN ? ` (${movedN} los pasé a ${card.name})` : ""}.` : "") + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "no sé qué es"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.") + moved);
+  uiAlert((added.length ? `Listo, cargué ${added.length} ${added.length === 1 ? "gasto" : "gastos"} de ${card.name}.` + (dupN ? ` ${dupN} ya los tenías y no los repetí${movedN ? ` (${movedN} los pasé a ${card.name})` : ""}.` : "") + (gone.length ? ` Borré ${gone.length} ${gone.length === 1 ? "gasto que se canceló" : "gastos que se cancelaron"}.` : "") + (dk ? ` ${dk} ${dk === 1 ? "quedó" : "quedaron"} como "no sé qué es"; si después te acordás, editalos desde Resumen → Tarjetas.` : "") : "Listo, no había nada nuevo para cargar.") + moved);
 }
 
 /* Modal de la clave */
@@ -7366,7 +7425,11 @@ const NEWS = [
     { es: "En la hoja de la persona ves la próxima cuota y podés adelantar: se descuenta de las últimas.", en: "On the person's page you see the next installment and can pay ahead: it comes off the last ones." },
     { es: "El último día antes de cobrar, la pizarra muestra lo que te queda hoy.", en: "On the last day before payday, the board shows what you have left today." },
     { es: "Arreglo: lo que cargabas a la mañana no se restaba de tus cuentas hasta el mediodía.", en: "Fix: morning expenses weren't taken off your accounts until noon." },
-    { es: "Arreglo: en compus medianas las pestañas de arriba se pisaban con los botones.", en: "Fix: on mid-size screens the top tabs overlapped the buttons." } ] },
+    { es: "Arreglo: en compus medianas las pestañas de arriba se pisaban con los botones.", en: "Fix: on mid-size screens the top tabs overlapped the buttons." },
+    { es: "El calendario ahora dice las fechas de tu mes (por ejemplo, 30 oct – 29 nov), así no parece que ya es el mes que viene.", en: "The calendar now shows your month's dates (e.g. Oct 30 – Nov 29), so it doesn't look like next month already started." },
+    { es: "Si cargaste el resumen de la tarjeta, en Movimientos ves lo que te cobra el banco, y si anotaste de más te muestra la diferencia.", en: "If you loaded your card statement, Movimientos shows what the bank charges, and the difference if you logged more." },
+    { es: "Si un fijo no vino en el resumen, podés pasarlo al próximo o marcar que ya estaba con otro nombre.", en: "If a fixed expense isn't on the statement, you can move it to the next one or mark it as already there." },
+    { es: "Las compras que se cancelaron con una devolución en el resumen ya no se cargan.", en: "Purchases cancelled by a refund on the statement are no longer added." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -11289,6 +11352,14 @@ Cuotas pagadas	Installments paid
 Adelanto de cuotas	Advance payment
 ¿En cuántas cuotas se lo devolvés?	In how many installments do you pay it back?
 1 (de una)	1 (all at once)
+según tu resumen	per your statement
+Te cobra el banco	The bank charges
+Lo que anotaste	What you logged
+Viene en el próximo	Comes in the next one
+Ya está con otro nombre	Already there under another name
+Deshacer	Undo
+Canceladas y devoluciones (no se cargan)	Cancelled and refunds (not added)
+es la devolución de esa compra	is the refund for that purchase
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11605,6 +11676,11 @@ const I18N_EN_P = [
   [/^cuota (\d+) de (\d+): (.+) el (.+)$/, "installment $1 of $2: $3 on $4"],
   [/^(\d+) cuotas de (.+), el (\d+) de cada mes, desde el mes que viene\.$/, "$1 installments of $2, on day $3 of each month, starting next month."],
   [/^Cuota (\d+) de (\d+)$/, "Installment $1 of $2"],
+  [/^Tu mes de (\S+) · empieza cuando cobrás$/, "Your $1 · starts on payday"],
+  [/^Anotaste (.+) más que el resumen\. Puede ser un fijo que el banco todavía no cobró, uno que ya está con otro nombre, o algo que se canceló \(eso borralo\)\.$/, "You logged $1 more than the statement. It may be a fixed expense the bank hasn't charged yet, one that's already there under another name, or something cancelled (delete that)."],
+  [/^(.+): lo pasaste al próximo resumen$/, "$1: moved to the next statement"],
+  [/^(.+): ya estaba con otro nombre$/, "$1: already there under another name"],
+  [/^(.+) \(vino en este resumen\)$/, "$1 (came in this statement)"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

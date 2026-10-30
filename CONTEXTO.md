@@ -447,3 +447,9 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Los botones de la derecha van en `.brand-right`. En ≥1100px `.brand` es grid `minmax(max-content,1fr) minmax(0,680px) minmax(max-content,1fr)`: las pestañas se achican en vez de pisar Aprender/dólar.
 - `.fab` en compu centrado sobre la columna derecha (`left:calc(50% + 231px)`), no tapa la izquierda.
 - `.hello` hace salto de línea en vez de "…".
+
+## 7ag. Calendario y resumen de tarjeta vs banco (2026-10-30)
+- `navTitle(y,m)`: si el mes va de cobro a cobro, el título del calendario son las fechas ("30 oct – 29 nov"); abajo "Tu mes de noviembre · empieza cuando cobrás" (abre Cuándo cobrás). Hoy: "30 de octubre, viernes".
+- Movimientos: con `data.cardStmt[key]` y sin pago, el grupo de tarjeta muestra el total del banco ("según tu resumen"). `stmtGap` muestra banco vs anotado y, si anotaste de más, cada fijo virtual con "Viene en el próximo" / "Ya está con otro nombre" (con Deshacer).
+- `data.fixStmt["fixedId|YYYY-MM"] = {v:"next"|"in", card, pay}`: "next" corre el vencimiento del fijo un mes (`virtualFixed`, `moved`), "in" no lo cuenta ese mes.
+- Importar resumen: una devolución por el mismo monto y moneda cancela una compra del resumen (no se carga ninguna) o borra un gasto ya cargado de esa tarjeta (checkbox tildado).
