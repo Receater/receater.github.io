@@ -455,3 +455,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Importar resumen: una devolución por el mismo monto y moneda cancela una compra del resumen (no se carga ninguna) o borra un gasto ya cargado de esa tarjeta (checkbox tildado).
 
 - Pago de tarjeta con dólares: si pesos pagados ≈ total del resumen (o compras en pesos) − percepciones RG 5617, esas percepciones se borran solas y Recy avisa.
+- Grupo de tarjeta pagado: muestra el pago (pesos + dólares), no la suma de lo anotado.
