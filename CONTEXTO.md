@@ -442,3 +442,8 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
   - Usa **el mismo Client ID de Google** que Receater (con `drive.file` solo así puede ver ese archivo). Lo único necesario es agregar el dominio de Despensa como origen autorizado en Google Cloud.
   - **Despensa nunca escribe en `receater-data.json`.** Receater no cambia nada por esta conexión.
 - **Ecosistema a futuro**: Receater, Ideary y Despensa unidas por un hub común. Cada repo tiene su `CONTEXTO.md` para darle contexto a los chats de cada app y del hub.
+
+## 7af. Header en compu sin pisarse (2026-10-30)
+- Los botones de la derecha van en `.brand-right`. En ≥1100px `.brand` es grid `minmax(max-content,1fr) minmax(0,680px) minmax(max-content,1fr)`: las pestañas se achican en vez de pisar Aprender/dólar.
+- `.fab` en compu centrado sobre la columna derecha (`left:calc(50% + 231px)`), no tapa la izquierda.
+- `.hello` hace salto de línea en vez de "…".

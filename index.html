@@ -1967,6 +1967,16 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 @media (max-width:600px){.brand .learn-btn span{display:none}.brand .learn-btn{padding:7px 9px}}
 @media (max-width:420px){.brand .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px}.brand{padding-left:14px !important}}
 @media (max-width:375px){.brand .usd-pill{display:none !important}}
+/* Header: lo de la derecha va junto; en compu el header es una grilla de 3 columnas, así las pestañas nunca se pisan con los botones */
+.brand-right{display:flex;align-items:center;gap:inherit;margin-left:auto;min-width:0}
+@media (min-width:1100px){
+  .brand{display:grid !important;grid-template-columns:minmax(max-content,1fr) minmax(0,680px) minmax(max-content,1fr);column-gap:18px}
+  .brand .main-tabs{position:relative !important;left:auto !important;top:auto !important;transform:none !important;width:auto !important;min-width:0;margin:0 !important}
+  .brand-right{justify-self:end;gap:10px}
+  /* "Darle a Recy" va centrado sobre la columna derecha, así no tapa la columna de la izquierda */
+  .fab{left:calc(50% + 231px) !important}
+}
+.brand .hello{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.15}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2374,12 +2384,14 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
       <span class="logo">Rec<span>eater</span></span>
       <span class="hello" id="hello" hidden></span>
     </div>
+    <div class="brand-right">
     <button type="button" class="learn-btn" id="learnBtn" aria-label="Aprender de finanzas"><svg class="ic" aria-hidden="true"><use href="#i-grad"/></svg><span>Aprender</span></button>
     <button type="button" class="usd-pill" id="usdPill" hidden aria-label="Cotización del dólar"></button>
     <button type="button" class="icon-btn help-btn" id="helpBtn" aria-label="Ayuda"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg></button>
     <button type="button" class="icon-btn gear" id="setBtn" aria-label="Ajustes">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
     </button>
+    </div>
   </header>
   <div class="tabs main-tabs" role="tablist">
     <button role="tab" id="tabList" aria-selected="true">Movimientos</button>
@@ -3177,7 +3189,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-29.1115";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1235";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7353,7 +7365,8 @@ const NEWS = [
     { es: "Las cuotas que debés aparecen en lo que te falta pagar y se restan del \"Te queda\"; te avisamos un día antes.", en: "Installments you owe show in what's left to pay and come off \"You have left\"; you get a notice the day before." },
     { es: "En la hoja de la persona ves la próxima cuota y podés adelantar: se descuenta de las últimas.", en: "On the person's page you see the next installment and can pay ahead: it comes off the last ones." },
     { es: "El último día antes de cobrar, la pizarra muestra lo que te queda hoy.", en: "On the last day before payday, the board shows what you have left today." },
-    { es: "Arreglo: lo que cargabas a la mañana no se restaba de tus cuentas hasta el mediodía.", en: "Fix: morning expenses weren't taken off your accounts until noon." } ] },
+    { es: "Arreglo: lo que cargabas a la mañana no se restaba de tus cuentas hasta el mediodía.", en: "Fix: morning expenses weren't taken off your accounts until noon." },
+    { es: "Arreglo: en compus medianas las pestañas de arriba se pisaban con los botones.", en: "Fix: on mid-size screens the top tabs overlapped the buttons." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
