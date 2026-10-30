@@ -2038,6 +2038,24 @@ body.chat-on{overflow:hidden}
 .go-top{bottom:calc(96px + env(safe-area-inset-bottom,0px)) !important}
 @media (max-width:760px){.chat-fab{right:14px;bottom:calc(98px + env(safe-area-inset-bottom,0px));width:52px;height:52px}.go-top{bottom:calc(162px + env(safe-area-inset-bottom,0px)) !important}}
 html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-fab,body.learn-mode .chat-fab,body.touring .chat-fab{opacity:0;pointer-events:none}
+/* Repartir dólares entre frascos */
+.jar-common{display:grid;gap:2px;margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#FBF8F1;border:1.5px dashed #BDB6A5;color:#1F1F1F}
+.jar-common .jc-v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:1.05rem}
+.jar-common small{color:#6E6A62}
+.fx-split{display:grid;gap:10px;margin-top:4px}
+.fxs-hint{margin:0}
+.fxs-row{border:1.5px dashed #CFC5AE;border-radius:10px;padding:10px 12px;background:#FFFEFB;display:grid;gap:7px}
+.fxs-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;align-items:baseline}
+.fxs-top strong{font-size:.95rem}
+.fxs-st{font-size:.8rem;color:#6E6A62}
+.fxs-bar{height:8px;border-radius:4px;background:#ECE5D5;display:flex;overflow:hidden}
+.fxs-bar i{display:block;height:100%;background:#2F8F5B}
+.fxs-bar i.add{background:repeating-linear-gradient(45deg,#6355C7 0 4px,#8478DC 4px 8px)}
+.fxs-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fxs-ctl .input{width:120px;flex:none}
+.fxs-after{color:#6355C7;font-weight:700;font-size:.8rem}
+.fxs-sum{font-weight:700;font-size:.92rem;padding:2px 2px}
+.fxs-sum.bad{color:#B0322A}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2440,6 +2458,15 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 :root[data-theme="dark"] .chat-ic.mic-btn.rec{background:#BC3D52 !important;border-color:#BC3D52 !important;color:#FFFFFF !important}
 :root[data-theme="dark"] .chat-fab{border:3px solid #1D1C19 !important;background:#2A2518 !important}
 :root[data-theme="dark"] .chat-fab::after{background:#584AB5 !important;border:2px solid #1D1C19 !important}
+:root[data-theme="dark"] .jar-common{background:#1D1C19 !important;border:1.5px dashed #3D382D !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .jar-common small{color:#817E78 !important}
+:root[data-theme="dark"] .fxs-row{border:1.5px dashed #413C32 !important;background:#191918 !important}
+:root[data-theme="dark"] .fxs-st{color:#817E78 !important}
+:root[data-theme="dark"] .fxs-bar{background:#2A2721 !important}
+:root[data-theme="dark"] .fxs-bar i{background:#258050 !important}
+:root[data-theme="dark"] .fxs-bar i.add{background:repeating-linear-gradient(45deg,#584AB5 0 4px,#766AC7 4px 8px) !important}
+:root[data-theme="dark"] .fxs-after{color:#8981F0 !important}
+:root[data-theme="dark"] .fxs-sum.bad{color:#E1675A !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -2781,6 +2808,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
   <div class="field" id="jarField" hidden>
     <span class="lbl">¿A qué frasco va?</span>
     <div class="chips" id="jarChips"></div>
+    <div class="fx-split" id="fxSplit" hidden></div>
   </div>
 
   <div class="field" id="incAccField" hidden>
@@ -3274,7 +3302,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1900";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.2030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -5202,6 +5230,9 @@ function updateJarField(){
   const cur = jarFieldCurrency(), jars = data.jars.filter(j => j.currency === cur);
   if (!editing && !jarUserPicked) jarSel = defaultJar(cur);
   if (jarSel && !jars.some(j => j.id === jarSel)) jarSel = null;
+  const split = mode === "fx" && !editing && jars.length > 0;
+  $("jarChips").hidden = split; $("fxSplit").hidden = !split;
+  if (split){ renderFxSplit(); return; }
   const box = $("jarChips"); box.innerHTML = "";
   const chip = (label, active, onclick, color) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(active));
@@ -5209,8 +5240,59 @@ function updateJarField(){
     b.append(label); b.onclick = onclick; box.append(b);
   };
   jars.forEach(j => chip(j.name, jarSel === j.id, () => { jarSel = j.id; jarUserPicked = true; updateJarField(); }, j.color));
-  chip("Sin frasco", !jarSel, () => { jarSel = null; jarUserPicked = true; updateJarField(); });
+  chip("Frasco común", !jarSel, () => { jarSel = null; jarUserPicked = true; updateJarField(); });
   chip("+ Frasco", false, () => openJar(null, cur));
+}
+/* Comprar dólares: repartirlos entre frascos. Lo que no asignás va al frasco común (ahorro sin frasco). */
+let fxAlloc = {};
+function fxAllocTotal(){ return round2(Object.values(fxAlloc).reduce((a, v) => a + (v || 0), 0)); }
+function renderFxSplit(){
+  const box = $("fxSplit"), usd = fxNum("fxUsd") || 0, jars = data.jars.filter(j => j.currency === "USD");
+  Object.keys(fxAlloc).forEach(id => { if (!jarById(id)) delete fxAlloc[id]; });
+  const asg = fxAllocTotal(), left = round2(usd - asg), U = v => fmtUSD.format(round2(v));
+  const keepFocus = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.fxj;
+  box.innerHTML = "";
+  const hint = document.createElement("p"); hint.className = "fx-hint fxs-hint";
+  hint.textContent = usd > 0 ? "Poné cuánto va a cada frasco. Lo que sobra queda en el frasco común." : "Primero poné cuántos dólares compraste y después repartilos.";
+  box.append(hint);
+  jars.forEach(j => {
+    const bal = jarBalance(j), add = fxAlloc[j.id] || 0, goal = j.goal || 0, miss = goal ? Math.max(0, round2(goal - bal)) : 0;
+    const row = document.createElement("div"); row.className = "fxs-row";
+    const top = document.createElement("div"); top.className = "fxs-top";
+    const nm = document.createElement("strong"); nm.textContent = j.name; if (j.color) nm.style.setProperty("--jc", j.color);
+    const st = document.createElement("span"); st.className = "fxs-st";
+    st.textContent = goal ? (miss > 0 ? `${U(bal)} de ${U(goal)} · te faltan ${U(miss)}` : `${U(bal)} · meta cumplida`) : `${U(bal)} · sin meta`;
+    top.append(nm, st);
+    const bar = document.createElement("div"); bar.className = "fxs-bar";
+    if (goal){ const a = document.createElement("i"); a.style.width = Math.min(100, bal / goal * 100) + "%"; if (j.color) a.style.background = j.color;
+      const b = document.createElement("i"); b.className = "add"; b.style.width = Math.max(0, Math.min(100 - bal / goal * 100, add / goal * 100)) + "%"; bar.append(a, b); }
+    const ctl = document.createElement("div"); ctl.className = "fxs-ctl";
+    const inp = document.createElement("input"); inp.className = "input"; inp.inputMode = "decimal"; inp.placeholder = "US$ 0"; inp.dataset.fxj = j.id;
+    inp.setAttribute("aria-label", `Dólares para ${j.name}`); inp.value = add ? String(add).replace(".", ",") : "";
+    inp.oninput = () => { const v = round2(parseFloat(inp.value.replace(/\./g, "").replace(",", ".")) || 0); if (v > 0) fxAlloc[j.id] = v; else delete fxAlloc[j.id]; renderFxSplitSum(); };
+    inp.onchange = () => renderFxSplit();
+    ctl.append(inp);
+    if (usd > 0 && goal && miss > 0){
+      const room = round2(left + add), fill = Math.min(miss, room);
+      if (fill > 0 && Math.abs(fill - add) > 0.004){ const b = document.createElement("button"); b.type = "button"; b.className = "small-btn";
+        b.textContent = fill >= miss ? `Llenarlo (${U(miss)})` : `Poner ${U(fill)}`; b.onclick = () => { fxAlloc[j.id] = fill; renderFxSplit(); }; ctl.append(b); }
+    }
+    if (usd > 0 && left > 0 && !goal){ const b = document.createElement("button"); b.type = "button"; b.className = "small-btn"; b.textContent = "Todo acá";
+      b.onclick = () => { fxAlloc[j.id] = round2(add + left); renderFxSplit(); }; ctl.append(b); }
+    if (goal && add > 0){ const after = bal + add, p = Math.min(100, Math.round(after / goal * 100)); const n = document.createElement("small"); n.className = "fxs-after";
+      n.textContent = after >= goal ? "Con esto lo llenás" : `Queda en ${p}%`; ctl.append(n); }
+    row.append(top); if (goal) row.append(bar); row.append(ctl); box.append(row);
+  });
+  const sum = document.createElement("div"); sum.className = "fxs-sum"; sum.id = "fxSplitSum"; box.append(sum);
+  const plus = document.createElement("button"); plus.type = "button"; plus.className = "linkbtn"; plus.textContent = "+ Nuevo frasco en dólares"; plus.onclick = () => openJar(null, "USD"); box.append(plus);
+  renderFxSplitSum();
+  if (keepFocus){ const el = box.querySelector(`[data-fxj="${keepFocus}"]`); if (el){ el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch {} } }
+}
+function renderFxSplitSum(){
+  const el = $("fxSplitSum"); if (!el) return;
+  const usd = fxNum("fxUsd") || 0, asg = fxAllocTotal(), left = round2(usd - asg), U = v => fmtUSD.format(round2(v));
+  el.classList.toggle("bad", left < -0.004);
+  el.textContent = !usd ? "" : left < -0.004 ? `Repartiste ${U(asg)}, pero compraste ${U(usd)}: sacá ${U(-left)}.` : `Frasco común: ${U(left)}`;
 }
 let fixSel = null, fixDiffMode = "partial";
 function fixSelInst(){
@@ -6000,6 +6082,7 @@ function fxValues(){
   return { usd, ars, rate: usd ? ars / usd : 0 };
 }
 function setFxMode(){ fxLink.reset(); fxCalc(); renderQuotes(FXQ); }
+$("fxUsd").addEventListener("input", () => { if (!$("fxSplit").hidden) renderFxSplit(); });
 
 /* ---------- Dólar del día (DolarApi) ---------- */
 const CASAS = [{ id:"oficial", name:"Oficial" }, { id:"blue", name:"Blue" }, { id:"bolsa", name:"MEP" }, { id:"tarjeta", name:"Tarjeta" }];
@@ -6986,7 +7069,7 @@ function openSheet(exp){
   $("paidCuotas").innerHTML = '<option value="0">0</option>'; $("paidCuotas").value = 0;
   if (exp && exp.paidInstallments){ const o = document.createElement("option"); o.value = exp.paidInstallments; $("paidCuotas").append(o); $("paidCuotas").value = exp.paidInstallments; }
   renderMethods();
-  jarSel = exp ? (exp.jarId || null) : null;
+  jarSel = exp ? (exp.jarId || null) : null; fxAlloc = {};
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = ""); $("cpkRate").value = "";
   $("catSearch").value = ""; catEditing = false; editingPay = null;
   $("tellInput").value = ""; $("tellMsg").textContent = "Podés dictarlo con el micrófono del teclado."; aiSetupLabel();
@@ -7140,9 +7223,21 @@ $("sheet").addEventListener("submit", ev => {
     if (!(usd > 0) || !(ars > 0)){ $("err").textContent = "Completá dos de los tres datos: dólares, cotización o cuánto te salieron."; return; }
     const date = `${$("date").value || toLocalInput(new Date())}T${$("time").value || toTime(new Date())}`;
     const fields = { amount: round2(ars), currency:"ARS", category:"ahorro", date, note: $("note").value.trim(), split:null, fx:{ usd: round2(usd), rate: round2(ars/usd) }, jarId: jarSel };
-    if (jarSel) data.lastJar.USD = jarSel;
-    if (editing) Object.assign(editing, fields);
-    else data.expenses.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), source:"manual", items:[], ...fields });
+    const mk = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    if (!editing && !$("fxSplit").hidden){
+      // repartidos entre frascos: una compra por frasco (misma cotización); lo que sobra, al frasco común
+      const asg = fxAllocTotal(); if (asg - usd > 0.004){ $("err").textContent = "Repartiste más dólares de los que compraste."; return; }
+      const rate = ars / usd, parts = Object.entries(fxAlloc).filter(([, v]) => v > 0).map(([id, v]) => [id, v]);
+      if (usd - asg > 0.004) parts.push([null, round2(usd - asg)]);
+      const group = mk(); let arsLeft = round2(ars);
+      parts.forEach(([id, u], k) => { const a = k === parts.length - 1 ? arsLeft : round2(u * rate); arsLeft = round2(arsLeft - a);
+        data.expenses.push({ id: mk(), source:"manual", items:[], ...fields, amount: a, fx: { usd: round2(u), rate: round2(rate) }, jarId: id, fxGroup: group }); });
+      if (parts[0] && parts[0][0]) data.lastJar.USD = parts[0][0];
+    } else {
+      if (jarSel) data.lastJar.USD = jarSel;
+      if (editing) Object.assign(editing, fields);
+      else data.expenses.push({ id: mk(), source:"manual", items:[], ...fields });
+    }
     data.lastRate = fields.fx.rate;
     persist();
     [viewYear, viewMonth] = periodOf(date);
@@ -7681,7 +7776,8 @@ const NEWS = [
     { es: "Arreglo: Hablar a veces no te escuchaba. Ahora siempre graba, y si el dictado del navegador no entendió, lo pasa a texto Gemini.", en: "Fix: Speak sometimes didn't hear you. It now always records, and if the browser's dictation missed it, Gemini transcribes it." },
     { es: "Logo nuevo: una sola tinta y letra de sello.", en: "New logo: one ink color and a stamp-style font." },
     { es: "Recy ahora es un chat: tocá su cara abajo a la derecha, en cualquier pestaña. Le podés preguntar o pedirle que te anote un gasto.", en: "Recy is now a chat: tap its face at the bottom right, on any tab. Ask it things or have it log an expense." },
-    { es: "La pizarra de Resumen ya no compara con el mes anterior a mitad de mes (confundía).", en: "The Summary board no longer compares with last month mid-month (it was confusing)." } ] },
+    { es: "La pizarra de Resumen ya no compara con el mes anterior a mitad de mes (confundía).", en: "The Summary board no longer compares with last month mid-month (it was confusing)." },
+    { es: "Al comprar dólares los podés repartir entre frascos: ves cuánto le falta a cada uno, lo llenás con un toque y lo que sobra va al frasco común.", en: "When buying dollars you can split them between jars: see what each needs, fill one with a tap, and the rest goes to the common jar." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -9419,9 +9515,11 @@ function renderJars(){
     const looseSum = cur => round2(savingsEntries(cur).filter(x => !x.jar).reduce((s2,x) => s2 + x.amount, 0));
     const lA = looseSum("ARS"), lU = looseSum("USD");
     if (lA || lU){
-      const p = document.createElement("p"); p.className = "fx-hint";
-      p.textContent = `Tenés ${[lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ")} ahorrados sin frasco. Editá esos movimientos para asignarles uno.`;
-      list.append(p);
+      const p = document.createElement("div"); p.className = "jar-common";
+      const t = document.createElement("strong"); t.textContent = "Frasco común";
+      const v = document.createElement("span"); v.className = "jc-v"; v.textContent = [lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ");
+      const h = document.createElement("small"); h.textContent = "Lo que ahorrás sin elegir un frasco. Cuando comprás dólares podés pasarlo a uno.";
+      p.append(t, v, h); list.append(p);
     }
   }
   fillShelf(grid);
@@ -11634,6 +11732,12 @@ Enviar	Send
 Ver y guardar ›	Review and save ›
 ¿Cuántos dólares puedo comprar?	How many dollars can I buy?
 Anotame 5.000 de café hoy	Log 5,000 for coffee today
+Poné cuánto va a cada frasco. Lo que sobra queda en el frasco común.	Set how much goes to each jar. The rest stays in the common jar.
+Primero poné cuántos dólares compraste y después repartilos.	First enter how many dollars you bought, then split them.
+Todo acá	All here
+Con esto lo llenás	This fills it
++ Nuevo frasco en dólares	+ New dollar jar
+Repartiste más dólares de los que compraste.	You split more dollars than you bought.
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11717,6 +11821,8 @@ Sin día fijo	No fixed day
 Sin entrar	Without signing in
 Sin entrar con Google	Without signing in with Google
 Sin frasco	No jar
+Frasco común	Common jar
+Lo que ahorrás sin elegir un frasco. Cuando comprás dólares podés pasarlo a uno.	What you save without picking a jar. When you buy dollars you can move it to one.
 Sin tope	No limit
 Sobre tus gastos	About your expenses
 Solo aparece si no entraste con Google.	Only shows if you didn't sign in with Google.
@@ -11969,6 +12075,14 @@ const I18N_EN_P = [
   [/^No pude pasar el audio a texto\.$/, "I couldn't turn the audio into text."],
   [/^¡Hola! Preguntame lo que quieras de tus gastos, o pedime que te anote uno.*$/, "Hi! Ask me anything about your spending, or have me log one (e.g. \"log 5,000 for coffee today\")."],
   [/^En total, (.+) (más|menos) que en (\S+)$/, (m, a, b, c) => `In total, ${a} ${b === "más" ? "more" : "less"} than in ${c}`],
+  [/^Frasco común: (.+)$/, "Common jar: $1"],
+  [/^Llenarlo \((.+)\)$/, "Fill it ($1)"],
+  [/^Poner (.+)$/, "Put $1"],
+  [/^Queda en (\d+)%$/, "Ends at $1%"],
+  [/^(.+) de (.+) · te faltan (.+)$/, "$1 of $2 · $3 to go"],
+  [/^(.+) · meta cumplida$/, "$1 · goal reached"],
+  [/^(.+) · sin meta$/, "$1 · no goal"],
+  [/^Repartiste (.+), pero compraste (.+): sacá (.+)\.$/, "You split $1 but bought $2: remove $3."],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

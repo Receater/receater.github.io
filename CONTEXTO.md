@@ -469,3 +469,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Logo: Alfa Slab One, un solo color.
 - Recy chat: `#askSheet.chat-panel` (panel derecho en compu, pantalla completa en celu), botón `#askFab` (cara de Recy) en todas las pestañas. askGo pide a Gemini accion "responder" o "anotar"; anotar → `askAnotar(texto)` abre Darle a Recy y corre tellSmart para revisar y guardar. Lleva historial corto (askHist).
 - Pizarra Resumen: la comparación con el mes anterior solo con el mes terminado.
+- Comprar dólares (nuevo, con frascos USD): `#fxSplit` reparte entre frascos (fxAlloc), muestra cuánto falta a cada uno, botones Llenarlo/Poner/Todo acá; lo no asignado va al frasco común (jarId null). Guarda una compra por frasco con `fxGroup`. "Sin frasco" ahora se llama "Frasco común" y en Ahorros se ve como tarjeta.
