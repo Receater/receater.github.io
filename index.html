@@ -3207,7 +3207,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1745";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1810";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4614,10 +4614,36 @@ function askContext(){
   const bal = balances(); if (bal.length) L.push("CUENTAS CON PERSONAS (positivo = te debe, negativo = le debés): " + bal.map(x => `${x.name}: ARS ${f(x.ARS)}${x.USD ? `, USD ${x.USD}` : ""}`).join("; "));
   const S2 = fixSummary(cy, cm); L.push(`FIJOS del período actual: total ARS ${f(S2.total)}, pagado ${f(S2.paid)}, por pagar ${f(S2.toPay)}, en tarjeta ${f(S2.inCard)}. ` + S2.list.map(i => `${i.f.name} ${i.currency} ${f(i.expected || 0)} (${i.state})`).join("; "));
   if (data.jars && data.jars.length) L.push("FRASCOS DE AHORRO: " + data.jars.map(j => `${j.name}: ${j.currency} ${f(jarBalance(j))}${j.goal ? ` de ${f(j.goal)}` : ""}`).join("; "));
-  try { const tq = teQuedaReal(cy, cm); if (tq) L.push(`PLATA LIBRE HOY (período actual): en cuentas ARS ${f(tq.real)}, menos fijos por pagar ${f(tq.fix)}, tarjetas por pagar ${f(tq.card)} y deudas ${f(tq.repay)} = te quedan ARS ${f(tq.left)} hasta que cobre de nuevo (${toLocalInput(payDate(cy, cm + 1))}). Para "cuántos dólares puedo comprar", usá esto menos lo que necesita para vivir hasta cobrar (gasto diario promedio del mes pasado × días que faltan), dividido el dólar de hoy.`); } catch {}
+  try { const tq = teQuedaReal(cy, cm); if (tq) L.push(`PLATA LIBRE HOY (período actual): en cuentas ARS ${f(tq.real)}, menos fijos por pagar ${f(tq.fix)}, tarjetas por pagar ${f(tq.card)} y deudas ${f(tq.repay)} = te quedan ARS ${f(tq.left)} hasta que cobre de nuevo (${toLocalInput(payDate(cy, cm + 1))}).`); } catch {}
+  try { const sp = usdPlan(); if (sp) L.push(sp); } catch {}
   try { const rt = fixUsdRate(); if (rt > 0) L.push(`DÓLAR HOY: ${f(rt)} pesos por dólar (para comprar dólares).`); } catch {}
   const bud = budgetStatus(cy, cm); if (bud.length) L.push("TOPES: " + bud.map(x => `${catById(x.id).name} ${f(x.spent)} de ${f(x.cap)}`).join("; "));
   return L.join("\n");
+}
+/* Cuántos dólares podés comprar: lo calcula la app (no Gemini), con el gasto variable de verdad (sin fijos, ahorro ni dólares) */
+function usdPlan(){
+  const [cy, cm] = periodOf(new Date()), tq = teQuedaReal(cy, cm), rate = fixUsdRate(); if (!(rate > 0)) return "";
+  const skip = new Set(["ahorro", "prestamo", "devolucion"]);
+  // gasto variable de un período: todo menos fijos, ahorro, préstamos y compra de dólares (con tarjeta incluido: es lo que gastás por mes)
+  const varOf = (y, m) => monthExpenses(y, m, "ARS").filter(x => !isFixedEnt(x) && !skip.has(x.category) && !x.fx && !x.payId && !x.stmtKey && !x.estc && !(x.src && (x.src.adjust || x.src.fx || x.src.virtual || x.src.fixedId)));
+  const past = []; for (let k = 1; k <= 3; k++){ const d0 = new Date(cy, cm - k, 1), xs = varOf(d0.getFullYear(), d0.getMonth()); if (xs.length) past.push(xs); }
+  if (!past.length) return "";
+  const tot = xs => xs.reduce((a, x) => a + x.amount, 0), avg = past.reduce((a, xs) => a + tot(xs), 0) / past.length, f = n => fmtARS.format(Math.round(n));
+  const inc = data.incomes.filter(e => e.currency === "ARS" && inPeriod(e, cy, cm) && !["prestamo"].includes(e.category)).reduce((a, e) => a + e.amount, 0);
+  if (!(inc > 0)) return "";
+  const fx = fixSummary(cy, cm).total || 0;
+  let free = inc - fx - avg; const cap = tq ? tq.left : null; if (cap != null) free = Math.min(free, cap);
+  const byCat = {}; past.forEach(xs => xs.forEach(x => { const n = catById(x.category).name; byCat[n] = (byCat[n] || 0) + x.amount / past.length; }));
+  const top = Object.entries(byCat).filter(([n]) => n !== catById("tarjeta_sd").name).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const usd = v => Math.max(0, Math.floor(v / rate));
+  const reco = free * 0.9, cuts = top.slice(0, 2).map(([n, v]) => [n, v * 0.3]), cutSum = cuts.reduce((a, c) => a + c[1], 0);
+  return `PLAN DE AHORRO EN DÓLARES (ya calculado por la app; usá ESTOS números tal cual, no hagas otras cuentas con el gasto total ni con promedios por día):
+- Cobró este período ${f(inc)}. Fijos del período ${f(fx)}. Gasto del día a día (comida, salidas, compras, con tarjeta incluida; sin fijos ni ahorro), promedio ${past.length === 1 ? "del período pasado" : `de los últimos ${past.length} períodos`}: ${f(avg)}.
+- Le sobraría ${f(inc - fx - avg)}${cap != null && cap < inc - fx - avg ? `, pero hoy le quedan libres ${f(cap)}, así que el tope es ese` : ""}.
+- Recomendación (dejando 10% de colchón): comprar unos US$ ${usd(reco)} (${f(reco)} al dólar de ${f(rate)}).
+- En qué más gasta por período: ${top.map(([n, v]) => `${n} ${f(v)}`).join("; ")}.
+- Si recorta 30% en ${cuts.map(([n]) => n).join(" y ")} (${f(cutSum)} menos), podría comprar unos US$ ${usd(reco + cutSum)}.
+- Si lo que sobra da negativo, decile que este mes no le conviene comprar y qué recortar.`;
 }
 async function askGo(){
   const q = $("askQ").value.trim(); if (!q || askBusy) return;
@@ -4626,7 +4652,7 @@ async function askGo(){
   const w = askMsg("recy busy", "Recy está mirando tus números…");
   const slow = setTimeout(() => { if (w.classList.contains("busy")) w.textContent = "Sigo haciendo cuentas, ya casi…"; }, 12000);
   try {
-    const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Contestá la pregunta del usuario SOLO con los datos de abajo, en español rioplatense, corto (máximo 3 o 4 oraciones), con los montos en formato argentino ($ 12.345). Si con los datos no alcanza para responder, decilo. No inventes.
+    const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Contestá la pregunta del usuario SOLO con los datos de abajo, en español rioplatense, corto (máximo 3 o 4 oraciones; si pregunta cuánto ahorrar o cuántos dólares comprar, usá el PLAN DE AHORRO: dale la recomendación y la opción recortando, hasta 6 oraciones), con los montos en formato argentino ($ 12.345). Si con los datos no alcanza para responder, decilo. No inventes.
 Respondé SOLO un JSON: {"respuesta":"..."}
 
 DATOS:
@@ -7552,7 +7578,8 @@ const NEWS = [
     { es: "Arreglo: Preguntale a Recy podía quedarse colgado. Ahora, si Gemini tarda, te avisa y corta a tiempo.", en: "Fix: Ask Recy could hang. Now if Gemini is slow it tells you and gives up in time." },
     { es: "Ahora le podés hablar a Recy: botón Hablar en Preguntale a Recy y al cargar un gasto. Funciona también en la compu.", en: "You can now talk to Recy: a Speak button in Ask Recy and when adding an expense. Works on computers too." },
     { es: "Hablar ahora escribe mientras hablás (en Chrome, Edge y Safari) y los botones dicen más claro qué está pasando.", en: "Speak now types as you talk (in Chrome, Edge and Safari), and the button says more clearly what's going on." },
-    { es: "Arreglo: Google dio de baja los modelos de Gemini que usaba Recy. Ahora usa los nuevos (Gemini 3.5) y recuerda el que anda.", en: "Fix: Google retired the Gemini models Recy used. It now uses the new ones (Gemini 3.5) and remembers the one that works." } ] },
+    { es: "Arreglo: Google dio de baja los modelos de Gemini que usaba Recy. Ahora usa los nuevos (Gemini 3.5) y recuerda el que anda.", en: "Fix: Google retired the Gemini models Recy used. It now uses the new ones (Gemini 3.5) and remembers the one that works." },
+    { es: "Arreglo: \"¿cuántos dólares puedo comprar?\" ahora usa lo que gastás de verdad en el día a día (sin fijos, tarjetas ni ahorro), te da una recomendación y cuánto más podrías si recortás algo.", en: "Fix: \"how many dollars can I buy?\" now uses your real day-to-day spending (no fixed costs, cards or savings), gives a recommendation and how much more if you cut back." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
