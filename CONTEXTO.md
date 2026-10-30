@@ -467,3 +467,5 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `usdPlan()`: cuántos dólares comprar = sueldo − fijos − gasto variable promedio (hasta 3 períodos; con tarjeta, sin fijos/ahorro/préstamos/dólares), tope plata libre, 10% colchón, y opción recortando 30% las 2 categorías más grandes. Va al contexto de Preguntale a Recy.
 - Hablar (v3): siempre graba con MediaRecorder; en Chrome/Edge además dictado en vivo (en iPhone no). Si el dictado no entendió nada, el audio va a Gemini (AI_LITE).
 - Logo: Alfa Slab One, un solo color.
+- Recy chat: `#askSheet.chat-panel` (panel derecho en compu, pantalla completa en celu), botón `#askFab` (cara de Recy) en todas las pestañas. askGo pide a Gemini accion "responder" o "anotar"; anotar → `askAnotar(texto)` abre Darle a Recy y corre tellSmart para revisar y guardar. Lleva historial corto (askHist).
+- Pizarra Resumen: la comparación con el mes anterior solo con el mes terminado.

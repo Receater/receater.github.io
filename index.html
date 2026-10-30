@@ -1995,6 +1995,49 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 .logo span,.brand .logo span{color:inherit !important}
 .logo{font-family:"Alfa Slab One",Georgia,serif !important;font-weight:400 !important;letter-spacing:.01em !important}
 .brand .logo{font-size:1.3rem !important}
+/* ===== Recy, en modo chat: panel al costado (compu) o pantalla completa (celu) ===== */
+.chat-bg{position:fixed;inset:0;background:rgba(20,14,8,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+.chat-bg.open{opacity:1;pointer-events:auto}
+.chat-panel{position:fixed;z-index:61;right:0;top:0;bottom:0;width:min(440px,100vw);display:flex;flex-direction:column;background:#FBF8F1;color:#1F1F1F;
+  box-shadow:-8px 0 30px rgba(0,0,0,.25);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
+.chat-panel.open{transform:none;visibility:visible}
+@media (max-width:600px){.chat-panel{width:100vw;top:auto;height:100dvh;height:100vh;height:100dvh;transform:translateY(105%)}}
+.chat-head{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1.5px dashed #D3C9B4;background:#F5E8C8}
+.chat-ava{width:44px;height:44px;flex:none;border-radius:50%;background:#FFFDF7;border:2px solid #E2D6B8;display:grid;place-items:center;overflow:hidden}
+.chat-ava svg{width:40px;height:40px}
+.chat-who{flex:1;min-width:0}
+.chat-who h3{margin:0;font-size:1.05rem}
+.chat-who span{display:block;font-size:.8rem;color:#6E6A62}
+.chat-x{width:40px;height:40px;border:0;border-radius:50%;background:transparent;font-size:1.1rem;cursor:pointer;color:#1F1F1F}
+.chat-x:hover{background:rgba(0,0,0,.06)}
+.chat-log{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.chat-log .ask-msg{max-width:85%;padding:10px 13px;border-radius:16px;line-height:1.45;font-size:.95rem;white-space:pre-wrap;border:0}
+.chat-log .ask-msg.me{align-self:flex-end;background:#1F1F1F;color:#FBF8F1;border-bottom-right-radius:4px}
+.chat-log .ask-msg.recy{align-self:flex-start;background:#FFFFFF;box-shadow:0 1px 0 #E2D6B8,0 2px 8px rgba(0,0,0,.06);border-bottom-left-radius:4px}
+.chat-log .ask-msg.busy{color:#6E6A62;font-style:italic}
+.chat-act{align-self:flex-start;border:1.5px solid #1F1F1F;background:#FFFFFF;border-radius:999px;padding:7px 14px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.chat-sug{display:flex;gap:8px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.chat-sug::-webkit-scrollbar{display:none}
+.chat-sug .chip{flex:none;white-space:nowrap}
+.chat-bar{display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));border-top:1.5px dashed #D3C9B4;background:#FBF8F1}
+.chat-bar textarea{flex:1;min-width:0;resize:none !important;height:46px;box-sizing:border-box;border:1.5px solid #CFC5AE;border-radius:22px;background:#FFFFFF;padding:11px 16px;font:inherit;font-size:1rem;line-height:1.35;min-height:46px;max-height:140px;color:#1F1F1F}
+#askSheet .chat-bar textarea{min-height:46px !important;max-height:140px !important;padding:11px 16px !important;border-radius:22px !important}
+#askSheet .chat-bar textarea:not([style*="height"]){height:46px !important}
+.chat-bar textarea:focus{outline:0;border-color:#1F1F1F}
+.chat-ic{width:46px;height:46px;flex:none;border-radius:50%;border:1.5px solid #CFC5AE;background:#FFFFFF;display:grid;place-items:center;cursor:pointer;color:#1F1F1F;padding:0}
+.chat-ic .ic{width:18px;height:18px}
+.chat-send{background:#1F1F1F;border-color:#1F1F1F;color:#FBF8F1}
+.chat-send:disabled{opacity:.5}
+.chat-ic .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.chat-ic.mic-btn.rec{background:#D0485E;border-color:#D0485E;color:#FFF}
+body.chat-on{overflow:hidden}
+.chat-fab{position:fixed;z-index:9;right:20px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:3px solid #FBF8F1;background:#F5E8C8;
+  box-shadow:0 6px 16px rgba(0,0,0,.3);cursor:pointer;display:grid;place-items:center;padding:0;overflow:hidden}
+.chat-fab::after{content:"";position:absolute;right:6px;top:6px;width:12px;height:12px;border-radius:50%;background:#6355C7;border:2px solid #FBF8F1}
+.chat-fab-face svg{width:50px;height:50px;margin-top:6px}
+.go-top{bottom:calc(96px + env(safe-area-inset-bottom,0px)) !important}
+@media (max-width:760px){.chat-fab{right:14px;bottom:calc(98px + env(safe-area-inset-bottom,0px));width:52px;height:52px}.go-top{bottom:calc(162px + env(safe-area-inset-bottom,0px)) !important}}
+html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-fab,body.learn-mode .chat-fab,body.touring .chat-fab{opacity:0;pointer-events:none}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2380,6 +2423,23 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
 :root[data-theme="dark"] .js-label .jar-sub .dl{color:#5FA37C !important}
 :root[data-theme="dark"] .js-label .jar-sub .dl.neg{color:#DD696F !important}
 :root[data-theme="dark"] .gap-fix{border-top:1px dashed #454036 !important}
+:root[data-theme="dark"] .chat-panel{background:#1D1C19 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-head{border-bottom:1.5px dashed #3E3930 !important;background:#2A2518 !important}
+:root[data-theme="dark"] .chat-ava{background:#1A1917 !important;border:2px solid #363124 !important}
+:root[data-theme="dark"] .chat-who span{color:#817E78 !important}
+:root[data-theme="dark"] .chat-x{color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-log .ask-msg.me{background:#3D3D3D !important}
+:root[data-theme="dark"] .chat-log .ask-msg.recy{background:#181818 !important;box-shadow:0 1px 0 #363124,0 2px 8px rgba(0,0,0,.06) !important}
+:root[data-theme="dark"] .chat-log .ask-msg.busy{color:#817E78 !important}
+:root[data-theme="dark"] .chat-act{border:1.5px solid #CCCCCC !important;background:#181818 !important}
+:root[data-theme="dark"] .chat-bar{border-top:1.5px dashed #3E3930 !important;background:#1D1C19 !important}
+:root[data-theme="dark"] .chat-bar textarea{border:1.5px solid #413C32 !important;background:#181818 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-bar textarea:focus{border-color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-ic{border:1.5px solid #413C32 !important;background:#181818 !important;color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-send{background:#3D3D3D !important;border-color:#CCCCCC !important}
+:root[data-theme="dark"] .chat-ic.mic-btn.rec{background:#BC3D52 !important;border-color:#BC3D52 !important;color:#FFFFFF !important}
+:root[data-theme="dark"] .chat-fab{border:3px solid #1D1C19 !important;background:#2A2518 !important}
+:root[data-theme="dark"] .chat-fab::after{background:#584AB5 !important;border:2px solid #1D1C19 !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -3091,19 +3151,22 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   <div class="actions"><button type="button" class="btn ghost" id="jdClose">Cerrar</button></div>
 </div>
 
-<div class="sheet-bg" id="askBg"></div>
-<div class="sheet" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
-  <h3 id="askTitle">Preguntale a Recy</h3>
-  <div id="askLog" class="ask-log" aria-live="polite"></div>
-  <div class="chips ask-sug" id="askSug"></div>
-  <div class="ask-row">
-    <textarea class="input" id="askQ" rows="3" placeholder="Ej: ¿cuánto gasté en Starbucks este año?" aria-label="Tu pregunta para Recy" enterkeyhint="send"></textarea>
-    <button type="button" class="small-btn mic-btn" id="askMic" aria-label="Preguntar hablando"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg> <span>Hablar</span></button>
-    <button type="button" class="btn primary" id="askGo">Preguntar</button>
+<div class="chat-bg" id="askBg"></div>
+<section class="chat-panel" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <header class="chat-head">
+    <span class="chat-ava" id="askAva" aria-hidden="true"></span>
+    <div class="chat-who"><h3 id="askTitle">Recy</h3><span>Preguntale o pedile que te anote algo</span></div>
+    <button type="button" class="chat-x" id="askClose" aria-label="Cerrar">✕</button>
+  </header>
+  <div class="chat-log" id="askLog" aria-live="polite"></div>
+  <div class="chat-sug" id="askSug"></div>
+  <div class="chat-bar">
+    <textarea id="askQ" rows="1" placeholder="Escribile a Recy…" aria-label="Tu mensaje para Recy" enterkeyhint="send"></textarea>
+    <button type="button" class="chat-ic mic-btn" id="askMic" aria-label="Hablar"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg><span class="sr">Hablar</span></button>
+    <button type="button" class="chat-ic chat-send" id="askGo" aria-label="Enviar"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
   </div>
-  <p class="fx-hint">Recy contesta con tus datos usando Gemini (lo que activaste en Recy inteligente). Los números los calcula con lo que tenés cargado.</p>
-  <div class="actions"><button type="button" class="btn ghost" id="askClose">Cerrar</button></div>
-</div>
+</section>
+<button type="button" class="chat-fab" id="askFab" aria-label="Hablar con Recy"><span class="chat-fab-face" aria-hidden="true"></span></button>
 
 <div class="sheet-bg" id="buyBg"></div>
 <div class="sheet" id="buySheet" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
@@ -3211,7 +3274,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1840b";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1900";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4590,14 +4653,21 @@ function openAsk(){
   const [py, pm] = periodOf(new Date()), prev = monthName(py, pm - 1);
   // Solo sugerimos "¿cuánto me debe?" de alguien que todavía te debe
   const people = balances().filter(x => x.ARS > 0.5 || x.USD > 0.005).map(x => x.name).slice(0, 1);
-  ["¿En qué gasté más este mes?", `¿Gasté más o menos que en ${prev}?`, people[0] ? `¿Cuánto me debe ${people[0]}?` : "¿Cuánto me queda por día?", "¿Cuánto gasté en delivery este mes?"].forEach(t => {
+  ["¿En qué gasté más este mes?", "¿Cuántos dólares puedo comprar?", "Anotame 5.000 de café hoy", people[0] ? `¿Cuánto me debe ${people[0]}?` : "¿Cuánto me queda por día?", "¿Cuánto gasté en delivery este mes?"].forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; b.onclick = () => { $("askQ").value = t; askGo(); }; sug.append(b); });
+  askMsg("recy", "¡Hola! Preguntame lo que quieras de tus gastos, o pedime que te anote uno (por ejemplo: \"anotame 5.000 de café hoy\").");
   if (!aiKey()){ askMsg("recy", "Para contestarte necesito que actives Recy inteligente (es gratis, se hace una vez)."); const a = document.createElement("button"); a.type = "button"; a.className = "btn primary st-wide"; a.textContent = "Activar Recy"; a.onclick = () => { closeAsk(); openAi(); }; $("askLog").append(a); }
-  $("askBg").classList.add("open"); $("askSheet").classList.add("open");
+  $("askAva").innerHTML = recySVG("happy");
+  $("askBg").classList.add("open"); $("askSheet").classList.add("open"); document.body.classList.add("chat-on");
+  if (matchMedia("(hover:hover)").matches) setTimeout(() => $("askQ").focus(), 200);
 }
-function closeAsk(){ $("askBg").classList.remove("open"); $("askSheet").classList.remove("open"); }
-$("askOpen").onclick = openAsk; $("askClose").onclick = closeAsk; $("askBg").onclick = closeAsk;
-function askMsg(who, text){ const d = document.createElement("div"); d.className = "ask-msg " + who; d.textContent = text; $("askLog").append(d); try { d.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch {} return d; }
+function closeAsk(){ $("askBg").classList.remove("open"); $("askSheet").classList.remove("open"); document.body.classList.remove("chat-on"); }
+$("askOpen").onclick = openAsk; $("askFab").onclick = openAsk; $("askClose").onclick = closeAsk; $("askBg").onclick = closeAsk;
+$("askFab").querySelector(".chat-fab-face").innerHTML = recySVG("happy");
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && $("askSheet").classList.contains("open")) closeAsk(); });
+// el cuadro de texto crece mientras escribís
+$("askQ").addEventListener("input", () => { const t = $("askQ"); t.style.height = "46px"; t.style.height = Math.min(Math.max(t.scrollHeight + 3, 46), 140) + "px"; });
+function askMsg(who, text){ const d = document.createElement("div"); d.className = "ask-msg " + who; d.textContent = text; $("askLog").append(d); try { $("askLog").scrollTop = $("askLog").scrollHeight; } catch {} return d; }
 /* Tus datos, resumidos en texto: los últimos 6 meses por categoría, y el detalle de los últimos 3 */
 function askContext(){
   const [cy, cm] = periodOf(new Date()), L = [], f = n => Math.round(n);
@@ -4649,23 +4719,41 @@ function usdPlan(){
 - Si recorta 30% en ${cuts.map(([n]) => n).join(" y ")} (${f(cutSum)} menos), podría comprar unos US$ ${usd(reco + cutSum)}.
 - Si lo que sobra da negativo, decile que este mes no le conviene comprar y qué recortar.`;
 }
+let askHist = [];
 async function askGo(){
   const q = $("askQ").value.trim(); if (!q || askBusy) return;
   if (!aiKey()){ askMsg("recy", "Primero activá Recy inteligente."); return; }
-  askMsg("me", q); $("askQ").value = ""; askBusy = true; $("askGo").disabled = true;
+  askMsg("me", q); $("askQ").value = ""; $("askQ").style.height = ""; askBusy = true; $("askGo").disabled = true; $("askSug").hidden = true;
   const w = askMsg("recy busy", "Recy está mirando tus números…");
   const slow = setTimeout(() => { if (w.classList.contains("busy")) w.textContent = "Sigo haciendo cuentas, ya casi…"; }, 12000);
   try {
-    const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Contestá la pregunta del usuario SOLO con los datos de abajo, en español rioplatense, corto (máximo 3 o 4 oraciones; si pregunta cuánto ahorrar o cuántos dólares comprar, usá el PLAN DE AHORRO: dale la recomendación y la opción recortando, hasta 6 oraciones), con los montos en formato argentino ($ 12.345). Si con los datos no alcanza para responder, decilo. No inventes.
-Respondé SOLO un JSON: {"respuesta":"..."}
+    const hist = askHist.slice(-6).map(h => `${h.who === "me" ? "Usuario" : "Recy"}: ${h.t}`).join("\n");
+    const r = await aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Hablás en español rioplatense, cálido y corto.
+Primero decidí qué quiere el usuario:
+- Si quiere ANOTAR algo (un gasto, un ingreso, una compra de dólares; ej: "anotame", "gasté", "cargá", "pagué"), respondé {"accion":"anotar","texto":"<lo que hay que anotar, en una frase con monto, qué fue, cuándo y cómo pagó si lo dijo>","respuesta":"<una frase corta tipo: Dale, te lo dejo listo para que lo revises>"}.
+- Si no, contestá la pregunta SOLO con los datos de abajo, con montos en formato argentino ($ 12.345), máximo 4 oraciones (si pregunta cuánto ahorrar o cuántos dólares comprar, usá el PLAN DE AHORRO: la recomendación y la opción recortando, hasta 6 oraciones). Si con los datos no alcanza, decilo. No inventes. Respondé {"accion":"responder","respuesta":"..."}.
+Respondé SOLO el JSON.
 
 DATOS:
 ${askContext()}
-
-PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS });
-    w.classList.remove("busy"); w.textContent = (r && r.respuesta) || "No me salió una respuesta. Probá preguntarlo de otra forma.";
+${hist ? `\nCHARLA HASTA ACÁ:\n${hist}\n` : ""}
+MENSAJE DEL USUARIO: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS });
+    w.classList.remove("busy");
+    const ans = (r && r.respuesta) || "No me salió una respuesta. Probá decirlo de otra forma.";
+    w.textContent = ans; askHist.push({ who: "me", t: q }, { who: "recy", t: ans });
+    if (r && r.accion === "anotar" && (r.texto || q)){
+      const go = document.createElement("button"); go.type = "button"; go.className = "chat-act"; go.textContent = "Ver y guardar ›";
+      go.onclick = () => askAnotar(r.texto || q); w.after(go);
+      setTimeout(() => askAnotar(r.texto || q), 700);
+    }
   } catch (e){ w.classList.remove("busy"); w.textContent = (aiErrorMsg(e) || "Algo falló.").replace(" Usé el modo simple.", ""); }
   clearTimeout(slow); askBusy = false; $("askGo").disabled = false;
+}
+/* Pedirle a Recy que anote algo: abre "Darle a Recy" con lo que dijiste ya leído, para que lo revises y lo guardes */
+function askAnotar(text){
+  if (askAnotar.t && Date.now() - askAnotar.t < 1500) return; askAnotar.t = Date.now();
+  closeAsk(); $("openAdd").click();
+  setTimeout(() => { $("tellBox").classList.add("tell-open"); $("tellInput").value = text; tellSmart(); }, 250);
 }
 $("askGo").onclick = askGo;
 /* Hablarle a Recy: siempre se graba el audio. Si el navegador sabe dictar (Chrome, Edge), se ve el texto mientras hablás;
@@ -7591,7 +7679,9 @@ const NEWS = [
     { es: "Arreglo: al principio del mes, las comparaciones con el mes anterior eran engañosas porque el pago de la tarjeta cae el primer día. Ahora se compara bien y dice \"a esta altura\".", en: "Fix: early in the month, comparisons with last month were misleading because the card payment lands on day one. They're fair now and say \"so far\"." },
     { es: "Textos más claros en las pizarras de Resumen y Fijos.", en: "Clearer wording on the Summary and Fixed boards." },
     { es: "Arreglo: Hablar a veces no te escuchaba. Ahora siempre graba, y si el dictado del navegador no entendió, lo pasa a texto Gemini.", en: "Fix: Speak sometimes didn't hear you. It now always records, and if the browser's dictation missed it, Gemini transcribes it." },
-    { es: "Logo nuevo: una sola tinta y letra de sello.", en: "New logo: one ink color and a stamp-style font." } ] },
+    { es: "Logo nuevo: una sola tinta y letra de sello.", en: "New logo: one ink color and a stamp-style font." },
+    { es: "Recy ahora es un chat: tocá su cara abajo a la derecha, en cualquier pestaña. Le podés preguntar o pedirle que te anote un gasto.", en: "Recy is now a chat: tap its face at the bottom right, on any tab. Ask it things or have it log an expense." },
+    { es: "La pizarra de Resumen ya no compara con el mes anterior a mitad de mes (confundía).", en: "The Summary board no longer compares with last month mid-month (it was confusing)." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -8557,7 +8647,8 @@ function stageDash(){
       inc && `Es el ${Math.round((savedNow > 0.5 ? allNow : now) / inc * 100)}% de lo que cobraste`,
       top && `En lo que más gastaste: ${catById(top[0]).name} (${fmtARS.format(round2(top[1]))})`,
       top && top[0] === "tarjeta_sd" ? "Son pagos de tarjeta que no cargaste compra por compra." : null,
-      before && Math.abs(diff) >= 1 ? `Gastaste ${fmtARS.format(Math.abs(round2(diff)))} ${diff > 0 ? "más" : "menos"} que en ${monthName(py, pm)}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}` : null],
+      // solo con el mes terminado: a mitad de mes la comparación confunde
+      before && !isCurrentPeriod(viewYear, viewMonth) && Math.abs(diff) >= 1 ? `En total, ${fmtARS.format(Math.abs(round2(diff)))} ${diff > 0 ? "más" : "menos"} que en ${monthName(py, pm)}` : null],
     mood: !now ? "hungry" : inc && now > inc * 0.8 ? "worried" : "happy",
     line: !now ? "Todavía no tengo nada para analizar." : top ? `${catById(top[0]).name} se lleva la mayor parte.` : "Acá va el resumen del mes."
   });
@@ -11536,6 +11627,13 @@ es la devolución de esa compra	is the refund for that purchase
 Hablar	Speak
 Tocá para terminar	Tap to finish
 Pasando a texto…	Transcribing…
+Preguntale o pedile que te anote algo	Ask or have it log something
+Escribile a Recy…	Write to Recy…
+Hablar con Recy	Talk to Recy
+Enviar	Send
+Ver y guardar ›	Review and save ›
+¿Cuántos dólares puedo comprar?	How many dollars can I buy?
+Anotame 5.000 de café hoy	Log 5,000 for coffee today
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -11869,6 +11967,8 @@ const I18N_EN_P = [
   [/^No te escuché\..*$/, "I didn't hear you. Tap Speak, say it, and tap again to finish."],
   [/^Para pasar el audio a texto en este navegador hace falta Recy inteligente \(en Ajustes\)\.$/, "To turn audio into text in this browser you need Smart Recy (in Settings)."],
   [/^No pude pasar el audio a texto\.$/, "I couldn't turn the audio into text."],
+  [/^¡Hola! Preguntame lo que quieras de tus gastos, o pedime que te anote uno.*$/, "Hi! Ask me anything about your spending, or have me log one (e.g. \"log 5,000 for coffee today\")."],
+  [/^En total, (.+) (más|menos) que en (\S+)$/, (m, a, b, c) => `In total, ${a} ${b === "más" ? "more" : "less"} than in ${c}`],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
