@@ -453,3 +453,5 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Movimientos: con `data.cardStmt[key]` y sin pago, el grupo de tarjeta muestra el total del banco ("según tu resumen"). `stmtGap` muestra banco vs anotado y, si anotaste de más, cada fijo virtual con "Viene en el próximo" / "Ya está con otro nombre" (con Deshacer).
 - `data.fixStmt["fixedId|YYYY-MM"] = {v:"next"|"in", card, pay}`: "next" corre el vencimiento del fijo un mes (`virtualFixed`, `moved`), "in" no lo cuenta ese mes.
 - Importar resumen: una devolución por el mismo monto y moneda cancela una compra del resumen (no se carga ninguna) o borra un gasto ya cargado de esa tarjeta (checkbox tildado).
+
+- Pago de tarjeta con dólares: si pesos pagados ≈ total del resumen (o compras en pesos) − percepciones RG 5617, esas percepciones se borran solas y Recy avisa.
