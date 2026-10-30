@@ -2042,6 +2042,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 .jar-common{display:grid;gap:2px;margin:12px 0 0;padding:12px 14px;border-radius:10px;background:#FBF8F1;border:1.5px dashed #BDB6A5;color:#1F1F1F}
 .jar-common .jc-v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:1.05rem}
 .jar-common small{color:#6E6A62}
+.jc-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .fx-split{display:grid;gap:10px;margin-top:4px}
 .fxs-hint{margin:0}
 .fxs-row{border:1.5px dashed #CFC5AE;border-radius:10px;padding:10px 12px;background:#FFFEFB;display:grid;gap:7px}
@@ -3044,6 +3045,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
     <div><label for="jmAmount" id="jmAmountLbl">Monto</label><input class="input" id="jmAmount" inputmode="decimal" autocomplete="off"></div>
     <div><label for="jmDate">Fecha</label><input class="input" type="date" id="jmDate"></div>
   </div>
+  <div class="field" id="jmToF" hidden><span class="lbl">¿A qué frasco lo pasás?</span><div class="chips" id="jmTo"></div></div>
   <div class="field"><label for="jmNote">Nota</label><input class="input" id="jmNote" autocomplete="off"></div>
   <div class="fx-hint" id="jmHint"></div>
   <div class="err" id="jmErr"></div>
@@ -3302,7 +3304,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.2030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.2100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3384,6 +3386,7 @@ if (!Array.isArray(data.incomes)) data.incomes = [];
 [data.expenses, data.incomes].forEach(l => l.forEach(x => { if (x.adjust && /sin anotar \(ajuste/i.test(x.note || "")) x.note = "Ajuste de saldo"; }));
 const INCOME_KINDS = [
   {id:"sueldo",    name:"Sueldo",         color:"#2F5BEA"},
+  {id:"aguinaldo", name:"Aguinaldo",      color:"#2F5BEA"},
   {id:"extra",     name:"Trabajos extra", color:"#2F5BEA"},
   {id:"otro_ing",  name:"Otro ingreso",   color:"#2F5BEA"},
   {id:"prestamo",  name:"Préstamo",       color:"#2F5BEA"},
@@ -3956,7 +3959,7 @@ function renderJarDetail(){
       }
       const body = document.createElement("div");
       const acts = document.createElement("div"); acts.className = "jar-actions";
-      [["Sumar", () => openJarMove(j, "deposit")], ["Sacar", () => openJarMove(j, "withdraw")], ["Actualizar valor", () => openJarMove(j, "adjust")], ["Editar", () => openJar(j)]]
+      [["Sumar", () => openJarMove(j, "deposit")], ["Sacar", () => openJarMove(j, "withdraw")], ["Pasar a otro frasco", () => openJarMove(j, "move")], ["Actualizar valor", () => openJarMove(j, "adjust")], ["Editar", () => openJar(j)]]
         .forEach(([t, fn]) => { const x = document.createElement("button"); x.type = "button"; x.className = t === "Sumar" ? "btn primary" : "btn ghost"; x.textContent = t; x.onclick = fn; acts.append(x); });
       body.append(acts);
       const hist = jarEntries(j), ul = document.createElement("ul"); ul.className = "jar-hist";
@@ -3968,7 +3971,7 @@ function renderJarDetail(){
         const a = document.createElement("span"); a.className = "a" + (x.amount < 0 ? " neg" : ""); a.textContent = (x.amount >= 0 ? "+ " : "− ") + money2(Math.abs(x.amount));
         li.append(d, t, a);
         if (x.move){ const del = document.createElement("button"); del.type = "button"; del.className = "x"; del.textContent = "×"; del.setAttribute("aria-label","Borrar movimiento");
-          del.onclick = async () => { if (!await uiConfirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move); persist(); render(); renderJarDetail(); };
+          del.onclick = async () => { if (!await uiConfirm("¿Borrar este movimiento?")) return; data.jarMoves = data.jarMoves.filter(m => m !== x.move && !(x.move.link && m.link === x.move.link)); persist(); render(); renderJarDetail(); };
           li.style.gridTemplateColumns = "auto minmax(0,1fr) auto auto"; li.append(del); }
         ul.append(li);
       });
@@ -3998,11 +4001,17 @@ function jarEntries(j){
     if (e.fx) out.push({ date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}`, src:e, fx:e.fx, pesos:e.amount });
     else if (e.currency === j.currency) out.push({ date:e.date.slice(0,10), amount:eff(e), label: e.note || "Ahorro", src:e });
   });
-  data.jarMoves.filter(m => m.jarId === j.id).forEach(m => out.push({ date:m.date, amount:m.amount,
-    label: m.note || (m.kind === "withdraw" ? "Sacaste" : m.kind === "adjust" ? "Ajuste de valor" : "Sumaste"), move:m }));
+  if (j.common) data.expenses.filter(e => !e.jarId && (e.fx ? j.currency === "USD" : e.category === "ahorro" && e.currency === j.currency)).forEach(e =>
+    out.push(e.fx ? { date:e.date.slice(0,10), amount:e.fx.usd, label:`Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}`, src:e, fx:e.fx, pesos:e.amount } : { date:e.date.slice(0,10), amount:eff(e), label:e.note || "Ahorro", src:e }));
+  data.jarMoves.filter(m => m.jarId === j.id && (!j.common || m.cur === j.currency)).forEach(m => out.push({ date:m.date, amount:m.amount,
+    label: moveLabel(m), move:m, xfer: /^move/.test(m.kind) }));
   return out.sort((a,b) => b.date.localeCompare(a.date));
 }
 const jarBalance = j => round2(jarEntries(j).reduce((s,x) => s + x.amount, 0));
+/* El frasco común: lo ahorrado sin frasco (compras de dólares y ahorros sin frasco) más lo que pasaste a/desde él */
+const COMMON = "__common__";
+const commonJar = cur => ({ id: COMMON, name: "Frasco común", currency: cur, common: true });
+const moveLabel = m => m.note || (m.kind === "move-out" ? `Pasaste a ${m.toName || "otro frasco"}` : m.kind === "move-in" ? `Vino de ${m.fromName || "otro frasco"}` : m.kind === "withdraw" ? "Sacaste" : m.kind === "adjust" ? "Ajuste de valor" : "Sumaste");
 /* Ahorros: lo que se ve depende del alcance. Total (hasta hoy), un mes o un día. Nunca más allá de hoy. */
 let jarScope = { mode: "total" };   // { mode:"total" } | { mode:"month", y, m } | { mode:"day", y, m, d:"YYYY-MM-DD" }
 function jarScopeRange(){
@@ -4020,13 +4029,14 @@ function savingsEntries(cur){
   data.expenses.filter(e => !e.jarId && (e.fx ? cur === "USD" : e.category === "ahorro" && e.currency === cur)).forEach(e => out.push({
     date: e.date.slice(0,10), amount: e.fx ? e.fx.usd : eff(e), src: e, jar: null, fx: e.fx || null, pesos: e.amount,
     label: e.fx ? `Compra a ${fmtARS.format(e.fx.rate)}: pagaste ${fmtARS.format(e.amount)}` : (e.note || "Ahorro") }));
+  data.jarMoves.filter(m => m.jarId === COMMON && m.cur === cur).forEach(m => out.push({ date: m.date, amount: m.amount, src: null, jar: null, label: moveLabel(m), move: m, xfer: /^move/.test(m.kind) }));
   return out.sort((a,b) => b.date.localeCompare(a.date));
 }
 function savingsTotals(r){
   const t = { balA:0, balU:0, netA:0, netU:0, buyUsd:0, buyArs:0, outA:0, outU:0, n:0 };
   [["ARS","A"],["USD","U"]].forEach(([cur, k]) => savingsEntries(cur).forEach(x => {
     if (!r.to || x.date <= r.to) t["bal" + k] += x.amount;
-    if (inJarScope(x.date, r)){ t.n++; t["net" + k] += x.amount; if (x.amount < 0) t["out" + k] += -x.amount; if (x.fx){ t.buyUsd += x.fx.usd; t.buyArs += x.pesos; } }
+    if (inJarScope(x.date, r) && !x.xfer){ t.n++; t["net" + k] += x.amount; if (x.amount < 0) t["out" + k] += -x.amount; if (x.fx){ t.buyUsd += x.fx.usd; t.buyArs += x.pesos; } }
   }));
   Object.keys(t).forEach(k => { if (k !== "n") t[k] = round2(t[k]); });
   return t;
@@ -6194,7 +6204,7 @@ function tellParse(raw){
   let t = " " + norm2(raw) + " ", out = { notes: [] };
   const take = re => { const m = t.match(re); if (m) t = t.replace(m[0], " "); return m; };
   // ingreso
-  if (/\b(cobre|me pagaron|me depositaron|ingreso|sueldo|cobro)\b/.test(t)){ out.mode = "income"; out.kind = /\bsueldo\b/.test(t) ? "sueldo" : /\b(freelance|trabajo|laburo)\b/.test(t) ? "extra" : (/\bsueldo|cobre\b/.test(t) ? "sueldo" : "otro_ing"); }
+  if (/\b(cobre|me pagaron|me depositaron|ingreso|sueldo|cobro|aguinaldo)\b/.test(t)){ out.mode = "income"; out.kind = /\baguinaldo\b/.test(t) ? "aguinaldo" : /\bsueldo\b/.test(t) ? "sueldo" : /\b(freelance|trabajo|laburo)\b/.test(t) ? "extra" : (/\bsueldo|cobre\b/.test(t) ? "sueldo" : "otro_ing"); }
   // moneda
   if (take(/\b(usd|us\$|u\$s|dolares|dolar|verdes)\b/)) out.currency = "USD";
   // cuotas
@@ -6375,7 +6385,7 @@ function aiContext(){
   const d = new Date();
   return `Hoy es ${d.toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"long", year:"numeric" })} (${toLocalInput(d)}), hora ${toTime(d)}. Moneda por defecto: pesos argentinos (ARS).
 Categorías de gasto (id: nombre): ${cats}.
-Tipos de ingreso (id: nombre): sueldo: Sueldo; extra: Trabajos extra; otro_ing: Otro ingreso; prestamo: Préstamo.
+Tipos de ingreso (id: nombre): sueldo: Sueldo; aguinaldo: Aguinaldo; extra: Trabajos extra; otro_ing: Otro ingreso; prestamo: Préstamo.
 Tarjetas (id: nombre): ${cards}.
 Personas conocidas: ${people}.`;
 }
@@ -7777,7 +7787,9 @@ const NEWS = [
     { es: "Logo nuevo: una sola tinta y letra de sello.", en: "New logo: one ink color and a stamp-style font." },
     { es: "Recy ahora es un chat: tocá su cara abajo a la derecha, en cualquier pestaña. Le podés preguntar o pedirle que te anote un gasto.", en: "Recy is now a chat: tap its face at the bottom right, on any tab. Ask it things or have it log an expense." },
     { es: "La pizarra de Resumen ya no compara con el mes anterior a mitad de mes (confundía).", en: "The Summary board no longer compares with last month mid-month (it was confusing)." },
-    { es: "Al comprar dólares los podés repartir entre frascos: ves cuánto le falta a cada uno, lo llenás con un toque y lo que sobra va al frasco común.", en: "When buying dollars you can split them between jars: see what each needs, fill one with a tap, and the rest goes to the common jar." } ] },
+    { es: "Al comprar dólares los podés repartir entre frascos: ves cuánto le falta a cada uno, lo llenás con un toque y lo que sobra va al frasco común.", en: "When buying dollars you can split them between jars: see what each needs, fill one with a tap, and the rest goes to the common jar." },
+    { es: "Podés pasar plata de un frasco a otro (y del frasco común a un frasco), con lo que le falta a cada uno a la vista.", en: "You can move money between jars (and from the common jar to one), seeing what each still needs." },
+    { es: "Nuevo tipo de ingreso: Aguinaldo.", en: "New income type: Aguinaldo (bonus)." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -9519,7 +9531,13 @@ function renderJars(){
       const t = document.createElement("strong"); t.textContent = "Frasco común";
       const v = document.createElement("span"); v.className = "jc-v"; v.textContent = [lA && fmtARS.format(lA), lU && fmtUSD.format(lU)].filter(Boolean).join(" y ");
       const h = document.createElement("small"); h.textContent = "Lo que ahorrás sin elegir un frasco. Cuando comprás dólares podés pasarlo a uno.";
-      p.append(t, v, h); list.append(p);
+      p.append(t, v, h);
+      const acts = document.createElement("div"); acts.className = "jc-acts";
+      [["ARS", lA], ["USD", lU]].forEach(([cur, val]) => { if (!(val > 0.004) || !data.jars.some(x => x.currency === cur)) return;
+        const b = document.createElement("button"); b.type = "button"; b.className = "small-btn"; b.textContent = lA > 0.004 && lU > 0.004 ? `Pasar ${cur === "USD" ? "dólares" : "pesos"} a un frasco` : "Pasar a un frasco";
+        b.onclick = () => openJarMove(commonJar(cur), "move"); acts.append(b); });
+      if (acts.childElementCount) p.append(acts);
+      list.append(p);
     }
   }
   fillShelf(grid);
@@ -10684,15 +10702,27 @@ $("jarDel").onclick = async () => {
 };
 
 /* Sumar / sacar / actualizar valor */
-let jmJar = null, jmKind = "deposit";
+let jmJar = null, jmKind = "deposit", jmTo = null;
+function renderJmTo(){
+  const box = $("jmTo"); box.innerHTML = ""; const j = jmJar, m = j.currency === "USD" ? fmtUSD : fmtARS;
+  const opts = [...data.jars.filter(x => x.currency === j.currency && x.id !== j.id), ...(j.common ? [] : [commonJar(j.currency)])];
+  opts.forEach(x => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(jmTo === x.id));
+    if (x.color){ const t = document.createElement("span"); t.className = "card-tag"; t.style.background = x.color; b.append(t); }
+    const miss = x.goal ? Math.max(0, round2(x.goal - jarBalance(x))) : 0;
+    b.append(x.name + (miss > 0 ? ` · le faltan ${m.format(miss)}` : ""));
+    b.onclick = () => { jmTo = x.id; renderJmTo(); if (miss > 0 && !$("jmAmount").value) $("jmAmount").value = String(Math.min(miss, jarBalance(j))).replace(".", ","); };
+    box.append(b); });
+  if (!opts.length){ const p = document.createElement("p"); p.className = "fx-hint"; p.textContent = "No tenés otro frasco en esta moneda."; box.append(p); }
+}
 function openJarMove(j, kind){
-  jmJar = j; jmKind = kind;
+  jmJar = j; jmKind = kind; jmTo = null;
   const m = j.currency === "USD" ? fmtUSD : fmtARS;
-  $("jmTitle").textContent = kind === "deposit" ? `Sumar a ${j.name}` : kind === "withdraw" ? `Sacar de ${j.name}` : `Actualizar ${j.name}`;
+  $("jmToF").hidden = kind !== "move"; if (kind === "move") renderJmTo();
+  $("jmTitle").textContent = kind === "move" ? "Pasar a otro frasco" : kind === "deposit" ? `Sumar a ${j.name}` : kind === "withdraw" ? `Sacar de ${j.name}` : `Actualizar ${j.name}`;
   $("jmAmountLbl").textContent = kind === "adjust" ? "¿Cuánto hay hoy?" : "Monto";
   $("jmAmount").value = ""; $("jmDate").value = toLocalInput(new Date()); $("jmNote").value = "";
   $("jmNote").placeholder = kind === "adjust" ? "Ej: intereses del plazo fijo" : kind === "withdraw" ? "Ej: para el viaje" : "Ej: me sobró del mes";
-  $("jmHint").textContent = kind === "adjust" ? `Hoy figura ${m.format(jarBalance(j))}. La diferencia queda como ajuste (intereses, rendimiento, cotización).`
+  $("jmHint").textContent = kind === "move" ? `Sale de ${j.name}, que tiene ${m.format(jarBalance(j))}. Pasar entre frascos no cuenta como gasto ni como ahorro nuevo.` : kind === "adjust" ? `Hoy figura ${m.format(jarBalance(j))}. La diferencia queda como ajuste (intereses, rendimiento, cotización).`
     : kind === "deposit" ? "Esto no cuenta como gasto del mes. Si la plata sale de tu sueldo, mejor cargala como gasto con categoría Ahorro." : "";
   $("jmErr").textContent = "";
   $("jmSheet").style.setProperty("--jar-color", j.color || "#1E8A5B");   // la tapa del color del frasco
@@ -10705,7 +10735,14 @@ $("jmSave").onclick = () => {
   const v = parseAmount($("jmAmount").value), date = $("jmDate").value || toLocalInput(new Date());
   if (!(v >= 0) || (jmKind !== "adjust" && !(v > 0))){ $("jmErr").textContent = "Poné un monto."; return; }
   let amount = jmKind === "deposit" ? v : jmKind === "withdraw" ? -v : round2(v - jarBalance(jmJar));
-  if (jmKind === "withdraw" && v > jarBalance(jmJar) + 0.001){ $("jmErr").textContent = "No podés sacar más de lo que hay en el frasco."; return; }
+  if ((jmKind === "withdraw" || jmKind === "move") && v > jarBalance(jmJar) + 0.001){ $("jmErr").textContent = "No podés sacar más de lo que hay en el frasco."; return; }
+  if (jmKind === "move"){
+    if (!jmTo){ $("jmErr").textContent = "Elegí a qué frasco lo pasás."; return; }
+    const to = jmTo === COMMON ? commonJar(jmJar.currency) : jarById(jmTo), id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), note = $("jmNote").value.trim(), cur = jmJar.currency;
+    data.jarMoves.push({ id: id + "o", jarId: jmJar.id, cur, date, amount: -round2(v), kind: "move-out", toName: to.name, link: id, note },
+                       { id: id + "i", jarId: to.id, cur, date, amount: round2(v), kind: "move-in", fromName: jmJar.name, link: id, note });
+    persist(); closeJarMove(); render(); try { if (jdOpen) renderJarDetail(); } catch {} return;
+  }
   if (jmKind === "adjust" && Math.abs(amount) < 0.005){ closeJarMove(); return; }
   data.jarMoves.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), jarId: jmJar.id, date, amount: round2(amount), kind: jmKind, note: $("jmNote").value.trim() });
   persist(); closeJarMove(); feedRecy(); render();
@@ -11738,6 +11775,14 @@ Todo acá	All here
 Con esto lo llenás	This fills it
 + Nuevo frasco en dólares	+ New dollar jar
 Repartiste más dólares de los que compraste.	You split more dollars than you bought.
+Pasar a otro frasco	Move to another jar
+¿A qué frasco lo pasás?	Which jar does it go to?
+No tenés otro frasco en esta moneda.	You have no other jar in this currency.
+Elegí a qué frasco lo pasás.	Pick which jar it goes to.
+Pasar a un frasco	Move to a jar
+Pasar dólares a un frasco	Move dollars to a jar
+Pasar pesos a un frasco	Move pesos to a jar
+Aguinaldo	Bonus (aguinaldo)
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -12083,6 +12128,11 @@ const I18N_EN_P = [
   [/^(.+) · meta cumplida$/, "$1 · goal reached"],
   [/^(.+) · sin meta$/, "$1 · no goal"],
   [/^Repartiste (.+), pero compraste (.+): sacá (.+)\.$/, "You split $1 but bought $2: remove $3."],
+  [/^Pasar plata de (.+)$/, "Move money from $1"],
+  [/^Pasaste a (.+)$/, "Moved to $1"],
+  [/^Vino de (.+)$/, "Came from $1"],
+  [/^(.+) · le faltan (.+)$/, "$1 · needs $2"],
+  [/^Sale de (.+), que tiene (.+)\. Pasar entre frascos no cuenta como gasto ni como ahorro nuevo\.$/, "From $1, which has $2. Moving between jars isn't spending or new savings."],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
