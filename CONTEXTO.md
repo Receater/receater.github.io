@@ -458,3 +458,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Grupo de tarjeta pagado: muestra el pago (pesos + dólares), no la suma de lo anotado.
 - `cardDueARS(end)`: tarjetas sin pagar que vencen desde hoy hasta antes del cobro (usa el total del resumen si está). Lo usan la pizarra y teQuedaReal; la pizarra muestra "Tarjetas por pagar".
 - `accFlows`: las tarjetas salen de la cuenta por el pago cargado (pesos + usdArs, con su `at`); sin pago, solo lo vencido antes de hoy se toma como pagado.
+- `openCardPayFill(card,key)`: botón Pagar en la lista Por pagar y "Pagué la tarjeta" en el grupo de Movimientos, con el resumen ya puesto.

@@ -3199,7 +3199,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1550";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4385,7 +4385,8 @@ function renderPayGroup(r){
     }
     const foot = document.createElement("div"); foot.className = "split-sum";
 
-    if (!pay){ const left = document.createElement("span"); left.textContent = "Pago programado"; foot.append(left); }
+    if (!pay){ const left = document.createElement("span"); left.textContent = "Pago programado"; foot.append(left);
+      const pb = document.createElement("button"); pb.type = "button"; pb.className = "small-btn primary"; pb.textContent = "Pagué la tarjeta"; pb.onclick = () => openCardPayFill(card, r.key); foot.append(pb); }
     if (pay){
       const undo = document.createElement("button"); undo.type = "button"; undo.className = "linkbtn"; undo.textContent = "Deshacer pago";
       undo.onclick = async () => { if (!await uiConfirm("¿Borrar este pago? Las compras vuelven a quedar sin pagar.")) return;
@@ -4497,6 +4498,7 @@ function renderFixedPend(){
     const s1 = document.createElement("span"); s1.className = "s1"; s1.textContent = o.plan || "Pago de tarjeta"; const s2 = document.createElement("span"); s2.className = "s2"; s2.textContent = `vence el ${shortDate(o.d)}`; info.append(nm, s1, s2);
     const right = document.createElement("div"); right.className = "cal-right"; const amt = document.createElement("b"); amt.className = "amt";
     [o.ars && fmtARS.format(round2(o.ars)), o.usd && (o.ars ? "+ " : "") + fmtUSD.format(round2(o.usd))].filter(Boolean).forEach(t => { const sp = document.createElement("span"); sp.className = "nw"; sp.textContent = t; amt.append(sp); }); right.append(amt);
+    if (o.card && o.key){ const cid = o.key.split("|")[0], c = cardById(cid); if (c){ const pb = document.createElement("span"); pb.className = "pay"; pb.textContent = "Pagar"; right.append(pb); r.onclick = () => openCardPayFill(c, o.key); } }
     r.append(day, info, right);
     paper.append(r);
   });
@@ -5739,6 +5741,13 @@ function openPayEdit(pay){
   setMode("cardpay");
   $("typeTabs").hidden = true;
   $("sheetTitle").textContent = "Editar pago de " + cardById(pay.cardId).name;
+}
+/* Pagar desde la lista o Movimientos: con lo que dice el resumen ya puesto */
+function openCardPayFill(card, key){
+  openCardPayFor(card); const stR = (data.cardStmt || {})[key], d = key.split("|")[1];
+  if (d) $("date").value = d < toLocalInput(new Date()) ? d : toLocalInput(new Date());
+  if (stR){ if (stR.ars) $("cpkAmount").value = String(stR.ars).replace(".", ","); if (stR.usd) $("cpkUsd").value = String(stR.usd).replace(".", ","); }
+  try { renderCpk(); } catch {}
 }
 /* Atajo desde Resumen → Tarjetas: anotar el pago de esa tarjeta */
 function openCardPayFor(card){
@@ -7469,7 +7478,8 @@ const NEWS = [
     { es: "Arreglo: una tarjeta ya pagada muestra lo que pagaste, no la suma de lo que anotaste.", en: "Fix: a paid card shows what you paid, not the sum of what you logged." },
     { es: "Arreglo: la tarjeta que vence hoy y todavía no pagaste ahora se resta de lo que te queda.", en: "Fix: a card due today that you haven't paid yet is now taken off what you have left." },
     { es: "La pizarra muestra cuánto te falta pagar de tarjetas. Cuando cargás el pago, sale de tu cuenta lo que pagaste (con los dólares que compraste).", en: "The board shows how much you still owe on cards. When you log the payment, what you paid (including the dollars you bought) comes out of your account." },
-    { es: "Arreglo: en el celu, la lista de lo que falta pagar se rompía con montos largos (el nombre quedaba en vertical). Ahí también se ve el total del banco.", en: "Fix: on phones, the to-pay list broke with long amounts (the name went vertical). It also shows the bank's total now." } ] },
+    { es: "Arreglo: en el celu, la lista de lo que falta pagar se rompía con montos largos (el nombre quedaba en vertical). Ahí también se ve el total del banco.", en: "Fix: on phones, the to-pay list broke with long amounts (the name went vertical). It also shows the bank's total now." },
+    { es: "Las tarjetas por pagar tienen su botón para pagar, con lo del resumen ya puesto.", en: "Cards to pay have a pay button, with the statement amounts filled in." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
