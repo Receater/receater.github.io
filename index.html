@@ -3207,7 +3207,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1810";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1840";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7387,7 +7387,9 @@ function prevExpensesFair(y, m, cur){
   const py = m === 0 ? y - 1 : y, pm = m === 0 ? 11 : m - 1, all = monthExpenses(py, pm, cur);
   if (!isCurrentPeriod(y, m)) return all;
   const days = Math.floor((new Date() - payDate(y, m)) / 864e5), cut = new Date(payDate(py, pm).getTime() + (days + 1) * 864e5);
-  return all.filter(e => new Date(e.date) < cut);
+  // las tarjetas se pagan una vez por período: si este período ya pagaste (o vence hoy) una, se compara con el pago entero del período anterior, no "hasta el mismo día"
+  const now = new Date(), curCards = new Set(monthExpenses(y, m, cur).filter(e => e.cardId && new Date(e.date) <= now).map(e => e.cardId));
+  return all.filter(e => new Date(e.date) < cut || (e.cardId && curCards.has(e.cardId)));
 }
 const byCat = arr => { const o = {}; arr.forEach(e => o[e.category] = (o[e.category]||0) + eff(e)); return o; };
 const monthName = (y,m,opt={month:"long"}) => new Date(y,m,1).toLocaleDateString("es-AR",opt);
@@ -7579,7 +7581,9 @@ const NEWS = [
     { es: "Ahora le podés hablar a Recy: botón Hablar en Preguntale a Recy y al cargar un gasto. Funciona también en la compu.", en: "You can now talk to Recy: a Speak button in Ask Recy and when adding an expense. Works on computers too." },
     { es: "Hablar ahora escribe mientras hablás (en Chrome, Edge y Safari) y los botones dicen más claro qué está pasando.", en: "Speak now types as you talk (in Chrome, Edge and Safari), and the button says more clearly what's going on." },
     { es: "Arreglo: Google dio de baja los modelos de Gemini que usaba Recy. Ahora usa los nuevos (Gemini 3.5) y recuerda el que anda.", en: "Fix: Google retired the Gemini models Recy used. It now uses the new ones (Gemini 3.5) and remembers the one that works." },
-    { es: "Arreglo: \"¿cuántos dólares puedo comprar?\" ahora usa lo que gastás de verdad en el día a día (sin fijos, tarjetas ni ahorro), te da una recomendación y cuánto más podrías si recortás algo.", en: "Fix: \"how many dollars can I buy?\" now uses your real day-to-day spending (no fixed costs, cards or savings), gives a recommendation and how much more if you cut back." } ] },
+    { es: "Arreglo: \"¿cuántos dólares puedo comprar?\" ahora usa lo que gastás de verdad en el día a día (sin fijos, tarjetas ni ahorro), te da una recomendación y cuánto más podrías si recortás algo.", en: "Fix: \"how many dollars can I buy?\" now uses your real day-to-day spending (no fixed costs, cards or savings), gives a recommendation and how much more if you cut back." },
+    { es: "Arreglo: la comparación de cada tarjeta con el mes anterior ahora es resumen contra resumen (antes comparaba el pago entero contra casi nada).", en: "Fix: each card's comparison with last month is now statement vs statement (it used to compare the whole payment against almost nothing)." },
+    { es: "Arreglo: al principio del mes, las comparaciones con el mes anterior eran engañosas porque el pago de la tarjeta cae el primer día. Ahora se compara bien y dice \"a esta altura\".", en: "Fix: early in the month, comparisons with last month were misleading because the card payment lands on day one. They're fair now and say \"so far\"." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -8094,7 +8098,7 @@ function renderDash(){
     const r = 78, C = 2*Math.PI*r;
     svg.append(svgEl("circle",{cx:100,cy:100,r,fill:"none",stroke:"var(--line)","stroke-width":26}));
     // El ahorro va primero y con rayas: es plata que se va del mes, pero no es un gasto
-    const sorted = Object.entries(cats).sort((a,b) => (b[0] === "ahorro") - (a[0] === "ahorro") || b[1]-a[1]);
+    const sorted = Object.entries(cats).filter(([, v]) => Math.abs(v) > 0.005).sort((a,b) => (b[0] === "ahorro") - (a[0] === "ahorro") || b[1]-a[1]);
     let off = 0;
     sorted.forEach(([id,v]) => {
       const len = v/base*C, gap = sorted.length > 1 ? Math.min(2, len/2) : 0;
@@ -8128,7 +8132,7 @@ function renderDash(){
       const mid = document.createElement("div");
       const n = document.createElement("div"); n.className = "n"; n.textContent = isSav ? "Ahorraste" : c.name;
       const d = document.createElement("div"); d.className = "d";
-      if (!p) d.textContent = prevHas ? `Nuevo: no tenías en ${prevName}` : "";
+      if (!p) d.textContent = prevHas ? (fairNote ? `A esta altura de ${prevName} no tenías` : `Nuevo: no tenías en ${prevName}`) : "";
       else {
         const dv = round2(v - p), pct = Math.round(dv/p*100);
         d.textContent = Math.abs(pct) < 1 ? `Igual que en ${prevName}${fairNote}` : `${dv>0?"▲":"▼"} ${money(Math.abs(dv), cur)} ${dv>0?"más":"menos"} que en ${prevName}${fairNote}`;
@@ -8347,7 +8351,7 @@ function renderCardsDash(list, cur){
     { const pv = prevExpensesFair(viewYear, viewMonth, cur).filter(x => x.cardId === card.id), hadPrev = monthExpenses(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1, cur).some(x => x.cardId === card.id);
       if (hadPrev){ const dv = round2(total - pv.reduce((a, x) => a + x.amount, 0)), pn = monthName(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1);
         const cmp = document.createElement("div"); cmp.className = "card-cmp " + (Math.abs(dv) < 1 ? "" : dv > 0 ? "up" : "down");
-        cmp.textContent = Math.abs(dv) < 1 ? `Igual que en ${pn}` : `${dv > 0 ? "▲" : "▼"} ${money(Math.abs(dv), cur)} ${dv > 0 ? "más" : "menos"} que en ${pn}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}`;
+        cmp.textContent = Math.abs(dv) < 1 ? `Igual que en ${pn}` : `${dv > 0 ? "▲" : "▼"} ${money(Math.abs(dv), cur)} ${dv > 0 ? "más" : "menos"} que el resumen de ${pn}`;
         el.append(cmp); } }
     const next = document.createElement("div"); next.className = "next";
     const info = document.createElement("span");
@@ -8498,7 +8502,8 @@ function renderPaper(){
   const ex = (y, m) => monthExpenses(y, m, "ARS");
   const all = ex(viewYear, viewMonth), spendL = all.filter(x => !isSaving(x));
   const now = spendL.reduce((s,x) => s + x.amount, 0), sav = all.filter(isSaving).reduce((s,x) => s + x.amount, 0);
-  const before = ex(py, pm).filter(x => !isSaving(x)).reduce((s,x) => s + x.amount, 0);
+  // en el mes en curso se compara con el anterior hasta el mismo día (con las tarjetas enteras)
+  const before = prevExpensesFair(viewYear, viewMonth, "ARS").filter(x => !isSaving(x)).reduce((s,x) => s + x.amount, 0), alt = isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : "";
   const inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS").reduce((s,e) => s + e.amount, 0);
   const cats = {}; spendL.forEach(x => cats[x.category] = (cats[x.category] || 0) + x.amount);
   const top = Object.entries(cats).sort((a,b) => b[1] - a[1])[0];
@@ -8516,7 +8521,7 @@ function renderPaper(){
   else parts.push("Recy está esperando tus tickets para escribir la primera nota.");
   if (sav) parts.push(`Además mandaste ${f0(sav)} a tus ahorros.`);
   if (inc) { const left = inc - now - sav; parts.push(left >= 0 ? `Te quedan ${f0(left)}.` : `Te pasaste por ${f0(-left)}.`); }
-  if (before && now) parts.push(now > before ? `Es ${f0(now - before)} más que en ${monthName(py, pm)}.` : now < before ? `Es ${f0(before - now)} menos que en ${monthName(py, pm)}.` : "");
+  if (before && now) parts.push(now > before ? `Es ${f0(now - before)} más que en ${monthName(py, pm)}${alt}.` : now < before ? `Es ${f0(before - now)} menos que en ${monthName(py, pm)}${alt}.` : "");
   $("leadHead").textContent = head;
   $("leadDeck").textContent = parts.filter(Boolean).join(" ");
   $("leadKicker").textContent = "Economía personal · " + periodTitle(viewYear, viewMonth);
@@ -8527,7 +8532,7 @@ function renderPaper(){
 function stageDash(){
   const py = viewMonth === 0 ? viewYear - 1 : viewYear, pm = viewMonth === 0 ? 11 : viewMonth - 1;
   const spend = (y, m) => monthExpenses(y, m, "ARS").filter(x => !isSaving(x)).reduce((s,x) => s + x.amount, 0);
-  const now = spend(viewYear, viewMonth), before = spend(py, pm);
+  const now = spend(viewYear, viewMonth), before = isCurrentPeriod(viewYear, viewMonth) ? prevExpensesFair(viewYear, viewMonth, "ARS").filter(x => !isSaving(x)).reduce((s,x) => s + x.amount, 0) : spend(py, pm);
   const inc = data.incomes.filter(e => inPeriod(e, viewYear, viewMonth) && e.currency === "ARS").reduce((s,e) => s + e.amount, 0);
   const cats = {}; monthExpenses(viewYear, viewMonth, "ARS").filter(x => !isSaving(x)).forEach(x => cats[x.category] = (cats[x.category] || 0) + x.amount);
   const top = Object.entries(cats).sort((a,b) => b[1] - a[1])[0];
@@ -8544,7 +8549,7 @@ function stageDash(){
       inc && `Es el ${Math.round((savedNow > 0.5 ? allNow : now) / inc * 100)}% de lo que cobraste`,
       top && `Donde más: ${catById(top[0]).name}, ${fmtARS.format(round2(top[1]))} (${topPct}% ${inc > 0 ? "de tu sueldo" : "de tus gastos"})`,
       top && top[0] === "tarjeta_sd" ? "Son pagos de tarjeta que no cargaste compra por compra." : null,
-      before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}` : null],
+      before ? `${diff >= 0 ? "+" : "−"}${fmtARS.format(Math.abs(round2(diff)))} vs ${monthName(py, pm)}${isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : ""}` : null],
     mood: !now ? "hungry" : inc && now > inc * 0.8 ? "worried" : "happy",
     line: !now ? "Todavía no tengo nada para analizar." : top ? `${catById(top[0]).name} se lleva la mayor parte.` : "Acá va el resumen del mes."
   });
@@ -11801,12 +11806,16 @@ const I18N_EN_P = [
   [/^Ver las (\d+) compras del resumen$/, "See the $1 purchases on the statement"],
   [/^Próximo pago: (.+) el (.+)$/, "Next payment: $1 on $2"],
   [/^Nuevo: no tenías en (.+)$/, "New: none in $1"],
+  [/^A esta altura de (.+) no tenías$/, "None by this point in $1"],
+  [/^([+−].+) vs (\S+) a esta altura$/, "$1 vs $2 so far"],
   [/^Este mes te rindió ≈ (.+)$/, "This month it earned ≈ $1"],
   [/^Tenés (.+) menos de lo que calculé \((.+)\)\. Seguro hay algún gasto que no cargaste\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 less than I calculated ($2). There's probably an expense you didn't log. Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
   [/^Tenés (.+) más de lo que calculé \((.+)\)\. ¿Lo anoto como "Ajuste de saldo" para que el Resumen también cierre\?$/, "You have $1 more than I calculated ($2). Should I add it as a \"Balance adjustment\" so the Summary adds up too?"],
   [/^Ya la usa (.+)$/, "Already used by $1"],
   [/^(.+): (.+) en (\d+) gastos?$/, "$1: $2 in $3 expenses"],
   [/^Versión (.+) · lo nuevo de cada versión$/, "Version $1 · what's new in each version"],
+  [/^([▲▼]) (.+) más que el resumen de (.+)$/, "$1 $2 more than the $3 statement"],
+  [/^([▲▼]) (.+) menos que el resumen de (.+)$/, "$1 $2 less than the $3 statement"],
   [/^([▲▼]) (.+) más que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} more than in ${c}${d ? " so far" : ""}`],
   [/^([▲▼]) (.+) menos que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} less than in ${c}${d ? " so far" : ""}`],
   [/^Igual que en (.+?)( a esta altura)?$/, (m, c, d) => `Same as in ${c}${d ? " so far" : ""}`],
