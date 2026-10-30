@@ -3207,7 +3207,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1650";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1730";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4638,39 +4638,53 @@ PREGUNTA: """${q}"""` }], { fast: true, timeout: 30000, models: AI_MODELS.slice(
   clearTimeout(slow); askBusy = false; $("askGo").disabled = false;
 }
 $("askGo").onclick = askGo;
-/* Hablarle a Recy: se graba con el micrófono y Gemini lo pasa a texto (funciona en la compu y en el celu) */
+/* Hablarle a Recy: si el navegador sabe dictar (Chrome, Edge, Safari), se escribe mientras hablás.
+   Si no, se graba y Gemini lo pasa a texto. */
 function micSetup(btn, ta, after){
-  if (!btn || !navigator.mediaDevices || !window.MediaRecorder){ if (btn) btn.hidden = true; return; }
-  let rec = null, chunks = [], stopT = null;
+  if (!btn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR && (!navigator.mediaDevices || !window.MediaRecorder)){ btn.hidden = true; return; }
   const label = t => { const sp = btn.querySelector("span"); if (sp) sp.textContent = t; };
-  const stop = () => { clearTimeout(stopT); if (rec && rec.state === "recording") rec.stop(); };
-  btn.onclick = async () => {
-    if (rec && rec.state === "recording"){ stop(); return; }
+  const idle = () => { btn.classList.remove("rec"); btn.disabled = false; label("Hablar"); };
+  const put = t => { t = (t || "").trim(); if (!t) return false; ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + t; ta.dispatchEvent(new Event("input", { bubbles: true })); return true; };
+  let live = null, rec = null, chunks = [], stopT = null;
+  const useGemini = async () => {
     if (!aiKey()){ uiAlert("Para hablarle a Recy primero activá Recy inteligente (en Ajustes)."); return; }
     let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
     catch { uiAlert("No me diste permiso para usar el micrófono. Habilitalo en el navegador para este sitio y probá de nuevo."); return; }
-    chunks = []; rec = new MediaRecorder(stream);
+    chunks = []; try { rec = new MediaRecorder(stream, { audioBitsPerSecond: 24000 }); } catch { rec = new MediaRecorder(stream); }
     rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
     rec.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop()); btn.classList.remove("rec"); label("Escuchando…"); btn.disabled = true;
+      stream.getTracks().forEach(t => t.stop()); btn.classList.remove("rec"); btn.disabled = true; label("Pasando a texto…");
       try {
         const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
         if (blob.size < 1500) throw { code: "short" };
         const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
         const r = await aiCall([{ text: 'Transcribí este audio en español rioplatense, tal cual lo dice (con los números en cifras). Respondé SOLO un JSON: {"texto":"..."}' },
-          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 30000, models: ["gemini-2.5-flash", "gemini-flash-latest"] });
-        const t = (r && r.texto || "").trim();
-        if (!t) throw { code: "empty" };
-        ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + t; ta.dispatchEvent(new Event("input", { bubbles: true }));
-        if (after) after();
+          { inline_data: { mime_type: (blob.type || "audio/webm").split(";")[0], data: b64 } }], { fast: true, timeout: 20000, models: ["gemini-2.5-flash-lite", "gemini-2.5-flash"] });
+        if (!put(r && r.texto)) throw { code: "empty" };
+        idle(); if (after) after(); return;
       } catch (e){ uiAlert(e && (e.code === "short" || e.code === "empty") ? "No te escuché. Tocá Hablar, decilo y tocá de nuevo para terminar." : (aiErrorMsg(e) || "No pude pasar el audio a texto.").replace(" Usé el modo simple.", "")); }
-      btn.disabled = false; label("Hablar");
+      idle();
     };
-    rec.start(); btn.classList.add("rec"); label("Listo"); stopT = setTimeout(stop, 60000);
+    rec.start(); btn.classList.add("rec"); label("Tocá para terminar"); stopT = setTimeout(() => rec && rec.state === "recording" && rec.stop(), 60000);
+  };
+  btn.onclick = () => {
+    if (live){ live.stop(); return; }
+    if (rec && rec.state === "recording"){ clearTimeout(stopT); rec.stop(); return; }
+    if (!SR){ useGemini(); return; }
+    const base = ta.value.trim(); let heard = "", failed = false;
+    live = new SR(); live.lang = "es-AR"; live.interimResults = true; live.continuous = true;
+    live.onresult = ev => { heard = [...ev.results].map(r => r[0].transcript).join(" ").trim(); ta.value = (base ? base + " " : "") + heard; };
+    live.onerror = ev => { failed = true; if (ev.error === "not-allowed" || ev.error === "service-not-allowed") uiAlert("No me diste permiso para usar el micrófono. Habilitalo en el navegador para este sitio y probá de nuevo."); };
+    live.onend = () => { live = null; idle(); ta.dispatchEvent(new Event("input", { bubbles: true }));
+      if (heard) { if (after) after(); } else if (!failed) uiAlert("No te escuché. Tocá Hablar, decilo y tocá de nuevo para terminar."); };
+    try { live.start(); btn.classList.add("rec"); label("Tocá para terminar"); if (after && after.open) after.open(); }
+    catch { live = null; useGemini(); }
   };
 }
 micSetup($("askMic"), $("askQ"), () => askGo());
-micSetup($("tellMic"), $("tellInput"), () => { $("tellBox").classList.add("tell-open"); $("tellInput").focus({ preventScroll: true }); });
+{ const openTell = () => { $("tellBox").classList.add("tell-open"); }; const af = () => { openTell(); $("tellInput").focus({ preventScroll: true }); }; af.open = openTell; micSetup($("tellMic"), $("tellInput"), af); }
 $("askQ").addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); askGo(); } });
 /* ---------- ¿Me lo puedo comprar?: cómo quedan los próximos meses con esta compra ---------- */
 let buy = { cur: "ARS", how: "cash" };
@@ -7525,7 +7539,8 @@ const NEWS = [
     { es: "Arreglo: en el celu, la lista de lo que falta pagar se rompía con montos largos (el nombre quedaba en vertical). Ahí también se ve el total del banco.", en: "Fix: on phones, the to-pay list broke with long amounts (the name went vertical). It also shows the bank's total now." },
     { es: "Las tarjetas por pagar tienen su botón para pagar, con lo del resumen ya puesto.", en: "Cards to pay have a pay button, with the statement amounts filled in." },
     { es: "Arreglo: Preguntale a Recy podía quedarse colgado. Ahora, si Gemini tarda, te avisa y corta a tiempo.", en: "Fix: Ask Recy could hang. Now if Gemini is slow it tells you and gives up in time." },
-    { es: "Ahora le podés hablar a Recy: botón Hablar en Preguntale a Recy y al cargar un gasto. Funciona también en la compu.", en: "You can now talk to Recy: a Speak button in Ask Recy and when adding an expense. Works on computers too." } ] },
+    { es: "Ahora le podés hablar a Recy: botón Hablar en Preguntale a Recy y al cargar un gasto. Funciona también en la compu.", en: "You can now talk to Recy: a Speak button in Ask Recy and when adding an expense. Works on computers too." },
+    { es: "Hablar ahora escribe mientras hablás (en Chrome, Edge y Safari) y los botones dicen más claro qué está pasando.", en: "Speak now types as you talk (in Chrome, Edge and Safari), and the button says more clearly what's going on." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -11467,7 +11482,8 @@ Deshacer	Undo
 Canceladas y devoluciones (no se cargan)	Cancelled and refunds (not added)
 es la devolución de esa compra	is the refund for that purchase
 Hablar	Speak
-Escuchando…	Listening…
+Tocá para terminar	Tap to finish
+Pasando a texto…	Transcribing…
 Tema	Theme
 Automático	Automatic
 Claro	Light

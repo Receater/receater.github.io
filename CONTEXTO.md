@@ -461,3 +461,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `openCardPayFill(card,key)`: botón Pagar en la lista Por pagar y "Pagué la tarjeta" en el grupo de Movimientos, con el resumen ya puesto.
 - Preguntale a Recy: timeout 30s y 2 modelos, aviso "Sigo haciendo cuentas" a los 12s; el contexto suma PLATA LIBRE HOY (teQuedaReal) y DÓLAR HOY.
 - `micSetup(btn, textarea, after)`: botón Hablar (MediaRecorder → Gemini transcribe, máx 60s). En Preguntale a Recy (pregunta sola al terminar) y en la barra de Darle a Recy (abre el texto).
+- Hablar: usa SpeechRecognition del navegador (es-AR, escribe en vivo); si no hay, graba y transcribe con Gemini (flash-lite, 20s). Botón: Hablar → "Tocá para terminar" → (Gemini) "Pasando a texto…".
