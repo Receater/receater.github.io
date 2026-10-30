@@ -1340,6 +1340,13 @@ html:has(.sheet.open) .go-top,html:has(.dlg-bg) .go-top{opacity:0;pointer-events
 .cal-info .s2{display:block;font-size:.82rem;color:#6E6A62;margin-top:1px;line-height:1.3}
 .cal-right{display:grid;gap:6px;justify-items:end;text-align:right}
 .cal-right .amt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:.98rem}
+.cal-info{min-width:0;overflow-wrap:break-word}
+.cal-row{box-sizing:border-box}
+.cal-right{min-width:0}
+.cal-right .amt .nw{display:block;white-space:nowrap}
+.fp-sub .a{white-space:nowrap}
+@media (max-width:480px){.cal .fp-sub,.clip .fp-sub{padding-left:14px !important}}
+@media (max-width:480px){.cal-row{grid-template-columns:52px minmax(0,1fr) auto;gap:10px;padding-left:10px;padding-right:10px}.cal-right .amt{font-size:.86rem}}
 .cal-right .pay{background:#6355C7;color:#fff;border-radius:99px;padding:6px 14px;font-weight:700;font-size:.85rem;min-height:34px;display:inline-grid;place-items:center}
 .cal-right .tag{border:1.5px solid #BDB6A5;color:#6E6A62;border-radius:99px;padding:3px 10px;font-weight:600;font-size:.76rem}
 .cal .fp-sub{padding:2px 14px 10px 86px;color:#1F1F1F}
@@ -3192,7 +3199,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1500";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1550";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4489,7 +4496,7 @@ function renderFixedPend(){
     if (o.plan) r.onclick = () => openPersonBal(o.person, o.pcur);
     const s1 = document.createElement("span"); s1.className = "s1"; s1.textContent = o.plan || "Pago de tarjeta"; const s2 = document.createElement("span"); s2.className = "s2"; s2.textContent = `vence el ${shortDate(o.d)}`; info.append(nm, s1, s2);
     const right = document.createElement("div"); right.className = "cal-right"; const amt = document.createElement("b"); amt.className = "amt";
-    amt.textContent = [o.ars && fmtARS.format(round2(o.ars)), o.usd && "+ " + fmtUSD.format(round2(o.usd))].filter(Boolean).join(" "); right.append(amt);
+    [o.ars && fmtARS.format(round2(o.ars)), o.usd && (o.ars ? "+ " : "") + fmtUSD.format(round2(o.usd))].filter(Boolean).forEach(t => { const sp = document.createElement("span"); sp.className = "nw"; sp.textContent = t; amt.append(sp); }); right.append(amt);
     r.append(day, info, right);
     paper.append(r);
   });
@@ -7461,7 +7468,8 @@ const NEWS = [
     { es: "Si pagás los dólares de la tarjeta con dólares, al cargar el pago se saca sola la percepción RG 5617.", en: "If you pay your card's dollars with dollars, the RG 5617 surcharge is removed when you log the payment." },
     { es: "Arreglo: una tarjeta ya pagada muestra lo que pagaste, no la suma de lo que anotaste.", en: "Fix: a paid card shows what you paid, not the sum of what you logged." },
     { es: "Arreglo: la tarjeta que vence hoy y todavía no pagaste ahora se resta de lo que te queda.", en: "Fix: a card due today that you haven't paid yet is now taken off what you have left." },
-    { es: "La pizarra muestra cuánto te falta pagar de tarjetas. Cuando cargás el pago, sale de tu cuenta lo que pagaste (con los dólares que compraste).", en: "The board shows how much you still owe on cards. When you log the payment, what you paid (including the dollars you bought) comes out of your account." } ] },
+    { es: "La pizarra muestra cuánto te falta pagar de tarjetas. Cuando cargás el pago, sale de tu cuenta lo que pagaste (con los dólares que compraste).", en: "The board shows how much you still owe on cards. When you log the payment, what you paid (including the dollars you bought) comes out of your account." },
+    { es: "Arreglo: en el celu, la lista de lo que falta pagar se rompía con montos largos (el nombre quedaba en vertical). Ahí también se ve el total del banco.", en: "Fix: on phones, the to-pay list broke with long amounts (the name went vertical). It also shows the bank's total now." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -9562,7 +9570,9 @@ function upcomingList(){
   const out = [];
   fixInstances(y, m).filter(i => i.f.how !== "card" && i.state !== "paid").forEach(i => { const v = Math.max(0, (i.expected || 0) - i.paid); if (v > 0) out.push({ d: i.due, name: i.f.name, sub: i.paid ? "Fijo · te falta una parte" : "Fijo", ars: fixToARS(v, i.currency), usd: 0 }); });
   const g = {}; entries().filter(x => x.cardId && dateOnly(x.date) >= today && dateOnly(x.date) <= end && !data.cardPayments.some(p => p.cardId === x.cardId && p.date === x.date.slice(0,10))).forEach(x => {
-    const k = x.cardId + "|" + x.date.slice(0,10); const o = g[k] || (g[k] = { d: dateOnly(x.date), name: (cardById(x.cardId) || {}).name || "Tarjeta", sub: "Tarjeta", card: true, ars: 0, usd: 0 }); if (x.currency === "USD") o.usd += x.amount; else o.ars += x.amount; });
+    const k = x.cardId + "|" + x.date.slice(0,10); const o = g[k] || (g[k] = { d: dateOnly(x.date), name: (cardById(x.cardId) || {}).name || "Tarjeta", sub: "Tarjeta", card: true, key: k, ars: 0, usd: 0 }); if (x.currency === "USD") o.usd += x.amount; else o.ars += x.amount; });
+  // si cargaste el resumen, manda lo que dice el banco
+  Object.values(g).forEach(o => { const stR = (data.cardStmt || {})[o.key]; if (stR){ o.ars = stR.ars || 0; o.usd = stR.usd || 0; } });
   Object.values(g).forEach(o => { if (+o.d >= +end) o.sub = "Tarjeta · se paga con el sueldo nuevo"; out.push(o); });
   out.sort((a, b) => a.d - b.d);
   return { end, items: out, total: round2(out.reduce((a, o) => a + o.ars, 0)) };
