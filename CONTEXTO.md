@@ -460,3 +460,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `accFlows`: las tarjetas salen de la cuenta por el pago cargado (pesos + usdArs, con su `at`); sin pago, solo lo vencido antes de hoy se toma como pagado.
 - `openCardPayFill(card,key)`: botón Pagar en la lista Por pagar y "Pagué la tarjeta" en el grupo de Movimientos, con el resumen ya puesto.
 - Preguntale a Recy: timeout 30s y 2 modelos, aviso "Sigo haciendo cuentas" a los 12s; el contexto suma PLATA LIBRE HOY (teQuedaReal) y DÓLAR HOY.
+- `micSetup(btn, textarea, after)`: botón Hablar (MediaRecorder → Gemini transcribe, máx 60s). En Preguntale a Recy (pregunta sola al terminar) y en la barra de Darle a Recy (abre el texto).
