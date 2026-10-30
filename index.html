@@ -3192,7 +3192,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.1330";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-10-30.1340";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4170,7 +4170,9 @@ function render(){
     const days = Math.ceil((untilD - new Date()) / 864e5);
     // El "por día" de hoy se calcula con lo que tenías al empezar el día, así no cambia mientras cargás gastos
     const todayStr = toLocalInput(new Date());
-    const spentToday = allEnts.filter(x => x.currency === "ARS" && x.date.slice(0,10) === todayStr && !isFixedEnt(x) && !(x.src && x.src.adjust) && (!cobro || new Date(x.date) >= new Date(cobro.date)))
+    // Lo de hoy es lo que compraste hoy: con tarjeta cuenta el día de la compra (no el día que pagás el resumen), y los fijos y pagos de tarjeta no son gasto del día
+    const dayOf = x => x.cardId ? (x.src && x.src.date && !x.src.virtual && !x.payId && !x.stmtKey && !x.estc && !(x.cuota > 1) ? x.src.date : "") : x.date;
+    const spentToday = allEnts.filter(x => x.currency === "ARS" && dayOf(x).slice(0,10) === todayStr && !isFixedEnt(x) && !(x.src && (x.src.adjust || x.src.fixedId)) && (!cobro || new Date(dayOf(x)) >= new Date(cobro.date)))
       .reduce((s2,x) => s2 + x.amount, 0);
     const perDay = days > 0 ? (freeD + spentToday) / days : 0;
     if (perDay > 0){
@@ -7429,7 +7431,8 @@ const NEWS = [
     { es: "El calendario ahora dice las fechas de tu mes (por ejemplo, 30 oct – 29 nov), así no parece que ya es el mes que viene.", en: "The calendar now shows your month's dates (e.g. Oct 30 – Nov 29), so it doesn't look like next month already started." },
     { es: "Si cargaste el resumen de la tarjeta, en Movimientos ves lo que te cobra el banco, y si anotaste de más te muestra la diferencia.", en: "If you loaded your card statement, Movimientos shows what the bank charges, and the difference if you logged more." },
     { es: "Si un fijo no vino en el resumen, podés pasarlo al próximo o marcar que ya estaba con otro nombre.", en: "If a fixed expense isn't on the statement, you can move it to the next one or mark it as already there." },
-    { es: "Las compras que se cancelaron con una devolución en el resumen ya no se cargan.", en: "Purchases cancelled by a refund on the statement are no longer added." } ] },
+    { es: "Las compras que se cancelaron con una devolución en el resumen ya no se cargan.", en: "Purchases cancelled by a refund on the statement are no longer added." },
+    { es: "Arreglo: el pago de la tarjeta y los fijos ya no cuentan como gasto del día; las compras con tarjeta cuentan el día que las hacés.", en: "Fix: card payments and fixed expenses no longer count as today's spending; card purchases count on the day you make them." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
