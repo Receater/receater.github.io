@@ -2693,6 +2693,10 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
       <div class="chips" id="cpkCards"></div>
     </div>
     <div class="fx-hint" id="cpkHint"></div>
+    <div class="field" id="cpkAccF" hidden>
+      <span class="lbl">¿De qué cuenta salió la plata?</span>
+      <div class="chips" id="cpkAccs"></div>
+    </div>
     <div class="pay-boxes">
       <section class="cur-box" aria-labelledby="cpkArsH">
         <h4 class="cur-box-h" id="cpkArsH">Pesos</h4>
@@ -3304,7 +3308,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-10-30.2100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-01.1850";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6007,6 +6011,7 @@ function openPayEdit(pay){
   $("cpkUsd").value = pay.usd ? String(pay.usd).replace(".",",") : "";
   $("cpkRate").value = pay.rate ? String(pay.rate).replace(".",",") : "";
   $("cpkUsdArs").value = pay.usd ? String(pay.usdArs || round2(pay.usd * pay.rate)).replace(".",",") : "";
+  cpkAcc = pay.accountId || null;
   setMode("cardpay");
   $("typeTabs").hidden = true;
   $("sheetTitle").textContent = "Editar pago de " + cardById(pay.cardId).name;
@@ -6020,7 +6025,7 @@ function openCardPayFill(card, key){
 }
 /* Atajo desde Resumen → Tarjetas: anotar el pago de esa tarjeta */
 function openCardPayFor(card){
-  openSheet(null); editingPay = null; cpkCard = card.id;
+  openSheet(null); editingPay = null; cpkCard = card.id; cpkAcc = null;
   ["cpkAmount","cpkUsd","cpkUsdArs"].forEach(id => $(id).value = "");
   setMode("cardpay");
   $("sheetTitle").textContent = "Pagué " + card.name;
@@ -6047,14 +6052,24 @@ $("cpkAmount").addEventListener("input", cpkUpdate);
 const cpkLink = linkFx("cpkUsd", "cpkRate", "cpkUsdArs", () => cpkUpdate());
 document.querySelectorAll("[data-cpkhow]").forEach(b => b.onclick = () => { cpkHow = b.dataset.cpkhow; cpkUpdate(); });
 
+let cpkAcc = null;
+function renderCpkAcc(){
+  const accs = data.accounts || [], f = $("cpkAccF"), box = $("cpkAccs"); f.hidden = !accs.length; box.innerHTML = ""; if (!accs.length) return;
+  const card = cardById(cpkCard);
+  if (!cpkAcc || !accById(cpkAcc)) cpkAcc = (card && card.payFrom && accById(card.payFrom)) ? card.payFrom : mainAccId();
+  accs.forEach(a => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(cpkAcc === a.id));
+    if (a.color){ const t = document.createElement("span"); t.className = "card-tag"; t.style.background = a.color; b.append(t); }
+    b.append(a.name); b.onclick = () => { cpkAcc = a.id; renderCpkAcc(); }; box.append(b); });
+}
 function renderCpk(){
+  try { renderCpkAcc(); } catch {}
   const box = $("cpkCards"); box.innerHTML = "";
   if (cpkCard && !cardById(cpkCard)) cpkCard = null;
   if (!cpkCard && data.cards.length === 1) cpkCard = data.cards[0].id;
   data.cards.forEach(c => {
     const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", String(cpkCard === c.id));
     const t = document.createElement("span"); t.className = "card-tag"; t.style.background = c.color; b.append(t, c.name);
-    b.onclick = () => { if (editingPay) return; cpkCard = c.id; $("cpkAmount").value = ""; $("cpkUsd").value = ""; $("cpkUsdArs").value = ""; renderCpk(); }; box.append(b);
+    b.onclick = () => { if (editingPay) return; cpkCard = c.id; cpkAcc = null; $("cpkAmount").value = ""; $("cpkUsd").value = ""; $("cpkUsdArs").value = ""; renderCpk(); }; box.append(b);
   });
   const add = document.createElement("button"); add.type = "button"; add.className = "chip"; add.textContent = "+ Tarjeta";
   add.onclick = () => openCard(null, false); box.append(add);
@@ -7084,7 +7099,7 @@ function openSheet(exp){
   $("catSearch").value = ""; catEditing = false; editingPay = null;
   $("tellInput").value = ""; $("tellMsg").textContent = "Podés dictarlo con el micrófono del teclado."; aiSetupLabel();
   fixSel = exp && exp.fixedId ? { fid: exp.fixedId, key: exp.fixedKey } : null; fixDiffMode = "partial";
-  cpkHow = "ars"; cpkMode = "rate";
+  cpkHow = "ars"; cpkMode = "rate"; cpkAcc = null;
   jarUserPicked = false; catUserPicked = !!exp; $("catSug").hidden = true;
   $("typeTabs").hidden = !!exp;
   setMode(exp ? (isIncome(exp) ? "income" : exp.fx ? "fx" : "expense") : "expense");
@@ -7207,6 +7222,7 @@ $("sheet").addEventListener("submit", ev => {
     if (data.cardPayments.some(p => p !== editingPay && p.cardId === card.id && p.date === date)){ $("err").textContent = "Ya cargaste un pago de esta tarjeta ese día."; return; }
     const pay = editingPay || { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), cardId: card.id };
     pay.date = date; pay.amount = round2(amount); delete pay.forDate;
+    if (cpkAcc && accById(cpkAcc)){ pay.accountId = cpkAcc; if (!card.payFrom) card.payFrom = cpkAcc; } else delete pay.accountId;
     delete pay.usd; delete pay.usdMode; delete pay.rate;
     delete pay.usdArs;
     if (usd > 0){ pay.usd = round2(usd); pay.usdMode = "ars"; pay.rate = round2(rate); pay.usdArs = round2(usdArs); data.lastRate = pay.rate; }
@@ -7789,7 +7805,8 @@ const NEWS = [
     { es: "La pizarra de Resumen ya no compara con el mes anterior a mitad de mes (confundía).", en: "The Summary board no longer compares with last month mid-month (it was confusing)." },
     { es: "Al comprar dólares los podés repartir entre frascos: ves cuánto le falta a cada uno, lo llenás con un toque y lo que sobra va al frasco común.", en: "When buying dollars you can split them between jars: see what each needs, fill one with a tap, and the rest goes to the common jar." },
     { es: "Podés pasar plata de un frasco a otro (y del frasco común a un frasco), con lo que le falta a cada uno a la vista.", en: "You can move money between jars (and from the common jar to one), seeing what each still needs." },
-    { es: "Nuevo tipo de ingreso: Aguinaldo.", en: "New income type: Aguinaldo (bonus)." } ] },
+    { es: "Nuevo tipo de ingreso: Aguinaldo.", en: "New income type: Aguinaldo (bonus)." },
+    { es: "Al cargar el pago de una tarjeta elegís de qué cuenta salió la plata.", en: "When logging a card payment you pick which account the money came from." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -9762,7 +9779,7 @@ function accFlows(){
   // Si no lo cargaste: lo que ya venció se toma como pagado ese día; lo de hoy o después queda "por pagar" (no sale todavía de la cuenta)
   const payAcc = cid => { const c = cardById(cid); return c && c.payFrom && accById(c.payFrom) ? c.payFrom : mainAccId(); };
   data.cardPayments.forEach(p => { if (!cardById(p.cardId)) return; const usdA = p.usd && p.usdMode === "ars" ? (p.usdArs || round2(p.usd * (p.rate || 0))) : 0;
-    add(payAcc(p.cardId), p.date, -round2((p.amount || 0) + usdA), p.at); });
+    add(p.accountId && accById(p.accountId) ? p.accountId : payAcc(p.cardId), p.date, -round2((p.amount || 0) + usdA), p.at); });
   const todayS = toLocalInput(new Date());
   entries().forEach(x => { if (!x.cardId || x.currency !== "ARS" || (x.src && x.src.paidBy) || x.payId) return; const d = x.date.slice(0, 10);
     if (d >= todayS || data.cardPayments.some(p => p.cardId === x.cardId && p.date === d)) return;
@@ -11783,6 +11800,7 @@ Pasar a un frasco	Move to a jar
 Pasar dólares a un frasco	Move dollars to a jar
 Pasar pesos a un frasco	Move pesos to a jar
 Aguinaldo	Bonus (aguinaldo)
+¿De qué cuenta salió la plata?	Which account did the money come from?
 Tema	Theme
 Automático	Automatic
 Claro	Light

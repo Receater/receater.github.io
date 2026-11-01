@@ -472,3 +472,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Comprar dólares (nuevo, con frascos USD): `#fxSplit` reparte entre frascos (fxAlloc), muestra cuánto falta a cada uno, botones Llenarlo/Poner/Todo acá; lo no asignado va al frasco común (jarId null). Guarda una compra por frasco con `fxGroup`. "Sin frasco" ahora se llama "Frasco común" y en Ahorros se ve como tarjeta.
 - Frascos: "Pasar a otro frasco" (jmKind "move") crea dos jarMoves move-out/move-in con `link` (se borran juntos). Frasco común = `commonJar(cur)` con id "__common__" (jarMoves con `cur`); en Ahorros tiene botón "Pasar a un frasco". Los traspasos no cuentan en net/out.
 - Ingreso nuevo: Aguinaldo.
+- Pago de tarjeta: elegís la cuenta (`cpkAcc`, default card.payFrom o la principal); se guarda en `pay.accountId` y accFlows la usa. Si la tarjeta no tenía payFrom, queda la elegida.
