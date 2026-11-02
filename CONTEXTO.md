@@ -474,3 +474,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Ingreso nuevo: Aguinaldo.
 - Pago de tarjeta: elegís la cuenta (`cpkAcc`, default card.payFrom o la principal); se guarda en `pay.accountId` y accFlows la usa. Si la tarjeta no tenía payFrom, queda la elegida.
 - fixInstance: pagos de un fijo en otra moneda se convierten (fixUsdRate); si cubren 85%+ cuenta pagado entero.
+- `placeFab()`: en compu fija --fab-x al centro de .vcol-r de la pestaña (en Fijos, sobre #fixedList > .list). Corre en render y resize.

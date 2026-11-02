@@ -1986,7 +1986,7 @@ input[type="checkbox"]:checked::after{content:"";width:5px;height:10px;border:so
   .brand .main-tabs{position:relative !important;left:auto !important;top:auto !important;transform:none !important;width:auto !important;min-width:0;margin:0 !important}
   .brand-right{justify-self:end;gap:10px}
   /* "Darle a Recy" va centrado sobre la columna derecha, así no tapa la columna de la izquierda */
-  .fab{left:calc(50% + 231px) !important}
+  .fab{left:var(--fab-x, calc(50% + 231px)) !important}
 }
 .brand .hello{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.15}
 .gap-fix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 0;border-top:1px dashed #C9BFA8;font-size:.85rem}
@@ -3308,7 +3308,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-02.1945";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-02.1955";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4169,6 +4169,17 @@ function equalizeBoards(){
 }
 window.addEventListener("resize", () => setTimeout(equalizeBoards, 150));
 /* Escritorio: la columna izquierda queda fija al scrollear solo si entra entera en la pantalla (si no, scrollea normal) */
+/* En compu, el botón de abajo va centrado sobre lo que mira cada pestaña (la columna derecha, que en Fijos es más angosta) */
+function placeFab(){
+  if (innerWidth < 1100){ document.documentElement.style.removeProperty("--fab-x"); return; }
+  const v = { list: "viewList", dash: "viewDash", fixed: "viewFixed", jars: "viewJars" }[tab], col = v && document.querySelector(`#${v} > .vcol-r`);
+  if (!col || !col.offsetParent) return;
+  let r = col.getBoundingClientRect();
+  // si la columna se divide en dos (como Fijos), el botón va sobre la parte de lista, que es la que crece
+  if (tab === "fixed"){ const lst = col.querySelector("#fixedList > .list"); if (lst && lst.offsetParent && lst.getBoundingClientRect().width < r.width - 50) r = lst.getBoundingClientRect(); }
+  document.documentElement.style.setProperty("--fab-x", Math.round(r.left + r.width / 2) + "px");
+}
+addEventListener("resize", () => { clearTimeout(placeFab.t); placeFab.t = setTimeout(placeFab, 150); });
 function fitLeftCol(){ document.querySelectorAll(".vcol-l").forEach(c => { c.classList.remove("stick"); if (innerWidth >= 1100 && c.offsetParent && c.getBoundingClientRect().height <= innerHeight - 120) c.classList.add("stick"); }); }
 window.addEventListener("resize", () => setTimeout(fitLeftCol, 160));
 /* "Te queda" real (uno solo para toda la app): plata de las cuentas − fijos sin pagar − tarjeta que vence antes de cobrar − lo que tenés que devolver.
@@ -4204,7 +4215,7 @@ function render(){
   if (learnOn){ setScene("learn"); return; }
   queueMicrotask(() => { try { renderAccounts(); } catch {} try { renderUpcomingBtn(); } catch {} });
   placeMonthNav();
-  setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); });
+  setScene(tab); requestAnimationFrame(() => { equalizeBoards(); fitLeftCol(); try { placeFab(); } catch {} });
   $("monthTitle").textContent = navTitle(viewYear, viewMonth);
   renderRange();
   $("next").disabled = false;
@@ -7811,7 +7822,8 @@ const NEWS = [
     { es: "Podés pasar plata de un frasco a otro (y del frasco común a un frasco), con lo que le falta a cada uno a la vista.", en: "You can move money between jars (and from the common jar to one), seeing what each still needs." },
     { es: "Nuevo tipo de ingreso: Aguinaldo.", en: "New income type: Aguinaldo (bonus)." },
     { es: "Al cargar el pago de una tarjeta elegís de qué cuenta salió la plata.", en: "When logging a card payment you pick which account the money came from." },
-    { es: "Arreglo: un fijo en dólares pagado en pesos (como Claude) hacía explotar el total de Fijos.", en: "Fix: a dollar fixed expense paid in pesos (like Claude) blew up the Fixed total." } ] },
+    { es: "Arreglo: un fijo en dólares pagado en pesos (como Claude) hacía explotar el total de Fijos.", en: "Fix: a dollar fixed expense paid in pesos (like Claude) blew up the Fixed total." },
+    { es: "En la compu, el botón de abajo se centra sobre lo que mirás en cada pestaña (en Fijos, sobre la lista).", en: "On computers, the bottom button centers over what you're looking at on each tab (on Fixed, over the list)." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -12156,6 +12168,7 @@ const I18N_EN_P = [
   [/^Vino de (.+)$/, "Came from $1"],
   [/^(.+) · le faltan (.+)$/, "$1 · needs $2"],
   [/^Sale de (.+), que tiene (.+)\. Pasar entre frascos no cuenta como gasto ni como ahorro nuevo\.$/, "From $1, which has $2. Moving between jars isn't spending or new savings."],
+  [/^Pagaste (\d+) de (\d+) fijos( \((.+)\))?$/, (m, a, b, c, d) => `You paid ${a} of ${b} fixed${d ? ` (${d})` : ""}`],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
