@@ -473,3 +473,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Frascos: "Pasar a otro frasco" (jmKind "move") crea dos jarMoves move-out/move-in con `link` (se borran juntos). Frasco común = `commonJar(cur)` con id "__common__" (jarMoves con `cur`); en Ahorros tiene botón "Pasar a un frasco". Los traspasos no cuentan en net/out.
 - Ingreso nuevo: Aguinaldo.
 - Pago de tarjeta: elegís la cuenta (`cpkAcc`, default card.payFrom o la principal); se guarda en `pay.accountId` y accFlows la usa. Si la tarjeta no tenía payFrom, queda la elegida.
+- fixInstance: pagos de un fijo en otra moneda se convierten (fixUsdRate); si cubren 85%+ cuenta pagado entero.

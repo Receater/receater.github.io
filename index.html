@@ -3308,7 +3308,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-01.1850";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-02.1945";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3613,7 +3613,11 @@ function fixInstance(f, y, m){
     const sch = cardSchedule(v)[0];
     return { ...base, state:"incard", paid:0, payDate: sch };
   }
-  const paid = round2(data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key).reduce((s,e) => s + e.amount, 0));
+  // un fijo en dólares pagado en pesos (o al revés): se pasa a la moneda del fijo; si no hay cotización, cuenta como pagado entero
+  const conv = e => { if (e.currency === f.currency) return e.amount; const r = fixUsdRate();
+    if (r > 0) return f.currency === "USD" ? e.amount / r : e.amount * r; return expected || 0; };
+  let paid = round2(data.expenses.filter(e => e.fixedId === f.id && e.fixedKey === key).reduce((s,e) => s + conv(e), 0));
+  if (expected && paid >= expected * 0.85 && data.expenses.some(e => e.fixedId === f.id && e.fixedKey === key && e.currency !== f.currency)) paid = Math.max(paid, expected);   // con impuestos o otra cotización, igual está pagado
   if (expected ? paid >= expected - 0.5 : paid > 0) return { ...base, state:"paid", paid };
   if (paid > 0) return { ...base, state:"partial", paid };
   return { ...base, state: f.how === "auto" ? "todebit" : "pending", paid };
@@ -7806,7 +7810,8 @@ const NEWS = [
     { es: "Al comprar dólares los podés repartir entre frascos: ves cuánto le falta a cada uno, lo llenás con un toque y lo que sobra va al frasco común.", en: "When buying dollars you can split them between jars: see what each needs, fill one with a tap, and the rest goes to the common jar." },
     { es: "Podés pasar plata de un frasco a otro (y del frasco común a un frasco), con lo que le falta a cada uno a la vista.", en: "You can move money between jars (and from the common jar to one), seeing what each still needs." },
     { es: "Nuevo tipo de ingreso: Aguinaldo.", en: "New income type: Aguinaldo (bonus)." },
-    { es: "Al cargar el pago de una tarjeta elegís de qué cuenta salió la plata.", en: "When logging a card payment you pick which account the money came from." } ] },
+    { es: "Al cargar el pago de una tarjeta elegís de qué cuenta salió la plata.", en: "When logging a card payment you pick which account the money came from." },
+    { es: "Arreglo: un fijo en dólares pagado en pesos (como Claude) hacía explotar el total de Fijos.", en: "Fix: a dollar fixed expense paid in pesos (like Claude) blew up the Fixed total." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
