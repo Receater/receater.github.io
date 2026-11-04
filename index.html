@@ -2066,6 +2066,9 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 .lcd-eye{margin-left:auto}
 .lcd-eye + .lcd-edit{margin-left:0}
 .lcd-eye[aria-pressed="true"]{color:#6355C7}
+.lcd-label-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lcd-why{border:0;background:transparent;padding:2px 0;font:inherit;font-size:.72rem;font-weight:700;color:#6355C7;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.lcd-why .ic{width:12px;height:12px}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2481,6 +2484,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 :root[data-theme="dark"] .pb-items summary{color:#8981F0 !important}
 :root[data-theme="dark"] .pb-items li{border-bottom:1px dotted #3E3930 !important}
 :root[data-theme="dark"] .lcd-eye[aria-pressed="true"]{color:#8981F0 !important}
+:root[data-theme="dark"] .lcd-why{color:#8981F0 !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -2550,7 +2554,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
   <section class="recy-stage" id="recyHero" aria-label="Resumen del período">
     <div class="board">
       <div class="lcd">
-        <div class="lcd-label" id="bigLabel">Gastaste</div>
+        <div class="lcd-label-row"><div class="lcd-label" id="bigLabel">Gastaste</div><button type="button" class="lcd-why" id="leftWhy" hidden><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg> ¿De dónde sale?</button></div>
         <div class="lcd-row"><div class="lcd-big" id="totalArs">$ 0</div><button type="button" class="lcd-edit lcd-eye" id="privBtn" aria-label="Ocultar mi plata" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button><button type="button" class="lcd-edit" id="leftEdit" aria-label="Corregir cuánto te queda" hidden><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg></button></div>
         <div class="lcd-usd" id="totalUsd" hidden></div>
         <div class="leds" id="meter" hidden><span></span></div>
@@ -3322,7 +3326,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-04.1230";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-04.1320";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4200,7 +4204,16 @@ const PRIV_SEL = ["#viewList .recy-stage", "#accBox", "#accOpenSub", "#viewJars"
 const PRIV_KEEP = /Te da para|Te deben|te deben|Hoy te quedan|Último día|por día/;
 const MONEY_RE = /(US\$|\$)\s?-?[\d.]+(?:,\d+)?(?:\s?k\b)?/g;
 function privOn(){ return !!(data.privacy && data.privacy.on); }
+/* Totales grandes sin centavos (pizarras, total de cuentas, ahorros): $ 743.842,4 → $ 743.842. En cada gasto y en los tickets quedan */
+const CENTS_SEL = [".board", ".mn-side", "#accBox .acc-sum", "#accBox > div:first-child", ".jar-common .jc-v", ".fp-tot", ".fx-total"];
+function roundCentsIn(root){
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())){ if (!/,\d/.test(n.nodeValue)) continue;
+    n.nodeValue = n.nodeValue.replace(/((?:US)?\$\s?-?)([\d.]+),(\d{1,2})(?!\d)/g, (m, pre, int, dec) => {
+      const v = Math.round(parseFloat(int.replace(/\./g, "") + "." + dec)); return pre + v.toLocaleString("es-AR"); }); }
+}
 function applyPrivacy(){
+  try { CENTS_SEL.forEach(sel => document.querySelectorAll(sel).forEach(roundCentsIn)); } catch {}
   document.body.classList.toggle("priv-on", privOn());
   const b = $("privBtn"); if (b){ b.setAttribute("aria-pressed", String(privOn())); b.setAttribute("aria-label", privOn() ? "Mostrar mi plata" : "Ocultar mi plata"); b.querySelector("use").setAttribute("href", privOn() ? "#i-eye-off" : "#i-eye"); }
   if (!privOn()) return;
@@ -4218,7 +4231,7 @@ function applyPrivacy(){
 function setPrivacy(on){ data.privacy = { ...(data.privacy || {}), on }; persist(); render(); try { if ($("accBox") && $("accBox").offsetParent) renderAccounts(); } catch {} }
 $("privBtn").onclick = () => setPrivacy(!privOn());
 $("privKeep").onchange = () => { data.privacy = { ...(data.privacy || {}), all: !$("privKeep").checked }; persist(); render(); };
-{ let t = null; new MutationObserver(() => { if (!privOn()) return; clearTimeout(t); t = setTimeout(applyPrivacy, 30); }).observe(document.body, { childList: true, subtree: true, characterData: true }); }
+{ let t = null; new MutationObserver(() => { clearTimeout(t); t = setTimeout(applyPrivacy, 30); }).observe(document.body, { childList: true, subtree: true, characterData: true }); }
 addEventListener("load", () => setTimeout(applyPrivacy, 50));
 /* Al abrir o cerrar algo de la lista (render), la página no salta para arriba */
 { const _render = render; render = function(){ const y = window.scrollY; _render.apply(this, arguments);
@@ -4298,6 +4311,7 @@ function render(){
     boardReal = realNow != null; boardRealNow = realNow; boardRealLeft = realNow != null ? left : null;
     $("bigLabel").textContent = left >= 0 ? "Te queda" : "Te pasaste";
     boardLeft = cur ? calcLeft : null; $("leftEdit").hidden = !cur;
+    $("leftWhy").hidden = realNow == null; boardWhy = realNow != null ? { real: realNow, periodEnd, left } : null;
     boardMismatch = null;
     big.textContent = fmtARS.format(Math.abs(left));
     big.classList.toggle("neg", left < 0);
@@ -4320,7 +4334,7 @@ function render(){
       lines.splice(1, 0, parts.join(" − ")); }
     else if (fixP > 0) lines.splice(1, 0, `Fijos por pagar: ${fmtARS.format(fixP)}. Libre: ${fmtARS.format(free)}`);
   } else {
-    $("bigLabel").textContent = "Gastaste"; boardLeft = null; boardMismatch = null; boardReal = false; boardRealLeft = null; $("leftEdit").hidden = true;
+    $("bigLabel").textContent = "Gastaste"; $("leftWhy").hidden = true; boardLeft = null; boardMismatch = null; boardReal = false; boardRealLeft = null; $("leftEdit").hidden = true;
     big.textContent = fmtARS.format(gastoA);
     big.classList.remove("neg");
     meter.hidden = true;
@@ -7880,7 +7894,9 @@ const NEWS = [
     { es: "En la compu, el botón de abajo se centra sobre lo que mirás en cada pestaña (en Fijos, sobre la lista).", en: "On computers, the bottom button centers over what you're looking at on each tab (on Fixed, over the list)." },
     { es: "Arreglo: al abrir un gasto para verlo en detalle, la pantalla ya no salta para arriba.", en: "Fix: opening an expense to see its details no longer jumps the screen to the top." },
     { es: "En las cuentas con amigos ves qué fue cada gasto, el total, su parte y los productos del ticket.", en: "In shared accounts you see what each expense was, the total, their share and the ticket items." },
-    { es: "Nuevo: el ojito en la pizarra oculta tu plata (saldos, cuentas, ahorros y sueldo). Queda guardado. El gasto por día y lo que te deben se siguen viendo; eso se cambia en Ajustes.", en: "New: the eye on the board hides your money (balances, accounts, savings and pay). It's remembered. Daily spending and what you're owed stay visible; change that in Settings." } ] },
+    { es: "Nuevo: el ojito en la pizarra oculta tu plata (saldos, cuentas, ahorros y sueldo). Queda guardado. El gasto por día y lo que te deben se siguen viendo; eso se cambia en Ajustes.", en: "New: the eye on the board hides your money (balances, accounts, savings and pay). It's remembered. Daily spending and what you're owed stay visible; change that in Settings." },
+    { es: "Los totales grandes (pizarras, cuentas, ahorros) van sin centavos. En cada gasto y en los tickets siguen.", en: "Big totals (boards, accounts, savings) no longer show cents. Each expense and ticket still does." },
+    { es: "Nuevo: \"¿De dónde sale?\" al lado de Te queda: te muestra la cuenta, cuenta por cuenta, con los fijos y tarjetas que ya se descontaron.", en: "New: \"Where does it come from?\" next to What's left shows the math, account by account, with the fixed costs and cards already taken off." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -10700,6 +10716,31 @@ function openAccFix(){
 }
 $("accMove").onclick = openAccMove;
 /* Tocar la pizarra abre dónde está tu plata */
+/* "¿De dónde sale?" de Te queda: la cuenta, renglón por renglón */
+let boardWhy = null;
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function explainLeft(){
+  const W = boardWhy; if (!W) return;
+  const row = (l, v, cls) => `<div class="pd-row${cls ? " " + cls : ""}"><span>${esc(l)}</span><b>${v}</b></div>`;
+  const flows = accFlows(), accs = (data.accounts || []).map(a => [a.name, accStatus(a, flows)]).filter(([, st]) => st.known);
+  const fx = fixInstances(viewYear, viewMonth).filter(i => i.f.how !== "card" && i.state !== "paid").map(i => [i.f.name, fixToARS(Math.max(0, (i.expected || 0) - i.paid), i.currency)]).filter(([, v]) => v > 0.5);
+  const today0 = dateOnly(toLocalInput(new Date())), byK = {};
+  entries().filter(x => x.cardId && x.currency === "ARS" && !(x.src && x.src.paidBy) && dateOnly(x.date) >= today0 && dateOnly(x.date) < W.periodEnd).forEach(x => { const k = x.cardId + "|" + x.date.slice(0,10); byK[k] = (byK[k] || 0) + x.amount; });
+  const cards = Object.entries(byK).filter(([k]) => !data.cardPayments.some(p => p.cardId + "|" + p.date === k)).map(([k, v]) => { const st = (data.cardStmt || {})[k], c = cardById(k.split("|")[0]);
+    return [`${c ? c.name : "Tarjeta"}, vence el ${shortDate(dateOnly(k.split("|")[1]))}${st && st.ars > 0 ? " (según tu resumen)" : ""}`, st && st.ars > 0 ? st.ars : v]; });
+  const fx0 = fx.reduce((a, [, v]) => a + v, 0), cd0 = cards.reduce((a, [, v]) => a + v, 0);
+  const html = `<p><b>¿De dónde sale lo que te queda?</b></p><div class="pd-list">
+    ${accs.map(([n, st]) => row(n, f0ARS(st.bal))).join("")}
+    ${row("En tus cuentas", f0ARS(W.real), "pd-tot")}
+    ${fx.length ? fx.map(([n, v]) => row("− " + n, "− " + f0ARS(v), "pd-fix")).join("") : ""}
+    ${cards.map(([n, v]) => row("− " + n, "− " + f0ARS(v))).join("")}
+    ${row("Te queda", f0ARS(W.left), "pd-tot")}</div>
+    <p class="fx-hint" style="margin:10px 0 0">${fx.length ? `Los fijos que todavía no pagaste (${f0ARS(fx0)})` : "No tenés fijos sin pagar"}${cards.length ? ` y las tarjetas que vencen antes de que cobres (${f0ARS(cd0)})` : ""} ya están descontados. Si un saldo no coincide con tu banco, tocá el lápiz y ponelo bien.</p>`;
+  uiDialog({ msg: "", ok: "Entendido" });
+  const all = document.querySelectorAll(".dlg"), box = all[all.length - 1]; if (!box) return;
+  const p = box.querySelector("p") || box.firstElementChild; if (p){ const w = document.createElement("div"); w.innerHTML = html; p.replaceWith(...w.childNodes); }
+}
+$("leftWhy").onclick = e => { e.stopPropagation(); explainLeft(); };
 $("leftEdit").onclick = e => { e.stopPropagation(); if (boardReal) openAccFix(); else openFixLeft(); }; $("accFix").onclick = openAccFix;
 /* Historial: cuándo cargaste cada ahorro (compras de dólares con su cotización), agrupado por mes con el total de cada mes */
 function renderJarHistory(r){
@@ -11880,6 +11921,9 @@ Ocultar mi plata	Hide my money
 Mostrar mi plata	Show my money
 Mostrar igual lo que podés gastar por día	Still show what you can spend per day
 Con tu plata oculta (el ojito de la pizarra), seguir viendo el gasto por día y lo que te deben.	With your money hidden (the eye on the board), still see the daily amount and what you're owed.
+¿De dónde sale?	Where does it come from?
+¿De dónde sale lo que te queda?	Where does what you have left come from?
+En tus cuentas	In your accounts
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -12232,6 +12276,7 @@ const I18N_EN_P = [
   [/^Sale de (.+), que tiene (.+)\. Pasar entre frascos no cuenta como gasto ni como ahorro nuevo\.$/, "From $1, which has $2. Moving between jars isn't spending or new savings."],
   [/^Pagaste (\d+) de (\d+) fijos( \((.+)\))?$/, (m, a, b, c, d) => `You paid ${a} of ${b} fixed${d ? ` (${d})` : ""}`],
   [/^Ver (\d+) productos?$/, "See $1 item(s)"],
+  [/^(.+), vence el (.+?)( \(según tu resumen\))?$/, (m, a, b, c) => `${a}, due ${b}${c ? " (per your statement)" : ""}`],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],

@@ -478,3 +478,9 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `render` envuelto: guarda scrollY y lo restaura (no salta al abrir un ítem); setTab marca render.reset para ir arriba.
 - Hoja de una persona: cada gasto muestra qué fue (nota o productos), categoría, fecha, total y su parte; con productos, "Ver N productos". openPersonBal sin moneda elige sola.
 - Ojito (privacidad): `data.privacy = {on, all}`. `applyPrivacy()` cambia montos por "$ ••••" en la pizarra de Movimientos, cuentas, Ahorros, sueldo y calendario (MutationObserver + render). Con all=false (default) se ven igual "Te da para … por día" y "Te deben". Ajuste en Ajustes.
+
+## 7ah. Tests, centavos y "¿De dónde sale?" (2026-11-04)
+- **Antes de cada push: `python3 tests/run.py`** (Playwright, hora congelada en 2026-10-30 11:00, datos inventados en tests/fixture.json que reproducen errores pasados). Si falla, no se publica. Sumar un caso cada vez que aparece un error de cuentas.
+- Totales grandes sin centavos: `roundCentsIn` sobre `CENTS_SEL` (pizarras, calendario, total de cuentas, frasco común), corre con el MutationObserver de applyPrivacy.
+- "¿De dónde sale?" (`#leftWhy`, `explainLeft`) al lado de Te queda: cuentas, fijos sin pagar y tarjetas que vencen antes de cobrar.
+- Versión de prueba (staging): Tomas la deja para más adelante.

@@ -1,0 +1,19 @@
+{
+  "payRule": "lb", "payOverrides": {}, "lastRate": 1500, "closeSeen": {"2026-10": 1},
+  "accounts": [{"id": "acc1", "name": "Banco", "main": true, "color": "#F37021", "anchor": {"amount": 1000000, "date": "2026-10-29", "at": 1}}],
+  "cards": [{"id": "visa", "name": "Visa", "color": "#2F5BEA", "closeDay": 22, "rule": "salary", "day": null, "payFrom": "acc1"}],
+  "cardPayments": [],
+  "cardStmt": {"visa|2026-10-30": {"ars": 95000, "usd": 0}},
+  "incomes": [{"id": "i1", "type": "income", "amount": 2000000, "currency": "ARS", "category": "sueldo", "date": "2026-10-30T09:00", "note": "", "at": 1793361600000}],
+  "fixed": [
+    {"id": "f_alq", "name": "Alquiler", "category": "casa", "currency": "ARS", "amount": 300000, "day": 5, "how": "manual", "cardId": null, "start": "2026-09", "end": null, "history": [], "monthAmounts": {}, "shares": [], "perSession": false},
+    {"id": "f_usd", "name": "Suscripción en dólares", "category": "suscripciones", "currency": "USD", "amount": 20, "day": 2, "how": "auto", "cardId": null, "start": "2026-09", "end": null, "history": [], "monthAmounts": {}, "shares": [], "perSession": false}
+  ],
+  "expenses": [
+    {"id": "e_card_in", "source": "manual", "items": [], "amount": 100000, "currency": "ARS", "category": "super", "date": "2026-10-10T12:00", "note": "compra en el ciclo", "split": null, "method": "card", "cardId": "visa", "installments": 1, "at": 1},
+    {"id": "e_card_next", "source": "manual", "items": [], "amount": 50000, "currency": "ARS", "category": "super", "date": "2026-10-25T12:00", "note": "compra después del cierre", "split": null, "method": "card", "cardId": "visa", "installments": 1, "at": 1},
+    {"id": "e_morning", "source": "manual", "items": [], "amount": 5000, "currency": "ARS", "category": "super", "date": "2026-10-30T10:00", "note": "barritas a la mañana", "split": null, "method": "debit", "cardId": null, "accountId": "acc1", "installments": 1, "at": 1793365200000},
+    {"id": "e_usd_paid_ars", "source": "manual", "items": [], "amount": 40000, "currency": "ARS", "category": "suscripciones", "date": "2026-10-30T10:30", "note": "débito en pesos de la suscripción en dólares", "split": null, "method": "debit", "cardId": null, "accountId": "acc1", "installments": 1, "fixedId": "f_usd", "fixedKey": "2026-11", "at": 1793367000000}
+  ],
+  "jars": [], "jarMoves": [], "people": [], "peopleOff": [], "settles": [], "accMoves": [], "customCats": [], "merchantCats": {}, "yields": [], "learned": {}
+}
