@@ -477,3 +477,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `placeFab()`: en compu fija --fab-x al centro de .vcol-r de la pestaña (en Fijos, sobre #fixedList > .list). Corre en render y resize.
 - `render` envuelto: guarda scrollY y lo restaura (no salta al abrir un ítem); setTab marca render.reset para ir arriba.
 - Hoja de una persona: cada gasto muestra qué fue (nota o productos), categoría, fecha, total y su parte; con productos, "Ver N productos". openPersonBal sin moneda elige sola.
+- Ojito (privacidad): `data.privacy = {on, all}`. `applyPrivacy()` cambia montos por "$ ••••" en la pizarra de Movimientos, cuentas, Ahorros, sueldo y calendario (MutationObserver + render). Con all=false (default) se ven igual "Te da para … por día" y "Te deben". Ajuste en Ajustes.
