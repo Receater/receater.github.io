@@ -12,7 +12,7 @@ async function fireDue(){
   const d = await readAlerts(), now = Date.now(), shown = new Set(d.shown || []);
   for (const a of d.list || []){
     if (a.at <= now && a.at > now - 2 * 864e5 && !shown.has(a.id)){
-      await self.registration.showNotification(a.title, { body: a.body, tag: a.id, icon: "icon.svg", badge: "icon.svg", data: { url: "./" } });
+      await self.registration.showNotification(a.title, { body: a.body, tag: a.id, icon: "icon-192.png", badge: "favicon-64.png", data: { url: "./" } });
       shown.add(a.id);
     }
   }

@@ -17,8 +17,9 @@
 </script>
 
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&family=VT323&family=Courier+Prime:wght@400;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
@@ -2072,6 +2073,12 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 .lcd-label-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lcd-why{border:0;background:transparent;padding:2px 0;font:inherit;font-size:.72rem;font-weight:700;color:#6355C7;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .lcd-why .ic{width:12px;height:12px}
+.spend-chart{background:#FBF8F1;border:1.5px dashed #CFC5AE;border-radius:10px;padding:12px 14px;margin:0 0 14px}
+.sc-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;margin-bottom:6px}
+.sc-head span{color:#6E6A62;font-size:.85rem}
+.spend-chart svg{width:100%;height:auto;display:block}
+.sc-v{font:600 11px "IBM Plex Mono",monospace;fill:#1F1F1F}
+.sc-m{font:12px "Instrument Sans",system-ui,sans-serif;fill:#6E6A62;text-transform:capitalize}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2488,6 +2495,10 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 :root[data-theme="dark"] .pb-items li{border-bottom:1px dotted #3E3930 !important}
 :root[data-theme="dark"] .lcd-eye[aria-pressed="true"]{color:#8981F0 !important}
 :root[data-theme="dark"] .lcd-why{color:#8981F0 !important}
+:root[data-theme="dark"] .spend-chart{background:#1D1C19 !important;border:1.5px dashed #413C32 !important}
+:root[data-theme="dark"] .sc-head span{color:#817E78 !important}
+:root[data-theme="dark"] .sc-v{fill:#CCCCCC !important}
+:root[data-theme="dark"] .sc-m{fill:#817E78 !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -3329,7 +3340,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-04.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-04.2200";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4493,7 +4504,8 @@ function render(){
       ids.forEach(id => bar.append(chip(id, catById(id).name, catById(id).color)));
       requestAnimationFrame(() => { bar.scrollLeft = sl; lfArrows(); });
       if (listCat){ const n = rows.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat).length;
-        const t = document.createElement("p"); t.className = "lf-total"; t.textContent = `${catById(listCat).name}: ${fmtARS.format(round2(tot[listCat]))} en ${n} ${n === 1 ? "gasto" : "gastos"}`; days.append(t); }
+        const t = document.createElement("p"); t.className = "lf-total"; t.textContent = `${catById(listCat).name}: ${fmtARS.format(round2(tot[listCat]))} en ${n} ${n === 1 ? "gasto" : "gastos"}`; days.append(t);
+        const ch = spendChart(data.expenses.filter(e => e.category === listCat), `${catById(listCat).name} por mes`, catById(listCat).color); if (ch) days.append(ch); }
     }
   } else { $("listFilterW").hidden = true; }
   const shownF = listCat && !viewDay ? shown.filter(r => r.kind === "item" && !isIncome(r.e) && r.e.category === listCat) : shown;
@@ -5079,6 +5091,28 @@ function searchMatches(q){
     const h = searchHay(e); return words.every(w => h.includes(w));
   }).sort((a,b) => b.date.localeCompare(a.date));
 }
+/* En compu: gráfico de cuánto gastaste por mes en lo que estás buscando o filtrando (últimos 12 meses, en pesos) */
+function spendChart(exps, title, color){
+  if (innerWidth < 1100) return null;
+  const xs = exps.filter(e => !isIncome(e) && e.currency === "ARS"); if (xs.length < 2) return null;
+  const [cy, cm] = periodOf(new Date()), per = [];
+  for (let k = 11; k >= 0; k--){ const d = new Date(cy, cm - k, 1); per.push({ y: d.getFullYear(), m: d.getMonth(), v: 0, n: 0 }); }
+  xs.forEach(e => { const [y, m] = periodOf(e.date), p = per.find(q => q.y === y && q.m === m); if (p){ p.v += eff(e); p.n++; } });
+  const first = per.findIndex(p => p.v > 0); if (first < 0) return null;
+  const P = per.slice(Math.min(first, per.length - 3)), max = Math.max(...P.map(p => p.v)) || 1, used = P.filter(p => p.v > 0), avg = used.reduce((a, p) => a + p.v, 0) / used.length;
+  const W = 640, H = 170, top = 22, bot = 28, bw = (W - 20) / P.length, col = color || "#6355C7", yv = v => top + (H - top - bot) * (1 - v / max);
+  const short = v => v >= 1e6 ? (v / 1e6).toFixed(1).replace(".", ",") + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(Math.round(v));
+  const bars = P.map((p, i) => { const w = Math.min(bw * 0.64, 56), x = 10 + i * bw + (bw - w) / 2, y = yv(p.v), cur = p.y === cy && p.m === cm;
+    return `<g><title>${periodTitle(p.y, p.m)}: ${fmtARS.format(Math.round(p.v))} en ${p.n} ${p.n === 1 ? "gasto" : "gastos"}</title>
+      <rect x="${x}" y="${y}" width="${w}" height="${Math.max(0, H - bot - y)}" rx="3" fill="${col}" opacity="${cur ? 1 : .55}"/>
+      ${p.v ? `<text x="${x + w / 2}" y="${y - 5}" text-anchor="middle" class="sc-v">${short(p.v)}</text>` : ""}
+      <text x="${x + w / 2}" y="${H - 10}" text-anchor="middle" class="sc-m">${monthName(p.y, p.m).slice(0, 3)}</text></g>`; }).join("");
+  const box = document.createElement("div"); box.className = "spend-chart";
+  box.innerHTML = `<div class="sc-head"><strong>${title}</strong><span>Promedio ${fmtARS.format(Math.round(avg))} por mes${used.length < P.length ? ` (en los ${used.length} meses con gastos)` : ""}</span></div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">${bars}
+      <line x1="10" x2="${W - 10}" y1="${yv(avg)}" y2="${yv(avg)}" stroke="#1F1F1F" stroke-dasharray="4 4" opacity=".45"/></svg>`;
+  return box;
+}
 function renderSearch(days){
   const res = searchMatches(searchQ), exps = res.filter(e => !isIncome(e)), incs = res.filter(isIncome);
   const sum = (xs, c) => round2(xs.filter(e => e.currency === c).reduce((s2, e) => s2 + eff(e), 0));
@@ -5092,6 +5126,7 @@ function renderSearch(days){
     l.textContent = "Ingresos: " + [sum(incs,"ARS") && fmtARS.format(sum(incs,"ARS")), sum(incs,"USD") && fmtUSD.format(sum(incs,"USD"))].filter(Boolean).join(" + ") + ` (${incs.length})`; head.append(l); }
   if (res.length){ const l = document.createElement("small"); l.textContent = "En todos los meses. Las compras en cuotas cuentan por su total."; head.append(l); }
   days.append(head);
+  const ch = spendChart(exps, `Gastos en "${searchQ}" por mes`); if (ch) days.append(ch);
   let lastM = "";
   res.slice(0, 300).forEach(e => {
     const [y, m] = periodOf(e.date), mk = monthKey(y, m);
@@ -7304,7 +7339,7 @@ async function enableNotif(){
   try { localStorage.setItem("receater.notify", "1"); } catch {}
   try { const reg = swReg || await navigator.serviceWorker.ready; if (reg.periodicSync) await reg.periodicSync.register("receater-alerts", { minInterval: 6 * 3600 * 1000 }); } catch {}
   await scheduleAlerts();
-  try { const reg = swReg || await navigator.serviceWorker.ready; reg.showNotification("Listo, te voy a avisar", { body: "Vencimientos de tarjetas y fijos, y el día que cobrás.", icon: "icon.svg" }); } catch {}
+  try { const reg = swReg || await navigator.serviceWorker.ready; reg.showNotification("Listo, te voy a avisar", { body: "Vencimientos de tarjetas y fijos, y el día que cobrás.", icon: "icon-192.png" }); } catch {}
   const n = buildAlerts().length;
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   uiAlert(`Avisos activados. Tenés ${n} ${n === 1 ? "aviso programado" : "avisos programados"} para las próximas 3 semanas.` + (standalone ? "" : " Para que lleguen aunque no abras la app, instalala en el celular (Agregar a pantalla de inicio).") + " Como no usamos servidor, si pasás varios días sin abrir Receater algunos pueden llegar tarde.");
@@ -7915,7 +7950,9 @@ const NEWS = [
     { es: "Nuevo: el ojito en la pizarra oculta tu plata (saldos, cuentas, ahorros y sueldo). Queda guardado. El gasto por día y lo que te deben se siguen viendo; eso se cambia en Ajustes.", en: "New: the eye on the board hides your money (balances, accounts, savings and pay). It's remembered. Daily spending and what you're owed stay visible; change that in Settings." },
     { es: "Los totales grandes (pizarras, cuentas, ahorros) van sin centavos. En cada gasto y en los tickets siguen.", en: "Big totals (boards, accounts, savings) no longer show cents. Each expense and ticket still does." },
     { es: "Nuevo: \"¿De dónde sale?\" al lado de Te queda: te muestra la cuenta, cuenta por cuenta, con los fijos y tarjetas que ya se descontaron.", en: "New: \"Where does it come from?\" next to What's left shows the math, account by account, with the fixed costs and cards already taken off." },
-    { es: "Recy nuevo: las caras dibujadas a mano por Tomas. En el chat pone cara de pensar mientras busca la respuesta y de escuchar cuando le hablás.", en: "New Recy: faces hand-drawn by Tomas. In the chat it looks thoughtful while it finds the answer and listens when you talk." } ] },
+    { es: "Recy nuevo: las caras dibujadas a mano por Tomas. En el chat pone cara de pensar mientras busca la respuesta y de escuchar cuando le hablás.", en: "New Recy: faces hand-drawn by Tomas. In the chat it looks thoughtful while it finds the answer and listens when you talk." },
+    { es: "Ícono nuevo de la app con el Recy dibujado (si la tenés instalada, puede tardar en cambiar).", en: "New app icon with the drawn Recy (if installed, it may take a while to update)." },
+    { es: "En la compu, al buscar o filtrar una categoría ves un gráfico de cuánto gastaste en eso por mes.", en: "On computers, searching or filtering a category shows a chart of how much you spent on it per month." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -12296,6 +12333,9 @@ const I18N_EN_P = [
   [/^Pagaste (\d+) de (\d+) fijos( \((.+)\))?$/, (m, a, b, c, d) => `You paid ${a} of ${b} fixed${d ? ` (${d})` : ""}`],
   [/^Ver (\d+) productos?$/, "See $1 item(s)"],
   [/^(.+), vence el (.+?)( \(según tu resumen\))?$/, (m, a, b, c) => `${a}, due ${b}${c ? " (per your statement)" : ""}`],
+  [/^Gastos en "(.+)" por mes$/, 'Spending on "$1" per month'],
+  [/^(.+) por mes$/, "$1 per month"],
+  [/^Promedio (.+) por mes( \(en los (\d+) meses con gastos\))?$/, (m, a, b, c) => `Average ${a} per month${c ? ` (over the ${c} months with spending)` : ""}`],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
