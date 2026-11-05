@@ -3340,7 +3340,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-05.0830";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-05.1140";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -3786,6 +3786,14 @@ function cardSchedule(e){
 function entries(){
   const out = [];
   allExpenses().forEach(e => {
+    // lo pagó otro y se lo devolvés en cuotas: el gasto se reparte en las fechas de cada cuota (como una compra en cuotas)
+    if (e.paidBy && e.paidBy.plan && (e.paidBy.plan.n | 0) > 1 && e.paidBy.plan.start){
+      const n = e.paidBy.plan.n | 0, tot = eff(e), per = round2(tot / n); let [y, m] = e.paidBy.plan.start.split("-").map(Number); m--;
+      for (let k = 0; k < n; k++){ const d = dayIn(y, m, Math.min(28, e.paidBy.plan.day || 10));
+        out.push({ ...e, id: `${e.id}:p${k}`, split: null, items: [], amount: k === n - 1 ? round2(tot - per * (n - 1)) : per, date: `${toLocalInput(d)}T00:00`, cardId: null, method: "other", cuota: k + 1, of: n, src: e });
+        m++; if (m > 11){ m = 0; y++; } }
+      return;
+    }
     if (!isCardExp(e)){
       const its = Array.isArray(e.items) ? e.items.filter(i => i.category && i.price > 0) : [];
       if (its.length && !e.split){
@@ -4392,7 +4400,12 @@ function render(){
   const balS = balances();
   const owedScreen = balS.filter(x => x.ARS > 0).reduce((a,x) => a + x.ARS, 0), oweScreen = balS.filter(x => x.ARS < 0).reduce((a,x) => a - x.ARS, 0);
   if (owedScreen > 0.5) screen.push(`Te deben ${fmtARS.format(owedScreen)}`);
-  if (oweScreen > 0.5) screen.push(`Debés ${fmtARS.format(oweScreen)}`);
+  // lo que debés en cuotas que todavía no empezaron no va como deuda de ahora: va aparte, con la próxima cuota
+  const planOwe = planRefs().filter(r => r.kind !== "lend" && r.cur === "ARS").map(r => ({ r, left: planCuotas(r).filter(c => c.owed > 0.004) })).filter(o => o.left.length);
+  const planLeft = round2(planOwe.reduce((a, o) => a + o.left.reduce((b, c) => b + c.owed, 0), 0)), oweNow = round2(Math.max(0, oweScreen - planLeft));
+  if (oweNow > 0.5) screen.push(`Debés ${fmtARS.format(oweNow)}`);
+  if (planLeft > 0.5){ const nx = planOwe.map(o => o.left[0]).sort((a, b) => a.date - b.date)[0];
+    screen.push(`En cuotas ${fmtARS.format(planLeft)} · la próxima ${fmtARS.format(nx.owed)} el ${shortDate(nx.date)}`); }
   if (boardReal && bIncA > 0){
     // Con las cuentas al día: también se descuenta lo que tenés que devolver
     const realLeft = round2(boardRealLeft - repayScreen);
@@ -5191,7 +5204,8 @@ function renderItem(e){
     return wrap;
   }
   if (!shared && e.paidBy){
-    sub.textContent = [`Pagó ${e.paidBy.name} (total ${money(e.paidBy.total, e.currency)})`, e.note].filter(Boolean).join("  ");
+    const pl = e.paidBy.plan && (e.paidBy.plan.n | 0) > 1 && e.paidBy.plan.start ? e.paidBy.plan : null;
+    sub.textContent = [`Pagó ${e.paidBy.name} (total ${money(e.paidBy.total, e.currency)})`, pl ? `se lo devolvés en ${pl.n} cuotas desde ${monthName(+pl.start.slice(0,4), +pl.start.slice(5,7) - 1)}` : null, e.note].filter(Boolean).join("  ");
     mid.append(cat, sub);
     amt.append(stampEl(e.paidBy.settled ? "SALDADO" : "LE DEBÉS", e.paidBy.settled ? "ok" : "wait"));
     b.onclick = () => openSheet(e);
@@ -7952,7 +7966,8 @@ const NEWS = [
     { es: "Nuevo: \"¿De dónde sale?\" al lado de Te queda: te muestra la cuenta, cuenta por cuenta, con los fijos y tarjetas que ya se descontaron.", en: "New: \"Where does it come from?\" next to What's left shows the math, account by account, with the fixed costs and cards already taken off." },
     { es: "Recy nuevo: las caras dibujadas a mano por Tomas. En el chat pone cara de pensar mientras busca la respuesta y de escuchar cuando le hablás.", en: "New Recy: faces hand-drawn by Tomas. In the chat it looks thoughtful while it finds the answer and listens when you talk." },
     { es: "Ícono nuevo de la app con el Recy dibujado (si la tenés instalada, puede tardar en cambiar).", en: "New app icon with the drawn Recy (if installed, it may take a while to update)." },
-    { es: "En la compu, al buscar o filtrar una categoría ves un gráfico de cuánto gastaste en eso por mes.", en: "On computers, searching or filtering a category shows a chart of how much you spent on it per month." } ] },
+    { es: "En la compu, al buscar o filtrar una categoría ves un gráfico de cuánto gastaste en eso por mes.", en: "On computers, searching or filtering a category shows a chart of how much you spent on it per month." },
+    { es: "Arreglo: si algo te lo pagó otro y se lo devolvés en cuotas, el gasto se reparte en los meses de cada cuota, y en la pizarra se ve aparte (\"En cuotas\", con la próxima).", en: "Fix: if someone paid for you and you pay them back in installments, the expense is spread over each installment's month, and the board shows it separately (\"In installments\", with the next one)." } ] },
   { v: "1.11.2", d: "2026-10-26", t: { es: "Resumen de tarjeta más fácil", en: "Easier card statement" }, i: [
     { es: "Si decís que dos gastos son distintos, Recy no vuelve a preguntar.", en: "If you say two expenses are different, Recy won't ask again." },
     { es: "Con el total del resumen cargado, \"Te llega\" muestra lo que dice el banco, y te avisa si en la app sumás de más.", en: "With the statement total entered, \"Due\" shows what the bank says, and warns if the app adds up to more." },
@@ -12336,6 +12351,8 @@ const I18N_EN_P = [
   [/^Gastos en "(.+)" por mes$/, 'Spending on "$1" per month'],
   [/^(.+) por mes$/, "$1 per month"],
   [/^Promedio (.+) por mes( \(en los (\d+) meses con gastos\))?$/, (m, a, b, c) => `Average ${a} per month${c ? ` (over the ${c} months with spending)` : ""}`],
+  [/^En cuotas (.+) · la próxima (.+) el (.+)$/, "In installments $1 · next $2 on $3"],
+  [/^(.+)  se lo devolvés en (\d+) cuotas desde (\S+)(.*)$/, "$1  you pay back in $2 installments from $3$4"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
