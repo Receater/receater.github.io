@@ -487,3 +487,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Recy con las caras de Tomas: `recy/faces/recy_<cara>.webp` (512px, lienzo entero) y `ava_<cara>.webp` (recorte del cuerpo para chat y botón). `RECY_FACES` mapea los moods de la app (happy, full→satisfied, worried, hungry, …). `recySVG` mete la imagen en el mismo viewBox y deja el papelito y las tiritas del SVG para la animación de comer. Faltan las animaciones (frames) que Tomas ya tiene dibujadas.
 - Íconos: icon-192/512.png, icon-maskable-512.png, apple-touch-icon.png (fondo crema #F5E8C8), favicon-32/64.png (Recy sin fondo), hechos con la cara Feliz. icon.svg queda viejo, sin usar.
 - `spendChart(exps, title, color)`: en compu (≥1100px), al buscar o filtrar categoría, barras por mes (últimos 12, pesos) con promedio.
+- Recy por defecto: Feliz. Satisfecho solo justo después de comer (recyFlash), con todos los fijos pagados o las lecciones terminadas.

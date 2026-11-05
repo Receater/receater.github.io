@@ -3340,7 +3340,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-04.2200";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-05.0830";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4446,7 +4446,7 @@ function render(){
     const ratio = (bIncA - bSpentA) / bIncA, savA = bSavA;
     if (ratio < 0){ mood = "worried"; line = "Uy, nos pasamos este mes."; }
     else if (ratio < 0.2){ mood = "worried"; line = "Se viene finito el mes, ojo."; }
-    else if (savA > 0){ mood = "full"; line = "Qué rico cuando ahorrás."; }
+    else if (savA > 0){ mood = "happy"; line = "Qué rico cuando ahorrás."; }
     else if (ratio < 0.5){ line = "Vamos bien, pero sin aflojar."; }
   } else line = "Contame cuánto cobrás así hago las cuentas.";
   setRecy(mood, line);
@@ -8960,7 +8960,7 @@ function stageJars(){
       lines: [goalARS() > 0 ? (() => { const [y0, m0] = periodOf(new Date()), v0 = savedIn(y0, m0), g0 = goalARS(); return v0 >= g0 ? `Meta del mes cumplida` : `Meta del mes: ${f0ARS(v0)} de ${f0ARS(g0)}`; })() : null,
         T.balA && T.balU ? `Y ${fmtUSD.format(T.balU)} en dólares` : null, data.jars.length && `${data.jars.length} ${data.jars.length === 1 ? "frasco" : "frascos"}`,
         best && `${best.j.name} al ${Math.round(best.p * 100)}% de la meta`],
-      mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "full",
+      mood: !data.jars.length && !T.balA && !T.balU ? "hungry" : "happy",
       line: !data.jars.length ? "Armemos tu primer frasco." : best ? `Te falta poco para ${best.j.name}.` : "Qué rico cuando ahorrás."
     });
     return;
@@ -8974,7 +8974,7 @@ function stageJars(){
       T.buyUsd ? `Compraste ${fmtUSD.format(round2(T.buyUsd))} a ${fmtARS.format(round2(T.buyArs / T.buyUsd))} promedio` : null,
       (T.outA || T.outU) ? `Sacaste ${both(T.outA, T.outU)}` : null,
       (T.balA || T.balU) ? `${isNow ? "Llevás ahorrado" : "Al final tenías"} ${both(T.balA, T.balU)}` : null],
-    mood: !T.n ? "hungry" : saved ? "full" : "happy",
+    mood: !T.n ? "hungry" : "happy",
     line: !T.n ? "No cargaste ahorros en este período." : saved ? "¡Qué rico cuando ahorrás!" : "Hubo más retiros que ahorros."
   });
 }
