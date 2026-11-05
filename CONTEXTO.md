@@ -489,3 +489,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - `spendChart(exps, title, color)`: en compu (≥1100px), al buscar o filtrar categoría, barras por mes (últimos 12, pesos) con promedio.
 - Recy por defecto: Feliz. Satisfecho solo justo después de comer (recyFlash), con todos los fijos pagados o las lecciones terminadas.
 - "Pagó otro" en cuotas (`paidBy.plan`): entries() lo reparte en las fechas de cada cuota (sin tarjeta). La pizarra separa "Debés" (lo de ahora) de "En cuotas $X · la próxima $Y el …".
+- Cuadro de suscripciones (renderFixed): las de USD usan el tipo real del último débito en pesos (con impuestos) y las compartidas restan lo que ponen otros (`shares`); línea `.sp-sub` explica cada una.

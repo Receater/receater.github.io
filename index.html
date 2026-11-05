@@ -2079,6 +2079,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 .spend-chart svg{width:100%;height:auto;display:block}
 .sc-v{font:600 11px "IBM Plex Mono",monospace;fill:#1F1F1F}
 .sc-m{font:12px "Instrument Sans",system-ui,sans-serif;fill:#6E6A62;text-transform:capitalize}
+.sp-sub{display:block;font-size:.75rem;color:#6E6A62;font-weight:400}
 /*DARK-START*/
 :root[data-theme="dark"] .fx-pie .fxp-body{--ink:#CCCCCC !important;--paper:#181818 !important;--muted:#817E78 !important;--line:#2E2C27 !important;--danger:#B62D41 !important;--usd:#146D46 !important}
 :root[data-theme="dark"] .fx-pie .donut-center .l{color:#817E78 !important}
@@ -2499,6 +2500,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
 :root[data-theme="dark"] .sc-head span{color:#817E78 !important}
 :root[data-theme="dark"] .sc-v{fill:#CCCCCC !important}
 :root[data-theme="dark"] .sc-m{fill:#817E78 !important}
+:root[data-theme="dark"] .sp-sub{color:#817E78 !important}
 /*DARK-END*/
 /* Modo claro: el fondo ilustrado se ve sobre fondo oscuro, como antes del modo oscuro */
 :root[data-theme="light"] body{background:#12161C}
@@ -3340,7 +3342,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-05.1140";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-05.2100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7923,6 +7925,8 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.13", d: "2026-11-05", t: { es: "Suscripciones reales", en: "Real subscription costs" }, i: [
+    { es: "Las suscripciones muestran lo que te cuestan de verdad: con impuestos si son en dólares y se debitan en pesos, y solo tu parte si las compartís.", en: "Subscriptions show what they really cost you: with taxes if they are in dollars but charged in pesos, and only your share if you split them." } ] },
   { v: "1.12", d: "2026-10-29", t: { es: "Deudas en cuotas", en: "Debts in installments" }, i: [
     { es: "Préstamos en cuotas: si te prestaron, si usaste la tarjeta de alguien o si vos prestaste, podés poner en cuántas cuotas y qué día de cada mes.", en: "Loans in installments: if someone lent you money, you used their card, or you lent money, set how many installments and which day." },
     { es: "Las cuotas que debés aparecen en lo que te falta pagar y se restan del \"Te queda\"; te avisamos un día antes.", en: "Installments you owe show in what's left to pay and come off \"You have left\"; you get a notice the day before." },
@@ -9395,12 +9399,22 @@ function renderFixed(){
   { const sbx = $("subsBox"); sbx.innerHTML = "";
     const subs = list.filter(i => i.f.category === "suscripciones" || /suscrip/i.test(catById(i.f.category).name));
     if (subs.length > 1){
-      const per = i => fixToARS(i.expected || i.paid || 0, i.currency), tot = round2(subs.reduce((a, i) => a + per(i), 0));
+      // lo que te cuesta de verdad: una en dólares que te debitan en pesos va con lo que pagaste la última vez (impuestos incluidos);
+      // si la compartís, cuenta tu parte
+      const realRate = i => { if (i.currency !== "USD") return 0; const last = data.expenses.filter(e => e.fixedId === i.f.id && e.currency === "ARS" && e.amount > 0).sort((a, b) => b.date.localeCompare(a.date))[0];
+        const u = last && (fixAmountFor(i.f, last.fixedKey) || i.f.amount); return last && u ? last.amount / u : 0; };
+      const full = i => { const r = realRate(i); return r ? round2((i.expected || 0) * r) : fixToARS(i.expected || i.paid || 0, i.currency); };
+      const others = i => i.currency === "ARS" ? (i.f.shares || []).reduce((a, x) => a + (x.share || 0), 0) : 0;
+      const per = i => Math.max(0, round2(full(i) - others(i))), tot = round2(subs.reduce((a, i) => a + per(i), 0));
       const sp = document.createElement("section"); sp.className = "subs-pad";
-      sp.innerHTML = `<div class="sp-head"><h2>Suscripciones</h2><span>lo que se renueva solo</span></div><div class="sp-list"></div><div class="sp-tot"><span>Por mes</span><b></b></div><div class="sp-tot sp-year"><span>Por año</span><b></b></div><p class="fx-hint" style="margin:6px 0 0">Las que están en dólares, al dólar de hoy.</p>`;
+      sp.innerHTML = `<div class="sp-head"><h2>Suscripciones</h2><span>lo que se renueva solo</span></div><div class="sp-list"></div><div class="sp-tot"><span>Por mes</span><b></b></div><div class="sp-tot sp-year"><span>Por año</span><b></b></div><p class="fx-hint" style="margin:6px 0 0">Lo que te cuesta a vos: si la compartís, tu parte. Las que están en dólares van con lo que pagaste la última vez (con impuestos) o al dólar de hoy.</p>`;
       const L = sp.querySelector(".sp-list");
       subs.slice().sort((a, b) => per(b) - per(a)).forEach(i => { const r = document.createElement("div"); r.className = "sp-row"; const n = document.createElement("span"); n.textContent = i.f.name;
-        const v = document.createElement("b"); v.textContent = i.currency === "USD" ? fmtUSD.format(i.expected || 0) : fmtARS.format(round2(per(i))); r.append(n, v); L.append(r); });
+        const v = document.createElement("b"); v.textContent = fmtARS.format(per(i));
+        const sub = [i.currency === "USD" ? `${fmtUSD.format(i.expected || 0)}${realRate(i) ? " con impuestos" : ""}` : null,
+          others(i) > 0 ? `total ${fmtARS.format(full(i))}, ${(i.f.shares || []).map(x => x.name).join(" y ")} pone ${fmtARS.format(others(i))}` : null].filter(Boolean).join(" · ");
+        if (sub){ const sm = document.createElement("small"); sm.className = "sp-sub"; sm.textContent = sub; n.append(sm); }
+        r.append(n, v); L.append(r); });
       sp.querySelector(".sp-tot b").textContent = fmtARS.format(tot); sp.querySelector(".sp-year b").textContent = fmtARS.format(round2(tot * 12));
       sbx.append(sp);
     } }
@@ -11995,6 +12009,7 @@ Con tu plata oculta (el ojito de la pizarra), seguir viendo el gasto por día y 
 ¿De dónde sale?	Where does it come from?
 ¿De dónde sale lo que te queda?	Where does what you have left come from?
 En tus cuentas	In your accounts
+Lo que te cuesta a vos: si la compartís, tu parte. Las que están en dólares van con lo que pagaste la última vez (con impuestos) o al dólar de hoy.	What it costs you: if shared, your part. Dollar ones use what you last paid (with taxes) or today's rate.
 Tema	Theme
 Automático	Automatic
 Claro	Light
@@ -12353,6 +12368,8 @@ const I18N_EN_P = [
   [/^Promedio (.+) por mes( \(en los (\d+) meses con gastos\))?$/, (m, a, b, c) => `Average ${a} per month${c ? ` (over the ${c} months with spending)` : ""}`],
   [/^En cuotas (.+) · la próxima (.+) el (.+)$/, "In installments $1 · next $2 on $3"],
   [/^(.+)  se lo devolvés en (\d+) cuotas desde (\S+)(.*)$/, "$1  you pay back in $2 installments from $3$4"],
+  [/^(US\$ [\d.,]+) con impuestos$/, "$1 with taxes"],
+  [/^total (.+), (.+) pone (.+)$/, "total $1, $2 chips in $3"],
   [/^Sigue: (.+)$/, "Next: $1"],
   [/^Leer ahora · (\d+) min$/, "Read now · $1 min"],
   [/^(\d+)% del sueldo$/, "$1% of paycheck"],
