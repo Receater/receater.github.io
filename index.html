@@ -3343,7 +3343,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-06.1520";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-06.1600";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -7932,6 +7932,7 @@ function offerSetup(){
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
   { v: "1.15", d: "2026-11-06", t: { es: "Ahorro en verde", en: "Savings in green" }, i: [
+    { es: "Las comparaciones de las tarjetas y de la imagen para compartir aclaran \"a esta altura\" cuando el mes no terminó.", en: "Card comparisons and the share image say \"so far\" when the month isn't over." },
     { es: "En el reparto, ahorrar más que el mes pasado ahora se ve en verde y dice \"Ahorraste $X más\".", en: "In the breakdown, saving more than last month now shows in green and says \"You saved $X more\"." } ] },
   { v: "1.14", d: "2026-11-06", t: { es: "Fijos que varían", en: "Fixed costs that vary" }, i: [
     { es: "Si un fijo vino distinto este mes (como las expensas), al pagarlo elegí \"Este mes vino así\": queda pagado sin cambiar lo que esperás los meses que vienen.", en: "If a fixed cost came different this month (like building fees), pick \"This month it came like this\" when paying: it is marked paid without changing what you expect next months." } ] },
@@ -8445,7 +8446,7 @@ async function shareMonthImage(){
     g.fillStyle = col; g.beginPath(); g.arc(122, yy - 12, 10, 0, Math.PI * 2); g.fill();
     g.font = F(32, 700); g.fillStyle = "#1B2430"; g.fillText(ct.name, 146, yy);
     g.textAlign = "right"; g.fillText(f0ARS(v), W - 110, yy);
-    const p0 = prevC[id] || 0, dv = v - p0, cmp = hasPrev && p0 ? `${dv > 0 ? "▲" : "▼"} ${f0ARS(Math.abs(dv))} vs ${monthName(py, pm)}` : (inc > 0 ? `${Math.round(v / inc * 100)}% del sueldo` : "");
+    const p0 = prevC[id] || 0, dv = v - p0, cmp = hasPrev && p0 ? `${dv > 0 ? "▲" : "▼"} ${f0ARS(Math.abs(dv))} vs ${monthName(py, pm)}${isCurrentPeriod(y, m) ? " a esta altura" : ""}` : (inc > 0 ? `${Math.round(v / inc * 100)}% del sueldo` : "");
     g.font = F(22, 600); g.fillStyle = hasPrev && p0 ? (dv > 0 ? "#C9374B" : "#1E7A50") : "#5A6B76"; g.fillText(cmp, W - 110, yy + 32); g.textAlign = "left";
     g.fillStyle = "#E6DECB"; g.fillRect(146, yy + 16, W - 520, 12); g.fillStyle = col; g.fillRect(146, yy + 16, Math.max(6, (W - 520) * v / mx), 12);
     yy += 84; });
@@ -8750,7 +8751,8 @@ function renderCardsDash(list, cur){
     { const pv = prevExpensesFair(viewYear, viewMonth, cur).filter(x => x.cardId === card.id), hadPrev = monthExpenses(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1, cur).some(x => x.cardId === card.id);
       if (hadPrev){ const dv = round2(total - pv.reduce((a, x) => a + x.amount, 0)), pn = monthName(viewMonth === 0 ? viewYear - 1 : viewYear, viewMonth === 0 ? 11 : viewMonth - 1);
         const cmp = document.createElement("div"); cmp.className = "card-cmp " + (Math.abs(dv) < 1 ? "" : dv > 0 ? "up" : "down");
-        cmp.textContent = Math.abs(dv) < 1 ? `Igual que en ${pn}` : `${dv > 0 ? "▲" : "▼"} ${money(Math.abs(dv), cur)} ${dv > 0 ? "más" : "menos"} que el resumen de ${pn}`;
+        const altC = isCurrentPeriod(viewYear, viewMonth) ? " a esta altura" : "";
+        cmp.textContent = Math.abs(dv) < 1 ? `Igual que en ${pn}${altC}` : `${dv > 0 ? "▲" : "▼"} ${money(Math.abs(dv), cur)} ${dv > 0 ? "más" : "menos"} que el resumen de ${pn}${altC}`;
         el.append(cmp); } }
     const next = document.createElement("div"); next.className = "next";
     const info = document.createElement("span");
@@ -12310,8 +12312,8 @@ const I18N_EN_P = [
   [/^Ya la usa (.+)$/, "Already used by $1"],
   [/^(.+): (.+) en (\d+) gastos?$/, "$1: $2 in $3 expenses"],
   [/^Versión (.+) · lo nuevo de cada versión$/, "Version $1 · what's new in each version"],
-  [/^([▲▼]) (.+) más que el resumen de (.+)$/, "$1 $2 more than the $3 statement"],
-  [/^([▲▼]) (.+) menos que el resumen de (.+)$/, "$1 $2 less than the $3 statement"],
+  [/^([▲▼]) (.+) más que el resumen de (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} more than the ${c} statement${d ? " so far" : ""}`],
+  [/^([▲▼]) (.+) menos que el resumen de (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} less than the ${c} statement${d ? " so far" : ""}`],
   [/^([▲▼]) Ahorraste (.+) (más|menos) que en (.+?)( a esta altura)?$/, (m, a, b, c, e, d) => `${a} You saved ${b} ${c === "más" ? "more" : "less"} than in ${e}${d ? " so far" : ""}`],
   [/^([▲▼]) (.+) más que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} more than in ${c}${d ? " so far" : ""}`],
   [/^([▲▼]) (.+) menos que en (.+?)( a esta altura)?$/, (m, a, b, c, d) => `${a} ${b} less than in ${c}${d ? " so far" : ""}`],
