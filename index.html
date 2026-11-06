@@ -2838,6 +2838,7 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
       <div class="fx-hint" id="fixDiffTxt"></div>
       <div class="seg" role="group" aria-label="Qué pasó con el monto" style="margin-top:8px">
         <button type="button" data-fixd="partial" aria-pressed="true">Pago parcial</button>
+        <button type="button" data-fixd="month" aria-pressed="false">Este mes vino así</button>
         <button type="button" data-fixd="raise" aria-pressed="false">Cambió el precio</button>
       </div>
     </div>
@@ -3342,7 +3343,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-05.2100";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-06.1230";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -5497,7 +5498,8 @@ function pickFixed(i){
 function updateFixDiff(){
   const i = fixSelInst(), box = $("fixDiff");
   if (!i || !i.expected || i.f.perSession){ box.hidden = true; return; }
-  const rem = round2(i.expected - i.paid), v = parseAmount($("amount").value) || 0;
+  const mine = editing && editing.fixedId === i.f.id && editing.fixedKey === i.key ? eff(editing) : 0;
+  const rem = round2(i.expected - i.paid + mine), v = parseAmount($("amount").value) || 0;
   if (!v || Math.abs(v - rem) < 0.5){ box.hidden = true; return; }
   box.hidden = false;
   $("fixDiffTxt").textContent = v < rem ? `${i.f.name} es ${money(i.expected, i.currency)} y estás poniendo menos. ¿Qué pasó?` : `${i.f.name} era ${money(i.expected, i.currency)} y estás poniendo más. ¿Qué pasó?`;
@@ -7485,6 +7487,10 @@ $("sheet").addEventListener("submit", ev => {
         const newAmt = round2(fi.paid - (editing && editing.fixedId === fi.f.id ? eff(editing) : 0) + fields.amount);
         fi.f.history = (fi.f.history || []).filter(h => h.from !== fi.key); fi.f.history.push({ from: fi.key, amount: newAmt }); fi.f.amount = newAmt;
       }
+      if (fixDiffMode === "month" && !$("fixDiff").hidden){
+        const newAmt = round2(fi.paid - (editing && editing.fixedId === fi.f.id ? eff(editing) : 0) + fields.amount);
+        (fi.f.monthAmounts ||= {})[fi.key] = newAmt;
+      }
     } else { fields.fixedId = null; fields.fixedKey = null; }
     if (fields.jarId) data.lastJar[currency] = fields.jarId;
   }
@@ -7925,6 +7931,8 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.14", d: "2026-11-06", t: { es: "Fijos que varían", en: "Fixed costs that vary" }, i: [
+    { es: "Si un fijo vino distinto este mes (como las expensas), al pagarlo elegí \"Este mes vino así\": queda pagado sin cambiar lo que esperás los meses que vienen.", en: "If a fixed cost came different this month (like building fees), pick \"This month it came like this\" when paying: it is marked paid without changing what you expect next months." } ] },
   { v: "1.13", d: "2026-11-05", t: { es: "Suscripciones reales", en: "Real subscription costs" }, i: [
     { es: "Las suscripciones muestran lo que te cuestan de verdad: con impuestos si son en dólares y se debitan en pesos, y solo tu parte si las compartís.", en: "Subscriptions show what they really cost you: with taxes if they are in dollars but charged in pesos, and only your share if you split them." } ] },
   { v: "1.12", d: "2026-10-29", t: { es: "Deudas en cuotas", en: "Debts in installments" }, i: [
@@ -12010,6 +12018,7 @@ Con tu plata oculta (el ojito de la pizarra), seguir viendo el gasto por día y 
 ¿De dónde sale lo que te queda?	Where does what you have left come from?
 En tus cuentas	In your accounts
 Lo que te cuesta a vos: si la compartís, tu parte. Las que están en dólares van con lo que pagaste la última vez (con impuestos) o al dólar de hoy.	What it costs you: if shared, your part. Dollar ones use what you last paid (with taxes) or today's rate.
+Este mes vino así	This month it came like this
 Tema	Theme
 Automático	Automatic
 Claro	Light
