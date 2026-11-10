@@ -493,3 +493,5 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Al pagar un fijo con otro monto: "Este mes vino así" guarda `f.monthAmounts[key]` (solo ese mes). Al editar, el resto excluye el propio gasto.
 - Reparto: la fila de ahorro invierte colores (más = verde) y dice "Ahorraste $X más/menos".
 - Auditoría de colores/textos de comparación: tarjetas e imagen compartida dicen "a esta altura" en el mes en curso.
+- Ojito en cada pizarra (renderStage agrega `.priv-eye`, menos Aprender); PRIV_SEL cubre todas las `.recy-stage`, #donutBox, tarjetas del Resumen y #viewFixed.
+- Imagen para compartir: `fitF` achica textos que no entran; la comparación de cada categoría va en su propia línea debajo de la barra.
