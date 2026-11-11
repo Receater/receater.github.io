@@ -3343,7 +3343,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-09.2140";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-10.2350";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4424,8 +4424,9 @@ function render(){
     const todayStr = toLocalInput(new Date());
     // Lo de hoy es lo que compraste hoy: con tarjeta cuenta el día de la compra (no el día que pagás el resumen), y los fijos y pagos de tarjeta no son gasto del día
     const dayOf = x => x.cardId ? (x.src && x.src.date && !x.src.virtual && !x.payId && !x.stmtKey && !x.estc && !(x.cuota > 1) ? x.src.date : "") : x.date;
-    const spentToday = allEnts.filter(x => x.currency === "ARS" && dayOf(x).slice(0,10) === todayStr && !isFixedEnt(x) && !(x.src && (x.src.adjust || x.src.fixedId)) && (!cobro || new Date(dayOf(x)) >= new Date(cobro.date)))
-      .reduce((s2,x) => s2 + x.amount, 0);
+    // con tarjeta: si se paga después de este período, no sale de la plata de este mes (no cuenta para el "por día")
+    const spentToday = allEnts.filter(x => x.currency === "ARS" && dayOf(x).slice(0,10) === todayStr && !isFixedEnt(x) && !(x.src && (x.src.adjust || x.src.fixedId)) && (!cobro || new Date(dayOf(x)) >= new Date(cobro.date)) && !(x.cardId && dateOnly(x.date.slice(0,10)) >= untilD))
+      .reduce((s2,x) => s2 + (x.cardId && x.src && !x.src.virtual ? Math.min(x.amount, eff(x.src)) : x.amount), 0);
     const perDay = days > 0 ? (freeD + spentToday) / days : 0;
     if (perDay > 0){
       const tqI = boardReal ? teQuedaReal(viewYear, viewMonth) : null;
@@ -5896,7 +5897,12 @@ function renderLoanPend(){
       const n = document.createElement("span"); n.className = "n"; n.textContent = txt;
       const refs = x.refs.filter(r => r.cur === cur && r.t !== "settle"), due = refs.filter(r => r.t === "loan" && r.i.dueDate).map(r => r.i.dueDate).sort()[0];
       const sm = document.createElement("small");
-      sm.textContent = v < 0 && due ? `devolver el ${shortDate(dateOnly(due))}` : `${refs.length} ${refs.length === 1 ? "cosa" : "cosas"} en cuenta`; n.append(sm);
+      sm.textContent = v < 0 && due ? `devolver el ${shortDate(dateOnly(due))}` : `${refs.length} ${refs.length === 1 ? "cosa" : "cosas"} en cuenta`;
+      // Deuda en cuotas que todavía no empezó: no la debés hoy, la vas a pagar desde la primera cuota
+      const pl = v < 0 && refs.length && refs.every(r => r.t === "paidBy" && r.e.paidBy.plan) ? refs.map(r => planRefs().find(q => q.obj === r.e)).filter(Boolean) : [];
+      const nx = pl.map(planNext).filter(Boolean).sort((p, q) => p.date - q.date)[0];
+      if (pl.length === refs.length && nx && nx.date > new Date()){ n.firstChild.textContent = `Le vas a pagar a ${x.name}`; sm.textContent = `en cuotas, la primera ${money(nx.owed, cur)} el ${shortDate(nx.date)}`; }
+      n.append(sm);
       const a = document.createElement("span"); a.className = "a"; a.textContent = money(Math.abs(v), cur);
       const st = document.createElement("span"); st.className = "settle"; st.textContent = "Anotar";
       b.append(n, a, st);
@@ -7931,6 +7937,9 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.17", d: "2026-11-10", t: { es: "Arreglos del día", en: "Fixes" }, i: [
+    { es: "Lo que compraste con tarjeta y se paga el mes que viene ya no cuenta como gasto de hoy en el \"por día\". Si lo compartiste, cuenta solo tu parte.", en: "Card purchases paid next month no longer count as today's spending. If shared, only your share counts." },
+    { es: "Una deuda en cuotas que empieza más adelante dice \"Le vas a pagar a…\" con la fecha de la primera cuota.", en: "A debt in installments that starts later says \"You'll pay…\" with the first installment date." } ] },
   { v: "1.16", d: "2026-11-09", t: { es: "Ojito en todas las pestañas", en: "Eye on every tab" }, i: [
     { es: "El ojito para ocultar tu plata ahora está en todas las pestañas y oculta también el Resumen, los fijos y las tarjetas.", en: "The eye to hide your money is now on every tab and also hides the Summary, fixed costs and cards." },
     { es: "Arreglo: en la imagen para compartir los textos ya no se pisan.", en: "Fix: texts in the share image no longer overlap." } ] },
@@ -12293,6 +12302,8 @@ const I18N_EN_P = [
   [/^Te da para (.+) por día(.*)$/, "You can spend $1 per day$2"],
   [/^Hoy te quedan (.+)$/, "Left for today: $1"],
   [/^Hoy te pasaste por (.+)$/, "Today you went over by $1"],
+  [/^Le vas a pagar a (.+)$/, "You'll pay $1"],
+  [/^en cuotas, la primera (.+) el (.+)$/, "in installments, the first $1 on $2"],
   [/^(.+): te pasaste del tope por (.+)$/, "$1: over the limit by $2"],
   [/^Te pasaste (.+) del tope de (.+)$/, "You went over the $2 limit by $1"],
   [/^Te pasaste (.+)$/, "You went over by $1"],
