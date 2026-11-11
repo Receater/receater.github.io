@@ -3159,7 +3159,12 @@ html:has(.sheet.open) .chat-fab,html:has(.dlg-bg) .chat-fab,body.chat-on .chat-f
     <button type="button" class="set-row as-btn" id="setAi"><div><strong>Recy inteligente</strong><span id="setAiTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setNotif"><div><strong>Avisos en el celular</strong><span id="setNotifTxt"></span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setRemind" hidden><div><strong>Recordatorio para cargar gastos</strong><span id="setRemindTxt"></span></div><span class="chev2">›</span></button>
-    <div class="set-row"><div><strong>Mostrar igual lo que podés gastar por día</strong><span>Con tu plata oculta (el ojito de la pizarra), seguir viendo el gasto por día y lo que te deben.</span></div><label class="switch"><input type="checkbox" id="privKeep" checked aria-label="Mostrar igual lo que podés gastar por día"></label></div>
+    <div class="set-label">Con el ojito cerrado, mostrar igual</div>
+    <div class="set-row"><div><strong>Lo que te da por día</strong></div><label class="switch"><input type="checkbox" class="priv-keep" data-k="perday" aria-label="Lo que te da por día"></label></div>
+    <div class="set-row"><div><strong>Lo que te queda hoy</strong></div><label class="switch"><input type="checkbox" class="priv-keep" data-k="today" aria-label="Lo que te queda hoy"></label></div>
+    <div class="set-row"><div><strong>Lo que te deben</strong></div><label class="switch"><input type="checkbox" class="priv-keep" data-k="owed" aria-label="Lo que te deben"></label></div>
+    <div class="set-row"><div><strong>Lo que tenés en tus cuentas</strong></div><label class="switch"><input type="checkbox" class="priv-keep" data-k="accounts" aria-label="Lo que tenés en tus cuentas"></label></div>
+    <div class="set-row"><div><strong>Lo que gastaste</strong></div><label class="switch"><input type="checkbox" class="priv-keep" data-k="spent" aria-label="Lo que gastaste"></label></div>
     <button type="button" class="set-row as-btn" id="setTheme"><div><strong>Tema</strong><span id="setThemeTxt">Automático</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setLang"><div><strong>Idioma / Language</strong><span id="setLangTxt">Español · English</span></div><span class="chev2">›</span></button>
     <button type="button" class="set-row as-btn" id="setPpl"><div><strong>Personas</strong><span>Con quién dividís gastos o te prestás plata.</span></div><span class="chev2">›</span></button>
@@ -3343,7 +3348,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-11.0010";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-11.0030";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4257,12 +4262,20 @@ function applyPrivacy(){
   document.body.classList.toggle("priv-on", privOn());
   document.querySelectorAll("#privBtn, .priv-eye").forEach(b => { b.setAttribute("aria-pressed", String(privOn())); b.setAttribute("aria-label", privOn() ? "Mostrar mi plata" : "Ocultar mi plata"); b.querySelector("use").setAttribute("href", privOn() ? "#i-eye-off" : "#i-eye"); });
   if (!privOn()) return;
-  const keep = !(data.privacy && data.privacy.all);
+  // En las pizarras: con el ojito cerrado, las líneas con plata no se muestran, salvo las que elegiste en Ajustes
+  const KEEP_RE = { perday: /Te da para|por día|Último día/, today: /^Hoy te (quedan|pasaste)/, owed: /Te deben/, accounts: /En tus cuentas/, spent: /^Gastaste|^Gastos /};
+  const ks = privKeepSet();
+  document.querySelectorAll(".recy-stage .mk").forEach(d => { MONEY_RE.lastIndex = 0; const t = d.textContent;
+    if (!MONEY_RE.test(t)){ MONEY_RE.lastIndex = 0; return; } MONEY_RE.lastIndex = 0;
+    if (/•/.test(t) || ![...ks].some(k => KEEP_RE[k].test(t))) d.hidden = true; else d.dataset.privKeep = "1"; });
+  const keep = true;
   PRIV_SEL.forEach(sel => document.querySelectorAll(sel).forEach(root => {
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
     while ((n = w.nextNode())){
       if (!MONEY_RE.test(n.nodeValue)){ MONEY_RE.lastIndex = 0; continue; } MONEY_RE.lastIndex = 0;
-      if (keep && PRIV_KEEP.test(n.nodeValue + " " + ((n.parentElement && n.parentElement.childElementCount < 3) ? n.parentElement.textContent : ""))) continue;
+      if (n.parentElement && n.parentElement.closest("[data-priv-keep]")) continue;
+      if (n.parentElement && n.parentElement.closest(".recy-stage .mk")) continue;
+      if (keep && !n.parentElement.closest(".recy-stage") && PRIV_KEEP.test(n.nodeValue + " " + ((n.parentElement && n.parentElement.childElementCount < 3) ? n.parentElement.textContent : ""))) continue;
       if (n.parentElement && n.parentElement.closest("input, textarea, button.chip, .dlg")) continue;
       n.nodeValue = n.nodeValue.replace(MONEY_RE, (m, c) => `${c} ••••`);
     }
@@ -4270,12 +4283,14 @@ function applyPrivacy(){
 }
 function setPrivacy(on){ data.privacy = { ...(data.privacy || {}), on }; persist(); render(); try { if ($("accBox") && $("accBox").offsetParent) renderAccounts(); } catch {} }
 $("privBtn").onclick = () => setPrivacy(!privOn());
-$("privKeep").onchange = () => { data.privacy = { ...(data.privacy || {}), all: !$("privKeep").checked }; persist(); render(); };
+const privKeepSet = () => new Set((data.privacy && data.privacy.keep) || (data.privacy && data.privacy.all ? [] : ["perday", "today"]));
+const syncPrivKeep = () => { const k = privKeepSet(); document.querySelectorAll(".priv-keep").forEach(c => c.checked = k.has(c.dataset.k)); };
+document.querySelectorAll(".priv-keep").forEach(c => c.onchange = () => { data.privacy = { ...(data.privacy || {}), keep: [...document.querySelectorAll(".priv-keep:checked")].map(x => x.dataset.k) }; persist(); render(); });
 { let t = null; new MutationObserver(() => { clearTimeout(t); t = setTimeout(applyPrivacy, 30); }).observe(document.body, { childList: true, subtree: true, characterData: true }); }
 addEventListener("load", () => setTimeout(applyPrivacy, 50));
 /* Al abrir o cerrar algo de la lista (render), la página no salta para arriba */
 { const _render = render; render = function(){ const y = window.scrollY; _render.apply(this, arguments);
-    try { applyPrivacy(); $("privKeep").checked = !(data.privacy && data.privacy.all); } catch {}
+    try { applyPrivacy(); syncPrivKeep(); } catch {}
     if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); requestAnimationFrame(() => { if (Math.abs(window.scrollY - y) > 2 && !render.reset) window.scrollTo(0, y); render.reset = false; }); }; }
 function fitLeftCol(){ document.querySelectorAll(".vcol-l").forEach(c => { c.classList.remove("stick"); if (innerWidth >= 1100 && c.offsetParent && c.getBoundingClientRect().height <= innerHeight - 120) c.classList.add("stick"); }); }
 window.addEventListener("resize", () => setTimeout(fitLeftCol, 160));
@@ -4407,8 +4422,7 @@ function render(){
   const planOwe = planRefs().filter(r => r.kind !== "lend" && r.cur === "ARS").map(r => ({ r, left: planCuotas(r).filter(c => c.owed > 0.004) })).filter(o => o.left.length);
   const planLeft = round2(planOwe.reduce((a, o) => a + o.left.reduce((b, c) => b + c.owed, 0), 0)), oweNow = round2(Math.max(0, oweScreen - planLeft));
   if (oweNow > 0.5) screen.push(`Debés ${fmtARS.format(oweNow)}`);
-  if (planLeft > 0.5){ const nx = planOwe.map(o => o.left[0]).sort((a, b) => a.date - b.date)[0];
-    screen.push(`En cuotas ${fmtARS.format(planLeft)} · la próxima ${fmtARS.format(nx.owed)} el ${shortDate(nx.date)}`); }
+
   if (boardReal && bIncA > 0){
     // Con las cuentas al día: también se descuenta lo que tenés que devolver
     const realLeft = round2(boardRealLeft - repayScreen);
@@ -4442,7 +4456,7 @@ function render(){
         const leftToday = perDay - spentToday;
         screen.push(leftToday >= 0 ? `Hoy te quedan ${fmtARS.format(leftToday)}` : `Hoy te pasaste por ${fmtARS.format(-leftToday)}`);
       }
-      if (cardLater > 0.5) screen.push(`Hoy con tarjeta: ${fmtARS.format(round2(cardLater))}, se paga el mes que viene`);
+
     }
   }
   // Hoy (o mañana) cierra una tarjeta: desde cuándo lo que compres se paga más adelante
@@ -7940,6 +7954,9 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.18", d: "2026-11-10", t: { es: "Pizarra más limpia", en: "Cleaner board" }, i: [
+    { es: "Con el ojito cerrado, la pizarra muestra solo lo que te da por día y lo que te queda hoy; lo demás no aparece. En Ajustes elegís qué mostrar.", en: "With the eye closed, the board only shows what you can spend per day and what you have left today. Pick what to show in Settings." },
+    { es: "Saqué de la pizarra las cuotas que todavía no empezaron y lo comprado con tarjeta para el mes que viene (están en Movimientos).", en: "Removed future installments and next month's card purchases from the board (they're in Movements)." } ] },
   { v: "1.17", d: "2026-11-10", t: { es: "Arreglos del día", en: "Fixes" }, i: [
     { es: "Lo que compraste con tarjeta y se paga el mes que viene ya no cuenta como gasto de hoy en el \"por día\". Si lo compartiste, cuenta solo tu parte.", en: "Card purchases paid next month no longer count as today's spending. If shared, only your share counts." },
     { es: "Una deuda en cuotas que empieza más adelante dice \"Le vas a pagar a…\" con la fecha de la primera cuota.", en: "A debt in installments that starts later says \"You'll pay…\" with the first installment date." } ] },
@@ -12042,6 +12059,12 @@ Con tu plata oculta (el ojito de la pizarra), seguir viendo el gasto por día y 
 En tus cuentas	In your accounts
 Lo que te cuesta a vos: si la compartís, tu parte. Las que están en dólares van con lo que pagaste la última vez (con impuestos) o al dólar de hoy.	What it costs you: if shared, your part. Dollar ones use what you last paid (with taxes) or today's rate.
 Este mes vino así	This month it came like this
+Con el ojito cerrado, mostrar igual	With the eye closed, still show
+Lo que te da por día	What you can spend per day
+Lo que te queda hoy	What you have left today
+Lo que te deben	What you are owed
+Lo que tenés en tus cuentas	What you have in your accounts
+Lo que gastaste	What you spent
 Tema	Theme
 Automático	Automatic
 Claro	Light
