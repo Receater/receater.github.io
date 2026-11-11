@@ -496,3 +496,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Ojito en cada pizarra (renderStage agrega `.priv-eye`, menos Aprender); PRIV_SEL cubre todas las `.recy-stage`, #donutBox, tarjetas del Resumen y #viewFixed.
 - Imagen para compartir: `fitF` achica textos que no entran; la comparación de cada categoría va en su propia línea debajo de la barra.
 - "Por día": spentToday excluye compras con tarjeta que vencen desde el próximo cobro (untilD) y cuenta tu parte (eff). Cuentas con amigos: deuda paidBy en cuotas que no empezó dice "Le vas a pagar a X".
+- Pizarra: "Hoy te quedan" se sigue mostrando; las compras con tarjeta del mes que viene van en una línea aparte "Hoy con tarjeta: $X, se paga el mes que viene".
