@@ -3349,7 +3349,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-12.1310";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-12.1415";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -4247,7 +4247,7 @@ addEventListener("resize", () => { clearTimeout(placeFab.t); placeFab.t = setTim
 /* Ocultar la plata (el ojito): los saldos se ven como $ ••••. Queda guardado en tus datos.
    Por defecto, el gasto por día y lo que te deben se siguen viendo (se puede cambiar en Ajustes). */
 const PRIV_SEL = [".recy-stage", "#donutBox", "#viewDash .cardx", "#viewFixed", "#accBox", "#accOpenSub", "#viewJars", "#viewList .amt.is-inc", "#jdSheet", ".mn-side"];
-const PRIV_KEEP = /Te da para|Te deben|te deben|Hoy te quedan|Último día|por día/;
+const PRIV_KEEP = /Te da para|Te deben|te deben|Hoy te quedan|Último día|por día|per day|Owed to you|Left for today|Last day/;
 const MONEY_RE = /(US\$|\$)\s?-?[\d.]+(?:,\d+)?(?:\s?k\b)?/g;
 function privOn(){ return !!(data.privacy && data.privacy.on); }
 /* Totales grandes sin centavos (pizarras, total de cuentas, ahorros): $ 743.842,4 → $ 743.842. En cada gasto y en los tickets quedan */
@@ -4264,7 +4264,7 @@ function applyPrivacy(){
   document.querySelectorAll("#privBtn, .priv-eye").forEach(b => { b.setAttribute("aria-pressed", String(privOn())); b.setAttribute("aria-label", privOn() ? "Mostrar mi plata" : "Ocultar mi plata"); b.querySelector("use").setAttribute("href", privOn() ? "#i-eye-off" : "#i-eye"); });
   if (!privOn()){ const sub = $("accOpenSub"); if (sub) sub.hidden = false; return; }
   // En las pizarras: con el ojito cerrado, las líneas con plata no se muestran, salvo las que elegiste en Ajustes
-  const KEEP_RE = { perday: /Te da para|por día|Último día/, today: /^Hoy te (quedan|pasaste)/, owed: /Te deben/, accounts: /En tus cuentas/, spent: /^Gastaste|^Gastos /};
+  const KEEP_RE = { perday: /Te da para|por día|Último día|per day|Last day/, today: /^Hoy te (quedan|pasaste)|^Left for today|^Today you went over/, owed: /Te deben|Owed to you/, accounts: /En tus cuentas|In your accounts/, spent: /^Gastaste|^Gastos |^You spent/};
   const ks = privKeepSet();
   { const sub = $("accOpenSub"); if (sub && !ks.has("accounts")) sub.hidden = true; }
   document.querySelectorAll(".recy-stage .mk").forEach(d => { MONEY_RE.lastIndex = 0; const t = d.textContent;

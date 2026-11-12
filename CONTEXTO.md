@@ -500,3 +500,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Ojito cerrado: en las pizarras las líneas `.mk` con plata se ocultan (hidden) salvo las de `data.privacy.keep` (perday, today, owed, accounts, spent; default perday+today). Ajustes: un switch `.priv-keep` por cada una. Se sacaron de la pizarra "En cuotas…" y "Hoy con tarjeta…".
 - "Hoy te quedan" se muestra siempre (no solo si gastaste hoy).
 - Ojito cerrado: `.priv-on .board .lcd-meta` más alto para que el globito no tape líneas; #accOpenSub se oculta salvo keep "accounts".
+- Ojo: KEEP_RE/PRIV_KEEP matchean texto, así que llevan también el inglés (la UI se traduce). Si agregás líneas, sumá ambos idiomas.
