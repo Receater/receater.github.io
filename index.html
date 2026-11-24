@@ -3349,7 +3349,7 @@ const LANG = (() => { try { const l = localStorage.getItem("receater.lang"); if 
   const ls2 = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "es"]);
   const first = ls2.find(x => /^(es|en)\b/i.test(x)); return first && /^en\b/i.test(first) ? "en" : first ? "es" : "en"; })();
 function setLang(l){ try { localStorage.setItem("receater.lang", l); } catch {} location.reload(); }
-const BUILD = "2026-11-12.1415";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
+const BUILD = "2026-11-24.1430";/* Pinta de verde cada ✓ que aparezca en la app (en textos armados con textContent también) */
 (function paintChecks(){
   const run = root => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.includes("✓") && !(n.parentElement && (n.parentElement.classList.contains("ck") || /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/.test(n.parentElement.tagName))) ? 1 : 3 });
     const list = []; while (w.nextNode()) list.push(w.currentNode);
@@ -6595,7 +6595,7 @@ async function aiFromText(text){
 }
 async function aiFromImage(b64, mime){
   return aiCall([{ text: `Sos Recy, el asistente de una app de gastos personales en Argentina. Esta foto es un ticket o comprobante de compra. Leé el comercio, la fecha, el total pagado y cada producto con su precio final (con descuentos aplicados). Asigná a cada producto una categoría de la lista. La nota debe ser el nombre del comercio. "monto" es el TOTAL del ticket.\n${aiContext()}\n${AI_FORMAT}` },
-    { inline_data: { mime_type: mime, data: b64 } }], { fast: true, models: AI_MODELS });
+    { inline_data: { mime_type: mime, data: b64 } }], { fast: true, timeout: 20000, budget: 60000, models: AI_MODELS });   // si un modelo se cuelga, a los 20 s probamos otro
 }
 /* Volcar lo que entendió la IA en el formulario */
 function aiApply(r){
@@ -6654,7 +6654,7 @@ function shrinkImage(file){
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const max = 1280, k = Math.min(1, max / Math.max(img.width, img.height));
+      const max = 1100, k = Math.min(1, max / Math.max(img.width, img.height));
       const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
       res(c.toDataURL("image/jpeg", 0.8).split(",")[1]);
@@ -6671,9 +6671,11 @@ $("tellFile").onchange = () => readTicket($("tellFile"));
 async function readTicket(inp){
   const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;
   setTellBusy(true, "Recy está leyendo el ticket…", "Mirando cada producto.");
+  const t0 = Date.now(), tick = setInterval(() => { const sec = Math.round((Date.now() - t0) / 1000);
+    $("tellBusySub").textContent = sec < 12 ? "Mirando cada producto." : sec < 25 ? "Es un ticket largo, ya casi." : "Google está lento, pruebo de nuevo…"; }, 1000);
   try { const b64 = await shrinkImage(f); aiApply(await aiFromImage(b64, "image/jpeg")); if (itemsDraft.length){ try { $("itemsField").scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} } }
   catch (e){ $("tellMsg").textContent = aiErrorMsg(e).replace(" Usé el modo simple.", "") || "No pude leer la foto."; }
-  setTellBusy(false);
+  clearInterval(tick); setTellBusy(false);
 }
 /* ---------- Subir el resumen de una tarjeta: Recy lo lee, pregunta lo que no entiende y carga los gastos ---------- */
 let st = null;   // { card, data, rows, step, phase }
@@ -7956,6 +7958,8 @@ function offerSetup(){
 /* Botón de ayuda (?) del header: volver a ver el recorrido o configurar la app */
 /* ===== Novedades (patch notes). REGLA: cada actualización suma una entrada arriba de todo (es + en). ===== */
 const NEWS = [
+  { v: "1.20", d: "2026-11-24", t: { es: "Tickets más rápidos", en: "Faster receipts" }, i: [
+    { es: "Leer la foto de un ticket es más rápido: si Google tarda, Recy prueba con otro modelo en vez de esperar, y te va contando cómo va.", en: "Reading a receipt photo is faster: if Google is slow, Recy tries another model instead of waiting, and tells you how it's going." } ] },
   { v: "1.19", d: "2026-11-12", t: { es: "Lo de hoy, siempre", en: "Today, always" }, i: [
     { es: "Con el ojito cerrado, el globito de Recy ya no tapa lo de hoy y \"¿Dónde está tu plata?\" no muestra el total.", en: "With the eye closed, Recy's bubble no longer covers today's line and \"Where's your money?\" hides the total." },
     { es: "La pizarra muestra siempre cuánto te queda para gastar hoy, aunque todavía no hayas gastado nada.", en: "The board always shows what you have left to spend today, even before you spend anything." } ] },
@@ -12070,6 +12074,8 @@ Lo que te queda hoy	What you have left today
 Lo que te deben	What you are owed
 Lo que tenés en tus cuentas	What you have in your accounts
 Lo que gastaste	What you spent
+Es un ticket largo, ya casi.	Long receipt, almost there.
+Google está lento, pruebo de nuevo…	Google is slow, trying again…
 Tema	Theme
 Automático	Automatic
 Claro	Light
