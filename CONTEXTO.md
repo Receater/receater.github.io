@@ -503,3 +503,4 @@ Receater es una app web (PWA, un solo `index.html`) para anotar gastos, ingresos
 - Ojo: KEEP_RE/PRIV_KEEP matchean texto, así que llevan también el inglés (la UI se traduce). Si agregás líneas, sumá ambos idiomas.
 - Ticket por foto: imagen a 1100 px, timeout 20 s por modelo (budget 60 s) y texto de progreso en tellBusySub.
 - aiNorm: acomoda respuestas de Gemini (lista, objeto anidado, números como texto) antes de aiApply. Foto de ticket a 1400 px.
+- Ticket: si Gemini responde vacío, reintenta con modelos no-lite y sin thinking mínimo; si sigue vacío muestra error "empty".
